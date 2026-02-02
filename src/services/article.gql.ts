@@ -51,6 +51,9 @@ export const Q_ARTICLES = /* GraphQL */ `
         name
         slug
       }
+      author {
+        id
+      }
     }
   }
 `;
@@ -78,6 +81,9 @@ export const Q_ARTICLES_BY_TOPIC = /* GraphQL */ `
         name
         slug
       }
+      author {
+        id
+      }
     }
   }
 `;
@@ -104,6 +110,9 @@ export const Q_ARTICLE_BY_ID = /* GraphQL */ `
         name
         slug
       }
+      author {
+        id
+      }
       contentJson
     }
   }
@@ -125,6 +134,9 @@ export const Q_ARTICLE_BY_SLUG = /* GraphQL */ `
       category {
         name
         slug
+      }
+      author {
+        id
       }
       contentJson
     }
