@@ -4,6 +4,18 @@
 import React, { useState, useEffect } from 'react';
 import { useWorkflowPermissions } from '../../hooks/usePermissions';
 import { PermissionGuard, Permission } from '../permissions/PermissionGuard';
+import { getAuthenticatedGqlClient } from '../../services/graphql-client';
+import { 
+  REVIEW_QUEUE_QUERY, 
+  ReviewQueueData, 
+  ReviewQueueFilters, 
+  ReviewQueueResponse 
+} from '../../graphql/queries/reviewQueue';
+import { 
+  SET_ARTICLE_STATUS_MUTATION, 
+  SetArticleStatusVariables, 
+  SetArticleStatusResponse 
+} from '../../graphql/mutations/articleWorkflow';
 
 interface Article {
   id: string;
@@ -57,73 +69,51 @@ export const ReviewQueue: React.FC = () => {
 
   const { canReview, canApprove, canReject } = useWorkflowPermissions();
 
-  // Mock data for demonstration - replace with actual GraphQL query
+  // Fetch review queue from server
   useEffect(() => {
     const fetchReviewQueue = async () => {
       try {
         setLoading(true);
-        // TODO: Replace with actual GraphQL query
-        // const { data } = await client.query({
-        //   query: REVIEW_QUEUE_QUERY,
-        //   variables: { filters }
-        // });
-        
-        // Mock data
-        const mockData: ReviewQueueData = {
-          articles: [
-            {
-              id: '1',
-              title: 'Breaking: Major Economic Policy Changes Announced',
-              excerpt: 'Government announces significant changes to economic policy affecting businesses nationwide.',
-              status: 'REVIEW',
-              createdAt: '2024-01-20T10:00:00Z',
-              updatedAt: '2024-01-20T14:30:00Z',
-              author: {
-                id: 'author1',
-                name: 'John Reporter',
-                email: 'john@example.com',
-              },
-              category: {
-                id: 'cat1',
-                name: 'Politics',
-                slug: 'politics',
-              },
-            },
-            {
-              id: '2',
-              title: 'Technology Trends Shaping the Future',
-              excerpt: 'An in-depth look at emerging technologies and their potential impact.',
-              status: 'REVIEW',
-              createdAt: '2024-01-19T15:00:00Z',
-              updatedAt: '2024-01-19T16:45:00Z',
-              author: {
-                id: 'author2',
-                name: 'Sarah Tech',
-                email: 'sarah@example.com',
-              },
-              category: {
-                id: 'cat2',
-                name: 'Technology',
-                slug: 'technology',
-              },
-            },
-          ],
-          totalCount: 2,
-          hasMore: false,
-        };
-
-        setReviewQueue(mockData);
         setError(null);
-      } catch (err) {
-        setError('Failed to load review queue');
+        
+        const client = getAuthenticatedGqlClient();
+        
+        // Prepare filters for GraphQL query
+        const queryFilters: ReviewQueueFilters = {};
+        if (filters.categoryId) queryFilters.categoryId = filters.categoryId;
+        if (filters.authorId) queryFilters.authorId = filters.authorId;
+        if (filters.limit) queryFilters.limit = filters.limit;
+        if (filters.offset) queryFilters.offset = filters.offset;
+        
+        const response = await client.request<ReviewQueueResponse>(
+          REVIEW_QUEUE_QUERY,
+          { filters: queryFilters }
+        );
+        
+        setReviewQueue(response.reviewQueue);
+      } catch (err: any) {
         console.error('Review queue error:', err);
+        
+        // Handle specific error types
+        if (err.response?.errors) {
+          const errorMessage = err.response.errors[0]?.message || 'Failed to load review queue';
+          setError(errorMessage);
+        } else if (err.message?.includes('Permission denied')) {
+          setError('You do not have permission to access the review queue');
+        } else {
+          setError('Failed to load review queue. Please try again.');
+        }
       } finally {
         setLoading(false);
       }
     };
 
+    // Only fetch if user has review permissions
     if (canReview) {
       fetchReviewQueue();
+    } else {
+      setLoading(false);
+      setError('You do not have permission to access the review queue');
     }
   }, [filters, canReview]);
 
@@ -140,27 +130,21 @@ export const ReviewQueue: React.FC = () => {
     setProcessingArticles(prev => new Set(prev).add(articleId));
 
     try {
-      // TODO: Replace with actual GraphQL mutation
-      // const { data } = await client.mutate({
-      //   mutation: PERFORM_WORKFLOW_ACTION,
-      //   variables: {
-      //     input: {
-      //       articleId,
-      //       action,
-      //       reason,
-      //       notifyAuthor: true,
-      //     }
-      //   }
-      // });
+      const client = getAuthenticatedGqlClient();
+      
+      // Map action to article status
+      const targetStatus = action === 'APPROVE' ? 'PUBLISHED' : 'ARCHIVED';
+      
+      const response = await client.request<SetArticleStatusResponse>(
+        SET_ARTICLE_STATUS_MUTATION,
+        {
+          id: articleId,
+          status: targetStatus
+        } as SetArticleStatusVariables
+      );
 
-      // Mock success
-      const result: WorkflowActionResult = {
-        success: true,
-        message: `Article ${action.toLowerCase()}d successfully`,
-      };
-
-      if (result.success) {
-        // Remove article from review queue
+      if (response.setArticleStatus) {
+        // Remove article from review queue since it's no longer in REVIEW status
         setReviewQueue(prev => ({
           ...prev,
           articles: prev.articles.filter(article => article.id !== articleId),
@@ -174,13 +158,20 @@ export const ReviewQueue: React.FC = () => {
           return newSet;
         });
 
-        alert(result.message);
-      } else {
-        alert(`Failed to ${action.toLowerCase()} article: ${result.message}`);
+        alert(`Article ${action.toLowerCase()}d successfully`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Workflow action error:', err);
-      alert(`Failed to ${action.toLowerCase()} article`);
+      
+      // Handle specific error types
+      if (err.response?.errors) {
+        const errorMessage = err.response.errors[0]?.message || `Failed to ${action.toLowerCase()} article`;
+        alert(errorMessage);
+      } else if (err.message?.includes('Permission denied')) {
+        alert(`You do not have permission to ${action.toLowerCase()} articles`);
+      } else {
+        alert(`Failed to ${action.toLowerCase()} article. Please try again.`);
+      }
     } finally {
       setProcessingArticles(prev => {
         const newSet = new Set(prev);
