@@ -15,6 +15,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MEGA_NAV } from "@/data/mega-nav";
 import { useCategories } from "@/hooks/useCategories";
+import { usePermissions } from "@/hooks/usePermissions";
+import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
+import { ArticleStatus, canEditArticle } from "@/utils/articlePermissions";
+import { Permission } from "@/components/permissions/PermissionGuard";
 
 import type { OutputData } from "@editorjs/editorjs";
 import type { NewsEditorRef } from "@/components/editor/news-editor";
@@ -55,6 +59,9 @@ export default function EditArticlePage() {
   
   // Category validation hook
   const { categories, loading: categoriesLoading, error: categoriesError, isValidCategory } = useCategories();
+  
+  // Permission hooks
+  const { hasPermission, userRole, userId } = usePermissions();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,9 +79,9 @@ export default function EditArticlePage() {
   );
   const [topic, setTopic] = useState<string>("");
 
-  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED" | "ARCHIVED">(
-    "DRAFT"
-  );
+  const [status, setStatus] = useState<ArticleStatus>("DRAFT");
+  const [originalStatus, setOriginalStatus] = useState<ArticleStatus>("DRAFT");
+  const [articleAuthorId, setArticleAuthorId] = useState<string>("");
   const [isBreaking, setIsBreaking] = useState(false);
 
   /** Editor initial content (ONE TIME) */
@@ -123,6 +130,8 @@ export default function EditArticlePage() {
       setCategorySlug(article.category?.slug ?? categoryOptions[0]);
       setTopic(article.topic ?? "");
       setStatus(article.status);
+      setOriginalStatus(article.status); // Track original status for permission checks
+      setArticleAuthorId(article.author?.id ?? ""); // Track author for ownership checks
       setIsBreaking(article.isBreaking ?? false);
       setInitialContent(article.contentJson ?? { blocks: [] });
 
@@ -201,6 +210,32 @@ export default function EditArticlePage() {
 
   if (loading) {
     return <div className="text-sm text-slate-600">Loading…</div>;
+  }
+
+  // Check if user can edit this article
+  const canEdit = canEditArticle(articleAuthorId, userId, userRole, hasPermission);
+  
+  if (!canEdit) {
+    return (
+      <main className="space-y-4">
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
+          <h2 className="text-lg font-semibold text-red-800 mb-2">Access Denied</h2>
+          <p className="text-sm text-red-600 mb-4">
+            You do not have permission to edit this article.
+            {userRole === 'AUTHOR' && articleAuthorId !== userId && 
+              ' Authors can only edit their own articles.'
+            }
+          </p>
+          <Button 
+            variant="outline" 
+            onClick={() => router.push('/articles')}
+            className="border-red-300 text-red-700 hover:bg-red-100"
+          >
+            Back to Articles
+          </Button>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -328,19 +363,15 @@ export default function EditArticlePage() {
           </div>
         )}
 
-        <div className="grid gap-2 sm:w-1/2">
-          <label className="text-xs font-semibold text-slate-600">Status</label>
-          <select
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+        <div className="sm:w-1/2">
+          <ArticleStatusSelect
             value={status}
-            onChange={(e) =>
-              setStatus(e.target.value as "DRAFT" | "PUBLISHED" | "ARCHIVED")
-            }
-          >
-            <option value="DRAFT">DRAFT</option>
-            <option value="PUBLISHED">PUBLISHED</option>
-            <option value="ARCHIVED">ARCHIVED</option>
-          </select>
+            onChange={setStatus}
+            currentStatus={originalStatus}
+            articleAuthorId={articleAuthorId}
+            showGuidance={true}
+            disabled={saving || !canEditArticle(articleAuthorId, userId, userRole, hasPermission)}
+          />
         </div>
 
         <div className="flex items-center gap-2">
@@ -350,12 +381,27 @@ export default function EditArticlePage() {
             className="h-4 w-4 rounded border-slate-300 text-red-600"
             checked={isBreaking}
             onChange={(e) => setIsBreaking(e.target.checked)}
+            disabled={saving || !hasPermission(Permission.SET_BREAKING_NEWS) || !canEditArticle(articleAuthorId, userId, userRole, hasPermission)}
           />
           <label
             htmlFor="breaking-news"
-            className="text-xs font-semibold text-slate-600"
+            className={`text-xs font-semibold ${
+              hasPermission(Permission.SET_BREAKING_NEWS) && canEditArticle(articleAuthorId, userId, userRole, hasPermission)
+                ? 'text-slate-600' 
+                : 'text-slate-400'
+            }`}
+            title={
+              !canEditArticle(articleAuthorId, userId, userRole, hasPermission)
+                ? 'You do not have permission to edit this article'
+                : !hasPermission(Permission.SET_BREAKING_NEWS)
+                ? 'You do not have permission to set breaking news'
+                : 'Mark this article as breaking news'
+            }
           >
             Mark as breaking news
+            {!hasPermission(Permission.SET_BREAKING_NEWS) && (
+              <span className="ml-1 text-xs text-slate-400">(Editors/Admins only)</span>
+            )}
           </label>
         </div>
       </div>

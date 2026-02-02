@@ -10,6 +10,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MEGA_NAV } from "@/data/mega-nav";
 import { useCategories } from "@/hooks/useCategories";
+import { usePermissions } from "@/hooks/usePermissions";
+import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
+import { ArticleStatus } from "@/utils/articlePermissions";
+import { Permission } from "@/components/permissions/PermissionGuard";
 
 import type { OutputData } from "@editorjs/editorjs";
 import type { NewsEditorRef } from "@/components/editor/news-editor";
@@ -47,6 +51,9 @@ export default function NewArticlePage() {
   
   // Category validation hook
   const { categories, loading: categoriesLoading, error: categoriesError, isValidCategory } = useCategories();
+  
+  // Permission hooks
+  const { hasPermission, userRole } = usePermissions();
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -60,7 +67,7 @@ export default function NewArticlePage() {
   );
   const [topic, setTopic] = useState<string>("");
 
-  const [status, setStatus] = useState<"DRAFT" | "PUBLISHED">("DRAFT");
+  const [status, setStatus] = useState<ArticleStatus>("DRAFT");
   const [isBreaking, setIsBreaking] = useState(false);
   const [saving, setSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -291,18 +298,13 @@ export default function NewArticlePage() {
           </div>
         )}
 
-        <div className="grid gap-2 sm:w-1/2">
-          <label className="text-xs font-semibold text-slate-600">Status</label>
-          <select
-            className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+        <div className="sm:w-1/2">
+          <ArticleStatusSelect
             value={status}
-            onChange={(e) =>
-              setStatus(e.target.value as "DRAFT" | "PUBLISHED")
-            }
-          >
-            <option value="DRAFT">DRAFT</option>
-            <option value="PUBLISHED">PUBLISHED</option>
-          </select>
+            onChange={setStatus}
+            showGuidance={true}
+            disabled={saving}
+          />
         </div>
 
         <div className="flex items-center gap-2">
@@ -312,12 +314,25 @@ export default function NewArticlePage() {
             className="h-4 w-4 rounded border-slate-300 text-red-600"
             checked={isBreaking}
             onChange={(e) => setIsBreaking(e.target.checked)}
+            disabled={saving || !hasPermission(Permission.SET_BREAKING_NEWS)}
           />
           <label
             htmlFor="breaking-news"
-            className="text-xs font-semibold text-slate-600"
+            className={`text-xs font-semibold ${
+              hasPermission(Permission.SET_BREAKING_NEWS) 
+                ? 'text-slate-600' 
+                : 'text-slate-400'
+            }`}
+            title={
+              hasPermission(Permission.SET_BREAKING_NEWS)
+                ? 'Mark this article as breaking news'
+                : 'You do not have permission to set breaking news'
+            }
           >
             Mark as breaking news
+            {!hasPermission(Permission.SET_BREAKING_NEWS) && (
+              <span className="ml-1 text-xs text-slate-400">(Editors/Admins only)</span>
+            )}
           </label>
         </div>
       </div>
