@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 import "./globals.css"
 import { fontKhmerDigital } from "@/lib/font"
 import { AuthProvider } from "@/contexts/AuthContext"
+import { ToastProvider } from "@/contexts/ToastContext"
 import { ClientLayoutWrapper } from "@/components/layout/client-layout-wrapper"
 
 export const metadata: Metadata = {
@@ -24,9 +25,11 @@ export default async function RootLayout({
     <html lang={locale} data-locale={locale} className={fontKhmerDigital.variable}>
       <body className={`min-h-screen bg-slate-50 text-slate-900 antialiased ${fontKhmerDigital.className}`}>
         <AuthProvider>
-          <ClientLayoutWrapper>
-            {children}
-          </ClientLayoutWrapper>
+          <ToastProvider>
+            <ClientLayoutWrapper>
+              {children}
+            </ClientLayoutWrapper>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

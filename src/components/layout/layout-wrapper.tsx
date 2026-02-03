@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { PermissionSidebar } from "../navigation/PermissionSidebar";
 import { Header } from "./header";
 import { MobileNav } from "./mobile-nav";
+import { ToastContainer } from "@/components/ui/toast";
 
 interface LayoutWrapperProps {
   children: React.ReactNode;
@@ -61,6 +62,9 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
           </div>
         </main>
       </motion.div>
+      
+      {/* Toast Container */}
+      <ToastContainer />
     </div>
   );
 }
