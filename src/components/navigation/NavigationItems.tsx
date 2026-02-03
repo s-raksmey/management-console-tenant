@@ -128,6 +128,32 @@ export const getNavigationItems = (
       permissions: [Permission.CREATE_ARTICLE],
     },
 
+    // Admin Dashboard - Admins only
+    {
+      name: "Admin",
+      href: "/admin",
+      icon: Shield,
+      badge: null,
+      description: "System administration",
+      permissions: [Permission.CREATE_USER],
+      children: [
+        {
+          name: "Dashboard",
+          href: "/admin",
+          icon: LayoutDashboard,
+          description: "Admin overview",
+          permissions: [Permission.CREATE_USER],
+        },
+        {
+          name: "Create Test Users",
+          href: "/admin/users/create",
+          icon: Users,
+          description: "Quick user setup",
+          permissions: [Permission.CREATE_USER],
+        },
+      ],
+    },
+
     // User Management - Admins only
     {
       name: "Users",
