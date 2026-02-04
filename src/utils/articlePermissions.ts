@@ -158,15 +158,24 @@ export function getAllowedStatusTransitions(
   const validTransitions = STATUS_TRANSITIONS.filter(transition => {
     if (transition.from !== currentStatus) return false;
     
+    // Special case: authors can submit their own articles for review (DRAFT -> REVIEW)
+    if (transition.from === 'DRAFT' && 
+        transition.to === 'REVIEW' && 
+        isOwner && 
+        userRole.toUpperCase() === 'AUTHOR') {
+      return true;
+    }
+    
+    // Special case: authors can pull their own articles back from review (REVIEW -> DRAFT)
+    if (transition.from === 'REVIEW' && 
+        transition.to === 'DRAFT' && 
+        isOwner && 
+        hasPermission(Permission.UPDATE_OWN_ARTICLE)) {
+      return true;
+    }
+    
     // Check if user has the required permission
     if (!hasPermission(transition.requiredPermission)) {
-      // Special case: authors can pull their own articles back from review
-      if (transition.from === 'REVIEW' && 
-          transition.to === 'DRAFT' && 
-          isOwner && 
-          hasPermission(Permission.UPDATE_OWN_ARTICLE)) {
-        return true;
-      }
       return false;
     }
     
@@ -205,16 +214,24 @@ export function canChangeStatus(
   
   if (!transition) return false;
   
-  // Check permission
-  if (hasPermission(transition.requiredPermission)) return true;
+  // Special case: authors can submit their own articles for review (DRAFT -> REVIEW)
+  if (fromStatus === 'DRAFT' && 
+      toStatus === 'REVIEW' && 
+      isOwner && 
+      userRole.toUpperCase() === 'AUTHOR') {
+    return true;
+  }
   
-  // Special case: authors can pull their own articles back from review
+  // Special case: authors can pull their own articles back from review (REVIEW -> DRAFT)
   if (fromStatus === 'REVIEW' && 
       toStatus === 'DRAFT' && 
       isOwner && 
       hasPermission(Permission.UPDATE_OWN_ARTICLE)) {
     return true;
   }
+  
+  // Check permission
+  if (hasPermission(transition.requiredPermission)) return true;
   
   return false;
 }
