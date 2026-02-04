@@ -3,6 +3,7 @@
 
 import React from 'react';
 import { usePermissions } from '../../hooks/usePermissions';
+import { Permission } from '../permissions/PermissionGuard';
 import {
   ArticleStatus,
   StatusOption,
@@ -36,24 +37,10 @@ export const ArticleStatusSelect: React.FC<ArticleStatusSelectProps> = ({
   // Determine if user owns the article
   const isOwner = articleAuthorId ? articleAuthorId === userId : true; // Assume ownership for new articles
 
-  // Debug logging
-  console.log('ArticleStatusSelect Debug:', {
-    currentStatus,
-    userRole,
-    userId,
-    articleAuthorId,
-    isOwner,
-    hasCreatePermission: hasPermission(Permission.CREATE_ARTICLE),
-    hasUpdateOwnPermission: hasPermission(Permission.UPDATE_OWN_ARTICLE),
-  });
-
   // Get allowed status options
   const allowedStatuses: StatusOption[] = currentStatus
     ? getAllowedStatusTransitions(currentStatus, userRole, hasPermission, isOwner)
     : getAllowedNewArticleStatuses(userRole, hasPermission);
-
-  // Debug the allowed statuses
-  console.log('Allowed statuses:', allowedStatuses.map(s => s.value));
 
   // Filter out current status if it's not in allowed transitions (shouldn't happen, but safety check)
   const statusOptions = allowedStatuses.filter(option => option !== undefined);
