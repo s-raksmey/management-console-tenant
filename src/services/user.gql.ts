@@ -247,7 +247,6 @@ export class UserService {
   // Query Functions
   static async listUsers(input: ListUsersInput): Promise<UserListResult> {
     try {
-      console.log('🔍 Frontend Debug - UserService.listUsers called');
       const response = await this.getClient().request<{ listUsers: UserListResult }>(
         LIST_USERS_QUERY,
         { input }
@@ -270,7 +269,6 @@ export class UserService {
 
   static async getUserById(id: string): Promise<User> {
     try {
-      console.log('🔍 Frontend Debug - UserService.getUserById called');
       const response = await this.getClient().request<{ getUserById: User }>(
         GET_USER_BY_ID_QUERY,
         { id }
@@ -293,7 +291,6 @@ export class UserService {
 
   static async getUserStats(): Promise<UserStats> {
     try {
-      console.log('🔍 Frontend Debug - UserService.getUserStats called');
       const response = await this.getClient().request<{ getUserStats: UserStats | null }>(
         GET_USER_STATS_QUERY
       );
@@ -352,7 +349,6 @@ export class UserService {
 
   static async getBasicStats(): Promise<{ totalUsers: number; totalArticles: number }> {
     try {
-      console.log('🔍 Frontend Debug - UserService.getBasicStats called');
       const response = await this.getClient().request<{ getBasicStats: { totalUsers: number; totalArticles: number } }>(
         GET_BASIC_STATS_QUERY
       );
@@ -530,7 +526,6 @@ export class UserService {
 
   static async getFallbackUserStats(): Promise<UserStats | null> {
     try {
-      console.log('Attempting to generate fallback user statistics...');
       
       // Fetch all users to calculate basic statistics
       const allUsersResult = await this.listUsers({ take: 1000, skip: 0 });
@@ -547,8 +542,6 @@ export class UserService {
       }
 
       const users = allUsersResult.users;
-      console.log(`Processing ${users.length} users for fallback statistics`);
-
       if (users.length === 0) {
         return {
           totalUsers: 0,
@@ -589,7 +582,6 @@ export class UserService {
         recentRegistrations
       };
 
-      console.log('Generated fallback statistics:', fallbackStats);
       return fallbackStats;
     } catch (error) {
       console.error('Failed to generate fallback user stats:', error);

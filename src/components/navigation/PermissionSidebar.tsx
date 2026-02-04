@@ -17,8 +17,10 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { PermissionGuard } from "../permissions/PermissionGuard";
 import { usePermissions } from "../../hooks/usePermissions";
-import { getNavigationItems, getQuickActions, NavigationItem } from "./NavigationItems";
-import { useState } from "react";
+import { getNavigationItems, NavigationItem } from "./NavigationItems";
+import { useState, useEffect } from "react";
+import { useCounts } from "@/hooks/useCounts";
+import { useArticles } from "@/hooks/useGraphQL";
 
 interface PermissionSidebarProps {
   collapsed: boolean;
@@ -155,18 +157,32 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
   const pathname = usePathname();
   const { user, isLoading } = useAuth();
   const { userRole } = usePermissions();
+  const { counts } = useCounts(userRole);
+  const { getArticles } = useArticles();
+  const [reviewQueueCount, setReviewQueueCount] = useState(0);
 
-  // Mock counts - replace with actual data fetching
-  const counts = {
-    articles: 42,
-    users: 15,
-    categories: 8,
-    media: 156,
-    reviewQueue: 5,
-  };
+  useEffect(() => {
+    const loadReviewCount = async () => {
+      if (!userRole || userRole.toString().toUpperCase() === 'AUTHOR') {
+        setReviewQueueCount(0);
+        return;
+      }
 
-  const navigationItems = getNavigationItems(counts, userRole);
-  const quickActions = getQuickActions(userRole);
+      const response = await getArticles({ status: 'REVIEW', take: 1000, skip: 0 });
+      const count = response?.articles?.length || 0;
+      setReviewQueueCount(count);
+    };
+
+    loadReviewCount();
+  }, [getArticles, userRole]);
+
+  const navigationItems = getNavigationItems(
+    {
+      ...counts,
+      reviewQueue: reviewQueueCount,
+    },
+    userRole
+  );
 
   // Don't render navigation until user data is loaded
   if (isLoading) {
@@ -229,36 +245,6 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
           )}
         </Button>
       </div>
-
-      {/* Quick Actions */}
-      {!collapsed && quickActions.length > 0 && (
-        <div className="p-4 border-b border-slate-200">
-          <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-            Quick Actions
-          </h3>
-          <div className="space-y-2">
-            {quickActions.map((action) => (
-              <PermissionGuard
-                key={action.href}
-                permissions={action.permissions}
-                roles={action.roles}
-                fallback={null}
-              >
-                <Link href={action.href}>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full justify-start gap-2 h-8 text-xs"
-                  >
-                    <action.icon className="h-3 w-3" />
-                    {action.name}
-                  </Button>
-                </Link>
-              </PermissionGuard>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto p-4">

@@ -11,7 +11,6 @@ import {
   Image,
   ClipboardList,
   Shield,
-  Search,
   Calendar,
   Bell,
   Archive,
@@ -118,16 +117,6 @@ export const getNavigationItems = (
       permissions: [Permission.CREATE_ARTICLE],
     },
 
-    // Search - Available to all users
-    {
-      name: "Search",
-      href: "/search",
-      icon: Search,
-      badge: null,
-      description: "Find content",
-      permissions: [Permission.CREATE_ARTICLE],
-    },
-
     // Admin Dashboard - Admins only
     {
       name: "Admin",
@@ -169,13 +158,6 @@ export const getNavigationItems = (
           icon: Users,
           description: "View all users",
           permissions: [Permission.VIEW_ALL_USERS],
-        },
-        {
-          name: "Add User",
-          href: "/users/new",
-          icon: Users,
-          description: "Create new user",
-          permissions: [Permission.CREATE_USER],
         },
         {
           name: "Role Management",

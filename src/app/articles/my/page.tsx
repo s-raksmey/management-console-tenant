@@ -26,22 +26,12 @@ export default function MyArticlesPage() {
   const [previousArticles, setPreviousArticles] = useState<Article[]>([]);
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | undefined>();
   const [isPolling, setIsPolling] = useState(true);
-  const [actionError, setActionError] = useState<string | null>(null);
   
   const { getArticles, loading, error } = useArticles();
-  const { upsertArticle, setArticleStatus, submitForReview, deleteArticle, loading: mutationLoading } = useArticleMutations();
+  const { setArticleStatus, deleteArticle, loading: mutationLoading } = useArticleMutations();
   const { user } = useAuth();
   const { userRole, hasPermission, isAdmin } = usePermissions();
   const { showSuccess, showError, showInfo } = useToastHelpers();
-
-  // Debug logging
-  useEffect(() => {
-    console.log('🔍 Frontend Debug - My Articles page loaded');
-    console.log('🔍 Frontend Debug - User:', user);
-    console.log('🔍 Frontend Debug - User Role:', userRole);
-    console.log('🔍 Frontend Debug - Is Admin:', isAdmin);
-    console.log('🔍 Frontend Debug - Has CREATE_ARTICLE permission:', hasPermission && hasPermission('CREATE_ARTICLE' as any));
-  }, [user, userRole, isAdmin, hasPermission]);
 
   useEffect(() => {
     loadMyArticles();
@@ -102,38 +92,25 @@ export default function MyArticlesPage() {
 
   const loadMyArticles = async () => {
     if (!user?.id) {
-      console.log('🔍 Frontend Debug - No user ID available, skipping article load');
       return;
     }
-
-    console.log('🔍 Frontend Debug - Loading MY articles for user ID:', user.id, 'with filter:', statusFilter);
     const response = await getArticles({ 
       status: statusFilter,
       authorId: user.id // Filter to only current user's articles
     });
     
     if (response?.articles) {
-      console.log('🔍 Frontend Debug - My articles loaded:', response.articles.length, 'articles');
-      console.log('🔍 Frontend Debug - Sample article IDs:', response.articles.slice(0, 3).map((a: Article) => a.id));
       setArticles(response.articles);
     } else {
-      console.log('🔍 Frontend Debug - No articles data in response:', response);
       setArticles([]);
     }
   };
 
   const handleStatusChange = async (articleId: string, newStatus: ArticleStatus) => {
     try {
-      setActionError(null);
       const article = articles.find(a => a.id === articleId);
       const oldStatus = article?.status;
-      
-      console.log('🔍 Status change attempt:', { articleId, oldStatus, newStatus });
-      
-      // Use setArticleStatus directly - let backend handle permission checks
-      console.log('🔄 Using setArticleStatus mutation');
       const result = await setArticleStatus(articleId, newStatus);
-      console.log('✅ setArticleStatus result:', result);
       
       if (!result) {
         throw new Error('No response from server. Please try again.');
@@ -162,7 +139,6 @@ export default function MyArticlesPage() {
     } catch (error) {
       console.error('❌ Error updating article status:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to update status. Please try again or contact support';
-      setActionError(errorMessage);
       showError('Failed to update status', errorMessage);
     }
   };
@@ -228,29 +204,6 @@ export default function MyArticlesPage() {
           </Link>
         </div>
       </div>
-
-      {/* Debug Panel */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
-        <h3 className="font-semibold text-blue-800 mb-2">🔍 Debug Info (My Articles)</h3>
-        <div className="grid grid-cols-2 gap-2 text-blue-700">
-          <div><strong>User Email:</strong> {user?.email || 'Not available'}</div>
-          <div><strong>User ID:</strong> {user?.id || 'Not available'}</div>
-          <div><strong>User Role:</strong> {userRole || 'Not available'}</div>
-          <div><strong>Is Admin:</strong> {isAdmin ? 'Yes' : 'No'}</div>
-          <div><strong>Articles Count:</strong> {articles.length}</div>
-          <div><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</div>
-          <div><strong>Status Filter:</strong> {statusFilter || 'None'}</div>
-          <div><strong>Error:</strong> {error || 'None'}</div>
-        </div>
-      </div>
-
-      {/* Action Error Display */}
-      {actionError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm">
-          <h3 className="font-semibold text-red-800 mb-2">❌ Error</h3>
-          <p className="text-red-700">{actionError}</p>
-        </div>
-      )}
 
       {/* Filters */}
       <div className="flex gap-4">

@@ -14,8 +14,7 @@ import {
   UserCheck, 
   UserX,
   Loader2,
-  AlertTriangle,
-  Plus
+  AlertTriangle
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,7 +44,6 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useUserManagement, User, ListUsersInput } from '@/hooks/useUserManagement';
-import Link from 'next/link';
 
 interface UserListProps {}
 
@@ -195,12 +193,6 @@ export const UserList: React.FC<UserListProps> = () => {
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-1">Manage user accounts, roles, and permissions</p>
         </div>
-        <Link href="/users/new">
-          <Button className="gap-2">
-            <Plus className="h-4 w-4" />
-            Add User
-          </Button>
-        </Link>
       </div>
 
       {/* Filters */}

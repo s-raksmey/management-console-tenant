@@ -132,18 +132,19 @@ export function useEditorial() {
     // Count featured articles from published articles (fixed field name)
     const featuredArticles = publishedArticles.filter((article: any) => article.isFeatured).length;
     
-    // Calculate approval rate (estimate since we don't have rejected data)
-    const approvalRate = 85; // Default approval rate estimate
+    const approvalRate = (publishedArticles.length + pendingArticles.length) > 0
+      ? Math.round((publishedArticles.length / (publishedArticles.length + pendingArticles.length)) * 100)
+      : 0;
     
     return {
       pendingReviews: pendingArticles.length,
       approvedToday: approvedToday.length,
       rejectedToday: 0, // No rejected data available from schema
       publishedThisWeek: publishedThisWeek.length,
-      totalAuthors: 10, // Default estimate since getUserStats not available
+      totalAuthors: 0,
       featuredArticles: featuredArticles,
-      avgReviewTime: 24, // Default estimate in hours since editorialMetrics not available
-      contentScore: 8.5, // Default content quality score estimate
+      avgReviewTime: 0,
+      contentScore: 0,
       approvalRate: approvalRate,
     };
   }, [executeQuery, user]);
@@ -282,10 +283,9 @@ export function useEditorial() {
       // Generate editorial actions from article data
       const actions: EditorialAction[] = [];
       
+      const editorName = editors.length > 0 ? editors[0].name : 'System Editor';
+
       articles.forEach((article: any) => {
-        const editorName = editors.length > 0 
-          ? editors[Math.floor(Math.random() * editors.length)].name 
-          : 'System Editor';
 
         // Determine action type based on article status and timestamps
         let actionType: 'approve' | 'reject' | 'publish' | 'feature' = 'approve';
@@ -334,61 +334,7 @@ export function useEditorial() {
       throw new Error('Insufficient permissions to view author performance metrics');
     }
 
-    // Note: authorPerformanceMetrics query is not available in current backend schema
-    // Providing default author performance data for consistent UI experience
-    console.info('Using default author performance data (authorPerformanceMetrics query not available in backend)');
-    
-    // Generate reasonable default author performance data
-    const defaultAuthors: AuthorPerformance[] = [
-      {
-        authorId: 'author-1',
-        name: 'John Smith',
-        articlesSubmitted: 12,
-        approvalRate: 85,
-        avgReviewTime: 24,
-        categories: ['Technology', 'Business'],
-        lastSubmission: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
-      },
-      {
-        authorId: 'author-2', 
-        name: 'Sarah Johnson',
-        articlesSubmitted: 8,
-        approvalRate: 92,
-        avgReviewTime: 18,
-        categories: ['Health', 'Lifestyle'],
-        lastSubmission: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
-      },
-      {
-        authorId: 'author-3',
-        name: 'Mike Chen',
-        articlesSubmitted: 15,
-        approvalRate: 78,
-        avgReviewTime: 36,
-        categories: ['Sports', 'Entertainment'],
-        lastSubmission: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
-      },
-      {
-        authorId: 'author-4',
-        name: 'Emily Davis',
-        articlesSubmitted: 6,
-        approvalRate: 100,
-        avgReviewTime: 12,
-        categories: ['Education', 'Science'],
-        lastSubmission: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(), // 4 days ago
-      },
-      {
-        authorId: 'author-5',
-        name: 'David Wilson',
-        articlesSubmitted: 10,
-        approvalRate: 80,
-        avgReviewTime: 30,
-        categories: ['Politics', 'World News'],
-        lastSubmission: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
-      },
-    ];
-
-    // Return the requested number of authors
-    return defaultAuthors.slice(0, limit);
+    return [];
   }, [user]);
 
   // Approve an article with RBAC check

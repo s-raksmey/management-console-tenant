@@ -142,6 +142,7 @@ export const AdminDashboard: React.FC = () => {
     isEditor, 
     isAuthor, 
     userRole,
+    userId,
     isLoading: permissionsLoading 
   } = usePermissions();
   
@@ -180,13 +181,56 @@ export const AdminDashboard: React.FC = () => {
       const totalArticles = allArticlesData?.articles?.length || basicStatsData?.totalArticles || 0;
       
       // Calculate approval rate from editorial stats or estimate
-      const approvalRate = editorialStats?.approvalRate || 
-        (publishedCount > 0 ? Math.round((publishedCount / (publishedCount + reviewCount)) * 100) : 85);
+      const approvalRate = editorialStats?.approvalRate ||
+        (publishedCount + reviewCount > 0
+          ? Math.round((publishedCount / (publishedCount + reviewCount)) * 100)
+          : 0);
 
-      // Calculate growth percentages (simplified calculation based on recent activity)
-      const userGrowth = userStatsData?.recentRegistrations || 12;
-      const articleGrowth = Math.round(publishedCount * 0.15); // Estimate 15% growth
-      const reviewGrowth = reviewCount > 0 ? Math.round(reviewCount * 0.1) : 0;
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+      const allArticles = allArticlesData?.articles || [];
+      const articleGrowth = allArticles.filter((article: any) => {
+        const createdAt = new Date(article.createdAt);
+        return createdAt >= thirtyDaysAgo;
+      }).length;
+
+      const reviewGrowth = reviewData?.articles?.filter((article: any) => {
+        const createdAt = new Date(article.createdAt);
+        return createdAt >= sevenDaysAgo;
+      }).length || 0;
+
+      const userGrowth = userStatsData?.recentRegistrations || 0;
+
+      const archivedCount = allArticles.filter((article: any) => article.status === 'ARCHIVED').length;
+      const featuredCount = allArticles.filter((article: any) => article.isFeatured).length;
+      const breakingCount = allArticles.filter((article: any) => article.isBreaking).length;
+      const editorsPickCount = allArticles.filter((article: any) => article.isEditorsPick).length;
+
+      const myArticles = allArticles.filter((article: any) => article.author?.id === userId);
+      const myPublishedArticles = myArticles.filter((article: any) => article.status === 'PUBLISHED');
+      const myDraftArticles = myArticles.filter((article: any) => article.status === 'DRAFT');
+      const myPendingArticles = myArticles.filter((article: any) => article.status === 'REVIEW');
+      const myTotalViews = myPublishedArticles.reduce((sum: number, article: any) => sum + (article.viewCount || 0), 0);
+
+      const recentArticles = allArticles
+        .slice()
+        .sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+        .slice(0, 5)
+        .map((article: any) => ({
+          id: article.id,
+          title: article.title,
+          status: article.status === 'PUBLISHED'
+            ? 'published'
+            : article.status === 'REVIEW'
+            ? 'pending'
+            : article.status === 'DRAFT'
+            ? 'draft'
+            : 'rejected',
+          updatedAt: article.updatedAt,
+          views: article.viewCount || 0,
+        }));
 
       const stats: DashboardStats = {
         totalUsers: userStatsData?.totalUsers || basicStatsData?.totalUsers || 0,
@@ -199,150 +243,37 @@ export const AdminDashboard: React.FC = () => {
         userGrowth,
         articleGrowth,
         reviewGrowth,
-        // Author-specific mock data (in real app, this would come from user-specific API)
-        myArticles: 15 + Math.floor(Math.random() * 10), // 15-25 articles
-        myPublishedArticles: 8 + Math.floor(Math.random() * 5), // 8-13 published
-        myDraftArticles: 3 + Math.floor(Math.random() * 3), // 3-6 drafts
-        myPendingArticles: Math.floor(Math.random() * 3), // 0-2 pending
-        totalViews: 15000 + Math.floor(Math.random() * 10000), // 15k-25k views
-        averageRating: 4.2 + Math.random() * 0.6, // 4.2-4.8 rating
-        totalComments: 120 + Math.floor(Math.random() * 80), // 120-200 comments
-        monthlyArticles: 3 + Math.floor(Math.random() * 4), // 3-7 this month
-        weeklyWords: 2500 + Math.floor(Math.random() * 2000), // 2.5k-4.5k words
-        writingStreak: 5 + Math.floor(Math.random() * 10), // 5-15 days
-        bestMonth: 8 + Math.floor(Math.random() * 4), // 8-12 articles
-        recentArticles: [
-          {
-            id: '1',
-            title: 'Understanding Modern Web Development Trends',
-            status: 'published' as const,
-            updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            views: 1250
-          },
-          {
-            id: '2',
-            title: 'The Future of AI in Content Creation',
-            status: 'pending' as const,
-            updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            views: 0
-          },
-          {
-            id: '3',
-            title: 'Building Scalable React Applications',
-            status: 'draft' as const,
-            updatedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-            views: 0
-          },
-          {
-            id: '4',
-            title: 'Database Optimization Techniques',
-            status: 'published' as const,
-            updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            views: 890
-          },
-          {
-            id: '5',
-            title: 'Mobile-First Design Principles',
-            status: 'published' as const,
-            updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            views: 2100
-          }
-        ],
-        // Editor-specific mock data (in real app, this would come from editorial API)
-        articlesReviewed: 45 + Math.floor(Math.random() * 20), // 45-65 reviewed
-        articlesApproved: 35 + Math.floor(Math.random() * 15), // 35-50 approved
-        articlesRejected: 8 + Math.floor(Math.random() * 7), // 8-15 rejected
-        featuredArticles: 12 + Math.floor(Math.random() * 8), // 12-20 featured
-        breakingNewsCount: 3 + Math.floor(Math.random() * 4), // 3-7 breaking news
-        editorsPickCount: 8 + Math.floor(Math.random() * 5), // 8-13 editor's picks
-        averageReviewTime: 2.5 + Math.random() * 2, // 2.5-4.5 hours
-        weeklyReviews: 12 + Math.floor(Math.random() * 8), // 12-20 this week
-        monthlyApprovals: 28 + Math.floor(Math.random() * 12), // 28-40 this month
-        qualityScore: 85 + Math.floor(Math.random() * 10), // 85-95% quality score
-        pendingQueue: [
-          {
-            id: 'p1',
-            title: 'Breaking: New Technology Breakthrough in AI',
-            author: 'John Smith',
-            submittedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-            priority: 'high' as const,
-            category: 'Technology'
-          },
-          {
-            id: 'p2',
-            title: 'Market Analysis: Q4 Financial Trends',
-            author: 'Sarah Johnson',
-            submittedAt: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-            priority: 'medium' as const,
-            category: 'Finance'
-          },
-          {
-            id: 'p3',
-            title: 'Health & Wellness: Winter Fitness Tips',
-            author: 'Mike Davis',
-            submittedAt: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-            priority: 'low' as const,
-            category: 'Health'
-          },
-          {
-            id: 'p4',
-            title: 'Climate Change Impact on Agriculture',
-            author: 'Emma Wilson',
-            submittedAt: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-            priority: 'medium' as const,
-            category: 'Environment'
-          },
-          {
-            id: 'p5',
-            title: 'Sports Update: Championship Results',
-            author: 'Tom Brown',
-            submittedAt: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-            priority: 'high' as const,
-            category: 'Sports'
-          }
-        ],
-        recentReviews: [
-          {
-            id: 'r1',
-            title: 'Understanding Modern Web Development Trends',
-            author: 'Alex Chen',
-            action: 'approved' as const,
-            reviewedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(),
-            category: 'Technology'
-          },
-          {
-            id: 'r2',
-            title: 'Investment Strategies for 2024',
-            author: 'Lisa Park',
-            action: 'featured' as const,
-            reviewedAt: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-            category: 'Finance'
-          },
-          {
-            id: 'r3',
-            title: 'Outdated Marketing Practices',
-            author: 'David Lee',
-            action: 'rejected' as const,
-            reviewedAt: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-            category: 'Marketing'
-          },
-          {
-            id: 'r4',
-            title: 'Sustainable Living Guide',
-            author: 'Rachel Green',
-            action: 'approved' as const,
-            reviewedAt: new Date(Date.now() - 7 * 60 * 60 * 1000).toISOString(),
-            category: 'Lifestyle'
-          },
-          {
-            id: 'r5',
-            title: 'Global Economic Outlook',
-            author: 'James Miller',
-            action: 'featured' as const,
-            reviewedAt: new Date(Date.now() - 9 * 60 * 60 * 1000).toISOString(),
-            category: 'Economics'
-          }
-        ]
+        myArticles: myArticles.length,
+        myPublishedArticles: myPublishedArticles.length,
+        myDraftArticles: myDraftArticles.length,
+        myPendingArticles: myPendingArticles.length,
+        totalViews: myTotalViews,
+        averageRating: 0,
+        totalComments: 0,
+        monthlyArticles: myPublishedArticles.filter((article: any) => new Date(article.publishedAt || article.updatedAt) >= thirtyDaysAgo).length,
+        weeklyWords: 0,
+        writingStreak: 0,
+        bestMonth: 0,
+        recentArticles,
+        articlesReviewed: publishedCount + archivedCount,
+        articlesApproved: publishedCount,
+        articlesRejected: archivedCount,
+        featuredArticles: featuredCount,
+        breakingNewsCount: breakingCount,
+        editorsPickCount: editorsPickCount,
+        averageReviewTime: 0,
+        weeklyReviews: 0,
+        monthlyApprovals: 0,
+        qualityScore: 0,
+        pendingQueue: (reviewData?.articles || []).map((article: any) => ({
+          id: article.id,
+          title: article.title,
+          author: article.authorName || 'Unknown',
+          submittedAt: article.createdAt,
+          priority: 'medium' as const,
+          category: article.category?.name || 'Uncategorized'
+        })),
+        recentReviews: []
       };
 
       setDashboardStats(stats);
@@ -364,17 +295,7 @@ export const AdminDashboard: React.FC = () => {
         setSystemActivity(transformedActivity);
       }
 
-      // Simulate system health data (in real app, this would come from monitoring API)
-      const mockSystemHealth: SystemHealth = {
-        uptime: 99.8 + Math.random() * 0.2, // Simulate slight variation
-        responseTime: 120 + Math.floor(Math.random() * 50), // 120-170ms
-        activeConnections: 1200 + Math.floor(Math.random() * 100), // 1200-1300
-        memoryUsage: 60 + Math.floor(Math.random() * 20), // 60-80%
-        cpuUsage: 30 + Math.floor(Math.random() * 30), // 30-60%
-        diskUsage: 45 + Math.floor(Math.random() * 15), // 45-60%
-        lastUpdated: new Date().toISOString()
-      };
-      setSystemHealth(mockSystemHealth);
+      setSystemHealth(null);
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -384,24 +305,7 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     loadDashboardData();
     
-    // Set up periodic refresh for system health (every 30 seconds)
-    const interval = setInterval(() => {
-      if (systemHealth) {
-        const updatedHealth: SystemHealth = {
-          ...systemHealth,
-          uptime: Math.min(99.9, systemHealth.uptime + Math.random() * 0.1),
-          responseTime: Math.max(100, systemHealth.responseTime + (Math.random() - 0.5) * 20),
-          activeConnections: Math.max(1000, systemHealth.activeConnections + Math.floor((Math.random() - 0.5) * 50)),
-          memoryUsage: Math.max(50, Math.min(90, systemHealth.memoryUsage + (Math.random() - 0.5) * 5)),
-          cpuUsage: Math.max(20, Math.min(80, systemHealth.cpuUsage + (Math.random() - 0.5) * 10)),
-          diskUsage: Math.max(40, Math.min(70, systemHealth.diskUsage + (Math.random() - 0.5) * 2)),
-          lastUpdated: new Date().toISOString()
-        };
-        setSystemHealth(updatedHealth);
-      }
-    }, 30000);
-
-    return () => clearInterval(interval);
+    return () => {};
   }, []);
 
   const handleRefresh = async () => {
@@ -1338,44 +1242,6 @@ export const AdminDashboard: React.FC = () => {
                     <span>{dashboardStats?.bestMonth || 0} articles</span>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-green-600" />
-                  Quick Actions
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {hasPermission(Permission.CREATE_ARTICLE) && (
-                  <Link href="/articles/create">
-                    <Button size="sm" variant="outline" className="w-full justify-start">
-                      <Plus className="h-4 w-4 mr-2" />
-                      New Article
-                    </Button>
-                  </Link>
-                )}
-                <Link href="/articles?status=draft">
-                  <Button size="sm" variant="outline" className="w-full justify-start">
-                    <Edit className="h-4 w-4 mr-2" />
-                    Continue Draft
-                  </Button>
-                </Link>
-                <Link href="/articles?status=published">
-                  <Button size="sm" variant="outline" className="w-full justify-start">
-                    <Eye className="h-4 w-4 mr-2" />
-                    View Published
-                  </Button>
-                </Link>
-                <Link href="/profile/analytics">
-                  <Button size="sm" variant="outline" className="w-full justify-start">
-                    <BarChart3 className="h-4 w-4 mr-2" />
-                    View Analytics
-                  </Button>
-                </Link>
               </CardContent>
             </Card>
 

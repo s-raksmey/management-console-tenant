@@ -152,7 +152,6 @@ export default function MediaPage() {
       if (successfullyDeleted.length > 0) {
         setFiles(prev => prev.filter(f => !successfullyDeleted.includes(f.id)));
         setSelectedFiles([]);
-        console.log(`Successfully deleted ${successfullyDeleted.length} files`);
       }
       
       const failedCount = results.filter(result => !result.success).length;
@@ -175,7 +174,6 @@ export default function MediaPage() {
       if (data.success) {
         setFiles(prev => prev.filter(f => f.id !== file.id));
         // Show success message (you can add toast notification here)
-        console.log('File deleted successfully');
       } else {
         console.error('Failed to delete file:', data.message);
         // Show error message (you can add toast notification here)
@@ -188,7 +186,6 @@ export default function MediaPage() {
 
   const handleFileEdit = (file: MediaFile) => {
     // TODO: Implement edit modal
-    console.log('Edit file:', file);
   };
 
   const stats = React.useMemo(() => {

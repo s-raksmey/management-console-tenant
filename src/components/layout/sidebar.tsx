@@ -68,12 +68,7 @@ const getNavigation = (counts: { articles: number; users: number; categories: nu
   ];
 
   // Only add Users navigation for ADMIN role
-  console.log('getNavigation Debug - userRole:', userRole);
-  console.log('getNavigation Debug - userRole === "ADMIN":', userRole === 'ADMIN');
-  console.log('getNavigation Debug - typeof userRole:', typeof userRole);
-  
   if (userRole === 'ADMIN') {
-    console.log('getNavigation Debug - Adding Users navigation item');
     baseItems.push({
       name: "Users",
       href: "/users",
@@ -81,8 +76,6 @@ const getNavigation = (counts: { articles: number; users: number; categories: nu
       badge: counts.users > 0 ? counts.users.toString() : null,
       description: "User management"
     });
-  } else {
-    console.log('getNavigation Debug - NOT adding Users navigation item, role is:', userRole);
   }
 
   // Settings item (available to all users)

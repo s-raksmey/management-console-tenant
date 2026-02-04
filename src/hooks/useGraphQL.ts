@@ -112,6 +112,7 @@ export function useArticles() {
           createdAt
           updatedAt
           contentJson
+          viewCount
           category {
             id
             name

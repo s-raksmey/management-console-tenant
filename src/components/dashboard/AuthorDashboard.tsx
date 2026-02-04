@@ -372,7 +372,7 @@ export const AuthorDashboard: React.FC = () => {
               activities={recentActivity}
               maxItems={5}
               showViewAll={true}
-              onViewAll={() => console.log('View all activity')}
+              onViewAll={() => {}}
             />
           )}
         </div>

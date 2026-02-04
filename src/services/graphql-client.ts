@@ -14,16 +14,10 @@ export function getAuthenticatedGqlClient(token?: string) {
       errorPolicy: 'all', // Return both data and errors
       requestMiddleware: (request) => {
         // Add debug logging if enabled
-        if (process.env.NEXT_PUBLIC_DEBUG_GRAPHQL === 'true') {
-          console.log('GraphQL Request:', request);
-        }
         return request;
       },
       responseMiddleware: (response) => {
         // Add debug logging if enabled
-        if (process.env.NEXT_PUBLIC_DEBUG_GRAPHQL === 'true') {
-          console.log('GraphQL Response:', response);
-        }
         
         // Check for null data responses that might indicate resolver issues
         if (response && 'data' in response && response.data && Object.values(response.data).some(value => value === null)) {

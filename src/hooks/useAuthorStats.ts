@@ -94,70 +94,45 @@ export function useAuthorStats() {
     }
 
     const AUTHOR_STATS_QUERY = `
-      query GetAuthorStats {
-        # Get all articles by current user
-        allArticles: articles(take: 1000) {
+      query GetAuthorStats($authorId: ID!) {
+        allArticles: articles(authorId: $authorId, take: 1000) {
           id
           status
-          authorName
           publishedAt
           createdAt
+          viewCount
         }
-        
-        # Get published articles
-        publishedArticles: articles(status: PUBLISHED, take: 1000) {
+        publishedArticles: articles(authorId: $authorId, status: PUBLISHED, take: 1000) {
           id
-          authorName
+          publishedAt
+          viewCount
         }
-        
-        # Get draft articles
-        draftArticles: articles(status: DRAFT, take: 1000) {
+        draftArticles: articles(authorId: $authorId, status: DRAFT, take: 1000) {
           id
-          authorName
         }
-        
-        # Get pending articles
-        pendingArticles: articles(status: REVIEW, take: 1000) {
+        pendingArticles: articles(authorId: $authorId, status: REVIEW, take: 1000) {
           id
-          authorName
         }
       }
     `;
 
-    const result = await executeQuery(AUTHOR_STATS_QUERY);
-    
-    // Filter articles by current user (since we don't have user-specific filtering in the query)
-    const userArticles = (result.allArticles || []).filter((article: any) => 
-      article.authorName === user.name
-    );
-    
-    const publishedByUser = (result.publishedArticles || []).filter((article: any) => 
-      article.authorName === user.name
-    );
-    
-    const draftsByUser = (result.draftArticles || []).filter((article: any) => 
-      article.authorName === user.name
-    );
-    
-    const pendingByUser = (result.pendingArticles || []).filter((article: any) => 
-      article.authorName === user.name
-    );
+    const result = await executeQuery(AUTHOR_STATS_QUERY, { authorId: user.id });
 
-    // Calculate total views (field not available in schema, using default)
-    const totalViews = publishedByUser.length * 150; // Estimate 150 views per published article
+    const userArticles = result.allArticles || [];
+    const publishedByUser = result.publishedArticles || [];
+    const draftsByUser = result.draftArticles || [];
+    const pendingByUser = result.pendingArticles || [];
 
-    // Calculate approval rate
-    const totalSubmitted = userArticles.filter((a: any) => 
-      a.status !== 'DRAFT'
-    ).length;
+    const totalViews = publishedByUser.reduce((sum: number, article: any) => sum + (article.viewCount || 0), 0);
+
+    const totalSubmitted = userArticles.filter((a: any) => a.status !== 'DRAFT').length;
     const approved = publishedByUser.length;
     const approvalRate = totalSubmitted > 0 ? (approved / totalSubmitted) * 100 : 0;
 
-    // Calculate monthly progress (articles published this month)
     const thisMonth = new Date();
     thisMonth.setDate(1);
     const monthlyProgress = publishedByUser.filter((article: any) => 
-      new Date(article.publishedAt) >= thisMonth
+      article.publishedAt && new Date(article.publishedAt) >= thisMonth
     ).length;
 
     return {
@@ -167,7 +142,7 @@ export function useAuthorStats() {
       inReviewArticles: pendingByUser.length,
       rejectedArticles: userArticles.filter((a: any) => a.status === 'ARCHIVED').length,
       totalViews,
-      monthlyGoal: 8, // This would come from user preferences
+      monthlyGoal: 0,
       monthlyProgress,
       approvalRate: Math.round(approvalRate),
       avgViewsPerArticle: publishedByUser.length > 0 ? Math.round(totalViews / publishedByUser.length) : 0,
@@ -176,21 +151,21 @@ export function useAuthorStats() {
 
   // Get author's articles with details
   const getAuthorArticles = useCallback(async (limit = 20): Promise<AuthorArticle[]> => {
-    if (!user?.name) {
+    if (!user?.id) {
       throw new Error('User not authenticated');
     }
 
     const AUTHOR_ARTICLES_QUERY = `
-      query GetAuthorArticles($take: Int) {
-        articles(take: $take) {
+      query GetAuthorArticles($authorId: ID!, $take: Int) {
+        articles(authorId: $authorId, take: $take) {
           id
           title
           status
           publishedAt
           createdAt
           updatedAt
-          authorName
           excerpt
+          viewCount
           category {
             id
             name
@@ -200,18 +175,14 @@ export function useAuthorStats() {
       }
     `;
 
-    const result = await executeQuery(AUTHOR_ARTICLES_QUERY, { take: limit * 2 }); // Get more to filter
-    
-    // Filter by current user
-    const userArticles = (result.articles || []).filter((article: any) => 
-      article.authorName === user.name
-    ).slice(0, limit);
+    const result = await executeQuery(AUTHOR_ARTICLES_QUERY, { authorId: user.id, take: limit });
+    const userArticles = result.articles || [];
 
     return userArticles.map((article: any) => ({
       id: article.id,
       title: article.title,
       status: article.status,
-      views: 150, // Default view count since field doesn't exist in schema
+      views: article.viewCount || 0,
       publishedAt: article.publishedAt,
       createdAt: article.createdAt,
       updatedAt: article.updatedAt,
@@ -260,13 +231,13 @@ export function useAuthorStats() {
     const categoryDistribution = Object.entries(categoryCount).map(([category, count]) => ({
       category,
       count,
-      percentage: Math.round((count / articles.length) * 100)
+      percentage: articles.length > 0 ? Math.round((count / articles.length) * 100) : 0
     }));
 
     // Writing streak (simplified - would need more sophisticated tracking)
     const writingStreak = {
-      current: articlesThisWeek > 0 ? 7 : 0, // Simplified
-      longest: 14 // This would need historical tracking
+      current: 0,
+      longest: 0
     };
 
     const stats = await getAuthorStats();
@@ -285,26 +256,12 @@ export function useAuthorStats() {
 
   // Get writing goals
   const getWritingGoals = useCallback(async (): Promise<WritingGoal[]> => {
-    // This would typically come from a user preferences/goals system
-    // For now, return a default monthly goal
-    const stats = await getAuthorStats();
-    
-    return [
-      {
-        id: 'monthly-articles',
-        target: stats.monthlyGoal,
-        current: stats.monthlyProgress,
-        period: 'monthly',
-        deadline: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString()
-      }
-    ];
-  }, [getAuthorStats]);
+    return [];
+  }, []);
 
   // Update writing goal
-  const updateWritingGoal = useCallback(async (goalId: string, target: number) => {
-    // This would update user preferences in the backend
-    // For now, just return success
-    return { success: true, message: 'Goal updated successfully' };
+  const updateWritingGoal = useCallback(async () => {
+    return { success: false, message: 'Writing goals are not available.' };
   }, []);
 
   return {

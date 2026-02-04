@@ -190,30 +190,7 @@ export const ReviewQueue: React.FC = () => {
     const reason = prompt(`Enter reason for bulk ${action.toLowerCase()} (optional):`);
     
     try {
-      // TODO: Replace with actual GraphQL mutation
-      // const { data } = await client.mutate({
-      //   mutation: PERFORM_BULK_WORKFLOW_ACTION,
-      //   variables: {
-      //     input: {
-      //       articleIds: Array.from(selectedArticles),
-      //       action,
-      //       reason,
-      //       notifyAuthors: true,
-      //     }
-      //   }
-      // });
-
-      // Mock success
-      alert(`Bulk ${action.toLowerCase()} completed for ${selectedArticles.size} articles`);
-      
-      // Remove processed articles from queue
-      setReviewQueue(prev => ({
-        ...prev,
-        articles: prev.articles.filter(article => !selectedArticles.has(article.id)),
-        totalCount: prev.totalCount - selectedArticles.size,
-      }));
-      
-      setSelectedArticles(new Set());
+      throw new Error('Bulk actions are not available yet. Please process articles individually.');
     } catch (err) {
       console.error('Bulk workflow action error:', err);
       alert(`Failed to perform bulk ${action.toLowerCase()}`);

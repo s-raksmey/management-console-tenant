@@ -45,7 +45,7 @@ export default function ArticlePreviewByIdPage() {
   
   const { getArticleById } = useArticles();
   const { setArticleStatus } = useArticleMutations();
-  const { userRole, hasPermission, user, isLoading: permissionsLoading } = usePermissions();
+  const { hasPermission, user, isLoading: permissionsLoading } = usePermissions();
   
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState(true);
@@ -55,93 +55,23 @@ export default function ArticlePreviewByIdPage() {
   // Check if user has permission to preview this article
   const canPreview = (article: Article | null) => {
     if (!article || !user) {
-      console.log('❌ Preview denied: Missing article or user', { article: !!article, user: !!user });
       return false;
     }
-    
-    // Comprehensive user object debugging
-    console.log('🔍 FULL USER OBJECT DEBUG:', {
-      user: user,
-      userKeys: Object.keys(user),
-      userRole: user.role,
-      userRoleType: typeof user.role,
-      userRoleString: user.role?.toString(),
-      userRoleUpperCase: user.role?.toString().toUpperCase(),
-      userEmail: user.email,
-      userName: user.name,
-      userId: user.id,
-      isActive: user.isActive
-    });
-    
-    console.log('📄 ARTICLE DEBUG:', {
-      articleId: article.id,
-      articleTitle: article.title,
-      articleAuthorName: article.authorName,
-      articleAuthorId: article.authorId,
-      articleStatus: article.status
-    });
-    
-    // Get user role with multiple fallback methods
+
     const currentUserRole = user.role?.toString().toUpperCase();
-    const roleFromHook = userRole;
-    const isAdminFromHook = isAdmin;
-    const isEditorFromHook = isEditor;
-    const isAuthorFromHook = isAuthor;
-    
-    console.log('🎭 ROLE COMPARISON DEBUG:', {
-      currentUserRole,
-      roleFromHook,
-      isAdminFromHook,
-      isEditorFromHook,
-      isAuthorFromHook,
-      rolesMatch: currentUserRole === roleFromHook
-    });
-    
-    // TEMPORARY: Allow all authenticated users to preview (for debugging)
-    // This will help us identify if the issue is with role checking or something else
-    if (user && article) {
-      console.log('🚨 TEMPORARY: Allowing all authenticated users to preview for debugging');
+
+    if (currentUserRole === 'ADMIN' || currentUserRole === 'EDITOR') {
       return true;
     }
-    
-    // Original role-based logic (commented out for debugging)
-    /*
-    // ADMIN: Full access
-    if (currentUserRole === 'ADMIN' || isAdminFromHook) {
-      console.log('✅ Access granted: User is ADMIN');
-      return true;
+
+    if (currentUserRole === 'AUTHOR') {
+      const isAuthor = article.authorId === user.id ||
+        article.authorName === user.email ||
+        article.authorName === user.name;
+
+      return isAuthor;
     }
-    
-    // EDITOR: Full access
-    if (currentUserRole === 'EDITOR' || isEditorFromHook) {
-      console.log('✅ Access granted: User is EDITOR');
-      return true;
-    }
-    
-    // AUTHOR: Own articles only
-    if (currentUserRole === 'AUTHOR' || isAuthorFromHook) {
-      // Check if the current user is the author by multiple criteria
-      const isAuthor = article.authorName === user.email || 
-                      article.authorName === user.name ||
-                      article.authorId === user.id ||
-                      article.authorId === user.email;
-      
-      console.log('👤 AUTHOR permission check:', {
-        isAuthor,
-        authorNameMatchesEmail: article.authorName === user.email,
-        authorNameMatchesName: article.authorName === user.name,
-        authorIdMatchesUserId: article.authorId === user.id,
-        authorIdMatchesEmail: article.authorId === user.email
-      });
-      
-      if (isAuthor) {
-        console.log('✅ Access granted: User is article author');
-        return true;
-      }
-    }
-    */
-    
-    console.log('❌ Access denied: No matching role or ownership');
+
     return false;
   };
 

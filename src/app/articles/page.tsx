@@ -33,37 +33,24 @@ export default function AdminArticlesPage() {
   const { user } = useAuth();
   const { userRole, hasPermission, isAdmin } = usePermissions();
 
-  // Debug logging
-  useEffect(() => {
-    console.log('🔍 Frontend Debug - Articles page loaded');
-    console.log('🔍 Frontend Debug - User:', user);
-    console.log('🔍 Frontend Debug - User Role:', userRole);
-    console.log('🔍 Frontend Debug - Is Admin:', isAdmin);
-    console.log('🔍 Frontend Debug - Has CREATE_ARTICLE permission:', hasPermission && hasPermission('CREATE_ARTICLE' as any));
-  }, [user, userRole, isAdmin, hasPermission]);
-
   useEffect(() => {
     loadArticles();
   }, [statusFilter, user?.id]);
 
   const loadArticles = async () => {
-    console.log('🔍 Frontend Debug - Loading articles with filter:', statusFilter);
     const response = await getArticles({ 
       status: statusFilter,
       take: 50, 
       skip: 0 
     });
     
-    console.log('🔍 Frontend Debug - Articles response:', response);
     if (response?.articles) {
-      console.log('🔍 Frontend Debug - Articles loaded:', response.articles.length);
       const filteredArticles = response.articles.filter((article: Article) => {
         if (article.status !== 'DRAFT') return true;
         return article.author?.id === user?.id;
       });
       setArticles(filteredArticles);
     } else {
-      console.log('🔍 Frontend Debug - No articles in response');
     }
   };
 
@@ -130,19 +117,6 @@ export default function AdminArticlesPage() {
             New Article
           </Button>
         </Link>
-      </div>
-
-      {/* Debug Information */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
-        <h3 className="font-semibold text-blue-800 mb-2">🔍 Debug Information</h3>
-        <div className="space-y-1 text-blue-700">
-          <p><strong>User Email:</strong> {user?.email || 'Not loaded'}</p>
-          <p><strong>User Role:</strong> {userRole || 'Not loaded'}</p>
-          <p><strong>Is Admin:</strong> {isAdmin ? 'Yes' : 'No'}</p>
-          <p><strong>Articles Count:</strong> {articles.length}</p>
-          <p><strong>Loading:</strong> {loading ? 'Yes' : 'No'}</p>
-          <p><strong>Error:</strong> {error || 'None'}</p>
-        </div>
       </div>
 
       {/* Filters */}
