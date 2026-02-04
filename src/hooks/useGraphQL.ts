@@ -34,11 +34,20 @@ export function useGraphQL() {
       const response = await client.request<T>(query, variables);
       return response;
     } catch (err: any) {
-      console.error('GraphQL Error:', err);
+      console.error('🔴 GraphQL Error:', err);
+      console.error('🔴 Error Response:', err.response);
+      console.error('🔴 Error Message:', err.message);
       
       // Handle GraphQL errors
       if (err.response?.errors) {
-        const errorMessages = err.response.errors.map((e: GraphQLError) => e.message).join(', ');
+        const errorMessages = err.response.errors.map((e: GraphQLError) => {
+          console.error('🔴 GraphQL Error Detail:', {
+            message: e.message,
+            locations: e.locations,
+            path: e.path
+          });
+          return e.message;
+        }).join(', ');
         setError(errorMessages);
       } else {
         setError(err.message || 'An unknown error occurred');
@@ -102,10 +111,14 @@ export function useArticles() {
           publishedAt
           createdAt
           updatedAt
+          contentJson
           category {
             id
             name
             slug
+          }
+          author {
+            id
           }
         }
       }
@@ -248,6 +261,21 @@ export function useArticleMutations() {
     return await mutate(SET_ARTICLE_STATUS_MUTATION, { id, status });
   }, [mutate]);
 
+  const submitForReview = useCallback(async (id: string) => {
+    const SUBMIT_FOR_REVIEW_MUTATION = `
+      mutation SubmitForReview($id: ID!) {
+        setArticleStatus(id: $id, status: REVIEW) {
+          id
+          status
+          publishedAt
+        }
+      }
+    `;
+
+    return await mutate(SUBMIT_FOR_REVIEW_MUTATION, { id });
+  }, [mutate]);
+
+
   const deleteArticle = useCallback(async (id: string) => {
     const DELETE_ARTICLE_MUTATION = `
       mutation DeleteArticle($id: ID!) {
@@ -261,6 +289,7 @@ export function useArticleMutations() {
   return {
     upsertArticle,
     setArticleStatus,
+    submitForReview,
     deleteArticle,
     loading,
     error,

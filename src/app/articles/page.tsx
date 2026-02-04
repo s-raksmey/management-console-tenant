@@ -16,6 +16,7 @@ import { MoreHorizontal, Eye, Edit, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
+import { Permission } from "@/components/permissions/PermissionGuard";
 
 const statusColors = {
   DRAFT: "bg-gray-100 text-gray-800",
@@ -43,7 +44,7 @@ export default function AdminArticlesPage() {
 
   useEffect(() => {
     loadArticles();
-  }, [statusFilter]);
+  }, [statusFilter, user?.id]);
 
   const loadArticles = async () => {
     console.log('🔍 Frontend Debug - Loading articles with filter:', statusFilter);
@@ -56,7 +57,11 @@ export default function AdminArticlesPage() {
     console.log('🔍 Frontend Debug - Articles response:', response);
     if (response?.articles) {
       console.log('🔍 Frontend Debug - Articles loaded:', response.articles.length);
-      setArticles(response.articles);
+      const filteredArticles = response.articles.filter((article: Article) => {
+        if (article.status !== 'DRAFT') return true;
+        return article.author?.id === user?.id;
+      });
+      setArticles(filteredArticles);
     } else {
       console.log('🔍 Frontend Debug - No articles in response');
     }
@@ -221,7 +226,7 @@ export default function AdminArticlesPage() {
                         Edit
                       </Link>
                     </DropdownMenuItem>
-                    {article.status !== 'PUBLISHED' && (
+                    {article.status === 'DRAFT' && hasPermission(Permission.PUBLISH_ARTICLE) && (
                       <DropdownMenuItem 
                         onClick={() => handleStatusChange(article.id, 'PUBLISHED')}
                         disabled={mutationLoading}
@@ -229,7 +234,23 @@ export default function AdminArticlesPage() {
                         Publish
                       </DropdownMenuItem>
                     )}
-                    {article.status === 'PUBLISHED' && (
+                    {article.status === 'REVIEW' && hasPermission(Permission.APPROVE_ARTICLES) && (
+                      <DropdownMenuItem 
+                        onClick={() => handleStatusChange(article.id, 'PUBLISHED')}
+                        disabled={mutationLoading}
+                      >
+                        Approve & Publish
+                      </DropdownMenuItem>
+                    )}
+                    {article.status === 'REVIEW' && hasPermission(Permission.REJECT_ARTICLES) && (
+                      <DropdownMenuItem 
+                        onClick={() => handleStatusChange(article.id, 'ARCHIVED')}
+                        disabled={mutationLoading}
+                      >
+                        Reject
+                      </DropdownMenuItem>
+                    )}
+                    {article.status === 'PUBLISHED' && hasPermission(Permission.UNPUBLISH_ARTICLE) && (
                       <DropdownMenuItem 
                         onClick={() => handleStatusChange(article.id, 'DRAFT')}
                         disabled={mutationLoading}

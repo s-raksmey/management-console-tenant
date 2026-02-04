@@ -9,6 +9,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { useVisibilityPolling } from "@/hooks/usePolling";
 import { useToastHelpers } from "@/components/ui/toast";
 import { getStatusChangeNotification } from "@/utils/workflowNotifications";
+import { Permission } from "@/components/permissions/PermissionGuard";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -25,9 +26,10 @@ export default function MyArticlesPage() {
   const [previousArticles, setPreviousArticles] = useState<Article[]>([]);
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | undefined>();
   const [isPolling, setIsPolling] = useState(true);
+  const [actionError, setActionError] = useState<string | null>(null);
   
   const { getArticles, loading, error } = useArticles();
-  const { setArticleStatus, deleteArticle, loading: mutationLoading } = useArticleMutations();
+  const { upsertArticle, setArticleStatus, submitForReview, deleteArticle, loading: mutationLoading } = useArticleMutations();
   const { user } = useAuth();
   const { userRole, hasPermission, isAdmin } = usePermissions();
   const { showSuccess, showError, showInfo } = useToastHelpers();
@@ -60,7 +62,7 @@ export default function MyArticlesPage() {
         
         // Check for status changes
         if (previousArticles.length > 0) {
-          newArticles.forEach(newArticle => {
+          newArticles.forEach((newArticle: { id: string; status: ArticleStatus; }) => {
             const oldArticle = previousArticles.find(a => a.id === newArticle.id);
             if (oldArticle && oldArticle.status !== newArticle.status) {
               const notification = getStatusChangeNotification(
@@ -122,10 +124,20 @@ export default function MyArticlesPage() {
 
   const handleStatusChange = async (articleId: string, newStatus: ArticleStatus) => {
     try {
+      setActionError(null);
       const article = articles.find(a => a.id === articleId);
       const oldStatus = article?.status;
       
-      await setArticleStatus(articleId, newStatus);
+      console.log('🔍 Status change attempt:', { articleId, oldStatus, newStatus });
+      
+      // Use setArticleStatus directly - let backend handle permission checks
+      console.log('🔄 Using setArticleStatus mutation');
+      const result = await setArticleStatus(articleId, newStatus);
+      console.log('✅ setArticleStatus result:', result);
+      
+      if (!result) {
+        throw new Error('No response from server. Please try again.');
+      }
       
       // Show notification for status change
       if (oldStatus) {
@@ -148,8 +160,10 @@ export default function MyArticlesPage() {
       
       loadMyArticles(); // Reload articles after status change
     } catch (error) {
-      console.error('Error updating article status:', error);
-      showError('Failed to update status', 'Please try again or contact support');
+      console.error('❌ Error updating article status:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update status. Please try again or contact support';
+      setActionError(errorMessage);
+      showError('Failed to update status', errorMessage);
     }
   };
 
@@ -229,6 +243,14 @@ export default function MyArticlesPage() {
           <div><strong>Error:</strong> {error || 'None'}</div>
         </div>
       </div>
+
+      {/* Action Error Display */}
+      {actionError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-sm">
+          <h3 className="font-semibold text-red-800 mb-2">❌ Error</h3>
+          <p className="text-red-700">{actionError}</p>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex gap-4">
@@ -337,7 +359,7 @@ export default function MyArticlesPage() {
                               Submit for Review
                             </DropdownMenuItem>
                           )}
-                          {article.status === 'REVIEW' && isAdmin && (
+                          {article.status === 'REVIEW' && hasPermission && hasPermission(Permission.REVIEW_ARTICLES) && (
                             <>
                               <DropdownMenuItem 
                                 onClick={() => handleStatusChange(article.id, 'PUBLISHED')}

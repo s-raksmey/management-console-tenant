@@ -85,6 +85,9 @@ export interface Article {
   category?: ArticleCategory;
   categoryId?: string;
   tags?: Tag[];
+  author?: {
+    id: string;
+  };
 }
 
 export interface ArticleInput {
