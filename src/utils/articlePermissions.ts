@@ -155,14 +155,31 @@ export function getAllowedStatusTransitions(
   hasPermission: (permission: Permission) => boolean,
   isOwner: boolean = false
 ): StatusOption[] {
+  console.log('getAllowedStatusTransitions called with:', {
+    currentStatus,
+    userRole,
+    isOwner,
+    userRoleUpper: userRole.toUpperCase()
+  });
+
   const validTransitions = STATUS_TRANSITIONS.filter(transition => {
     if (transition.from !== currentStatus) return false;
+    
+    console.log(`Checking transition ${transition.from} -> ${transition.to}:`, {
+      requiredPermission: transition.requiredPermission,
+      hasRequiredPermission: hasPermission(transition.requiredPermission)
+    });
     
     // Special case: authors can submit their own articles for review (DRAFT -> REVIEW)
     if (transition.from === 'DRAFT' && 
         transition.to === 'REVIEW' && 
         isOwner && 
-        userRole.toUpperCase() === 'AUTHOR') {
+        (userRole.toUpperCase() === 'AUTHOR' || userRole.toLowerCase() === 'author')) {
+      console.log('✅ Special case: Author can submit own article for review', {
+        userRole,
+        userRoleUpper: userRole.toUpperCase(),
+        isOwner
+      });
       return true;
     }
     
@@ -171,14 +188,28 @@ export function getAllowedStatusTransitions(
         transition.to === 'DRAFT' && 
         isOwner && 
         hasPermission(Permission.UPDATE_OWN_ARTICLE)) {
+      console.log('✅ Special case: Author can pull own article back from review');
       return true;
     }
     
     // Check if user has the required permission
-    if (!hasPermission(transition.requiredPermission)) {
+    const hasRequiredPermission = hasPermission(transition.requiredPermission);
+    if (!hasRequiredPermission) {
+      console.log('❌ User does not have required permission:', transition.requiredPermission);
+      
+      // Additional fallback for DRAFT -> REVIEW for authors
+      if (transition.from === 'DRAFT' && 
+          transition.to === 'REVIEW' && 
+          isOwner && 
+          (userRole.toUpperCase() === 'AUTHOR' || userRole.toLowerCase() === 'author')) {
+        console.log('✅ Fallback: Author owns article and can submit for review');
+        return true;
+      }
+      
       return false;
     }
     
+    console.log('✅ User has required permission');
     return true;
   });
   
@@ -218,7 +249,7 @@ export function canChangeStatus(
   if (fromStatus === 'DRAFT' && 
       toStatus === 'REVIEW' && 
       isOwner && 
-      userRole.toUpperCase() === 'AUTHOR') {
+      (userRole.toUpperCase() === 'AUTHOR' || userRole.toLowerCase() === 'author')) {
     return true;
   }
   
