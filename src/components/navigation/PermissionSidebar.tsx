@@ -120,7 +120,12 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
             {itemContent}
           </div>
         ) : (
-          <Link href={item.href} className="block">
+          <Link 
+            href={item.href} 
+            className="block"
+            target={item.openInNewTab ? "_blank" : undefined}
+            rel={item.openInNewTab ? "noopener noreferrer" : undefined}
+          >
             {itemContent}
           </Link>
         )}

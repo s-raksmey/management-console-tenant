@@ -1,6 +1,9 @@
 // @/types/article.ts
 
 export type ArticleStatus = 'DRAFT' | 'REVIEW' | 'PUBLISHED' | 'ARCHIVED';
+export type BreakingNewsRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type RevisionRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type RevisionStatus = 'NONE' | 'REQUESTED';
 
 export interface User {
   id: string;
@@ -51,6 +54,46 @@ export interface ArticleContentJson {
   version: string;
 }
 
+export interface ArticleRevisionChanges {
+  title?: string;
+  excerpt?: string;
+  topic?: string;
+  contentJson?: ArticleContentJson;
+  coverImageUrl?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  ogImageUrl?: string;
+  categorySlug?: string;
+  tagSlugs?: string[];
+  isFeatured?: boolean;
+  isEditorsPick?: boolean;
+  isBreaking?: boolean;
+  pinnedAt?: string;
+}
+
+export interface ArticleRevisionRequest {
+  id: string;
+  articleId: string;
+  status: RevisionRequestStatus;
+  note?: string;
+  proposedChanges: ArticleRevisionChanges;
+  createdAt: string;
+  requester: User;
+  reviewedAt?: string;
+  reviewedBy?: User;
+  reviewComment?: string;
+}
+
+export interface ArticleRevisionHistory {
+  id: string;
+  articleId: string;
+  summary: string;
+  changes: ArticleRevisionChanges;
+  appliedAt: string;
+  appliedBy: User;
+  revisionRequest?: ArticleRevisionRequest;
+}
+
 export interface Article {
   id: string;
   title: string;
@@ -75,6 +118,17 @@ export interface Article {
   isBreaking: boolean;
   pinnedAt?: string;
   viewCount?: number;
+  
+  // Breaking News Request
+  breakingNewsRequestStatus?: BreakingNewsRequestStatus;
+  breakingNewsRequestedAt?: string;
+  breakingNewsRequestedBy?: string;
+  
+  // Revision Status
+  revisionStatus?: RevisionStatus;
+  revisionRequestedAt?: string;
+  currentRevisionRequest?: ArticleRevisionRequest;
+  revisionHistory?: ArticleRevisionHistory[];
   
   // Timestamps
   createdAt: string;
@@ -133,5 +187,21 @@ export interface ArticleListResponse {
 export interface ArticleResponse {
   articleById?: Article;
   articleBySlug?: Article;
+}
+
+export interface RequestArticleRevisionInput {
+  articleId: string;
+  note?: string;
+  changes: ArticleRevisionChanges;
+}
+
+export interface ApproveRevisionInput {
+  requestId: string;
+  reviewComment?: string;
+}
+
+export interface RejectRevisionInput {
+  requestId: string;
+  reviewComment?: string;
 }
 

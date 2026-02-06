@@ -9,7 +9,10 @@ import {
   Q_ARTICLE_BY_ID,
   M_UPSERT_ARTICLE,
   M_DELETE_ARTICLE,
+  Q_PENDING_BREAKING_NEWS_REQUESTS,
 } from "@/services/article.gql";
+import { useArticleMutations } from "@/hooks/useGraphQL";
+import { useRevisions } from "@/hooks/useGraphQL";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -17,8 +20,9 @@ import { MEGA_NAV } from "@/data/mega-nav";
 import { useCategories } from "@/hooks/useCategories";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
-import { ArticleStatus, canEditArticle } from "@/utils/articlePermissions";
+import { ArticleStatus, canEditArticle, canViewArticleForEdit } from "@/utils/articlePermissions";
 import { Permission } from "@/components/permissions/PermissionGuard";
+import { format } from "date-fns";
 
 import type { OutputData } from "@editorjs/editorjs";
 import type { NewsEditorRef } from "@/components/editor/news-editor";
@@ -56,6 +60,8 @@ export default function EditArticlePage() {
 
   const client = useMemo(() => getAuthenticatedGqlClient(), []);
   const editorRef = useRef<NewsEditorRef>(null);
+  const { requestBreakingNews, requestRevision, approveRevisionRequest, rejectRevisionRequest, approveBreakingNewsRequest, rejectBreakingNewsRequest } = useArticleMutations();
+  const { getRevisionRequests } = useRevisions();
   
   // Category validation hook
   const { categories, loading: categoriesLoading, error: categoriesError, isValidCategory } = useCategories();
@@ -83,6 +89,23 @@ export default function EditArticlePage() {
   const [originalStatus, setOriginalStatus] = useState<ArticleStatus>("DRAFT");
   const [articleAuthorId, setArticleAuthorId] = useState<string>("");
   const [isBreaking, setIsBreaking] = useState(false);
+  const [shouldRequestBreakingNews, setShouldRequestBreakingNews] = useState(false);
+  const [breakingNewsReason, setBreakingNewsReason] = useState("");
+  const [breakingNewsRequestStatus, setBreakingNewsRequestStatus] = useState<string | undefined>();
+  const [breakingNewsRequestedAt, setBreakingNewsRequestedAt] = useState<string | undefined>();
+  const [breakingNewsRequestedBy, setBreakingNewsRequestedBy] = useState<string | undefined>();
+  const [revisionStatus, setRevisionStatus] = useState<string | undefined>();
+  const [currentRevisionRequest, setCurrentRevisionRequest] = useState<any | undefined>();
+  const [revisionNote, setRevisionNote] = useState<string>("");
+  const [showRevisionForm, setShowRevisionForm] = useState(false);
+  
+  // Track original values for change detection
+  const [originalTitle, setOriginalTitle] = useState("");
+  const [originalSlug, setOriginalSlug] = useState("");
+  const [originalExcerpt, setOriginalExcerpt] = useState("");
+  const [originalCategorySlug, setOriginalCategorySlug] = useState("");
+  const [originalTopic, setOriginalTopic] = useState("");
+  const [originalIsBreaking, setOriginalIsBreaking] = useState(false);
 
   /** Editor initial content (ONE TIME) */
   const [initialContent, setInitialContent] = useState<OutputData>({
@@ -133,7 +156,41 @@ export default function EditArticlePage() {
       setOriginalStatus(article.status); // Track original status for permission checks
       setArticleAuthorId(article.author?.id ?? ""); // Track author for ownership checks
       setIsBreaking(article.isBreaking ?? false);
+      setRevisionStatus(article.revisionStatus);
       setInitialContent(article.contentJson ?? { blocks: [] });
+      
+      // Load breaking news request status from pending requests
+      try {
+        const breakingNewsData = await client.request(Q_PENDING_BREAKING_NEWS_REQUESTS);
+        if (breakingNewsData?.pendingBreakingNewsRequests) {
+          const breakingRequest = breakingNewsData.pendingBreakingNewsRequests.find(
+            (r: any) => r.article?.id === id
+          );
+          if (breakingRequest) {
+            setBreakingNewsRequestStatus('PENDING');
+            setBreakingNewsRequestedAt(breakingRequest.createdAt);
+            setBreakingNewsRequestedBy(breakingRequest.requester?.name);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not fetch breaking news requests:', err);
+      }
+      
+      // Load revision requests if article has revision status  
+      if (article.revisionStatus === 'REQUESTED') {
+        const revisionData = await getRevisionRequests(id, 'PENDING');
+        if (revisionData?.revisionRequests && revisionData.revisionRequests.length > 0) {
+          setCurrentRevisionRequest(revisionData.revisionRequests[0]);
+        }
+      }
+      
+      // Set original values for change detection
+      setOriginalTitle(article.title);
+      setOriginalSlug(article.slug);
+      setOriginalExcerpt(article.excerpt ?? "");
+      setOriginalCategorySlug(article.category?.slug ?? categoryOptions[0]);
+      setOriginalTopic(article.topic ?? "");
+      setOriginalIsBreaking(article.isBreaking ?? false);
 
       setLoading(false);
     })();
@@ -158,7 +215,7 @@ export default function EditArticlePage() {
     try {
       const contentJson = (await editorRef.current?.save()) ?? { blocks: [] };
 
-      await client.request(M_UPSERT_ARTICLE, {
+      const response = await client.request(M_UPSERT_ARTICLE, {
         id,
         input: {
           title,
@@ -172,6 +229,19 @@ export default function EditArticlePage() {
           contentJson,
         },
       });
+
+      // If user requested breaking news, send the request after updating article
+      if (shouldRequestBreakingNews && response?.upsertArticle?.id && !response?.upsertArticle?.breakingNewsRequestStatus) {
+        try {
+          await requestBreakingNews(response.upsertArticle.id, breakingNewsReason);
+          // Reset the checkbox and reason after request is sent
+          setShouldRequestBreakingNews(false);
+          setBreakingNewsReason("");
+        } catch (err) {
+          console.warn('Breaking news request submission failed:', err);
+          // Don't block the article save if breaking news request fails
+        }
+      }
 
       setStatus(nextStatus);
 
@@ -192,6 +262,10 @@ export default function EditArticlePage() {
     await upsertArticle(nextStatus, false);
   }
 
+  async function publish() {
+    await upsertArticle("PUBLISHED", false);
+  }
+
   async function remove() {
     if (!confirm("Delete this article?")) return;
     setSaving(true);
@@ -203,28 +277,123 @@ export default function EditArticlePage() {
     }
   }
 
-  function preview() {
-    // Use article ID for preview instead of slug to avoid "article not found" issues
-    window.open(`/preview/id/${id}`, "_blank");
+  async function submitRevisionRequest() {
+    if (!revisionNote.trim()) {
+      alert("Please describe the changes you'd like to make");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      // Save current editor content
+      const contentJson = (await editorRef.current?.save()) ?? { blocks: [] };
+      
+      // Build proposed changes object - only include fields that have changed
+      const proposedChanges: any = {};
+      
+      if (title !== originalTitle) proposedChanges.title = title;
+      if (slug !== originalSlug) proposedChanges.slug = slug;
+      if (excerpt !== originalExcerpt) proposedChanges.excerpt = excerpt;
+      if (categorySlug !== originalCategorySlug) proposedChanges.categorySlug = categorySlug;
+      if (topic !== originalTopic) proposedChanges.topic = topic;
+      if (isBreaking !== originalIsBreaking) proposedChanges.isBreaking = isBreaking;
+      
+      // Always include contentJson if editor has content
+      if (contentJson.blocks?.length > 0) {
+        proposedChanges.contentJson = contentJson;
+      }
+      
+      // Call the new requestRevision mutation with proper input structure
+      await requestRevision({
+        articleId: id,
+        note: revisionNote.trim(),
+        changes: proposedChanges
+      });
+      
+      setShowRevisionForm(false);
+      setRevisionNote("");
+      
+      // Refresh article data to get updated revision status
+      const data = await client.request(Q_ARTICLE_BY_ID, { id });
+      const article = data.articleById;
+      setRevisionStatus(article.revisionStatus);
+      
+      // Load latest revision requests
+      const revisionData = await getRevisionRequests(id, 'PENDING');
+      if (revisionData?.revisionRequests && revisionData.revisionRequests.length > 0) {
+        setCurrentRevisionRequest(revisionData.revisionRequests[0]);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function approveBreakingNews() {
+    setSaving(true);
+    try {
+      // Fetch pending breaking news requests to find the one for this article
+      const data = await client.request(Q_PENDING_BREAKING_NEWS_REQUESTS);
+      if (data?.pendingBreakingNewsRequests) {
+        const request = data.pendingBreakingNewsRequests.find((r: any) => r.article?.id === id);
+        if (request) {
+          const response = await approveBreakingNewsRequest(request.id);
+          if (response) {
+            // Refresh article data to get updated isBreaking status
+            const articleData = await client.request(Q_ARTICLE_BY_ID, { id });
+            const article = articleData.articleById;
+            setIsBreaking(article.isBreaking);
+            // Clear the breaking news request status since it was approved
+            setBreakingNewsRequestStatus(undefined);
+            setBreakingNewsRequestedAt(undefined);
+            setBreakingNewsRequestedBy(undefined);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error approving breaking news:', err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function rejectBreakingNews() {
+    setSaving(true);
+    try {
+      // Fetch pending breaking news requests to find the one for this article
+      const data = await client.request(Q_PENDING_BREAKING_NEWS_REQUESTS);
+      if (data?.pendingBreakingNewsRequests) {
+        const request = data.pendingBreakingNewsRequests.find((r: any) => r.article?.id === id);
+        if (request) {
+          const response = await rejectBreakingNewsRequest(request.id);
+          if (response) {
+            // Clear the breaking news request status since it was rejected
+            setBreakingNewsRequestStatus(undefined);
+            setBreakingNewsRequestedAt(undefined);
+            setBreakingNewsRequestedBy(undefined);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error rejecting breaking news:', err);
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (loading) {
     return <div className="text-sm text-slate-600">Loading…</div>;
   }
 
-  // Check if user can edit this article
-  const canEdit = canEditArticle(articleAuthorId, userId, userRole, hasPermission);
+  // Check if user can view this article
+  const canView = canViewArticleForEdit(articleAuthorId, userId, userRole, hasPermission);
   
-  if (!canEdit) {
+  if (!canView) {
     return (
       <main className="space-y-4">
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
           <h2 className="text-lg font-semibold text-red-800 mb-2">Access Denied</h2>
           <p className="text-sm text-red-600 mb-4">
-            You do not have permission to edit this article.
-            {userRole === 'AUTHOR' && articleAuthorId !== userId && 
-              ' Authors can only edit their own articles.'
-            }
+            Authors can only view their own articles.
           </p>
           <Button 
             variant="outline" 
@@ -237,9 +406,30 @@ export default function EditArticlePage() {
       </main>
     );
   }
+  
+  // Check if user can edit this article
+  const canEdit = canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus);
+  const isReadOnly = !canEdit;
 
   return (
     <main className="space-y-4">
+      {/* Read-Only Banner */}
+      {isReadOnly && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <div className="text-xl">📝</div>
+            <div>
+              <h3 className="font-semibold text-amber-900">Read-Only Mode</h3>
+              <p className="text-sm text-amber-800 mt-1">
+                {status === 'REVIEW' && 'This article is in review. To propose changes, use the "Request Revision" form below.'}
+                {status === 'PUBLISHED' && 'This article is published. To propose changes, use the "Request Revision" form below.'}
+                {status === 'ARCHIVED' && 'This article is archived and cannot be modified.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ---------- Header ---------- */}
       <div className="flex items-center justify-between">
         <div>
@@ -248,13 +438,17 @@ export default function EditArticlePage() {
         </div>
 
         <div className="flex gap-2">
-          <Button variant="outline" onClick={preview}>
-            Preview
-          </Button>
-          <Button variant="outline" onClick={togglePublish} disabled={saving}>
-            {status === "PUBLISHED" ? "Unpublish" : "Publish"}
-          </Button>
-          <Button onClick={save} disabled={saving || !title}>
+          {status === "PUBLISHED" && hasPermission(Permission.UNPUBLISH_ARTICLE) && (
+            <Button variant="outline" onClick={togglePublish} disabled={saving}>
+              Unpublish
+            </Button>
+          )}
+          {status !== "PUBLISHED" && hasPermission(Permission.PUBLISH_ARTICLE) && (
+            <Button variant="outline" onClick={publish} disabled={saving}>
+              Publish
+            </Button>
+          )}
+          <Button onClick={save} disabled={saving || !title || isReadOnly}>
             Save
           </Button>
           <Button variant="ghost" onClick={remove} disabled={saving}>
@@ -269,6 +463,7 @@ export default function EditArticlePage() {
           <label className="text-xs font-semibold text-slate-600">Title</label>
           <Input
             value={title}
+            disabled={isReadOnly}
             onChange={(e) => {
               setTitle(e.target.value);
               setSlug(slugify(e.target.value));
@@ -278,7 +473,7 @@ export default function EditArticlePage() {
 
         <div className="grid gap-2">
           <label className="text-xs font-semibold text-slate-600">Slug</label>
-          <Input value={slug} onChange={(e) => setSlug(e.target.value)} />
+          <Input value={slug} disabled={isReadOnly} onChange={(e) => setSlug(e.target.value)} />
         </div>
 
         {/* ✅ AUTHOR FIELD — ADDED, NOTHING REMOVED */}
@@ -286,6 +481,7 @@ export default function EditArticlePage() {
           <label className="text-xs font-semibold text-slate-600">Author</label>
           <Input
             value={authorName}
+            disabled={isReadOnly}
             onChange={(e) => setAuthorName(e.target.value)}
             placeholder="e.g. John Doe"
           />
@@ -295,7 +491,7 @@ export default function EditArticlePage() {
           <label className="text-xs font-semibold text-slate-600">
             Excerpt
           </label>
-          <Input value={excerpt} onChange={(e) => setExcerpt(e.target.value)} />
+          <Input value={excerpt} disabled={isReadOnly} onChange={(e) => setExcerpt(e.target.value)} />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -306,6 +502,7 @@ export default function EditArticlePage() {
             <select
               className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
               value={categorySlug}
+              disabled={isReadOnly}
               onChange={(e) => {
                 setCategorySlug(e.target.value);
                 setTopic("");
@@ -326,6 +523,7 @@ export default function EditArticlePage() {
             <select
               className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
               value={topic}
+              disabled={isReadOnly}
               onChange={(e) => setTopic(e.target.value)}
             >
               <option value="">— No topic —</option>
@@ -370,40 +568,205 @@ export default function EditArticlePage() {
             currentStatus={originalStatus}
             articleAuthorId={articleAuthorId}
             showGuidance={true}
-            disabled={saving || !canEditArticle(articleAuthorId, userId, userRole, hasPermission)}
+              disabled={saving || isReadOnly}
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            id="breaking-news"
-            type="checkbox"
-            className="h-4 w-4 rounded border-slate-300 text-red-600"
-            checked={isBreaking}
-            onChange={(e) => setIsBreaking(e.target.checked)}
-            disabled={saving || !hasPermission(Permission.SET_BREAKING_NEWS) || !canEditArticle(articleAuthorId, userId, userRole, hasPermission)}
-          />
-          <label
-            htmlFor="breaking-news"
-            className={`text-xs font-semibold ${
-              hasPermission(Permission.SET_BREAKING_NEWS) && canEditArticle(articleAuthorId, userId, userRole, hasPermission)
-                ? 'text-slate-600' 
-                : 'text-slate-400'
-            }`}
-            title={
-              !canEditArticle(articleAuthorId, userId, userRole, hasPermission)
-                ? 'You do not have permission to edit this article'
-                : !hasPermission(Permission.SET_BREAKING_NEWS)
-                ? 'You do not have permission to set breaking news'
-                : 'Mark this article as breaking news'
-            }
-          >
-            Mark as breaking news
-            {!hasPermission(Permission.SET_BREAKING_NEWS) && (
-              <span className="ml-1 text-xs text-slate-400">(Editors/Admins only)</span>
+        {hasPermission(Permission.SET_BREAKING_NEWS) && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus) && (
+          <div className="flex items-center gap-2">
+            <input
+              id="breaking-news"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300 text-red-600"
+              checked={isBreaking}
+              onChange={(e) => setIsBreaking(e.target.checked)}
+              disabled={saving}
+            />
+            <label
+              htmlFor="breaking-news"
+              className="text-xs font-semibold text-slate-600"
+              title="Mark this article as breaking news"
+            >
+              Mark as breaking news
+            </label>
+          </div>
+        )}
+
+        {!hasPermission(Permission.SET_BREAKING_NEWS) && status === 'PUBLISHED' && !isBreaking && !shouldRequestBreakingNews && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus) && (
+          <div className="flex items-center gap-2">
+            <input
+              id="request-breaking-news"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300 text-orange-600"
+              checked={shouldRequestBreakingNews}
+              onChange={(e) => setShouldRequestBreakingNews(e.target.checked)}
+              disabled={saving}
+            />
+            <label
+              htmlFor="request-breaking-news"
+              className="text-xs font-semibold text-slate-600"
+              title="Request this article to be marked as breaking news"
+            >
+              Request as breaking news
+              <span className="ml-1 text-xs text-slate-500">(Editors/Admins will review)</span>
+            </label>
+          </div>
+        )}
+
+        {/* Breaking News Reason */}
+        {!hasPermission(Permission.SET_BREAKING_NEWS) && status === 'PUBLISHED' && !isBreaking && shouldRequestBreakingNews && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus) && (
+          <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-3">
+            <div>
+              <label htmlFor="breaking-news-reason" className="block text-sm font-medium text-orange-900 mb-1">
+                Why is this breaking news?
+              </label>
+              <textarea
+                id="breaking-news-reason"
+                value={breakingNewsReason}
+                onChange={(e) => setBreakingNewsReason(e.target.value)}
+                placeholder="Explain why this article should be marked as breaking news..."
+                className="w-full rounded-md border border-orange-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                rows={3}
+                disabled={saving}
+              />
+              <p className="text-xs text-orange-700 mt-2">
+                Admins and editors will review your request and decide if this article qualifies as breaking news.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* Revision Request Section */}
+        {status === 'PUBLISHED' && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus) && (
+          <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-semibold text-blue-900 mb-1">Request Revision</h3>
+                <p className="text-xs text-blue-700 mb-3">
+                  {revisionStatus === 'REQUESTED' && currentRevisionRequest?.status === 'PENDING'
+                    ? '⏳ Revision request is pending review'
+                    : revisionStatus === 'REQUESTED' && currentRevisionRequest?.status === 'APPROVED'
+                    ? '✓ Your revision request was approved'
+                    : revisionStatus === 'REQUESTED' && currentRevisionRequest?.status === 'REJECTED'
+                    ? '✗ Your revision request was rejected'
+                    : 'Propose changes to this published article for editorial review'}
+                </p>
+                {currentRevisionRequest?.reviewComment && (
+                  <p className="text-xs text-blue-600 mt-2 italic">
+                    Editor comment: {currentRevisionRequest.reviewComment}
+                  </p>
+                )}
+              </div>
+              {!showRevisionForm && (!currentRevisionRequest || currentRevisionRequest.status !== 'PENDING') && (
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  onClick={() => setShowRevisionForm(true)}
+                  disabled={saving}
+                  className="whitespace-nowrap"
+                >
+                  Propose Changes
+                </Button>
+              )}
+            </div>
+
+            {showRevisionForm && (
+              <div className="mt-4 space-y-3 border-t border-blue-200 pt-4">
+                <div className="grid gap-2">
+                  <label className="text-xs font-semibold text-blue-900">
+                    Describe the changes you'd like to make
+                  </label>
+                  <textarea
+                    className="min-h-20 rounded-md border border-blue-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g., Fix typo in paragraph 2, add recent data from Q4, update author bio..."
+                    value={revisionNote}
+                    onChange={(e) => setRevisionNote(e.target.value)}
+                    disabled={saving}
+                  />
+                  <p className="text-xs text-blue-600 mt-1">
+                    The system will automatically track which fields you've modified and submit them as proposed changes.
+                  </p>
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      setShowRevisionForm(false);
+                      setRevisionNote("");
+                    }}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={submitRevisionRequest}
+                    disabled={saving || !revisionNote.trim()}
+                  >
+                    {saving ? "Submitting..." : "Submit Request"}
+                  </Button>
+                </div>
+              </div>
             )}
-          </label>
-        </div>
+          </div>
+        )}
+
+        {/* Breaking News Request Status - For Admins/Editors */}
+        {breakingNewsRequestStatus === 'PENDING' && hasPermission(Permission.SET_BREAKING_NEWS) && (
+          <div className="rounded-md border border-orange-300 bg-orange-50 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-sm font-semibold text-orange-900 mb-2">⚡ Breaking News Request</h3>
+                <p className="text-xs text-orange-700 mb-2">
+                  🔔 Author requested this article to be marked as breaking news
+                </p>
+                {breakingNewsRequestedAt && (
+                  <p className="text-xs text-orange-600">
+                    Requested on {format(new Date(breakingNewsRequestedAt), 'MMM d, yyyy')} by {breakingNewsRequestedBy}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="default"
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => approveBreakingNews()}
+                  disabled={saving}
+                >
+                  ✓ Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => rejectBreakingNews()}
+                  disabled={saving}
+                >
+                  ✗ Reject
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {breakingNewsRequestStatus === 'APPROVED' && (
+          <div className="rounded-md border border-green-300 bg-green-50 p-4">
+            <p className="text-sm font-semibold text-green-900">✓ Breaking News Request Approved</p>
+            <p className="text-xs text-green-700 mt-1">
+              This article has been approved as breaking news and will be marked accordingly.
+            </p>
+          </div>
+        )}
+
+        {breakingNewsRequestStatus === 'REJECTED' && (
+          <div className="rounded-md border border-red-300 bg-red-50 p-4">
+            <p className="text-sm font-semibold text-red-900">✗ Breaking News Request Rejected</p>
+            <p className="text-xs text-red-700 mt-1">
+              The breaking news request for this article was rejected.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* ---------- Editor ---------- */}

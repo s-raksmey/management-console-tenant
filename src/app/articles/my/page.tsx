@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
 import { useArticles, useArticleMutations } from "@/hooks/useGraphQL";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import type { Article, ArticleStatus } from "@/types/article";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useVisibilityPolling } from "@/hooks/usePolling";
@@ -16,7 +17,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Edit, Trash2, Plus, RefreshCw } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Plus, RefreshCw } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -273,7 +274,15 @@ export default function MyArticlesPage() {
                       </div>
                     </td>
                     <td className="p-4">
-                      <StatusBadge status={article.status} />
+                      <div className="flex gap-2 flex-wrap">
+                        <StatusBadge status={article.status} />
+                        {article.isBreaking && (
+                          <Badge variant="destructive" className="text-xs">Breaking</Badge>
+                        )}
+                        {article.revisionStatus === 'REQUESTED' && (
+                          <Badge variant="outline" className="bg-purple-50 border-purple-200">📝 Revision Requested</Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="p-4">
                       {article.category?.name || 'Uncategorized'}
@@ -292,12 +301,6 @@ export default function MyArticlesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/articles/${article.id}`}>
-                              <Eye className="mr-2 h-4 w-4" />
-                              View
-                            </Link>
-                          </DropdownMenuItem>
                           <DropdownMenuItem asChild>
                             <Link href={`/articles/${article.id}/edit`}>
                               <Edit className="mr-2 h-4 w-4" />

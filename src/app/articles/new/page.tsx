@@ -5,6 +5,7 @@ import { useMemo, useRef, useState } from "react";
 
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
 import { M_UPSERT_ARTICLE } from "@/services/article.gql";
+import { useArticleMutations } from "@/hooks/useGraphQL";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -48,6 +49,7 @@ function titleCase(slug: string) {
 export default function NewArticlePage() {
   const client = useMemo(() => getAuthenticatedGqlClient(), []);
   const editorRef = useRef<NewsEditorRef>(null);
+  const { requestBreakingNews } = useArticleMutations();
   
   // Category validation hook
   const { categories, loading: categoriesLoading, error: categoriesError, isValidCategory } = useCategories();
@@ -69,6 +71,8 @@ export default function NewArticlePage() {
 
   const [status, setStatus] = useState<ArticleStatus>("DRAFT");
   const [isBreaking, setIsBreaking] = useState(false);
+  const [shouldRequestBreakingNews, setShouldRequestBreakingNews] = useState(false);
+  const [breakingNewsReason, setBreakingNewsReason] = useState("");
   const [saving, setSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -112,12 +116,12 @@ export default function NewArticlePage() {
       const contentJson: OutputData =
         (await editorRef.current?.save()) ?? { blocks: [] };
 
-      await client.request(M_UPSERT_ARTICLE, {
+      const response = await client.request(M_UPSERT_ARTICLE, {
         input: {
           title,
           slug: slug || slugify(title),
           excerpt,
-          authorName, // ✅ ADDED
+          authorName,
           categorySlug,
           topic: topic || null,
           status,
@@ -126,6 +130,16 @@ export default function NewArticlePage() {
         },
       });
 
+      // If user requested breaking news, send the request after creating article
+      if (shouldRequestBreakingNews && response?.upsertArticle?.id) {
+        try {
+          await requestBreakingNews(response.upsertArticle.id, breakingNewsReason);
+        } catch (err) {
+          console.warn('Breaking news request submission failed:', err);
+          // Don't block the article save if breaking news request fails
+        }
+      }
+
       window.location.href = "/articles";
     } finally {
       setSaving(false);
@@ -133,42 +147,54 @@ export default function NewArticlePage() {
   }
 
   /* -------------------------
-     Preview
+     Publish (for admins/editors)
   ------------------------- */
-  async function previewNewArticle() {
-    if (!title) {
-      alert("Please enter a title before previewing.");
+  async function publish() {
+    if (!title) return;
+
+    // Validate category exists in database
+    setValidationError(null);
+    if (!categoriesLoading && !isValidCategory(categorySlug)) {
+      setValidationError(`Category "${categorySlug}" does not exist in the database. Please select a valid category.`);
       return;
     }
 
-    const contentJson: OutputData =
-      (await editorRef.current?.save()) ?? { blocks: [] };
+    setSaving(true);
+    try {
+      const contentJson: OutputData =
+        (await editorRef.current?.save()) ?? { blocks: [] };
 
-    // Get category data if categorySlug is selected
-    let categoryData = null;
-    if (categorySlug) {
-      // You might want to fetch category details here
-      categoryData = {
-        id: categorySlug,
-        name: categorySlug, // This should ideally be the category name
-        slug: categorySlug
-      };
+      const response = await client.request(M_UPSERT_ARTICLE, {
+        input: {
+          title,
+          slug: slug || slugify(title),
+          excerpt,
+          authorName,
+          categorySlug,
+          topic: topic || null,
+          status: "PUBLISHED", // Directly publish
+          isBreaking,
+          contentJson,
+        },
+      });
+
+      // If user requested breaking news, send the request after creating article
+      if (shouldRequestBreakingNews && response?.upsertArticle?.id) {
+        try {
+          await requestBreakingNews(response.upsertArticle.id, breakingNewsReason);
+        } catch (err) {
+          console.warn('Breaking news request submission failed:', err);
+          // Don't block the article save if breaking news request fails
+        }
+      }
+
+      window.location.href = "/articles";
+    } finally {
+      setSaving(false);
     }
-
-    localStorage.setItem(
-      "preview:new-article",
-      JSON.stringify({
-        title,
-        excerpt,
-        contentJson: JSON.stringify(contentJson),
-        topic,
-        coverImageUrl: "", // Add if you have cover image functionality
-        category: categoryData,
-      })
-    );
-
-    window.open("/preview/new", "_blank");
   }
+
+
 
   return (
     <main className="space-y-4">
@@ -182,9 +208,11 @@ export default function NewArticlePage() {
         </div>
 
         <div className="flex gap-2">
-          <Button variant="outline" onClick={previewNewArticle} disabled={!title}>
-            Preview
-          </Button>
+          {hasPermission(Permission.PUBLISH_ARTICLE) && (
+            <Button onClick={publish} disabled={saving || !title}>
+              {saving ? "Publishing..." : "Publish"}
+            </Button>
+          )}
           <Button onClick={save} disabled={saving || !title}>
             {saving ? "Saving..." : "Save"}
           </Button>
@@ -307,34 +335,69 @@ export default function NewArticlePage() {
           />
         </div>
 
-        <div className="flex items-center gap-2">
-          <input
-            id="breaking-news"
-            type="checkbox"
-            className="h-4 w-4 rounded border-slate-300 text-red-600"
-            checked={isBreaking}
-            onChange={(e) => setIsBreaking(e.target.checked)}
-            disabled={saving || !hasPermission(Permission.SET_BREAKING_NEWS)}
-          />
-          <label
-            htmlFor="breaking-news"
-            className={`text-xs font-semibold ${
-              hasPermission(Permission.SET_BREAKING_NEWS) 
-                ? 'text-slate-600' 
-                : 'text-slate-400'
-            }`}
-            title={
-              hasPermission(Permission.SET_BREAKING_NEWS)
-                ? 'Mark this article as breaking news'
-                : 'You do not have permission to set breaking news'
-            }
-          >
-            Mark as breaking news
-            {!hasPermission(Permission.SET_BREAKING_NEWS) && (
-              <span className="ml-1 text-xs text-slate-400">(Editors/Admins only)</span>
-            )}
-          </label>
-        </div>
+        {hasPermission(Permission.SET_BREAKING_NEWS) && (
+          <div className="flex items-center gap-2">
+            <input
+              id="breaking-news"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300 text-red-600"
+              checked={isBreaking}
+              onChange={(e) => setIsBreaking(e.target.checked)}
+              disabled={saving}
+            />
+            <label
+              htmlFor="breaking-news"
+              className="text-xs font-semibold text-slate-600"
+              title="Mark this article as breaking news"
+            >
+              Mark as breaking news
+            </label>
+          </div>
+        )}
+
+        {!hasPermission(Permission.SET_BREAKING_NEWS) && (
+          <div className="flex items-center gap-2">
+            <input
+              id="request-breaking-news"
+              type="checkbox"
+              className="h-4 w-4 rounded border-slate-300 text-orange-600"
+              checked={shouldRequestBreakingNews}
+              onChange={(e) => setShouldRequestBreakingNews(e.target.checked)}
+              disabled={saving}
+            />
+            <label
+              htmlFor="request-breaking-news"
+              className="text-xs font-semibold text-slate-600"
+              title="Request this article to be marked as breaking news"
+            >
+              Request as breaking news
+              <span className="ml-1 text-xs text-slate-500">(Editors/Admins will review)</span>
+            </label>
+          </div>
+        )}
+
+        {/* Breaking News Reason */}
+        {status !== 'PUBLISHED' && shouldRequestBreakingNews && (
+          <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-3">
+            <div>
+              <label htmlFor="breaking-news-reason" className="block text-sm font-medium text-orange-900 mb-1">
+                Why is this breaking news?
+              </label>
+              <textarea
+                id="breaking-news-reason"
+                value={breakingNewsReason}
+                onChange={(e) => setBreakingNewsReason(e.target.value)}
+                placeholder="Explain why this article should be marked as breaking news..."
+                className="w-full rounded-md border border-orange-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
+                rows={3}
+                disabled={saving}
+              />
+              <p className="text-xs text-orange-700 mt-2">
+                Admins and editors will review your request and decide if this article qualifies as breaking news.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ---------- Editor ---------- */}

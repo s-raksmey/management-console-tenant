@@ -236,7 +236,7 @@ export function Header({ onMobileNavOpen }: HeaderProps) {
                   ) : (
                     <div className="px-4 py-6 text-center">
                       <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-2">
-                        <Search className="h-5 w-5 text-slate-400" />
+                        <Search className="h-5 w-5 text-slate-400" />      
                       </div>
                       <p className="text-sm font-medium text-slate-700 mb-1">No results found</p>
                       <p className="text-xs text-slate-500">Try searching with different keywords</p>

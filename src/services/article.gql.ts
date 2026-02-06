@@ -42,6 +42,8 @@ export const Q_ARTICLES = /* GraphQL */ `
       isFeatured
       isEditorsPick
       isBreaking
+      revisionStatus
+      revisionRequestedAt
 
       publishedAt
       createdAt
@@ -106,6 +108,8 @@ export const Q_ARTICLE_BY_ID = /* GraphQL */ `
       publishedAt
       createdAt
       updatedAt
+      revisionStatus
+      revisionRequestedAt
       category {
         name
         slug
@@ -139,6 +143,100 @@ export const Q_ARTICLE_BY_SLUG = /* GraphQL */ `
         id
       }
       contentJson
+    }
+  }
+`;
+
+/* =========================
+   Article Preview
+========================= */
+
+export const Q_PREVIEW_ARTICLE = /* GraphQL */ `
+  query PreviewArticle($id: ID!) {
+    articleById(id: $id) {
+      id
+      title
+      slug
+      status
+      excerpt
+      contentJson
+      authorName
+      coverImageUrl
+      category {
+        name
+        slug
+      }
+      createdAt
+      updatedAt
+      publishedAt
+    }
+  }
+`;
+
+export const Q_PREVIEW_ARTICLE_BY_SLUG = /* GraphQL */ `
+  query PreviewArticleBySlug($slug: String!) {
+    articleBySlug(slug: $slug) {
+      id
+      title
+      slug
+      status
+      excerpt
+      contentJson
+      authorName
+      coverImageUrl
+      category {
+        name
+        slug
+      }
+      createdAt
+      updatedAt
+      publishedAt
+    }
+  }
+`;
+
+/* =========================
+   Revision Requests & History
+========================= */
+
+export const Q_REVISION_REQUESTS = /* GraphQL */ `
+  query RevisionRequests($articleId: ID!, $status: RevisionRequestStatus) {
+    revisionRequests(articleId: $articleId, status: $status) {
+      id
+      status
+      note
+      proposedChanges
+      createdAt
+      requester {
+        id
+        name
+        email
+      }
+      reviewedAt
+      reviewedBy {
+        id
+        name
+      }
+      reviewComment
+    }
+  }
+`;
+
+export const Q_ARTICLE_REVISION_HISTORY = /* GraphQL */ `
+  query ArticleRevisionHistory($articleId: ID!, $limit: Int) {
+    articleRevisionHistory(articleId: $articleId, limit: $limit) {
+      id
+      summary
+      changes
+      appliedAt
+      appliedBy {
+        id
+        name
+      }
+      revisionRequest {
+        id
+        status
+      }
     }
   }
 `;
@@ -249,6 +347,100 @@ export const Q_TRENDING = /* GraphQL */ `
 export const M_INCREMENT_VIEW = /* GraphQL */ `
   mutation ($slug: String!) {
     incrementArticleView(slug: $slug)
+  }
+`;
+
+export const M_REQUEST_BREAKING_NEWS = /* GraphQL */ `
+  mutation RequestBreakingNews($articleId: ID!, $reason: String) {
+    requestBreakingNews(articleId: $articleId, reason: $reason) {
+      id
+      status
+      createdAt
+    }
+  }
+`;
+
+export const M_APPROVE_BREAKING_NEWS_REQUEST = /* GraphQL */ `
+  mutation ApproveBreakingNews($requestId: ID!, $reviewComment: String) {
+    approveBreakingNews(requestId: $requestId, reviewComment: $reviewComment) {
+      id
+      isBreaking
+    }
+  }
+`;
+
+export const M_REJECT_BREAKING_NEWS_REQUEST = /* GraphQL */ `
+  mutation RejectBreakingNews($requestId: ID!, $reviewComment: String) {
+    rejectBreakingNews(requestId: $requestId, reviewComment: $reviewComment) {
+      id
+      status
+      reviewComment
+    }
+  }
+`;
+
+export const M_REQUEST_ARTICLE_REVISION = /* GraphQL */ `
+  mutation RequestArticleRevision($input: RequestArticleRevisionInput!) {
+    requestArticleRevision(input: $input) {
+      id
+      status
+      note
+      proposedChanges
+      createdAt
+      requester {
+        id
+        name
+        email
+      }
+    }
+  }
+`;
+
+export const M_APPROVE_ARTICLE_REVISION = /* GraphQL */ `
+  mutation ApproveArticleRevision($requestId: ID!, $reviewComment: String) {
+    approveArticleRevision(requestId: $requestId, reviewComment: $reviewComment) {
+      id
+      title
+      status
+      revisionStatus
+      updatedAt
+    }
+  }
+`;
+
+export const Q_PENDING_BREAKING_NEWS_REQUESTS = /* GraphQL */ `
+  query PendingBreakingNewsRequests {
+    pendingBreakingNewsRequests {
+      id
+      status
+      reason
+      createdAt
+      article {
+        id
+        title
+        slug
+      }
+      requester {
+        id
+        name
+        email
+      }
+    }
+  }
+`;
+
+export const M_REJECT_ARTICLE_REVISION = /* GraphQL */ `
+  mutation RejectArticleRevision($requestId: ID!, $reviewComment: String) {
+    rejectArticleRevision(requestId: $requestId, reviewComment: $reviewComment) {
+      id
+      status
+      reviewComment
+      reviewedAt
+      reviewedBy {
+        id
+        name
+      }
+    }
   }
 `;
 

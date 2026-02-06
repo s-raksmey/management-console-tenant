@@ -1,8 +1,10 @@
 'use client';
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
-import { useArticles, useArticleMutations } from "@/hooks/useGraphQL";
+import { useState, useEffect, useMemo } from "react";
+import { useArticles, useArticleMutations, useRevisions } from "@/hooks/useGraphQL";
+import { getAuthenticatedGqlClient } from "@/services/graphql-client";
+import { Q_REVISION_REQUESTS, Q_PENDING_BREAKING_NEWS_REQUESTS } from "@/services/article.gql";
 import { Button } from "@/components/ui/button";
 import { Article, ArticleStatus } from "@/types/article";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +14,7 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, Edit, Trash2, Plus } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -28,13 +30,16 @@ const statusColors = {
 export default function AdminArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | undefined>();
+  const [pendingBreakingNews, setPendingBreakingNews] = useState<any[]>([]);
+  const client = useMemo(() => getAuthenticatedGqlClient(), []);
   const { getArticles, loading, error } = useArticles();
-  const { setArticleStatus, deleteArticle, loading: mutationLoading } = useArticleMutations();
+  const { setArticleStatus, deleteArticle, approveBreakingNewsRequest, rejectBreakingNewsRequest, approveRevisionRequest, rejectRevisionRequest, loading: mutationLoading } = useArticleMutations();
   const { user } = useAuth();
   const { userRole, hasPermission, isAdmin } = usePermissions();
 
   useEffect(() => {
     loadArticles();
+    loadPendingBreakingNews();
   }, [statusFilter, user?.id]);
 
   const loadArticles = async () => {
@@ -51,6 +56,17 @@ export default function AdminArticlesPage() {
       });
       setArticles(filteredArticles);
     } else {
+    }
+  };
+
+  const loadPendingBreakingNews = async () => {
+    try {
+      const data = await client.request(Q_PENDING_BREAKING_NEWS_REQUESTS);
+      if (data?.pendingBreakingNewsRequests) {
+        setPendingBreakingNews(data.pendingBreakingNewsRequests);
+      }
+    } catch (err) {
+      console.error('Error loading pending breaking news:', err);
     }
   };
 
@@ -72,10 +88,63 @@ export default function AdminArticlesPage() {
     }
   };
 
-  const articleUrl = (article: Article) => {
-    const category = article.category?.slug ?? "news";
-    const topic = article.topic ?? "latest";
-    return `/${category}/${topic}/${article.slug}`;
+  const handleApproveBreakingNews = async (requestId: string) => {
+    try {
+      const response = await approveBreakingNewsRequest(requestId);
+      if (response) {
+        loadArticles();
+        loadPendingBreakingNews();
+      }
+    } catch (err) {
+      console.error('Error approving breaking news:', err);
+    }
+  };
+
+  const handleRejectBreakingNews = async (requestId: string) => {
+    try {
+      const response = await rejectBreakingNewsRequest(requestId);
+      if (response) {
+        loadArticles();
+        loadPendingBreakingNews();
+      }
+    } catch (err) {
+      console.error('Error rejecting breaking news:', err);
+    }
+  };
+
+  const handleApproveBreakingNewsFromArticle = async (articleId: string) => {
+    try {
+      // Fetch the pending breaking news request for this article
+      const data = await client.request(Q_PENDING_BREAKING_NEWS_REQUESTS);
+      if (data?.pendingBreakingNewsRequests) {
+        const request = data.pendingBreakingNewsRequests.find((r: any) => r.article?.id === articleId);
+        if (request) {
+          await handleApproveBreakingNews(request.id);
+        }
+      }
+    } catch (err) {
+      console.error('Error finding breaking news request:', err);
+    }
+  };
+
+  const handleRejectBreakingNewsFromArticle = async (articleId: string) => {
+    try {
+      // Fetch the pending breaking news request for this article
+      const data = await client.request(Q_PENDING_BREAKING_NEWS_REQUESTS);
+      if (data?.pendingBreakingNewsRequests) {
+        const request = data.pendingBreakingNewsRequests.find((r: any) => r.article?.id === articleId);
+        if (request) {
+          await handleRejectBreakingNews(request.id);
+        }
+      }
+    } catch (err) {
+      console.error('Error finding breaking news request:', err);
+    }
+  };
+
+  // Helper function to check if article has a pending breaking news request
+  const hasPendingBreakingNewsRequest = (articleId: string) => {
+    return pendingBreakingNews.some((r: any) => r.article?.id === articleId);
   };
 
   if (loading && articles.length === 0) {
@@ -140,6 +209,53 @@ export default function AdminArticlesPage() {
         ))}
       </div>
 
+      {/* Pending Breaking News Requests */}
+      {hasPermission(Permission.APPROVE_ARTICLES) && pendingBreakingNews.length > 0 && (
+        <div className="overflow-hidden rounded-xl border border-orange-200 bg-orange-50">
+          <div className="border-b border-orange-200 bg-orange-100 px-4 py-3">
+            <h3 className="text-sm font-semibold text-orange-900">⚡ Pending Breaking News Requests ({pendingBreakingNews.length})</h3>
+          </div>
+          <div className="divide-y">
+            {pendingBreakingNews.map((request: any) => (
+              <div key={request.id} className="flex items-start justify-between gap-4 px-4 py-3">
+                <div className="flex-1 space-y-1">
+                  <p className="text-sm font-medium text-orange-900">
+                    {request.article?.title}
+                  </p>
+                  <p className="text-xs text-orange-700">
+                    Requested by <span className="font-medium">{request.requester?.name}</span> on {format(new Date(request.createdAt), 'MMM d, yyyy')}
+                  </p>
+                  {request.reason && (
+                    <p className="text-xs text-orange-600 italic mt-2">
+                      "{request.reason}"
+                    </p>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={() => handleApproveBreakingNews(request.id)}
+                    disabled={mutationLoading}
+                  >
+                    ✓ Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleRejectBreakingNews(request.id)}
+                    disabled={mutationLoading}
+                  >
+                    ✕ Reject
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="grid grid-cols-12 border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600">
           <div className="col-span-4">Title</div>
@@ -159,11 +275,17 @@ export default function AdminArticlesPage() {
             <div key={article.id} className="grid grid-cols-12 items-center px-4 py-3 text-sm border-b last:border-b-0 hover:bg-slate-50">
               <div className="col-span-4">
                 <div className="font-medium">{article.title}</div>
-                <div className="text-xs text-slate-500 flex items-center gap-2">
+                <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
                   /{article.slug}
                   {article.isFeatured && <Badge variant="secondary" className="text-xs">Featured</Badge>}
                   {article.isEditorsPick && <Badge variant="secondary" className="text-xs">Editor's Pick</Badge>}
                   {article.isBreaking && <Badge variant="destructive" className="text-xs">Breaking</Badge>}
+                  {hasPendingBreakingNewsRequest(article.id) && (
+                    <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">🔔 Breaking Request</Badge>
+                  )}
+                  {article.revisionStatus === 'REQUESTED' && (
+                    <Badge variant="outline" className="text-xs bg-purple-50 border-purple-200">📝 Revision Requested</Badge>
+                  )}
                 </div>
               </div>
               <div className="col-span-2">
@@ -188,12 +310,6 @@ export default function AdminArticlesPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link href={articleUrl(article)} target="_blank">
-                        <Eye className="w-4 h-4 mr-2" />
-                        View
-                      </Link>
-                    </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href={`/articles/${article.id}/edit`}>
                         <Edit className="w-4 h-4 mr-2" />
@@ -232,6 +348,38 @@ export default function AdminArticlesPage() {
                         Unpublish
                       </DropdownMenuItem>
                     )}
+                    {article.breakingNewsRequestStatus === 'PENDING' && hasPermission(Permission.SET_BREAKING_NEWS) && (
+                      <>
+                        <DropdownMenuItem 
+                          onClick={() => handleApproveBreakingNewsFromArticle(article.id)}
+                          disabled={mutationLoading}
+                        >
+                          ✓ Approve Breaking News
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleRejectBreakingNewsFromArticle(article.id)}
+                          disabled={mutationLoading}
+                        >
+                          ✗ Reject Breaking News
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {article.revisionStatus === 'REQUESTED' && hasPermission(Permission.APPROVE_ARTICLES) && (
+                      <>
+                        <DropdownMenuItem 
+                          onClick={() => handleApproveRevision(article.id)}
+                          disabled={mutationLoading}
+                        >
+                          ✓ Approve Revision
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleRejectRevision(article.id)}
+                          disabled={mutationLoading}
+                        >
+                          ✗ Reject Revision
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuItem 
                       onClick={() => handleDelete(article.id)}
                       disabled={mutationLoading}
@@ -250,3 +398,66 @@ export default function AdminArticlesPage() {
     </main>
   );
 }
+
+  const handleApproveRevision = async (articleId: string) => {
+    try {
+      // Fetch the pending revision request
+      const data = await client.request(Q_REVISION_REQUESTS, { 
+        articleId, 
+        status: 'PENDING' 
+      });
+      
+      if (data?.revisionRequests && data.revisionRequests.length > 0) {
+        const requestId = data.revisionRequests[0].id;
+        const response = await approveRevisionRequest(requestId);
+        if (response) {
+          loadArticles();
+        }
+      }
+    } catch (err) {
+      console.error('Error approving revision:', err);
+    }
+  };
+
+  const handleRejectRevision = async (articleId: string) => {
+    try {
+      // Fetch the pending revision request
+      const data = await client.request(Q_REVISION_REQUESTS, { 
+        articleId, 
+        status: 'PENDING' 
+      });
+      
+      if (data?.revisionRequests && data.revisionRequests.length > 0) {
+        const requestId = data.revisionRequests[0].id;
+        const response = await rejectRevisionRequest(requestId);
+        if (response) {
+          loadArticles();
+        }
+      }
+    } catch (err) {
+      console.error('Error rejecting revision:', err);
+    }
+  };
+  const handleApproveBreakingNews = async (requestId: string) => {
+    try {
+      const response = await approveBreakingNewsRequest(requestId, '');
+      if (response) {
+        loadArticles();
+        loadPendingBreakingNews();
+      }
+    } catch (err) {
+      console.error('Error approving breaking news:', err);
+    }
+  };
+
+  const handleRejectBreakingNews = async (requestId: string) => {
+    try {
+      const response = await rejectBreakingNewsRequest(requestId, '');
+      if (response) {
+        loadArticles();
+        loadPendingBreakingNews();
+      }
+    } catch (err) {
+      console.error('Error rejecting breaking news:', err);
+    }
+  };

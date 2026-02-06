@@ -296,22 +296,57 @@ export function getStatusActionLabel(
 }
 
 /**
- * Check if user can edit article based on ownership and permissions
+ * Check if user can view article for editing (access the edit page)
  */
-export function canEditArticle(
+export function canViewArticleForEdit(
   articleAuthorId: string,
   currentUserId: string,
   userRole: string,
   hasPermission: (permission: Permission) => boolean
 ): boolean {
+  // User has permission to edit any article
+  if (hasPermission(Permission.UPDATE_ANY_ARTICLE)) {
+    return true;
+  }
+  
   // User owns the article and has permission to edit own articles
   if (articleAuthorId === currentUserId && hasPermission(Permission.UPDATE_OWN_ARTICLE)) {
     return true;
   }
   
-  // User has permission to edit any article
+  return false;
+}
+
+/**
+ * Check if user can edit article based on ownership, permissions, and article status
+ */
+export function canEditArticle(
+  articleAuthorId: string,
+  currentUserId: string,
+  userRole: string,
+  hasPermission: (permission: Permission) => boolean,
+  articleStatus?: ArticleStatus,
+  revisionStatus?: string
+): boolean {
+  // User has permission to edit any article (admins/editors can always edit)
   if (hasPermission(Permission.UPDATE_ANY_ARTICLE)) {
     return true;
+  }
+  
+  // User owns the article and has permission to edit own articles
+  if (articleAuthorId === currentUserId && hasPermission(Permission.UPDATE_OWN_ARTICLE)) {
+    // Authors can edit DRAFT articles
+    if (!articleStatus || articleStatus === 'DRAFT') {
+      return true;
+    }
+    
+    // Authors can edit REVIEW and PUBLISHED articles ONLY if they have requested a revision
+    if ((articleStatus === 'REVIEW' || articleStatus === 'PUBLISHED') && revisionStatus === 'REQUESTED') {
+      return true;
+    }
+    
+    // Authors cannot edit REVIEW, PUBLISHED, or ARCHIVED articles without a revision request
+    return false;
   }
   
   return false;

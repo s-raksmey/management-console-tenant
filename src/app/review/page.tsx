@@ -182,7 +182,7 @@ export default function ReviewQueuePage() {
                 </div>
 
                 <div className="flex items-center space-x-2 ml-6">
-                  <Link href={`/preview/id/${article.id}`}>
+                  <Link href={`/preview/id/${article.id}`} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm">
                       <Eye className="w-4 h-4 mr-1" />
                       Preview

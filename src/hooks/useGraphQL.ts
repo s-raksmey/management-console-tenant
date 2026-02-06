@@ -287,11 +287,114 @@ export function useArticleMutations() {
     return await mutate(DELETE_ARTICLE_MUTATION, { id });
   }, [mutate]);
 
+  const requestBreakingNews = useCallback(async (articleId: string, reason?: string) => {
+    const REQUEST_BREAKING_NEWS_MUTATION = `
+      mutation RequestBreakingNews($articleId: ID!, $reason: String) {
+        requestBreakingNews(articleId: $articleId, reason: $reason) {
+          id
+          status
+          createdAt
+        }
+      }
+    `;
+
+    return await mutate(REQUEST_BREAKING_NEWS_MUTATION, { articleId, reason });
+  }, [mutate]);
+
+  const approveBreakingNewsRequest = useCallback(async (requestId: string, reviewComment?: string) => {
+    const APPROVE_BREAKING_NEWS_MUTATION = `
+      mutation ApproveBreakingNews($requestId: ID!, $reviewComment: String) {
+        approveBreakingNews(requestId: $requestId, reviewComment: $reviewComment) {
+          id
+          isBreaking
+        }
+      }
+    `;
+
+    return await mutate(APPROVE_BREAKING_NEWS_MUTATION, { requestId, reviewComment });
+  }, [mutate]);
+
+  const rejectBreakingNewsRequest = useCallback(async (requestId: string, reviewComment?: string) => {
+    const REJECT_BREAKING_NEWS_MUTATION = `
+      mutation RejectBreakingNews($requestId: ID!, $reviewComment: String) {
+        rejectBreakingNews(requestId: $requestId, reviewComment: $reviewComment) {
+          id
+          status
+          reviewComment
+        }
+      }
+    `;
+
+    return await mutate(REJECT_BREAKING_NEWS_MUTATION, { requestId, reviewComment });
+  }, [mutate]);
+
+  const requestRevision = useCallback(async (input: { articleId: string; note?: string; changes: any }) => {
+    const REQUEST_ARTICLE_REVISION_MUTATION = `
+      mutation RequestArticleRevision($input: RequestArticleRevisionInput!) {
+        requestArticleRevision(input: $input) {
+          id
+          status
+          note
+          proposedChanges
+          createdAt
+          requester {
+            id
+            name
+            email
+          }
+        }
+      }
+    `;
+
+    return await mutate(REQUEST_ARTICLE_REVISION_MUTATION, { input });
+  }, [mutate]);
+
+  const approveRevisionRequest = useCallback(async (requestId: string, reviewComment?: string) => {
+    const APPROVE_ARTICLE_REVISION_MUTATION = `
+      mutation ApproveArticleRevision($requestId: ID!, $reviewComment: String) {
+        approveArticleRevision(requestId: $requestId, reviewComment: $reviewComment) {
+          id
+          title
+          status
+          revisionStatus
+          updatedAt
+        }
+      }
+    `;
+
+    return await mutate(APPROVE_ARTICLE_REVISION_MUTATION, { requestId, reviewComment });
+  }, [mutate]);
+
+  const rejectRevisionRequest = useCallback(async (requestId: string, reviewComment?: string) => {
+    const REJECT_ARTICLE_REVISION_MUTATION = `
+      mutation RejectArticleRevision($requestId: ID!, $reviewComment: String) {
+        rejectArticleRevision(requestId: $requestId, reviewComment: $reviewComment) {
+          id
+          status
+          reviewComment
+          reviewedAt
+          reviewedBy {
+            id
+            name
+          }
+        }
+      }
+    `;
+
+    return await mutate(REJECT_ARTICLE_REVISION_MUTATION, { requestId, reviewComment });
+  }, [mutate]);
+
   return {
     upsertArticle,
     setArticleStatus,
     submitForReview,
     deleteArticle,
+    requestBreakingNews,
+    approveBreakingNewsRequest,
+    rejectBreakingNewsRequest,
+    requestRevision,
+    approveRevisionRequest,
+    rejectRevisionRequest,
     loading,
     error,
   };
@@ -386,6 +489,67 @@ export function useSearch() {
   return {
     searchArticles,
     getSearchSuggestions,
+    loading,
+    error,
+  };
+}
+
+export function useRevisions() {
+  const { query, loading, error } = useGraphQL();
+
+  const getRevisionRequests = useCallback(async (articleId: string, status?: string) => {
+    const REVISION_REQUESTS_QUERY = `
+      query RevisionRequests($articleId: ID!, $status: RevisionRequestStatus) {
+        revisionRequests(articleId: $articleId, status: $status) {
+          id
+          status
+          note
+          proposedChanges
+          createdAt
+          requester {
+            id
+            name
+            email
+          }
+          reviewedAt
+          reviewedBy {
+            id
+            name
+          }
+          reviewComment
+        }
+      }
+    `;
+
+    return await query(REVISION_REQUESTS_QUERY, { articleId, status });
+  }, [query]);
+
+  const getRevisionHistory = useCallback(async (articleId: string, limit = 20) => {
+    const REVISION_HISTORY_QUERY = `
+      query ArticleRevisionHistory($articleId: ID!, $limit: Int) {
+        articleRevisionHistory(articleId: $articleId, limit: $limit) {
+          id
+          summary
+          changes
+          appliedAt
+          appliedBy {
+            id
+            name
+          }
+          revisionRequest {
+            id
+            status
+          }
+        }
+      }
+    `;
+
+    return await query(REVISION_HISTORY_QUERY, { articleId, limit });
+  }, [query]);
+
+  return {
+    getRevisionRequests,
+    getRevisionHistory,
     loading,
     error,
   };
