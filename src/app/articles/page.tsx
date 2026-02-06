@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { useArticles, useArticleMutations, useRevisions } from "@/hooks/useGraphQL";
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
-import { Q_REVISION_REQUESTS, Q_PENDING_BREAKING_NEWS_REQUESTS } from "@/services/article.gql";
+import { Q_REVISION_REQUESTS } from "@/services/article.gql";
 import { Button } from "@/components/ui/button";
 import { Article, ArticleStatus } from "@/types/article";
 import { Badge } from "@/components/ui/badge";
@@ -30,16 +30,14 @@ const statusColors = {
 export default function AdminArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | undefined>();
-  const [pendingBreakingNews, setPendingBreakingNews] = useState<any[]>([]);
   const client = useMemo(() => getAuthenticatedGqlClient(), []);
   const { getArticles, loading, error } = useArticles();
-  const { setArticleStatus, deleteArticle, approveBreakingNewsRequest, rejectBreakingNewsRequest, approveRevisionRequest, rejectRevisionRequest, loading: mutationLoading } = useArticleMutations();
+  const { setArticleStatus, deleteArticle, approveRevisionRequest, rejectRevisionRequest, loading: mutationLoading } = useArticleMutations();
   const { user } = useAuth();
   const { userRole, hasPermission, isAdmin } = usePermissions();
 
   useEffect(() => {
     loadArticles();
-    loadPendingBreakingNews();
   }, [statusFilter, user?.id]);
 
   const loadArticles = async () => {
@@ -59,16 +57,6 @@ export default function AdminArticlesPage() {
     }
   };
 
-  const loadPendingBreakingNews = async () => {
-    try {
-      const data = await client.request(Q_PENDING_BREAKING_NEWS_REQUESTS);
-      if (data?.pendingBreakingNewsRequests) {
-        setPendingBreakingNews(data.pendingBreakingNewsRequests);
-      }
-    } catch (err) {
-      console.error('Error loading pending breaking news:', err);
-    }
-  };
 
   const handleStatusChange = async (articleId: string, newStatus: ArticleStatus) => {
     const response = await setArticleStatus(articleId, newStatus);
@@ -88,96 +76,51 @@ export default function AdminArticlesPage() {
     }
   };
 
-  const handleApproveBreakingNews = async (requestId: string) => {
+  const handleApproveRevision = async (articleId: string) => {
     try {
-      const response = await approveBreakingNewsRequest(requestId);
-      if (response) {
-        loadArticles();
-        loadPendingBreakingNews();
-      }
-    } catch (err) {
-      console.error('Error approving breaking news:', err);
-    }
-  };
-
-  const handleRejectBreakingNews = async (requestId: string) => {
-    try {
-      const response = await rejectBreakingNewsRequest(requestId);
-      if (response) {
-        loadArticles();
-        loadPendingBreakingNews();
-      }
-    } catch (err) {
-      console.error('Error rejecting breaking news:', err);
-    }
-  };
-
-  const handleApproveBreakingNewsFromArticle = async (articleId: string) => {
-    try {
-      // Fetch the pending breaking news request for this article
-      const data = await client.request(Q_PENDING_BREAKING_NEWS_REQUESTS);
-      if (data?.pendingBreakingNewsRequests) {
-        const request = data.pendingBreakingNewsRequests.find((r: any) => r.article?.id === articleId);
-        if (request) {
-          await handleApproveBreakingNews(request.id);
+      // Fetch the pending revision request
+      const data = await client.request(Q_REVISION_REQUESTS, { 
+        articleId, 
+        status: 'PENDING' 
+      });
+      
+      if (data?.revisionRequests && data.revisionRequests.length > 0) {
+        const requestId = data.revisionRequests[0].id;
+        const response = await approveRevisionRequest(requestId);
+        if (response) {
+          loadArticles();
         }
       }
     } catch (err) {
-      console.error('Error finding breaking news request:', err);
+      console.error('Error approving revision:', err);
     }
   };
 
-  const handleRejectBreakingNewsFromArticle = async (articleId: string) => {
+  const handleRejectRevision = async (articleId: string) => {
     try {
-      // Fetch the pending breaking news request for this article
-      const data = await client.request(Q_PENDING_BREAKING_NEWS_REQUESTS);
-      if (data?.pendingBreakingNewsRequests) {
-        const request = data.pendingBreakingNewsRequests.find((r: any) => r.article?.id === articleId);
-        if (request) {
-          await handleRejectBreakingNews(request.id);
+      // Fetch the pending revision request
+      const data = await client.request(Q_REVISION_REQUESTS, { 
+        articleId, 
+        status: 'PENDING' 
+      });
+      
+      if (data?.revisionRequests && data.revisionRequests.length > 0) {
+        const requestId = data.revisionRequests[0].id;
+        const response = await rejectRevisionRequest(requestId);
+        if (response) {
+          loadArticles();
         }
       }
     } catch (err) {
-      console.error('Error finding breaking news request:', err);
+      console.error('Error rejecting revision:', err);
     }
   };
-
-  // Helper function to check if article has a pending breaking news request
-  const hasPendingBreakingNewsRequest = (articleId: string) => {
-    return pendingBreakingNews.some((r: any) => r.article?.id === articleId);
-  };
-
-  if (loading && articles.length === 0) {
-    return (
-      <main className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Articles</h2>
-            <p className="text-sm text-slate-600">Loading articles...</p>
-          </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (error) {
-    return (
-      <main className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Articles</h2>
-            <p className="text-sm text-red-600">Error: {error}</p>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
   return (
-    <main className="space-y-4">
+    <main className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Articles</h2>
+          <h1 className="text-xl font-semibold text-slate-900">Articles</h1>
           <p className="text-sm text-slate-600">Create, edit, and publish articles.</p>
         </div>
         <Link href="/articles/new">
@@ -209,52 +152,6 @@ export default function AdminArticlesPage() {
         ))}
       </div>
 
-      {/* Pending Breaking News Requests */}
-      {hasPermission(Permission.APPROVE_ARTICLES) && pendingBreakingNews.length > 0 && (
-        <div className="overflow-hidden rounded-xl border border-orange-200 bg-orange-50">
-          <div className="border-b border-orange-200 bg-orange-100 px-4 py-3">
-            <h3 className="text-sm font-semibold text-orange-900">⚡ Pending Breaking News Requests ({pendingBreakingNews.length})</h3>
-          </div>
-          <div className="divide-y">
-            {pendingBreakingNews.map((request: any) => (
-              <div key={request.id} className="flex items-start justify-between gap-4 px-4 py-3">
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm font-medium text-orange-900">
-                    {request.article?.title}
-                  </p>
-                  <p className="text-xs text-orange-700">
-                    Requested by <span className="font-medium">{request.requester?.name}</span> on {format(new Date(request.createdAt), 'MMM d, yyyy')}
-                  </p>
-                  {request.reason && (
-                    <p className="text-xs text-orange-600 italic mt-2">
-                      "{request.reason}"
-                    </p>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="default"
-                    className="bg-green-600 hover:bg-green-700"
-                    onClick={() => handleApproveBreakingNews(request.id)}
-                    disabled={mutationLoading}
-                  >
-                    ✓ Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleRejectBreakingNews(request.id)}
-                    disabled={mutationLoading}
-                  >
-                    ✕ Reject
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
         <div className="grid grid-cols-12 border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600">
@@ -280,8 +177,14 @@ export default function AdminArticlesPage() {
                   {article.isFeatured && <Badge variant="secondary" className="text-xs">Featured</Badge>}
                   {article.isEditorsPick && <Badge variant="secondary" className="text-xs">Editor's Pick</Badge>}
                   {article.isBreaking && <Badge variant="destructive" className="text-xs">Breaking</Badge>}
-                  {hasPendingBreakingNewsRequest(article.id) && (
-                    <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">🔔 Breaking Request</Badge>
+                  {article.breakingNewsRequestStatus === 'PENDING' && (
+                    <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">🔔 Breaking Request: Pending</Badge>
+                  )}
+                  {!hasPermission(Permission.SET_BREAKING_NEWS) && article.breakingNewsRequestStatus === 'APPROVED' && (
+                    <Badge variant="outline" className="text-xs bg-green-50 border-green-200">✅ Breaking Request: Approved</Badge>
+                  )}
+                  {!hasPermission(Permission.SET_BREAKING_NEWS) && article.breakingNewsRequestStatus === 'REJECTED' && (
+                    <Badge variant="outline" className="text-xs bg-red-50 border-red-200">❌ Breaking Request: Rejected</Badge>
                   )}
                   {article.revisionStatus === 'REQUESTED' && (
                     <Badge variant="outline" className="text-xs bg-purple-50 border-purple-200">📝 Revision Requested</Badge>
@@ -348,22 +251,6 @@ export default function AdminArticlesPage() {
                         Unpublish
                       </DropdownMenuItem>
                     )}
-                    {article.breakingNewsRequestStatus === 'PENDING' && hasPermission(Permission.SET_BREAKING_NEWS) && (
-                      <>
-                        <DropdownMenuItem 
-                          onClick={() => handleApproveBreakingNewsFromArticle(article.id)}
-                          disabled={mutationLoading}
-                        >
-                          ✓ Approve Breaking News
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleRejectBreakingNewsFromArticle(article.id)}
-                          disabled={mutationLoading}
-                        >
-                          ✗ Reject Breaking News
-                        </DropdownMenuItem>
-                      </>
-                    )}
                     {article.revisionStatus === 'REQUESTED' && hasPermission(Permission.APPROVE_ARTICLES) && (
                       <>
                         <DropdownMenuItem 
@@ -398,66 +285,3 @@ export default function AdminArticlesPage() {
     </main>
   );
 }
-
-  const handleApproveRevision = async (articleId: string) => {
-    try {
-      // Fetch the pending revision request
-      const data = await client.request(Q_REVISION_REQUESTS, { 
-        articleId, 
-        status: 'PENDING' 
-      });
-      
-      if (data?.revisionRequests && data.revisionRequests.length > 0) {
-        const requestId = data.revisionRequests[0].id;
-        const response = await approveRevisionRequest(requestId);
-        if (response) {
-          loadArticles();
-        }
-      }
-    } catch (err) {
-      console.error('Error approving revision:', err);
-    }
-  };
-
-  const handleRejectRevision = async (articleId: string) => {
-    try {
-      // Fetch the pending revision request
-      const data = await client.request(Q_REVISION_REQUESTS, { 
-        articleId, 
-        status: 'PENDING' 
-      });
-      
-      if (data?.revisionRequests && data.revisionRequests.length > 0) {
-        const requestId = data.revisionRequests[0].id;
-        const response = await rejectRevisionRequest(requestId);
-        if (response) {
-          loadArticles();
-        }
-      }
-    } catch (err) {
-      console.error('Error rejecting revision:', err);
-    }
-  };
-  const handleApproveBreakingNews = async (requestId: string) => {
-    try {
-      const response = await approveBreakingNewsRequest(requestId, '');
-      if (response) {
-        loadArticles();
-        loadPendingBreakingNews();
-      }
-    } catch (err) {
-      console.error('Error approving breaking news:', err);
-    }
-  };
-
-  const handleRejectBreakingNews = async (requestId: string) => {
-    try {
-      const response = await rejectBreakingNewsRequest(requestId, '');
-      if (response) {
-        loadArticles();
-        loadPendingBreakingNews();
-      }
-    } catch (err) {
-      console.error('Error rejecting breaking news:', err);
-    }
-  };

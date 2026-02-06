@@ -2,6 +2,7 @@
 
 export type ArticleStatus = 'DRAFT' | 'REVIEW' | 'PUBLISHED' | 'ARCHIVED';
 export type BreakingNewsRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type ArticleBreakingNewsRequestStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
 export type RevisionRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export type RevisionStatus = 'NONE' | 'REQUESTED';
 
@@ -120,9 +121,9 @@ export interface Article {
   viewCount?: number;
   
   // Breaking News Request
-  breakingNewsRequestStatus?: BreakingNewsRequestStatus;
+  breakingNewsRequestStatus?: ArticleBreakingNewsRequestStatus;
   breakingNewsRequestedAt?: string;
-  breakingNewsRequestedBy?: string;
+  breakingNewsRequestedBy?: User | null;
   
   // Revision Status
   revisionStatus?: RevisionStatus;

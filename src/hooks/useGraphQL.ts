@@ -108,6 +108,13 @@ export function useArticles() {
           isFeatured
           isEditorsPick
           isBreaking
+          breakingNewsRequestStatus
+          breakingNewsRequestedAt
+          breakingNewsRequestedBy {
+            id
+            name
+            email
+          }
           publishedAt
           createdAt
           updatedAt
@@ -147,6 +154,13 @@ export function useArticles() {
           isFeatured
           isEditorsPick
           isBreaking
+          breakingNewsRequestStatus
+          breakingNewsRequestedAt
+          breakingNewsRequestedBy {
+            id
+            name
+            email
+          }
           pinnedAt
           viewCount
           publishedAt
@@ -183,6 +197,13 @@ export function useArticles() {
           isFeatured
           isEditorsPick
           isBreaking
+          breakingNewsRequestStatus
+          breakingNewsRequestedAt
+          breakingNewsRequestedBy {
+            id
+            name
+            email
+          }
           pinnedAt
           viewCount
           publishedAt
@@ -231,6 +252,13 @@ export function useArticleMutations() {
           isFeatured
           isEditorsPick
           isBreaking
+          breakingNewsRequestStatus
+          breakingNewsRequestedAt
+          breakingNewsRequestedBy {
+            id
+            name
+            email
+          }
           pinnedAt
           viewCount
           publishedAt
@@ -457,6 +485,13 @@ export function useSearch() {
             isFeatured
             isEditorsPick
             isBreaking
+            breakingNewsRequestStatus
+            breakingNewsRequestedAt
+            breakingNewsRequestedBy {
+              id
+              name
+              email
+            }
             viewCount
             publishedAt
             createdAt

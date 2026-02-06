@@ -44,6 +44,13 @@ export const Q_ARTICLES = /* GraphQL */ `
       isBreaking
       revisionStatus
       revisionRequestedAt
+      breakingNewsRequestStatus
+      breakingNewsRequestedAt
+      breakingNewsRequestedBy {
+        id
+        name
+        email
+      }
 
       publishedAt
       createdAt
@@ -110,6 +117,13 @@ export const Q_ARTICLE_BY_ID = /* GraphQL */ `
       updatedAt
       revisionStatus
       revisionRequestedAt
+      breakingNewsRequestStatus
+      breakingNewsRequestedAt
+      breakingNewsRequestedBy {
+        id
+        name
+        email
+      }
       category {
         name
         slug
@@ -420,6 +434,24 @@ export const Q_PENDING_BREAKING_NEWS_REQUESTS = /* GraphQL */ `
         title
         slug
       }
+      requester {
+        id
+        name
+        email
+      }
+    }
+  }
+`;
+
+export const Q_BREAKING_NEWS_REQUESTS = /* GraphQL */ `
+  query BreakingNewsRequests($articleId: ID!) {
+    breakingNewsRequests(articleId: $articleId) {
+      id
+      status
+      reason
+      reviewComment
+      reviewedAt
+      createdAt
       requester {
         id
         name

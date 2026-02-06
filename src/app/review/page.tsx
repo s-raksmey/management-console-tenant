@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useArticles, useArticleMutations } from '@/hooks/useGraphQL';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Permission, PermissionGuard } from '@/components/permissions/PermissionGuard';
@@ -27,8 +28,8 @@ export default function ReviewQueuePage() {
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   
   const { getArticles, loading, error } = useArticles();
-  const { setArticleStatus, loading: mutationLoading } = useArticleMutations();
-  const { hasPermission, userRole } = usePermissions();
+  const { setArticleStatus } = useArticleMutations();
+  const { hasPermission } = usePermissions();
   const { showSuccess, showError } = useToastHelpers();
 
   useEffect(() => {
@@ -46,6 +47,7 @@ export default function ReviewQueuePage() {
       showError('Failed to load articles', 'Please refresh the page to try again');
     }
   };
+
 
   const handleApprove = async (articleId: string) => {
     if (processingIds.has(articleId)) return;
@@ -127,6 +129,7 @@ export default function ReviewQueuePage() {
           </div>
         )}
 
+
         {articles.length === 0 && !loading && !error && (
           <div className="text-center py-12">
             <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -154,6 +157,9 @@ export default function ReviewQueuePage() {
                       <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded">
                         Breaking News
                       </span>
+                    )}
+                    {article.breakingNewsRequestStatus === 'PENDING' && (
+                      <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">🔔 Breaking Request: Pending</Badge>
                     )}
                   </div>
 

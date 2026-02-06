@@ -133,9 +133,15 @@ export default function NewArticlePage() {
       // If user requested breaking news, send the request after creating article
       if (shouldRequestBreakingNews && response?.upsertArticle?.id) {
         try {
-          await requestBreakingNews(response.upsertArticle.id, breakingNewsReason);
+          const breakingResponse = await requestBreakingNews(response.upsertArticle.id, breakingNewsReason);
+          if (breakingResponse?.requestBreakingNews?.id) {
+            alert('Breaking news request submitted for review.');
+          } else {
+            alert('Breaking news request was not accepted by the server.');
+          }
         } catch (err) {
           console.warn('Breaking news request submission failed:', err);
+          alert('Breaking news request submission failed.');
           // Don't block the article save if breaking news request fails
         }
       }
@@ -181,9 +187,15 @@ export default function NewArticlePage() {
       // If user requested breaking news, send the request after creating article
       if (shouldRequestBreakingNews && response?.upsertArticle?.id) {
         try {
-          await requestBreakingNews(response.upsertArticle.id, breakingNewsReason);
+          const breakingResponse = await requestBreakingNews(response.upsertArticle.id, breakingNewsReason);
+          if (breakingResponse?.requestBreakingNews?.id) {
+            alert('Breaking news request submitted for review.');
+          } else {
+            alert('Breaking news request was not accepted by the server.');
+          }
         } catch (err) {
           console.warn('Breaking news request submission failed:', err);
+          alert('Breaking news request submission failed.');
           // Don't block the article save if breaking news request fails
         }
       }
@@ -377,7 +389,7 @@ export default function NewArticlePage() {
         )}
 
         {/* Breaking News Reason */}
-        {status !== 'PUBLISHED' && shouldRequestBreakingNews && (
+        {shouldRequestBreakingNews && (
           <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-3">
             <div>
               <label htmlFor="breaking-news-reason" className="block text-sm font-medium text-orange-900 mb-1">

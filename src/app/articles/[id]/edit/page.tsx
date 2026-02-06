@@ -9,7 +9,7 @@ import {
   Q_ARTICLE_BY_ID,
   M_UPSERT_ARTICLE,
   M_DELETE_ARTICLE,
-  Q_PENDING_BREAKING_NEWS_REQUESTS,
+  Q_BREAKING_NEWS_REQUESTS,
 } from "@/services/article.gql";
 import { useArticleMutations } from "@/hooks/useGraphQL";
 import { useRevisions } from "@/hooks/useGraphQL";
@@ -21,6 +21,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
 import { ArticleStatus, canEditArticle, canViewArticleForEdit } from "@/utils/articlePermissions";
+import { ArticleBreakingNewsRequestStatus } from "@/types/article";
 import { Permission } from "@/components/permissions/PermissionGuard";
 import { format } from "date-fns";
 
@@ -91,7 +92,7 @@ export default function EditArticlePage() {
   const [isBreaking, setIsBreaking] = useState(false);
   const [shouldRequestBreakingNews, setShouldRequestBreakingNews] = useState(false);
   const [breakingNewsReason, setBreakingNewsReason] = useState("");
-  const [breakingNewsRequestStatus, setBreakingNewsRequestStatus] = useState<string | undefined>();
+  const [breakingNewsRequestStatus, setBreakingNewsRequestStatus] = useState<ArticleBreakingNewsRequestStatus | undefined>();
   const [breakingNewsRequestedAt, setBreakingNewsRequestedAt] = useState<string | undefined>();
   const [breakingNewsRequestedBy, setBreakingNewsRequestedBy] = useState<string | undefined>();
   const [revisionStatus, setRevisionStatus] = useState<string | undefined>();
@@ -159,22 +160,10 @@ export default function EditArticlePage() {
       setRevisionStatus(article.revisionStatus);
       setInitialContent(article.contentJson ?? { blocks: [] });
       
-      // Load breaking news request status from pending requests
-      try {
-        const breakingNewsData = await client.request(Q_PENDING_BREAKING_NEWS_REQUESTS);
-        if (breakingNewsData?.pendingBreakingNewsRequests) {
-          const breakingRequest = breakingNewsData.pendingBreakingNewsRequests.find(
-            (r: any) => r.article?.id === id
-          );
-          if (breakingRequest) {
-            setBreakingNewsRequestStatus('PENDING');
-            setBreakingNewsRequestedAt(breakingRequest.createdAt);
-            setBreakingNewsRequestedBy(breakingRequest.requester?.name);
-          }
-        }
-      } catch (err) {
-        console.warn('Could not fetch breaking news requests:', err);
-      }
+      // Load breaking news request status directly from article data
+      setBreakingNewsRequestStatus(article.breakingNewsRequestStatus ?? undefined);
+      setBreakingNewsRequestedAt(article.breakingNewsRequestedAt);
+      setBreakingNewsRequestedBy(article.breakingNewsRequestedBy?.name);
       
       // Load revision requests if article has revision status  
       if (article.revisionStatus === 'REQUESTED') {
@@ -231,14 +220,24 @@ export default function EditArticlePage() {
       });
 
       // If user requested breaking news, send the request after updating article
-      if (shouldRequestBreakingNews && response?.upsertArticle?.id && !response?.upsertArticle?.breakingNewsRequestStatus) {
+      const currentBreakingStatus = response?.upsertArticle?.breakingNewsRequestStatus;
+      const canRequestBreakingNews = currentBreakingStatus === undefined || currentBreakingStatus === 'NONE';
+      if (shouldRequestBreakingNews && response?.upsertArticle?.id && canRequestBreakingNews) {
         try {
-          await requestBreakingNews(response.upsertArticle.id, breakingNewsReason);
+          const breakingResponse = await requestBreakingNews(response.upsertArticle.id, breakingNewsReason);
           // Reset the checkbox and reason after request is sent
           setShouldRequestBreakingNews(false);
           setBreakingNewsReason("");
+          setBreakingNewsRequestStatus('PENDING');
+          setBreakingNewsRequestedAt(breakingResponse?.requestBreakingNews?.createdAt);
+          if (breakingResponse?.requestBreakingNews?.id) {
+            alert('Breaking news request submitted for review.');
+          } else {
+            alert('Breaking news request was not accepted by the server.');
+          }
         } catch (err) {
           console.warn('Breaking news request submission failed:', err);
+          alert('Breaking news request submission failed.');
           // Don't block the article save if breaking news request fails
         }
       }
@@ -331,22 +330,20 @@ export default function EditArticlePage() {
   async function approveBreakingNews() {
     setSaving(true);
     try {
-      // Fetch pending breaking news requests to find the one for this article
-      const data = await client.request(Q_PENDING_BREAKING_NEWS_REQUESTS);
-      if (data?.pendingBreakingNewsRequests) {
-        const request = data.pendingBreakingNewsRequests.find((r: any) => r.article?.id === id);
-        if (request) {
-          const response = await approveBreakingNewsRequest(request.id);
-          if (response) {
-            // Refresh article data to get updated isBreaking status
-            const articleData = await client.request(Q_ARTICLE_BY_ID, { id });
-            const article = articleData.articleById;
-            setIsBreaking(article.isBreaking);
-            // Clear the breaking news request status since it was approved
-            setBreakingNewsRequestStatus(undefined);
-            setBreakingNewsRequestedAt(undefined);
-            setBreakingNewsRequestedBy(undefined);
-          }
+      // Fetch breaking news requests to find the pending one for this article
+      const data = await client.request(Q_BREAKING_NEWS_REQUESTS, { articleId: id });
+      const request = data?.breakingNewsRequests?.find((r: any) => r.status === 'PENDING');
+      if (request) {
+        const response = await approveBreakingNewsRequest(request.id);
+        if (response) {
+          // Refresh article data to get updated isBreaking status
+          const articleData = await client.request(Q_ARTICLE_BY_ID, { id });
+          const article = articleData.articleById;
+          setIsBreaking(article.isBreaking);
+          // Clear the breaking news request status since it was approved
+          setBreakingNewsRequestStatus(undefined);
+          setBreakingNewsRequestedAt(undefined);
+          setBreakingNewsRequestedBy(undefined);
         }
       }
     } catch (err) {
@@ -359,18 +356,16 @@ export default function EditArticlePage() {
   async function rejectBreakingNews() {
     setSaving(true);
     try {
-      // Fetch pending breaking news requests to find the one for this article
-      const data = await client.request(Q_PENDING_BREAKING_NEWS_REQUESTS);
-      if (data?.pendingBreakingNewsRequests) {
-        const request = data.pendingBreakingNewsRequests.find((r: any) => r.article?.id === id);
-        if (request) {
-          const response = await rejectBreakingNewsRequest(request.id);
-          if (response) {
-            // Clear the breaking news request status since it was rejected
-            setBreakingNewsRequestStatus(undefined);
-            setBreakingNewsRequestedAt(undefined);
-            setBreakingNewsRequestedBy(undefined);
-          }
+      // Fetch breaking news requests to find the pending one for this article
+      const data = await client.request(Q_BREAKING_NEWS_REQUESTS, { articleId: id });
+      const request = data?.breakingNewsRequests?.find((r: any) => r.status === 'PENDING');
+      if (request) {
+        const response = await rejectBreakingNewsRequest(request.id);
+        if (response) {
+          // Clear the breaking news request status since it was rejected
+          setBreakingNewsRequestStatus(undefined);
+          setBreakingNewsRequestedAt(undefined);
+          setBreakingNewsRequestedBy(undefined);
         }
       }
     } catch (err) {
@@ -592,7 +587,7 @@ export default function EditArticlePage() {
           </div>
         )}
 
-        {!hasPermission(Permission.SET_BREAKING_NEWS) && status === 'PUBLISHED' && !isBreaking && !shouldRequestBreakingNews && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus) && (
+        {!hasPermission(Permission.SET_BREAKING_NEWS) && !isBreaking && !shouldRequestBreakingNews && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus) && (
           <div className="flex items-center gap-2">
             <input
               id="request-breaking-news"
@@ -614,7 +609,7 @@ export default function EditArticlePage() {
         )}
 
         {/* Breaking News Reason */}
-        {!hasPermission(Permission.SET_BREAKING_NEWS) && status === 'PUBLISHED' && !isBreaking && shouldRequestBreakingNews && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus) && (
+        {!hasPermission(Permission.SET_BREAKING_NEWS) && !isBreaking && shouldRequestBreakingNews && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus) && (
           <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-3">
             <div>
               <label htmlFor="breaking-news-reason" className="block text-sm font-medium text-orange-900 mb-1">
@@ -632,6 +627,80 @@ export default function EditArticlePage() {
               <p className="text-xs text-orange-700 mt-2">
                 Admins and editors will review your request and decide if this article qualifies as breaking news.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Breaking News Request Status (for Editors/Admins) */}
+        {breakingNewsRequestStatus === 'PENDING' && hasPermission(Permission.SET_BREAKING_NEWS) && (
+          <div className="rounded-md border border-orange-200 bg-orange-50 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">🔔</span>
+                  <h3 className="text-sm font-semibold text-orange-900">Breaking News Request Pending</h3>
+                </div>
+                <p className="text-xs text-orange-700 mb-2">
+                  The author has requested this article to be marked as breaking news.
+                </p>
+                {breakingNewsRequestedBy && (
+                  <p className="text-xs text-orange-600">
+                    <strong>Requested by:</strong> {breakingNewsRequestedBy}
+                  </p>
+                )}
+                {breakingNewsRequestedAt && (
+                  <p className="text-xs text-orange-600">
+                    <strong>Requested at:</strong> {format(new Date(breakingNewsRequestedAt), 'MMM d, yyyy h:mm a')}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100 hover:text-green-800"
+                  onClick={async () => {
+                    try {
+                      const breakingNewsData = await client.request(Q_BREAKING_NEWS_REQUESTS, { articleId: id });
+                      const request = breakingNewsData?.breakingNewsRequests?.find((r: any) => r.status === 'PENDING');
+                      if (request) {
+                        await approveBreakingNewsRequest(request.id);
+                        setBreakingNewsRequestStatus(undefined);
+                        setIsBreaking(true);
+                        alert('Breaking news request approved!');
+                      }
+                    } catch (err) {
+                      console.error('Error approving breaking news:', err);
+                      alert('Failed to approve breaking news request');
+                    }
+                  }}
+                  disabled={saving}
+                >
+                  ✓ Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:text-red-800"
+                  onClick={async () => {
+                    try {
+                      const breakingNewsData = await client.request(Q_BREAKING_NEWS_REQUESTS, { articleId: id });
+                      const request = breakingNewsData?.breakingNewsRequests?.find((r: any) => r.status === 'PENDING');
+                      if (request) {
+                        await rejectBreakingNewsRequest(request.id);
+                        setBreakingNewsRequestStatus(undefined);
+                        alert('Breaking news request rejected');
+                      }
+                    } catch (err) {
+                      console.error('Error rejecting breaking news:', err);
+                      alert('Failed to reject breaking news request');
+                    }
+                  }}
+                  disabled={saving}
+                >
+                  ✗ Reject
+                </Button>
+              </div>
             </div>
           </div>
         )}
@@ -712,43 +781,6 @@ export default function EditArticlePage() {
           </div>
         )}
 
-        {/* Breaking News Request Status - For Admins/Editors */}
-        {breakingNewsRequestStatus === 'PENDING' && hasPermission(Permission.SET_BREAKING_NEWS) && (
-          <div className="rounded-md border border-orange-300 bg-orange-50 p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-sm font-semibold text-orange-900 mb-2">⚡ Breaking News Request</h3>
-                <p className="text-xs text-orange-700 mb-2">
-                  🔔 Author requested this article to be marked as breaking news
-                </p>
-                {breakingNewsRequestedAt && (
-                  <p className="text-xs text-orange-600">
-                    Requested on {format(new Date(breakingNewsRequestedAt), 'MMM d, yyyy')} by {breakingNewsRequestedBy}
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="bg-green-600 hover:bg-green-700"
-                  onClick={() => approveBreakingNews()}
-                  disabled={saving}
-                >
-                  ✓ Approve
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => rejectBreakingNews()}
-                  disabled={saving}
-                >
-                  ✗ Reject
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
 
         {breakingNewsRequestStatus === 'APPROVED' && (
           <div className="rounded-md border border-green-300 bg-green-50 p-4">
