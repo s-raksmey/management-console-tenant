@@ -30,8 +30,11 @@ const statusColors = {
 export default function AdminArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | undefined>();
+  const [revisionRequestStatusById, setRevisionRequestStatusById] = useState<Record<string, string>>({});
+  const [revisionRequestNoteById, setRevisionRequestNoteById] = useState<Record<string, string>>({});
   const client = useMemo(() => getAuthenticatedGqlClient(), []);
   const { getArticles, loading, error } = useArticles();
+  const { getLatestRevisionRequest } = useRevisions();
   const { setArticleStatus, deleteArticle, approveRevisionRequest, rejectRevisionRequest, loading: mutationLoading } = useArticleMutations();
   const { user } = useAuth();
   const { userRole, hasPermission, isAdmin } = usePermissions();
@@ -53,7 +56,44 @@ export default function AdminArticlesPage() {
         return article.author?.id === user?.id;
       });
       setArticles(filteredArticles);
+      await loadRevisionStatuses(filteredArticles);
     } else {
+    }
+  };
+
+  const loadRevisionStatuses = async (list: Article[]) => {
+    if (!list.length) {
+      setRevisionRequestStatusById({});
+      setRevisionRequestNoteById({});
+      return;
+    }
+
+    try {
+      const results = await Promise.all(
+        list.map(async (article) => {
+          const data = await getLatestRevisionRequest(article.id);
+          const latest = data?.latestRevisionRequest;
+          if (latest?.consumedAt) {
+            return [article.id, 'CONSUMED', latest?.note] as const;
+          }
+          return [article.id, latest?.status, latest?.note] as const;
+        })
+      );
+
+      const nextMap: Record<string, string> = {};
+      const nextNotes: Record<string, string> = {};
+      results.forEach(([id, status, note]) => {
+        if (status) {
+          nextMap[id] = status;
+        }
+        if (note) {
+          nextNotes[id] = note;
+        }
+      });
+      setRevisionRequestStatusById(nextMap);
+      setRevisionRequestNoteById(nextNotes);
+    } catch (err) {
+      console.error('Failed to load revision request statuses:', err);
     }
   };
 
@@ -186,10 +226,24 @@ export default function AdminArticlesPage() {
                   {!hasPermission(Permission.SET_BREAKING_NEWS) && article.breakingNewsRequestStatus === 'REJECTED' && (
                     <Badge variant="outline" className="text-xs bg-red-50 border-red-200">❌ Breaking Request: Rejected</Badge>
                   )}
-                  {article.revisionStatus === 'REQUESTED' && (
+                  {revisionRequestStatusById[article.id] === 'PENDING' && (
                     <Badge variant="outline" className="text-xs bg-purple-50 border-purple-200">📝 Revision Requested</Badge>
                   )}
+                  {revisionRequestStatusById[article.id] === 'APPROVED' && (
+                    <Badge variant="outline" className="text-xs bg-green-50 border-green-200">✅ Revision Approved</Badge>
+                  )}
+                  {revisionRequestStatusById[article.id] === 'REJECTED' && (
+                    <Badge variant="outline" className="text-xs bg-red-50 border-red-200">❌ Revision Rejected</Badge>
+                  )}
+                  {revisionRequestStatusById[article.id] === 'CONSUMED' && (
+                    <Badge variant="outline" className="text-xs bg-slate-50 border-slate-200">✔ Revision End</Badge>
+                  )}
                 </div>
+                {revisionRequestStatusById[article.id] === 'PENDING' && revisionRequestNoteById[article.id] && (
+                  <div className="text-xs text-slate-500 mt-1">
+                    Revision note: {revisionRequestNoteById[article.id]}
+                  </div>
+                )}
               </div>
               <div className="col-span-2">
                 <Badge className={`text-xs ${statusColors[article.status]}`}>

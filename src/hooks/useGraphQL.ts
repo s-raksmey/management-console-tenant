@@ -108,6 +108,8 @@ export function useArticles() {
           isFeatured
           isEditorsPick
           isBreaking
+          revisionStatus
+          revisionRequestedAt
           breakingNewsRequestStatus
           breakingNewsRequestedAt
           breakingNewsRequestedBy {
@@ -334,7 +336,8 @@ export function useArticleMutations() {
       mutation ApproveBreakingNews($requestId: ID!, $reviewComment: String) {
         approveBreakingNews(requestId: $requestId, reviewComment: $reviewComment) {
           id
-          isBreaking
+          status
+          reviewComment
         }
       }
     `;
@@ -375,6 +378,24 @@ export function useArticleMutations() {
     `;
 
     return await mutate(REQUEST_ARTICLE_REVISION_MUTATION, { input });
+  }, [mutate]);
+
+  const consumeRevisionRequest = useCallback(async (requestId: string) => {
+    const CONSUME_ARTICLE_REVISION_MUTATION = `
+      mutation ConsumeArticleRevision($requestId: ID!) {
+        consumeArticleRevision(requestId: $requestId) {
+          id
+          status
+          consumedAt
+          consumedBy {
+            id
+            name
+          }
+        }
+      }
+    `;
+
+    return await mutate(CONSUME_ARTICLE_REVISION_MUTATION, { requestId });
   }, [mutate]);
 
   const approveRevisionRequest = useCallback(async (requestId: string, reviewComment?: string) => {
@@ -421,6 +442,7 @@ export function useArticleMutations() {
     approveBreakingNewsRequest,
     rejectBreakingNewsRequest,
     requestRevision,
+    consumeRevisionRequest,
     approveRevisionRequest,
     rejectRevisionRequest,
     loading,
@@ -547,7 +569,12 @@ export function useRevisions() {
             email
           }
           reviewedAt
+          consumedAt
           reviewedBy {
+            id
+            name
+          }
+          consumedBy {
             id
             name
           }
@@ -557,6 +584,36 @@ export function useRevisions() {
     `;
 
     return await query(REVISION_REQUESTS_QUERY, { articleId, status });
+  }, [query]);
+
+  const getLatestRevisionRequest = useCallback(async (articleId: string) => {
+    const LATEST_REVISION_REQUEST_QUERY = `
+      query LatestRevisionRequest($articleId: ID!) {
+        latestRevisionRequest(articleId: $articleId) {
+          id
+          status
+          note
+          reviewedAt
+          consumedAt
+          reviewComment
+          requester {
+            id
+            name
+          }
+          reviewedBy {
+            id
+            name
+          }
+          consumedBy {
+            id
+            name
+          }
+          createdAt
+        }
+      }
+    `;
+
+    return await query(LATEST_REVISION_REQUEST_QUERY, { articleId });
   }, [query]);
 
   const getRevisionHistory = useCallback(async (articleId: string, limit = 20) => {
@@ -584,6 +641,7 @@ export function useRevisions() {
 
   return {
     getRevisionRequests,
+    getLatestRevisionRequest,
     getRevisionHistory,
     loading,
     error,

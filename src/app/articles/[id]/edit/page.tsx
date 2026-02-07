@@ -61,8 +61,8 @@ export default function EditArticlePage() {
 
   const client = useMemo(() => getAuthenticatedGqlClient(), []);
   const editorRef = useRef<NewsEditorRef>(null);
-  const { requestBreakingNews, requestRevision, approveRevisionRequest, rejectRevisionRequest, approveBreakingNewsRequest, rejectBreakingNewsRequest } = useArticleMutations();
-  const { getRevisionRequests } = useRevisions();
+  const { requestBreakingNews, requestRevision, approveRevisionRequest, rejectRevisionRequest, approveBreakingNewsRequest, rejectBreakingNewsRequest, consumeRevisionRequest } = useArticleMutations();
+  const { getLatestRevisionRequest } = useRevisions();
   
   // Category validation hook
   const { categories, loading: categoriesLoading, error: categoriesError, isValidCategory } = useCategories();
@@ -165,12 +165,17 @@ export default function EditArticlePage() {
       setBreakingNewsRequestedAt(article.breakingNewsRequestedAt);
       setBreakingNewsRequestedBy(article.breakingNewsRequestedBy?.name);
       
-      // Load revision requests if article has revision status  
-      if (article.revisionStatus === 'REQUESTED') {
-        const revisionData = await getRevisionRequests(id, 'PENDING');
-        if (revisionData?.revisionRequests && revisionData.revisionRequests.length > 0) {
-          setCurrentRevisionRequest(revisionData.revisionRequests[0]);
-        }
+      // Load latest revision request (any status) for edit permissions
+      const latestRevision = await getLatestRevisionRequest(id);
+      const latestRequest = latestRevision?.latestRevisionRequest;
+      if (latestRequest) {
+        setCurrentRevisionRequest(
+          latestRequest.consumedAt
+            ? { ...latestRequest, status: 'CONSUMED' }
+            : latestRequest
+        );
+      } else {
+        setCurrentRevisionRequest(undefined);
       }
       
       // Set original values for change detection
@@ -244,9 +249,34 @@ export default function EditArticlePage() {
 
       setStatus(nextStatus);
 
+      if (response?.upsertArticle?.id) {
+        setOriginalTitle(title);
+        setOriginalSlug(slug);
+        setOriginalExcerpt(excerpt ?? "");
+        setOriginalCategorySlug(categorySlug);
+        setOriginalTopic(topic ?? "");
+        setOriginalIsBreaking(isBreaking);
+        setInitialContent(contentJson);
+
+        if (userRole === 'AUTHOR' && (currentRevisionRequest?.status === 'APPROVED' || currentRevisionRequest?.status === 'REJECTED')) {
+          if (currentRevisionRequest?.id && !currentRevisionRequest?.consumedAt) {
+            await consumeRevisionRequest(currentRevisionRequest.id);
+          }
+          setCurrentRevisionRequest({
+            ...currentRevisionRequest,
+            status: 'CONSUMED',
+            consumedAt: new Date().toISOString()
+          });
+        }
+      }
+
       if (redirectToList) {
         router.push("/articles");
       }
+    } catch (error) {
+      console.error('Error saving article:', error);
+      const message = error instanceof Error ? error.message : 'Failed to save article.';
+      setValidationError(message);
     } finally {
       setSaving(false);
     }
@@ -276,7 +306,29 @@ export default function EditArticlePage() {
     }
   }
 
+  const refreshRevisionState = async () => {
+    const data = await client.request(Q_ARTICLE_BY_ID, { id });
+    const article = data.articleById;
+    setRevisionStatus(article.revisionStatus);
+
+    const latestRevision = await getLatestRevisionRequest(id);
+    const latestRequest = latestRevision?.latestRevisionRequest;
+    if (latestRequest) {
+      setCurrentRevisionRequest(
+        latestRequest.consumedAt
+          ? { ...latestRequest, status: 'CONSUMED' }
+          : latestRequest
+      );
+    } else {
+      setCurrentRevisionRequest(undefined);
+    }
+  };
+
   async function submitRevisionRequest() {
+    if (status !== 'REVIEW') {
+      alert('Revisions can only be requested while the article is in review.');
+      return;
+    }
     if (!revisionNote.trim()) {
       alert("Please describe the changes you'd like to make");
       return;
@@ -308,20 +360,41 @@ export default function EditArticlePage() {
         note: revisionNote.trim(),
         changes: proposedChanges
       });
-      
+
       setShowRevisionForm(false);
       setRevisionNote("");
       
-      // Refresh article data to get updated revision status
-      const data = await client.request(Q_ARTICLE_BY_ID, { id });
-      const article = data.articleById;
-      setRevisionStatus(article.revisionStatus);
-      
-      // Load latest revision requests
-      const revisionData = await getRevisionRequests(id, 'PENDING');
-      if (revisionData?.revisionRequests && revisionData.revisionRequests.length > 0) {
-        setCurrentRevisionRequest(revisionData.revisionRequests[0]);
-      }
+      await refreshRevisionState();
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function approveRevision() {
+    if (!currentRevisionRequest?.id) return;
+    setSaving(true);
+    try {
+      await approveRevisionRequest(currentRevisionRequest.id);
+      await refreshRevisionState();
+      alert('Revision request approved');
+    } catch (err) {
+      console.error('Error approving revision request:', err);
+      alert('Failed to approve revision request');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function rejectRevision() {
+    if (!currentRevisionRequest?.id) return;
+    setSaving(true);
+    try {
+      await rejectRevisionRequest(currentRevisionRequest.id);
+      await refreshRevisionState();
+      alert('Revision request rejected');
+    } catch (err) {
+      console.error('Error rejecting revision request:', err);
+      alert('Failed to reject revision request');
     } finally {
       setSaving(false);
     }
@@ -403,8 +476,21 @@ export default function EditArticlePage() {
   }
   
   // Check if user can edit this article
-  const canEdit = canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus);
+  const canEdit = canEditArticle(
+    articleAuthorId,
+    userId,
+    userRole,
+    hasPermission,
+    status,
+    revisionStatus,
+    currentRevisionRequest?.status
+  );
   const isReadOnly = !canEdit;
+
+  const canRequestRevision =
+    articleAuthorId === userId &&
+    hasPermission(Permission.UPDATE_OWN_ARTICLE) &&
+    status === 'REVIEW';
 
   return (
     <main className="space-y-4">
@@ -567,7 +653,7 @@ export default function EditArticlePage() {
           />
         </div>
 
-        {hasPermission(Permission.SET_BREAKING_NEWS) && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus) && (
+        {hasPermission(Permission.SET_BREAKING_NEWS) && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus, currentRevisionRequest?.status) && (
           <div className="flex items-center gap-2">
             <input
               id="breaking-news"
@@ -587,7 +673,7 @@ export default function EditArticlePage() {
           </div>
         )}
 
-        {!hasPermission(Permission.SET_BREAKING_NEWS) && !isBreaking && !shouldRequestBreakingNews && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus) && (
+        {!hasPermission(Permission.SET_BREAKING_NEWS) && !isBreaking && !shouldRequestBreakingNews && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus, currentRevisionRequest?.status) && (
           <div className="flex items-center gap-2">
             <input
               id="request-breaking-news"
@@ -609,7 +695,7 @@ export default function EditArticlePage() {
         )}
 
         {/* Breaking News Reason */}
-        {!hasPermission(Permission.SET_BREAKING_NEWS) && !isBreaking && shouldRequestBreakingNews && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus) && (
+        {!hasPermission(Permission.SET_BREAKING_NEWS) && !isBreaking && shouldRequestBreakingNews && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus, currentRevisionRequest?.status) && (
           <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-3">
             <div>
               <label htmlFor="breaking-news-reason" className="block text-sm font-medium text-orange-900 mb-1">
@@ -705,20 +791,64 @@ export default function EditArticlePage() {
           </div>
         )}
 
+        {/* Revision Request Status (for Editors/Admins) */}
+        {currentRevisionRequest?.status === 'PENDING' && hasPermission(Permission.APPROVE_ARTICLES) && (
+          <div className="rounded-md border border-purple-200 bg-purple-50 p-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-xl">📝</span>
+                  <h3 className="text-sm font-semibold text-purple-900">Revision Request Pending</h3>
+                </div>
+                <p className="text-xs text-purple-700 mb-2">
+                  The author has requested permission to revise this article.
+                </p>
+                {currentRevisionRequest?.note && (
+                  <p className="text-xs text-purple-700">
+                    <strong>Request note:</strong> {currentRevisionRequest.note}
+                  </p>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100 hover:text-green-800"
+                  onClick={approveRevision}
+                  disabled={saving}
+                >
+                  ✓ Approve
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:text-red-800"
+                  onClick={rejectRevision}
+                  disabled={saving}
+                >
+                  ✗ Reject
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Revision Request Section */}
-        {status === 'PUBLISHED' && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus) && (
+        {canRequestRevision && (
           <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="text-sm font-semibold text-blue-900 mb-1">Request Revision</h3>
                 <p className="text-xs text-blue-700 mb-3">
-                  {revisionStatus === 'REQUESTED' && currentRevisionRequest?.status === 'PENDING'
+                  {currentRevisionRequest?.status === 'PENDING'
                     ? '⏳ Revision request is pending review'
-                    : revisionStatus === 'REQUESTED' && currentRevisionRequest?.status === 'APPROVED'
+                    : currentRevisionRequest?.status === 'APPROVED'
                     ? '✓ Your revision request was approved'
-                    : revisionStatus === 'REQUESTED' && currentRevisionRequest?.status === 'REJECTED'
+                    : currentRevisionRequest?.status === 'REJECTED'
                     ? '✗ Your revision request was rejected'
-                    : 'Propose changes to this published article for editorial review'}
+                    : currentRevisionRequest?.status === 'CONSUMED'
+                    ? 'Changes saved. Request a new revision to edit again.'
+                    : 'Request permission to edit this article'}
                 </p>
                 {currentRevisionRequest?.reviewComment && (
                   <p className="text-xs text-blue-600 mt-2 italic">

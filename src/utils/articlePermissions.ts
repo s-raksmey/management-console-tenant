@@ -326,7 +326,8 @@ export function canEditArticle(
   userRole: string,
   hasPermission: (permission: Permission) => boolean,
   articleStatus?: ArticleStatus,
-  revisionStatus?: string
+  revisionStatus?: string,
+  revisionRequestStatus?: string
 ): boolean {
   // User has permission to edit any article (admins/editors can always edit)
   if (hasPermission(Permission.UPDATE_ANY_ARTICLE)) {
@@ -340,9 +341,17 @@ export function canEditArticle(
       return true;
     }
     
-    // Authors can edit REVIEW and PUBLISHED articles ONLY if they have requested a revision
-    if ((articleStatus === 'REVIEW' || articleStatus === 'PUBLISHED') && revisionStatus === 'REQUESTED') {
-      return true;
+    // Authors can edit REVIEW articles only after a revision decision
+    if (articleStatus === 'REVIEW') {
+      if (revisionRequestStatus === 'CONSUMED') {
+        return false;
+      }
+      if (revisionRequestStatus === 'APPROVED' || revisionRequestStatus === 'REJECTED') {
+        return true;
+      }
+      if (revisionStatus === 'REQUESTED' && revisionRequestStatus !== 'PENDING') {
+        return true;
+      }
     }
     
     // Authors cannot edit REVIEW, PUBLISHED, or ARCHIVED articles without a revision request

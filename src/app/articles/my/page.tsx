@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useCallback } from "react";
-import { useArticles, useArticleMutations } from "@/hooks/useGraphQL";
+import { useArticles, useArticleMutations, useRevisions } from "@/hooks/useGraphQL";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Article, ArticleStatus } from "@/types/article";
@@ -27,8 +27,10 @@ export default function MyArticlesPage() {
   const [previousArticles, setPreviousArticles] = useState<Article[]>([]);
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | undefined>();
   const [isPolling, setIsPolling] = useState(true);
+  const [revisionRequestStatusById, setRevisionRequestStatusById] = useState<Record<string, string>>({});
   
   const { getArticles, loading, error } = useArticles();
+  const { getLatestRevisionRequest } = useRevisions();
   const { setArticleStatus, deleteArticle, loading: mutationLoading } = useArticleMutations();
   const { user } = useAuth();
   const { userRole, hasPermission, isAdmin } = usePermissions();
@@ -77,12 +79,13 @@ export default function MyArticlesPage() {
         
         setPreviousArticles(articles);
         setArticles(newArticles);
+        await loadRevisionStatuses(newArticles);
       }
     } catch (error) {
       console.error('Polling error:', error);
       // Don't show error toast for polling failures to avoid spam
     }
-  }, [user?.id, statusFilter, loading, articles, previousArticles, userRole, showSuccess, showError, showInfo, getArticles]);
+  }, [user?.id, statusFilter, loading, articles, previousArticles, userRole, showSuccess, showError, showInfo, getArticles, loadRevisionStatuses]);
 
   // Set up 10-second polling
   useVisibilityPolling(pollForUpdates, {
@@ -102,10 +105,41 @@ export default function MyArticlesPage() {
     
     if (response?.articles) {
       setArticles(response.articles);
+      await loadRevisionStatuses(response.articles);
     } else {
       setArticles([]);
     }
   };
+
+  const loadRevisionStatuses = useCallback(async (list: Article[]) => {
+    if (!list.length) {
+      setRevisionRequestStatusById({});
+      return;
+    }
+
+    try {
+      const results = await Promise.all(
+        list.map(async (article) => {
+          const data = await getLatestRevisionRequest(article.id);
+          const latest = data?.latestRevisionRequest;
+          if (latest?.consumedAt) {
+            return [article.id, 'CONSUMED'] as const;
+          }
+          return [article.id, latest?.status] as const;
+        })
+      );
+
+      const nextMap: Record<string, string> = {};
+      results.forEach(([id, status]) => {
+        if (status) {
+          nextMap[id] = status;
+        }
+      });
+      setRevisionRequestStatusById(nextMap);
+    } catch (error) {
+      console.error('Failed to load revision request statuses:', error);
+    }
+  }, [getLatestRevisionRequest]);
 
   const handleStatusChange = async (articleId: string, newStatus: ArticleStatus) => {
     try {
@@ -279,8 +313,17 @@ export default function MyArticlesPage() {
                         {article.isBreaking && (
                           <Badge variant="destructive" className="text-xs">Breaking</Badge>
                         )}
-                        {article.revisionStatus === 'REQUESTED' && (
+                        {revisionRequestStatusById[article.id] === 'PENDING' && (
                           <Badge variant="outline" className="bg-purple-50 border-purple-200">📝 Revision Requested</Badge>
+                        )}
+                        {revisionRequestStatusById[article.id] === 'APPROVED' && (
+                          <Badge variant="outline" className="bg-green-50 border-green-200">✅ Revision Approved</Badge>
+                        )}
+                        {revisionRequestStatusById[article.id] === 'REJECTED' && (
+                          <Badge variant="outline" className="bg-red-50 border-red-200">❌ Revision Rejected</Badge>
+                        )}
+                        {revisionRequestStatusById[article.id] === 'CONSUMED' && (
+                          <Badge variant="outline" className="bg-slate-50 border-slate-200">✔ Revision End</Badge>
                         )}
                       </div>
                     </td>

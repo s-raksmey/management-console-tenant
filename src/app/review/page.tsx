@@ -158,6 +158,9 @@ export default function ReviewQueuePage() {
                         Breaking News
                       </span>
                     )}
+                    {article.revisionStatus === 'REQUESTED' && (
+                      <Badge variant="outline" className="text-xs bg-purple-50 border-purple-200">📝 Revision Requested</Badge>
+                    )}
                     {article.breakingNewsRequestStatus === 'PENDING' && (
                       <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">🔔 Breaking Request: Pending</Badge>
                     )}
