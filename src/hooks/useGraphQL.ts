@@ -292,19 +292,33 @@ export function useArticleMutations() {
     return await mutate(SET_ARTICLE_STATUS_MUTATION, { id, status });
   }, [mutate]);
 
-  const submitForReview = useCallback(async (id: string) => {
-    const SUBMIT_FOR_REVIEW_MUTATION = `
-      mutation SubmitForReview($id: ID!) {
-        setArticleStatus(id: $id, status: REVIEW) {
-          id
-          status
-          publishedAt
+  const performWorkflowAction = useCallback(
+    async (input: { articleId: string; action: 'SUBMIT_FOR_REVIEW' | 'APPROVE' | 'REJECT'; reason?: string; notifyAuthor?: boolean }) => {
+      const PERFORM_WORKFLOW_ACTION_MUTATION = `
+        mutation PerformWorkflowAction($input: WorkflowActionInput!) {
+          performWorkflowAction(input: $input) {
+            success
+            message
+            article {
+              id
+              status
+              updatedAt
+            }
+          }
         }
-      }
-    `;
+      `;
 
-    return await mutate(SUBMIT_FOR_REVIEW_MUTATION, { id });
-  }, [mutate]);
+      return await mutate(PERFORM_WORKFLOW_ACTION_MUTATION, { input });
+    },
+    [mutate]
+  );
+
+  const submitForReview = useCallback(async (articleId: string) => {
+    return await performWorkflowAction({
+      articleId,
+      action: 'SUBMIT_FOR_REVIEW',
+    });
+  }, [performWorkflowAction]);
 
 
   const deleteArticle = useCallback(async (id: string) => {
@@ -436,6 +450,7 @@ export function useArticleMutations() {
   return {
     upsertArticle,
     setArticleStatus,
+    performWorkflowAction,
     submitForReview,
     deleteArticle,
     requestBreakingNews,

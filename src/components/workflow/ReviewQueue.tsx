@@ -12,9 +12,9 @@ import {
   ReviewQueueResponse 
 } from '../../graphql/queries/reviewQueue';
 import { 
-  SET_ARTICLE_STATUS_MUTATION, 
-  SetArticleStatusVariables, 
-  SetArticleStatusResponse 
+  PERFORM_WORKFLOW_ACTION_MUTATION, 
+  PerformWorkflowActionVariables, 
+  PerformWorkflowActionResponse 
 } from '../../graphql/mutations/articleWorkflow';
 
 interface Article {
@@ -132,18 +132,19 @@ export const ReviewQueue: React.FC = () => {
     try {
       const client = getAuthenticatedGqlClient();
       
-      // Map action to article status
-      const targetStatus = action === 'APPROVE' ? 'PUBLISHED' : 'ARCHIVED';
-      
-      const response = await client.request<SetArticleStatusResponse>(
-        SET_ARTICLE_STATUS_MUTATION,
+      const response = await client.request<PerformWorkflowActionResponse>(
+        PERFORM_WORKFLOW_ACTION_MUTATION,
         {
-          id: articleId,
-          status: targetStatus
-        } as SetArticleStatusVariables
+          input: {
+            articleId,
+            action,
+            reason,
+            notifyAuthor: true,
+          },
+        } as PerformWorkflowActionVariables
       );
 
-      if (response.setArticleStatus) {
+      if (response.performWorkflowAction?.success) {
         // Remove article from review queue since it's no longer in REVIEW status
         setReviewQueue(prev => ({
           ...prev,
@@ -353,12 +354,6 @@ export const ReviewQueue: React.FC = () => {
                               {processingArticles.has(article.id) ? 'Processing...' : 'Reject'}
                             </button>
                           </PermissionGuard>
-                          <button
-                            onClick={() => window.open(`/articles/${article.id}`, '_blank')}
-                            className="px-3 py-1 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition-colors"
-                          >
-                            Preview
-                          </button>
                         </div>
                       </div>
                     </div>

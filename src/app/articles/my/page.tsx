@@ -31,7 +31,7 @@ export default function MyArticlesPage() {
   
   const { getArticles, loading, error } = useArticles();
   const { getLatestRevisionRequest } = useRevisions();
-  const { setArticleStatus, deleteArticle, loading: mutationLoading } = useArticleMutations();
+  const { setArticleStatus, performWorkflowAction, deleteArticle, loading: mutationLoading } = useArticleMutations();
   const { user } = useAuth();
   const { userRole, hasPermission, isAdmin } = usePermissions();
   const { showSuccess, showError, showInfo } = useToastHelpers();
@@ -39,6 +39,36 @@ export default function MyArticlesPage() {
   useEffect(() => {
     loadMyArticles();
   }, [statusFilter, user]);
+
+  const loadRevisionStatuses = useCallback(async (list: Article[]) => {
+    if (!list.length) {
+      setRevisionRequestStatusById({});
+      return;
+    }
+
+    try {
+      const results = await Promise.all(
+        list.map(async (article) => {
+          const data = await getLatestRevisionRequest(article.id);
+          const latest = data?.latestRevisionRequest;
+          if (latest?.consumedAt) {
+            return [article.id, 'CONSUMED'] as const;
+          }
+          return [article.id, latest?.status] as const;
+        })
+      );
+
+      const nextMap: Record<string, string> = {};
+      results.forEach(([id, status]) => {
+        if (status) {
+          nextMap[id] = status;
+        }
+      });
+      setRevisionRequestStatusById(nextMap);
+    } catch (error) {
+      console.error('Failed to load revision request statuses:', error);
+    }
+  }, [getLatestRevisionRequest]);
 
   // Polling function to check for status changes
   const pollForUpdates = useCallback(async () => {
@@ -111,41 +141,16 @@ export default function MyArticlesPage() {
     }
   };
 
-  const loadRevisionStatuses = useCallback(async (list: Article[]) => {
-    if (!list.length) {
-      setRevisionRequestStatusById({});
-      return;
-    }
-
-    try {
-      const results = await Promise.all(
-        list.map(async (article) => {
-          const data = await getLatestRevisionRequest(article.id);
-          const latest = data?.latestRevisionRequest;
-          if (latest?.consumedAt) {
-            return [article.id, 'CONSUMED'] as const;
-          }
-          return [article.id, latest?.status] as const;
-        })
-      );
-
-      const nextMap: Record<string, string> = {};
-      results.forEach(([id, status]) => {
-        if (status) {
-          nextMap[id] = status;
-        }
-      });
-      setRevisionRequestStatusById(nextMap);
-    } catch (error) {
-      console.error('Failed to load revision request statuses:', error);
-    }
-  }, [getLatestRevisionRequest]);
-
   const handleStatusChange = async (articleId: string, newStatus: ArticleStatus) => {
     try {
       const article = articles.find(a => a.id === articleId);
       const oldStatus = article?.status;
-      const result = await setArticleStatus(articleId, newStatus);
+      const result = oldStatus === 'DRAFT' && newStatus === 'REVIEW'
+        ? await performWorkflowAction({
+            articleId,
+            action: 'SUBMIT_FOR_REVIEW',
+          })
+        : await setArticleStatus(articleId, newStatus);
       
       if (!result) {
         throw new Error('No response from server. Please try again.');

@@ -23,7 +23,6 @@ export enum Permission {
   DELETE_ANY_ARTICLE = 'DELETE_ANY_ARTICLE',
   PUBLISH_ARTICLE = 'PUBLISH_ARTICLE',
   UNPUBLISH_ARTICLE = 'UNPUBLISH_ARTICLE',
-  PREVIEW_ARTICLE = 'PREVIEW_ARTICLE',
   
   // Article Features
   SET_FEATURED = 'SET_FEATURED',
@@ -67,7 +66,6 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.DELETE_ANY_ARTICLE,
     Permission.PUBLISH_ARTICLE,
     Permission.UNPUBLISH_ARTICLE,
-    Permission.PREVIEW_ARTICLE,
     Permission.SET_FEATURED,
     Permission.SET_BREAKING_NEWS,
     Permission.SET_EDITORS_PICK,
@@ -84,14 +82,12 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   ],
   EDITOR: [
     // Content management and editorial control
-    Permission.VIEW_ALL_USERS,
     Permission.CREATE_ARTICLE,
     Permission.UPDATE_OWN_ARTICLE,
     Permission.UPDATE_ANY_ARTICLE,
     Permission.DELETE_OWN_ARTICLE,
     Permission.PUBLISH_ARTICLE,
     Permission.UNPUBLISH_ARTICLE,
-    Permission.PREVIEW_ARTICLE,
     Permission.SET_FEATURED,
     Permission.SET_BREAKING_NEWS,
     Permission.SET_EDITORS_PICK,
@@ -107,7 +103,6 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.CREATE_ARTICLE,
     Permission.UPDATE_OWN_ARTICLE,
     Permission.DELETE_OWN_ARTICLE,
-    Permission.PREVIEW_ARTICLE,
   ],
 };
 

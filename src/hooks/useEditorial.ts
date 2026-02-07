@@ -347,15 +347,21 @@ export function useEditorial() {
     }
 
     const APPROVE_ARTICLE_MUTATION = `
-      mutation ApproveArticle($id: ID!) {
-        setArticleStatus(id: $id, status: PUBLISHED) {
-          id
-          status
+      mutation ApproveArticle($input: WorkflowActionInput!) {
+        performWorkflowAction(input: $input) {
+          success
+          message
+          article {
+            id
+            status
+          }
         }
       }
     `;
 
-    return await executeQuery(APPROVE_ARTICLE_MUTATION, { id: articleId });
+    return await executeQuery(APPROVE_ARTICLE_MUTATION, {
+      input: { articleId, action: 'APPROVE', notifyAuthor: true },
+    });
   }, [executeQuery, user]);
 
   // Reject an article with RBAC check
@@ -368,15 +374,21 @@ export function useEditorial() {
     }
 
     const REJECT_ARTICLE_MUTATION = `
-      mutation RejectArticle($id: ID!, $reason: String) {
-        setArticleStatus(id: $id, status: ARCHIVED, reason: $reason) {
-          id
-          status
+      mutation RejectArticle($input: WorkflowActionInput!) {
+        performWorkflowAction(input: $input) {
+          success
+          message
+          article {
+            id
+            status
+          }
         }
       }
     `;
 
-    return await executeQuery(REJECT_ARTICLE_MUTATION, { id: articleId, reason });
+    return await executeQuery(REJECT_ARTICLE_MUTATION, {
+      input: { articleId, action: 'REJECT', reason, notifyAuthor: true },
+    });
   }, [executeQuery, user]);
 
   // Feature an article with RBAC check

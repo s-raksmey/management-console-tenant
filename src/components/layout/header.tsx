@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Bell, 
@@ -11,7 +11,12 @@ import {
   Moon, 
   Sun, 
   Globe,
-  ChevronDown
+  ChevronDown,
+  CheckCircle,
+  XCircle,
+  Send,
+  FileText,
+  Archive
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -33,6 +38,9 @@ import {
 import { MobileNavTrigger } from "./mobile-nav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearch } from "@/hooks/useGraphQL";
+import { useNotifications, type NotificationRecord, type NotificationTypeValue } from "@/hooks/useNotifications";
+import { useVisibilityPolling } from "@/hooks/usePolling";
+import { formatDistanceToNow } from "date-fns";
 
 interface HeaderProps {
   onMobileNavOpen: (open: boolean) => void;
@@ -49,6 +57,16 @@ export function Header({ onMobileNavOpen }: HeaderProps) {
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
+
+  const {
+    getNotifications,
+    getUnreadCount,
+    markNotificationRead,
+    markAllNotificationsRead,
+  } = useNotifications();
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
@@ -57,6 +75,125 @@ export function Header({ onMobileNavOpen }: HeaderProps) {
 
   const handleLogout = () => {
     logout();
+  };
+
+  const formatNotificationTime = (value?: string | null) => {
+    if (!value) return '';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return formatDistanceToNow(date, { addSuffix: true });
+  };
+
+  const getNotificationMeta = (type: NotificationTypeValue) => {
+    switch (type) {
+      case 'SUBMISSION':
+        return { label: 'Submission', accent: 'bg-blue-100 text-blue-700', icon: Send };
+      case 'APPROVAL':
+      case 'PUBLICATION':
+        return { label: 'Approved', accent: 'bg-green-100 text-green-700', icon: CheckCircle };
+      case 'REJECTION':
+        return { label: 'Rejected', accent: 'bg-red-100 text-red-700', icon: XCircle };
+      case 'UNPUBLICATION':
+      case 'ARCHIVE':
+        return { label: 'Archived', accent: 'bg-slate-100 text-slate-700', icon: Archive };
+      case 'DRAFT_SAVED':
+        return { label: 'Draft', accent: 'bg-amber-100 text-amber-700', icon: FileText };
+      default:
+        return { label: 'Update', accent: 'bg-slate-100 text-slate-700', icon: FileText };
+    }
+  };
+
+  const getNotificationTarget = (notification: NotificationRecord) => {
+    if (notification.type === 'SUBMISSION') {
+      return '/review';
+    }
+    if (notification.articleId) {
+      return `/articles/${notification.articleId}`;
+    }
+    return undefined;
+  };
+
+  const getNotificationFromLabel = (notification: NotificationRecord) => {
+    const fromUser = notification.fromUser;
+    if (fromUser?.name && fromUser.name.trim()) {
+      return `From: ${fromUser.name.trim()}`;
+    }
+    if (fromUser?.email && fromUser.email.trim()) {
+      return `From: ${fromUser.email.trim()}`;
+    }
+
+    if (!notification.metadata || typeof notification.metadata !== 'object') {
+      return null;
+    }
+
+    const metadata = notification.metadata as Record<string, unknown>;
+    const fromUserName = metadata.fromUserName;
+    const fromUserEmail = metadata.fromUserEmail;
+
+    if (typeof fromUserName === 'string' && fromUserName.trim()) {
+      return `From: ${fromUserName.trim()}`;
+    }
+
+    if (typeof fromUserEmail === 'string' && fromUserEmail.trim()) {
+      return `From: ${fromUserEmail.trim()}`;
+    }
+
+    return null;
+  };
+
+  const loadNotifications = useCallback(async () => {
+    if (!user?.id) return;
+    setIsNotificationsLoading(true);
+
+    try {
+      const [listResult, countResult] = await Promise.all([
+        getNotifications({ limit: 6, offset: 0, unreadOnly: false }),
+        getUnreadCount(),
+      ]);
+      const list = listResult?.myNotifications?.notifications ?? [];
+      setNotifications(list);
+      setUnreadCount(countResult?.unreadNotificationCount ?? 0);
+    } catch {
+      setNotifications([]);
+      setUnreadCount(0);
+    } finally {
+      setIsNotificationsLoading(false);
+    }
+  }, [user?.id, getNotifications, getUnreadCount]);
+
+  const handleNotificationClick = async (notification: NotificationRecord, targetPath?: string) => {
+    if (!notification.isRead) {
+      const result = await markNotificationRead(notification.id);
+      if (result?.markNotificationRead?.isRead) {
+        setNotifications((prev) =>
+          prev.map((item) =>
+            item.id === notification.id
+              ? { ...item, isRead: true, readAt: result.markNotificationRead.readAt ?? item.readAt }
+              : item
+          )
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+    }
+
+    if (targetPath) {
+      router.push(targetPath);
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    if (unreadCount === 0) return;
+    const result = await markAllNotificationsRead();
+    if (result?.markAllNotificationsRead) {
+      setNotifications((prev) =>
+        prev.map((item) => ({
+          ...item,
+          isRead: true,
+          readAt: item.readAt ?? new Date().toISOString(),
+        }))
+      );
+      setUnreadCount(0);
+    }
   };
 
   // Get user initials for avatar
@@ -146,6 +283,16 @@ export function Header({ onMobileNavOpen }: HeaderProps) {
 
     return () => clearTimeout(handle);
   }, [searchQuery, searchArticles]);
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
+
+  useVisibilityPolling(loadNotifications, {
+    interval: 10000,
+    enabled: !!user?.id,
+    immediate: false,
+  });
 
   return (
     <TooltipProvider>
@@ -294,60 +441,112 @@ export function Header({ onMobileNavOpen }: HeaderProps) {
           </Tooltip>
 
           {/* Notifications */}
-          <DropdownMenu>
+          <DropdownMenu onOpenChange={(open) => open && loadNotifications()}>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="relative h-9 w-9 p-0">
                 <Bell className="h-4 w-4" />
-                <Badge
-                  variant="destructive"
-                  className="absolute items-center justify-center -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs animate-pulse"
-                >
-                  3
-                </Badge>
+                {unreadCount > 0 && (
+                  <Badge
+                    variant="destructive"
+                    className="absolute items-center justify-center -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs animate-pulse"
+                  >
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Badge>
+                )}
                 <span className="sr-only">Notifications</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel className="flex items-center justify-between">
+            <DropdownMenuContent align="end" className="w-96 p-0 overflow-hidden">
+              <DropdownMenuLabel className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-800">
                 Notifications
-                <Badge variant="secondary" className="text-xs">3 new</Badge>
+                {unreadCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {unreadCount} new
+                  </Badge>
+                )}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <div className="max-h-64 overflow-y-auto">
-                <DropdownMenuItem className="flex-col items-start p-4 cursor-pointer">
-                  <div className="flex items-center gap-2 w-full">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="font-medium text-sm">New article published</span>
-                    <span className="text-xs text-slate-500 ml-auto">2m ago</span>
+              <div className="max-h-72 overflow-y-auto">
+                {isNotificationsLoading && notifications.length === 0 ? (
+                  <div className="px-4 py-3 text-sm text-slate-500">
+                    <div className="flex items-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-500"></div>
+                      <span>Loading notifications...</span>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-600 mt-1">
-                    "Breaking News: Tech Innovation" has been published successfully.
-                  </p>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex-col items-start p-4 cursor-pointer">
-                  <div className="flex items-center gap-2 w-full">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="font-medium text-sm">Comment approved</span>
-                    <span className="text-xs text-slate-500 ml-auto">5m ago</span>
+                ) : notifications.length > 0 ? (
+                  notifications.map((notification) => (
+                    <DropdownMenuItem
+                      key={notification.id}
+                      className={`group flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors ${
+                        notification.isRead ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/60 hover:bg-blue-50'
+                      }`}
+                      onClick={() => handleNotificationClick(notification, getNotificationTarget(notification))}
+                    >
+                      {(() => {
+                        const meta = getNotificationMeta(notification.type);
+                        const Icon = meta.icon;
+                        const target = getNotificationTarget(notification);
+                        const actionLabel = target === '/review'
+                          ? 'Review queue'
+                          : target
+                            ? 'Open article'
+                            : 'View details';
+                        const fromLabel = getNotificationFromLabel(notification);
+
+                        return (
+                          <>
+                            <div className="relative mt-0.5 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm">
+                              <Icon className="h-4 w-4 text-slate-700" />
+                              {!notification.isRead && (
+                                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-white"></span>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <div className="text-sm font-semibold text-slate-900 truncate">
+                                  {notification.title}
+                                </div>
+                                <span className="text-xs text-slate-500 ml-auto whitespace-nowrap">
+                                  {formatNotificationTime(notification.createdAt)}
+                                </span>
+                              </div>
+                              {notification.message && (
+                                <p className="mt-1 text-xs text-slate-600 line-clamp-2">
+                                  {notification.message}
+                                </p>
+                              )}
+                              <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
+                                <span className="text-blue-600 group-hover:text-blue-700">
+                                  {actionLabel}
+                                </span>
+                                {fromLabel && (
+                                  <span className="truncate">• {fromLabel}</span>
+                                )}
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </DropdownMenuItem>
+                  ))
+                ) : (
+                  <div className="px-4 py-6 text-center">
+                    <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-2">
+                      <Bell className="h-5 w-5 text-slate-400" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-700 mb-1">No notifications</p>
+                    <p className="text-xs text-slate-500">You are all caught up</p>
                   </div>
-                  <p className="text-xs text-slate-600 mt-1">
-                    A comment on "Latest Updates" has been approved.
-                  </p>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="flex-col items-start p-4 cursor-pointer">
-                  <div className="flex items-center gap-2 w-full">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                    <span className="font-medium text-sm">System update</span>
-                    <span className="text-xs text-slate-500 ml-auto">1h ago</span>
-                  </div>
-                  <p className="text-xs text-slate-600 mt-1">
-                    System maintenance completed successfully.
-                  </p>
-                </DropdownMenuItem>
+                )}
               </div>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-center text-sm text-blue-600 cursor-pointer">
-                View all notifications
+              <DropdownMenuItem
+                className="justify-center text-sm text-blue-600 cursor-pointer py-2.5"
+                onClick={handleMarkAllRead}
+                disabled={unreadCount === 0}
+              >
+                Mark all as read
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

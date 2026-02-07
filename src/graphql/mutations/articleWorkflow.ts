@@ -12,6 +12,21 @@ export const SET_ARTICLE_STATUS_MUTATION = gql`
   }
 `;
 
+export const PERFORM_WORKFLOW_ACTION_MUTATION = gql`
+  mutation PerformWorkflowAction($input: WorkflowActionInput!) {
+    performWorkflowAction(input: $input) {
+      success
+      message
+      article {
+        id
+        title
+        status
+        updatedAt
+      }
+    }
+  }
+`;
+
 export interface SetArticleStatusVariables {
   id: string;
   status: 'DRAFT' | 'REVIEW' | 'PUBLISHED' | 'ARCHIVED';
@@ -23,5 +38,27 @@ export interface SetArticleStatusResponse {
     title: string;
     status: string;
     updatedAt: string;
+  };
+}
+
+export interface PerformWorkflowActionVariables {
+  input: {
+    articleId: string;
+    action: 'SUBMIT_FOR_REVIEW' | 'APPROVE' | 'REJECT';
+    reason?: string;
+    notifyAuthor?: boolean;
+  };
+}
+
+export interface PerformWorkflowActionResponse {
+  performWorkflowAction: {
+    success: boolean;
+    message?: string | null;
+    article?: {
+      id: string;
+      title: string;
+      status: string;
+      updatedAt: string;
+    } | null;
   };
 }

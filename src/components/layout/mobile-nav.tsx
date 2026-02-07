@@ -22,52 +22,64 @@ import {
   SheetTitle,
   SheetClose,
 } from "@/components/ui/sheet";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface MobileNavProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const navigation = [
-  {
-    name: "Dashboard",
-    href: "/",
-    icon: LayoutDashboard,
-  },
-  {
-    name: "Articles",
-    href: "/articles",
-    icon: FileText,
-  },
-  {
-    name: "Categories",
-    href: "/categories",
-    icon: Tags,
-  },
-  {
-    name: "Media",
-    href: "/media",
-    icon: Image,
-  },
-  {
-    name: "Analytics",
-    href: "/analytics",
-    icon: BarChart3,
-  },
-  {
-    name: "Users",
-    href: "/users",
-    icon: Users,
-  },
-  {
+const getNavigation = (userRole?: string) => {
+  const baseItems = [
+    {
+      name: "Dashboard",
+      href: "/",
+      icon: LayoutDashboard,
+    },
+    {
+      name: "Articles",
+      href: "/articles",
+      icon: FileText,
+    },
+    {
+      name: "Categories",
+      href: "/categories",
+      icon: Tags,
+    },
+    {
+      name: "Media",
+      href: "/media",
+      icon: Image,
+    },
+    {
+      name: "Analytics",
+      href: "/analytics",
+      icon: BarChart3,
+    },
+  ];
+
+  if (userRole === "ADMIN") {
+    baseItems.push({
+      name: "Users",
+      href: "/users",
+      icon: Users,
+    });
+  }
+
+  baseItems.push({
     name: "Settings",
     href: "/settings",
     icon: Settings,
-  },
-];
+  });
+
+  return baseItems;
+};
 
 export function MobileNav({ open, onOpenChange }: MobileNavProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const userRole = user?.role?.toString().toUpperCase();
+  const navigation = getNavigation(userRole);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

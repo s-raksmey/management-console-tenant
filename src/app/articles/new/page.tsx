@@ -49,7 +49,7 @@ function titleCase(slug: string) {
 export default function NewArticlePage() {
   const client = useMemo(() => getAuthenticatedGqlClient(), []);
   const editorRef = useRef<NewsEditorRef>(null);
-  const { requestBreakingNews } = useArticleMutations();
+  const { performWorkflowAction, requestBreakingNews } = useArticleMutations();
   
   // Category validation hook
   const { categories, loading: categoriesLoading, error: categoriesError, isValidCategory } = useCategories();
@@ -116,6 +116,9 @@ export default function NewArticlePage() {
       const contentJson: OutputData =
         (await editorRef.current?.save()) ?? { blocks: [] };
 
+      const shouldSubmitForReview = status === 'REVIEW';
+      const statusForSave = shouldSubmitForReview ? 'DRAFT' : status;
+
       const response = await client.request(M_UPSERT_ARTICLE, {
         input: {
           title,
@@ -124,11 +127,23 @@ export default function NewArticlePage() {
           authorName,
           categorySlug,
           topic: topic || null,
-          status,
+          status: statusForSave,
           isBreaking,
           contentJson,
         },
       });
+
+      if (shouldSubmitForReview && response?.upsertArticle?.id) {
+        const result = await performWorkflowAction({
+          articleId: response.upsertArticle.id,
+          action: 'SUBMIT_FOR_REVIEW',
+        });
+
+        if (!result?.performWorkflowAction?.success) {
+          const message = result?.performWorkflowAction?.message || 'Failed to submit for review.';
+          throw new Error(message);
+        }
+      }
 
       // If user requested breaking news, send the request after creating article
       if (shouldRequestBreakingNews && response?.upsertArticle?.id) {

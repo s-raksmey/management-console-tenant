@@ -162,54 +162,6 @@ export const Q_ARTICLE_BY_SLUG = /* GraphQL */ `
 `;
 
 /* =========================
-   Article Preview
-========================= */
-
-export const Q_PREVIEW_ARTICLE = /* GraphQL */ `
-  query PreviewArticle($id: ID!) {
-    articleById(id: $id) {
-      id
-      title
-      slug
-      status
-      excerpt
-      contentJson
-      authorName
-      coverImageUrl
-      category {
-        name
-        slug
-      }
-      createdAt
-      updatedAt
-      publishedAt
-    }
-  }
-`;
-
-export const Q_PREVIEW_ARTICLE_BY_SLUG = /* GraphQL */ `
-  query PreviewArticleBySlug($slug: String!) {
-    articleBySlug(slug: $slug) {
-      id
-      title
-      slug
-      status
-      excerpt
-      contentJson
-      authorName
-      coverImageUrl
-      category {
-        name
-        slug
-      }
-      createdAt
-      updatedAt
-      publishedAt
-    }
-  }
-`;
-
-/* =========================
    Revision Requests & History
 ========================= */
 

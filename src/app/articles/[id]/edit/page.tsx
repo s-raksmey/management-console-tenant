@@ -61,7 +61,16 @@ export default function EditArticlePage() {
 
   const client = useMemo(() => getAuthenticatedGqlClient(), []);
   const editorRef = useRef<NewsEditorRef>(null);
-  const { requestBreakingNews, requestRevision, approveRevisionRequest, rejectRevisionRequest, approveBreakingNewsRequest, rejectBreakingNewsRequest, consumeRevisionRequest } = useArticleMutations();
+  const {
+    performWorkflowAction,
+    requestBreakingNews,
+    requestRevision,
+    approveRevisionRequest,
+    rejectRevisionRequest,
+    approveBreakingNewsRequest,
+    rejectBreakingNewsRequest,
+    consumeRevisionRequest
+  } = useArticleMutations();
   const { getLatestRevisionRequest } = useRevisions();
   
   // Category validation hook
@@ -207,6 +216,8 @@ export default function EditArticlePage() {
 
     setSaving(true);
     try {
+      const shouldSubmitForReview = nextStatus === 'REVIEW' && originalStatus !== 'REVIEW';
+      const statusForSave = shouldSubmitForReview ? 'DRAFT' : nextStatus;
       const contentJson = (await editorRef.current?.save()) ?? { blocks: [] };
 
       const response = await client.request(M_UPSERT_ARTICLE, {
@@ -218,11 +229,23 @@ export default function EditArticlePage() {
           authorName, // ✅ ADDED
           categorySlug,
           topic: topic || null,
-          status: nextStatus,
+          status: statusForSave,
           isBreaking,
           contentJson,
         },
       });
+
+      if (shouldSubmitForReview && response?.upsertArticle?.id) {
+        const result = await performWorkflowAction({
+          articleId: response.upsertArticle.id,
+          action: 'SUBMIT_FOR_REVIEW',
+        });
+
+        if (!result?.performWorkflowAction?.success) {
+          const message = result?.performWorkflowAction?.message || 'Failed to submit for review.';
+          throw new Error(message);
+        }
+      }
 
       // If user requested breaking news, send the request after updating article
       const currentBreakingStatus = response?.upsertArticle?.breakingNewsRequestStatus;
@@ -247,7 +270,8 @@ export default function EditArticlePage() {
         }
       }
 
-      setStatus(nextStatus);
+      setStatus(shouldSubmitForReview ? 'REVIEW' : nextStatus);
+      setOriginalStatus(shouldSubmitForReview ? 'REVIEW' : nextStatus);
 
       if (response?.upsertArticle?.id) {
         setOriginalTitle(title);
@@ -292,7 +316,71 @@ export default function EditArticlePage() {
   }
 
   async function publish() {
+    if (status === "REVIEW") {
+      await approveFromReview();
+      return;
+    }
     await upsertArticle("PUBLISHED", false);
+  }
+
+  async function approveFromReview() {
+    if (!hasPermission(Permission.APPROVE_ARTICLES)) {
+      setValidationError("You do not have permission to approve articles.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const result = await performWorkflowAction({
+        articleId: id,
+        action: "APPROVE",
+        notifyAuthor: true,
+      });
+
+      if (!result?.performWorkflowAction?.success) {
+        const message = result?.performWorkflowAction?.message || "Failed to approve article.";
+        throw new Error(message);
+      }
+
+      setStatus("PUBLISHED");
+      setOriginalStatus("PUBLISHED");
+      setValidationError(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to approve article.";
+      setValidationError(message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function rejectFromReview() {
+    if (!hasPermission(Permission.REJECT_ARTICLES)) {
+      setValidationError("You do not have permission to reject articles.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const result = await performWorkflowAction({
+        articleId: id,
+        action: "REJECT",
+        notifyAuthor: true,
+      });
+
+      if (!result?.performWorkflowAction?.success) {
+        const message = result?.performWorkflowAction?.message || "Failed to reject article.";
+        throw new Error(message);
+      }
+
+      setStatus("ARCHIVED");
+      setOriginalStatus("ARCHIVED");
+      setValidationError(null);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to reject article.";
+      setValidationError(message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function remove() {
@@ -524,7 +612,21 @@ export default function EditArticlePage() {
               Unpublish
             </Button>
           )}
-          {status !== "PUBLISHED" && hasPermission(Permission.PUBLISH_ARTICLE) && (
+          {status === "REVIEW" && (
+            <>
+              {hasPermission(Permission.APPROVE_ARTICLES) && (
+                <Button variant="outline" onClick={approveFromReview} disabled={saving}>
+                  Approve & Publish
+                </Button>
+              )}
+              {hasPermission(Permission.REJECT_ARTICLES) && (
+                <Button variant="outline" onClick={rejectFromReview} disabled={saving}>
+                  Reject
+                </Button>
+              )}
+            </>
+          )}
+          {status !== "PUBLISHED" && status !== "REVIEW" && hasPermission(Permission.PUBLISH_ARTICLE) && (
             <Button variant="outline" onClick={publish} disabled={saving}>
               Publish
             </Button>

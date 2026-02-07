@@ -35,7 +35,14 @@ export default function AdminArticlesPage() {
   const client = useMemo(() => getAuthenticatedGqlClient(), []);
   const { getArticles, loading, error } = useArticles();
   const { getLatestRevisionRequest } = useRevisions();
-  const { setArticleStatus, deleteArticle, approveRevisionRequest, rejectRevisionRequest, loading: mutationLoading } = useArticleMutations();
+  const {
+    setArticleStatus,
+    performWorkflowAction,
+    deleteArticle,
+    approveRevisionRequest,
+    rejectRevisionRequest,
+    loading: mutationLoading
+  } = useArticleMutations();
   const { user } = useAuth();
   const { userRole, hasPermission, isAdmin } = usePermissions();
 
@@ -99,7 +106,18 @@ export default function AdminArticlesPage() {
 
 
   const handleStatusChange = async (articleId: string, newStatus: ArticleStatus) => {
-    const response = await setArticleStatus(articleId, newStatus);
+    const article = articles.find(item => item.id === articleId);
+    const isReviewApproval = article?.status === 'REVIEW' && newStatus === 'PUBLISHED';
+    const isReviewRejection = article?.status === 'REVIEW' && newStatus === 'ARCHIVED';
+
+    const response = isReviewApproval || isReviewRejection
+      ? await performWorkflowAction({
+          articleId,
+          action: isReviewApproval ? 'APPROVE' : 'REJECT',
+          notifyAuthor: true,
+        })
+      : await setArticleStatus(articleId, newStatus);
+
     if (response) {
       // Refresh the list
       loadArticles();

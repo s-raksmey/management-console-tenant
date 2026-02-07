@@ -14,7 +14,6 @@ import { format } from 'date-fns';
 import { 
   CheckCircle, 
   XCircle, 
-  Eye, 
   Edit, 
   Loader2,
   FileText,
@@ -28,7 +27,7 @@ export default function ReviewQueuePage() {
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   
   const { getArticles, loading, error } = useArticles();
-  const { setArticleStatus } = useArticleMutations();
+  const { performWorkflowAction } = useArticleMutations();
   const { hasPermission } = usePermissions();
   const { showSuccess, showError } = useToastHelpers();
 
@@ -54,7 +53,11 @@ export default function ReviewQueuePage() {
 
     try {
       setProcessingIds(prev => new Set(prev).add(articleId));
-      await setArticleStatus(articleId, 'PUBLISHED');
+      await performWorkflowAction({
+        articleId,
+        action: 'APPROVE',
+        notifyAuthor: true,
+      });
       
       const notification = getApprovalNotification();
       showSuccess(notification.title, notification.message);
@@ -78,7 +81,11 @@ export default function ReviewQueuePage() {
 
     try {
       setProcessingIds(prev => new Set(prev).add(articleId));
-      await setArticleStatus(articleId, 'ARCHIVED');
+      await performWorkflowAction({
+        articleId,
+        action: 'REJECT',
+        notifyAuthor: true,
+      });
       
       const notification = getRejectionNotification();
       showSuccess(notification.title, notification.message);
@@ -191,13 +198,6 @@ export default function ReviewQueuePage() {
                 </div>
 
                 <div className="flex items-center space-x-2 ml-6">
-                  <Link href={`/preview/id/${article.id}`} target="_blank" rel="noopener noreferrer">
-                    <Button variant="outline" size="sm">
-                      <Eye className="w-4 h-4 mr-1" />
-                      Preview
-                    </Button>
-                  </Link>
-
                   {hasPermission(Permission.UPDATE_ANY_ARTICLE) && (
                     <Link href={`/articles/${article.id}/edit`}>
                       <Button variant="outline" size="sm">
