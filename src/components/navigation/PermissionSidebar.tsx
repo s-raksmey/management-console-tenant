@@ -219,23 +219,23 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
-        {!collapsed && (
+      <div className="flex items-center justify-between h-14 px-4 border-b border-slate-100 bg-white">
+        {!collapsed ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
             className="flex items-center gap-3"
           >
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
+            <div className="w-8 h-8 bg-slate-900 rounded-md flex items-center justify-center">
+              <span className="text-white font-semibold text-sm">PN</span>
             </div>
-            <div>
-              <h2 className="font-semibold text-slate-900">Pulse News</h2>
+            <div className="leading-tight">
+              <p className="text-sm font-semibold text-slate-900">Pulse News</p>
               <p className="text-xs text-slate-500 capitalize">{userRole?.toLowerCase()} Panel</p>
             </div>
           </motion.div>
-        )}
+        ) : null}
         
         <Button
           variant="ghost"

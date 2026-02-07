@@ -44,9 +44,10 @@ import { formatDistanceToNow } from "date-fns";
 
 interface HeaderProps {
   onMobileNavOpen: (open: boolean) => void;
+  showBrand?: boolean;
 }
 
-export function Header({ onMobileNavOpen }: HeaderProps) {
+export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { searchArticles } = useSearch();
@@ -296,17 +297,18 @@ export function Header({ onMobileNavOpen }: HeaderProps) {
 
   return (
     <TooltipProvider>
-      <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-slate-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60 px-4 md:px-6 shadow-sm">
+      <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-slate-100 bg-white px-4 md:px-6">
         {/* Mobile nav trigger */}
         <MobileNavTrigger onOpenChange={onMobileNavOpen} />
 
-        {/* Logo/Brand - Hidden on mobile */}
-        <div className="hidden lg:flex items-center gap-2 mr-4">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">PN</span>
+        {showBrand && (
+          <div className="hidden lg:flex items-center gap-2 mr-4">
+            <div className="w-8 h-8 bg-slate-900 rounded-md flex items-center justify-center">
+              <span className="text-white font-semibold text-sm">PN</span>
+            </div>
+            <span className="font-semibold tracking-tight text-slate-900">Pulse News</span>
           </div>
-          <span className="font-semibold text-slate-800">Pulse News</span>
-        </div>
+        )}
 
         {/* Enhanced Search */}
         <div className="flex-1 max-w-lg">
@@ -327,10 +329,10 @@ export function Header({ onMobileNavOpen }: HeaderProps) {
                 name="search"
                 type="search"
                 placeholder="Search articles, categories, users... (Ctrl+K)"
-                className={`w-full rounded-lg border bg-white pl-10 pr-12 py-2.5 text-sm placeholder:text-slate-500 transition-all duration-200 ${
-                  searchFocused 
-                    ? 'border-blue-500 ring-2 ring-blue-500/20 shadow-sm' 
-                    : 'border-slate-200 hover:border-slate-300'
+                className={`w-full rounded-full border pl-10 pr-12 py-2 text-sm placeholder:text-slate-500 transition-colors duration-200 ${
+                  searchFocused
+                    ? 'border-slate-300 bg-white'
+                    : 'border-slate-200 bg-slate-50/80 hover:bg-white'
                 }`}
                 onFocus={() => {
                   setSearchFocused(true);
@@ -345,7 +347,7 @@ export function Header({ onMobileNavOpen }: HeaderProps) {
               />
               {!searchFocused && (
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded border bg-slate-100 px-1.5 font-mono text-xs text-slate-600">
+                  <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded-full border border-slate-200 bg-white px-1.5 font-mono text-xs text-slate-500">
                     <span className="text-xs">⌘</span>K
                   </kbd>
                 </div>
@@ -396,12 +398,12 @@ export function Header({ onMobileNavOpen }: HeaderProps) {
         </div>
 
         {/* Right side actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
 
           {/* Language Selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                 <Globe className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -422,10 +424,10 @@ export function Header({ onMobileNavOpen }: HeaderProps) {
           {/* Theme Toggle */}
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-9 w-9 p-0"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
                 onClick={toggleDarkMode}
               >
                 {isDarkMode ? (
@@ -443,7 +445,7 @@ export function Header({ onMobileNavOpen }: HeaderProps) {
           {/* Notifications */}
           <DropdownMenu onOpenChange={(open) => open && loadNotifications()}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="relative h-9 w-9 p-0">
+              <Button variant="ghost" size="sm" className="relative h-8 w-8 p-0">
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
                   <Badge
@@ -554,7 +556,7 @@ export function Header({ onMobileNavOpen }: HeaderProps) {
           {/* User profile dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 h-9 px-2">
+              <Button variant="ghost" className="flex items-center gap-2 h-8 px-2">
                 <Avatar className="h-7 w-7">
                   <AvatarImage src="/avatar.png" />
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs">
