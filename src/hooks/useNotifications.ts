@@ -9,7 +9,11 @@ export type NotificationTypeValue =
   | "PUBLICATION"
   | "UNPUBLICATION"
   | "ARCHIVE"
-  | "DRAFT_SAVED";
+  | "DRAFT_SAVED"
+  | "REVISION_REQUESTED"
+  | "REVISION_APPROVED"
+  | "REVISION_REJECTED"
+  | "REVISION_CONSUMED";
 
 export type NotificationRecord = {
   id: string;

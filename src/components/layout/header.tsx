@@ -94,6 +94,14 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
         return { label: 'Approved', accent: 'bg-green-100 text-green-700', icon: CheckCircle };
       case 'REJECTION':
         return { label: 'Rejected', accent: 'bg-red-100 text-red-700', icon: XCircle };
+      case 'REVISION_REQUESTED':
+        return { label: 'Revision', accent: 'bg-purple-100 text-purple-700', icon: FileText };
+      case 'REVISION_APPROVED':
+        return { label: 'Revision', accent: 'bg-green-100 text-green-700', icon: CheckCircle };
+      case 'REVISION_REJECTED':
+        return { label: 'Revision', accent: 'bg-red-100 text-red-700', icon: XCircle };
+      case 'REVISION_CONSUMED':
+        return { label: 'Revision', accent: 'bg-slate-100 text-slate-700', icon: Archive };
       case 'UNPUBLICATION':
       case 'ARCHIVE':
         return { label: 'Archived', accent: 'bg-slate-100 text-slate-700', icon: Archive };
@@ -107,6 +115,16 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const getNotificationTarget = (notification: NotificationRecord) => {
     if (notification.type === 'SUBMISSION') {
       return '/review';
+    }
+    if (
+      notification.type === 'REVISION_REQUESTED' ||
+      notification.type === 'REVISION_APPROVED' ||
+      notification.type === 'REVISION_REJECTED' ||
+      notification.type === 'REVISION_CONSUMED'
+    ) {
+      if (notification.articleId) {
+        return `/articles/${notification.articleId}/edit`;
+      }
     }
     if (notification.articleId) {
       return `/articles/${notification.articleId}`;

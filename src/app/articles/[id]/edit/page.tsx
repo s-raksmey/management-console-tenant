@@ -413,6 +413,7 @@ export default function EditArticlePage() {
   };
 
   async function submitRevisionRequest() {
+    setValidationError(null);
     if (status !== 'REVIEW') {
       alert('Revisions can only be requested while the article is in review.');
       return;
@@ -442,6 +443,12 @@ export default function EditArticlePage() {
         proposedChanges.contentJson = contentJson;
       }
       
+      if (Object.keys(proposedChanges).length === 0) {
+        setValidationError('Please make at least one change before submitting a revision request.');
+        setSaving(false);
+        return;
+      }
+
       // Call the new requestRevision mutation with proper input structure
       await requestRevision({
         articleId: id,

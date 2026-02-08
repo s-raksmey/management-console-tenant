@@ -17,6 +17,9 @@ export interface GraphQLResponse<T = any> {
   errors?: GraphQLError[];
 }
 
+let supportsCurrentRevisionRequestField: boolean | null = null;
+let hasRetriedCurrentRevisionRequestField = false;
+
 export function useGraphQL() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +88,7 @@ export function useGraphQL() {
 // Specific hooks for common operations
 export function useArticles() {
   const { query, loading, error } = useGraphQL();
+  const { token } = useAuth();
 
   const getArticles = useCallback(async (filters?: {
     status?: string;
@@ -95,6 +99,57 @@ export function useArticles() {
     skip?: number;
   }) => {
     const ARTICLES_QUERY = `
+      query GetArticles($status: ArticleStatus, $categorySlug: String, $topic: String, $authorId: ID, $take: Int, $skip: Int) {
+        articles(status: $status, categorySlug: $categorySlug, topic: $topic, authorId: $authorId, take: $take, skip: $skip) {
+          id
+          title
+          slug
+          excerpt
+          status
+          topic
+          coverImageUrl
+          authorName
+          isFeatured
+          isEditorsPick
+          isBreaking
+          revisionStatus
+          revisionRequestedAt
+          currentRevisionRequest {
+            id
+            status
+            note
+            reviewComment
+            reviewedAt
+            reviewedBy {
+              id
+              name
+            }
+          }
+          breakingNewsRequestStatus
+          breakingNewsRequestedAt
+          breakingNewsRequestedBy {
+            id
+            name
+            email
+          }
+          publishedAt
+          createdAt
+          updatedAt
+          contentJson
+          viewCount
+          category {
+            id
+            name
+            slug
+          }
+          author {
+            id
+          }
+        }
+      }
+    `;
+
+    const LEGACY_ARTICLES_QUERY = `
       query GetArticles($status: ArticleStatus, $categorySlug: String, $topic: String, $authorId: ID, $take: Int, $skip: Int) {
         articles(status: $status, categorySlug: $categorySlug, topic: $topic, authorId: $authorId, take: $take, skip: $skip) {
           id
@@ -134,8 +189,45 @@ export function useArticles() {
       }
     `;
 
-    return await query(ARTICLES_QUERY, filters);
-  }, [query]);
+    const client = getAuthenticatedGqlClient(token ?? undefined);
+
+    if (supportsCurrentRevisionRequestField !== false) {
+      try {
+        const response = await client.request(ARTICLES_QUERY, filters);
+        supportsCurrentRevisionRequestField = true;
+        return response;
+      } catch (err: any) {
+        const message = err?.response?.errors?.[0]?.message || err?.message || '';
+        if (message.includes('currentRevisionRequest')) {
+          supportsCurrentRevisionRequestField = false;
+        } else {
+          return null;
+        }
+      }
+    }
+
+    if (!hasRetriedCurrentRevisionRequestField) {
+      hasRetriedCurrentRevisionRequestField = true;
+      try {
+        const response = await client.request(ARTICLES_QUERY, filters);
+        supportsCurrentRevisionRequestField = true;
+        return response;
+      } catch (err: any) {
+        const message = err?.response?.errors?.[0]?.message || err?.message || '';
+        if (message.includes('currentRevisionRequest')) {
+          supportsCurrentRevisionRequestField = false;
+        } else {
+          return null;
+        }
+      }
+    }
+
+    try {
+      return await client.request(LEGACY_ARTICLES_QUERY, filters);
+    } catch {
+      return null;
+    }
+  }, [token]);
 
   const getArticleById = useCallback(async (id: string) => {
     const ARTICLE_BY_ID_QUERY = `

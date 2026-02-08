@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useArticles, useArticleMutations } from '@/hooks/useGraphQL';
+import { useArticles, useArticleMutations, useRevisions } from '@/hooks/useGraphQL';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatusBadge } from '@/components/ui/status-badge';
@@ -28,8 +28,44 @@ export default function ReviewQueuePage() {
   
   const { getArticles, loading, error } = useArticles();
   const { performWorkflowAction } = useArticleMutations();
+  const { getLatestRevisionRequest } = useRevisions();
   const { hasPermission } = usePermissions();
   const { showSuccess, showError } = useToastHelpers();
+  const [revisionRequestStatusById, setRevisionRequestStatusById] = useState<Record<string, string>>({});
+  const [revisionRequestNoteById, setRevisionRequestNoteById] = useState<Record<string, string>>({});
+
+  const getRevisionBadge = (status?: string | null) => {
+    if (!status) return null;
+
+    switch (status) {
+      case 'PENDING':
+        return <Badge variant="outline" className="text-xs bg-purple-50 border-purple-200">📝 Revision Pending</Badge>;
+      case 'APPROVED':
+        return <Badge variant="outline" className="text-xs bg-green-50 border-green-200">✅ Revision Approved</Badge>;
+      case 'REJECTED':
+        return <Badge variant="outline" className="text-xs bg-red-50 border-red-200">❌ Revision Rejected</Badge>;
+      case 'CONSUMED':
+        return <Badge variant="outline" className="text-xs bg-slate-50 border-slate-200">✔ Revision End</Badge>;
+      default:
+        return <Badge variant="outline" className="text-xs bg-slate-50 border-slate-200">📝 Revision {status}</Badge>;
+    }
+  };
+
+  const getRevisionBadgeForArticle = (article: Article) => {
+    if (article.currentRevisionRequest?.status) {
+      return getRevisionBadge(article.currentRevisionRequest.status);
+    }
+
+    if (revisionRequestStatusById[article.id]) {
+      return getRevisionBadge(revisionRequestStatusById[article.id]);
+    }
+
+    if (article.revisionStatus === 'REQUESTED') {
+      return getRevisionBadge('PENDING');
+    }
+
+    return null;
+  };
 
   useEffect(() => {
     loadReviewArticles();
@@ -40,10 +76,47 @@ export default function ReviewQueuePage() {
       const response = await getArticles({ status: 'REVIEW' });
       if (response?.articles) {
         setArticles(response.articles);
+        await loadRevisionStatuses(response.articles);
       }
     } catch (error) {
       console.error('Failed to load review articles:', error);
       showError('Failed to load articles', 'Please refresh the page to try again');
+    }
+  };
+
+  const loadRevisionStatuses = async (list: Article[]) => {
+    if (!list.length) {
+      setRevisionRequestStatusById({});
+      setRevisionRequestNoteById({});
+      return;
+    }
+
+    try {
+      const results = await Promise.all(
+        list.map(async (article) => {
+          const data = await getLatestRevisionRequest(article.id);
+          const latest = data?.latestRevisionRequest;
+          if (latest?.consumedAt) {
+            return [article.id, 'CONSUMED', latest?.note] as const;
+          }
+          return [article.id, latest?.status, latest?.note] as const;
+        })
+      );
+
+      const nextMap: Record<string, string> = {};
+      const nextNotes: Record<string, string> = {};
+      results.forEach(([id, status, note]) => {
+        if (status) {
+          nextMap[id] = status;
+        }
+        if (note) {
+          nextNotes[id] = note;
+        }
+      });
+      setRevisionRequestStatusById(nextMap);
+      setRevisionRequestNoteById(nextNotes);
+    } catch (err) {
+      console.error('Failed to load revision request statuses:', err);
     }
   };
 
@@ -165,17 +238,20 @@ export default function ReviewQueuePage() {
                         Breaking News
                       </span>
                     )}
-                    {article.revisionStatus === 'REQUESTED' && (
-                      <Badge variant="outline" className="text-xs bg-purple-50 border-purple-200">📝 Revision Requested</Badge>
-                    )}
+                    {getRevisionBadgeForArticle(article)}
                     {article.breakingNewsRequestStatus === 'PENDING' && (
                       <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">🔔 Breaking Request: Pending</Badge>
                     )}
                   </div>
 
-                  {article.excerpt && (
+                  {article.excerpt && article.excerpt.trim() !== (article.authorName ?? '').trim() && (
                     <p className="text-gray-600 mb-4 line-clamp-2">
                       {article.excerpt}
+                    </p>
+                  )}
+                  {revisionRequestStatusById[article.id] === 'PENDING' && revisionRequestNoteById[article.id] && (
+                    <p className="text-xs text-gray-500 mb-4">
+                      Revision note: {revisionRequestNoteById[article.id]}
                     </p>
                   )}
 
