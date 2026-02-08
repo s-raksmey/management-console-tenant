@@ -47,6 +47,10 @@ function slugify(s: string) {
     .replace(/-+/g, "-");
 }
 
+function normalizeTopic(value: string) {
+  return slugify(value);
+}
+
 function titleCase(slug: string) {
   return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -161,7 +165,7 @@ export default function EditArticlePage() {
       setExcerpt(article.excerpt ?? "");
       setAuthorName(article.authorName ?? ""); // ✅ ADDED
       setCategorySlug(article.category?.slug ?? categoryOptions[0]);
-      setTopic(article.topic ?? "");
+      setTopic(article.topic ? normalizeTopic(article.topic) : "");
       setStatus(article.status);
       setOriginalStatus(article.status); // Track original status for permission checks
       setArticleAuthorId(article.author?.id ?? ""); // Track author for ownership checks
@@ -192,7 +196,7 @@ export default function EditArticlePage() {
       setOriginalSlug(article.slug);
       setOriginalExcerpt(article.excerpt ?? "");
       setOriginalCategorySlug(article.category?.slug ?? categoryOptions[0]);
-      setOriginalTopic(article.topic ?? "");
+      setOriginalTopic(article.topic ? normalizeTopic(article.topic) : "");
       setOriginalIsBreaking(article.isBreaking ?? false);
 
       setLoading(false);
@@ -228,7 +232,7 @@ export default function EditArticlePage() {
           excerpt,
           authorName, // ✅ ADDED
           categorySlug,
-          topic: topic || null,
+          topic: topic ? normalizeTopic(topic) : null,
           status: statusForSave,
           isBreaking,
           contentJson,

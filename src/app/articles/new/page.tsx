@@ -39,6 +39,10 @@ function slugify(s: string) {
     .replace(/-+/g, "-");
 }
 
+function normalizeTopic(value: string) {
+  return slugify(value);
+}
+
 function titleCase(slug: string) {
   return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
@@ -126,7 +130,7 @@ export default function NewArticlePage() {
           excerpt,
           authorName,
           categorySlug,
-          topic: topic || null,
+          topic: topic ? normalizeTopic(topic) : null,
           status: statusForSave,
           isBreaking,
           contentJson,
@@ -192,7 +196,7 @@ export default function NewArticlePage() {
           excerpt,
           authorName,
           categorySlug,
-          topic: topic || null,
+          topic: topic ? normalizeTopic(topic) : null,
           status: "PUBLISHED", // Directly publish
           isBreaking,
           contentJson,
