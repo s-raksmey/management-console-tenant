@@ -61,6 +61,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             email: formData.email,
             requesterName: formData.name,
             requestedRole: formData.role,
+            password: formData.password,
           },
         },
       });
