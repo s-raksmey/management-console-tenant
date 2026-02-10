@@ -3,15 +3,24 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useMutation } from '@apollo/client/react';
+import { SUBMIT_ACCOUNT_REQUEST_MUTATION } from '@/services/createAccountRequest.gql';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
   onSwitchToLogin?: () => void;
 }
 
+type SubmitAccountRequestResult = {
+  submitAccountRequest?: {
+    success: boolean;
+    message?: string;
+  };
+};
+
 export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
-  const { register, isLoading } = useAuth();
+
+  const [submitAccountRequest, { loading: isLoading }] = useMutation<SubmitAccountRequestResult>(SUBMIT_ACCOUNT_REQUEST_MUTATION);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,10 +31,12 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess(false);
 
     // Validation
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
@@ -44,17 +55,24 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     }
 
     try {
-      const response = await register({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        role: formData.role,
+      const { data } = await submitAccountRequest({
+        variables: {
+          input: {
+            email: formData.email,
+            requesterName: formData.name,
+            requestedRole: formData.role,
+          },
+        },
       });
-      
-      if (response.success) {
+      if (data?.submitAccountRequest?.success) {
+        setSuccess(true);
         onSuccess?.();
+        // Redirect to login after a short delay
+        setTimeout(() => {
+          onSwitchToLogin?.();
+        }, 1200);
       } else {
-        setError(response.message || 'Registration failed');
+        setError(data?.submitAccountRequest?.message || 'Request failed');
       }
     } catch (error) {
       setError('An unexpected error occurred');
@@ -81,14 +99,30 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       <div className="bg-white rounded-lg shadow-lg p-8">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            Create Account
+            Request Account
           </h1>
           <p className="text-slate-600">
             Join the Pulse News admin team
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
+        {success ? (
+          <div className="bg-green-50 border border-green-200 rounded-md p-4 text-center">
+            <h2 className="text-lg font-semibold text-green-700 mb-2">Request Submitted</h2>
+            <p className="text-green-700">Your account request has been submitted and is pending admin approval. You will receive an email if your request is approved.</p>
+            {onSwitchToLogin && (
+              <button
+                type="button"
+                onClick={onSwitchToLogin}
+                className="mt-4 font-medium text-blue-600 hover:text-blue-500 transition-colors"
+              >
+                Back to Login
+              </button>
+            )}
+          </div>
+        ) : (
+        <>
+          <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name Field */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
@@ -240,23 +274,24 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
               </>
             )}
           </button>
-        </form>
-
-        {/* Login Link */}
-        {onSwitchToLogin && (
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-600">
-              Already have an account?{' '}
-              <button
-                type="button"
-                onClick={onSwitchToLogin}
-                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-                disabled={isLoading}
-              >
-                Sign in here
-              </button>
-            </p>
-          </div>
+          </form>
+          {/* Login Link */}
+          {onSwitchToLogin && (
+            <div className="mt-6 text-center">
+              <p className="text-sm text-slate-600">
+                Already have an account?{' '}
+                <button
+                  type="button"
+                  onClick={onSwitchToLogin}
+                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                  disabled={isLoading}
+                >
+                  Sign in here
+                </button>
+              </p>
+            </div>
+          )}
+        </>
         )}
       </div>
     </motion.div>

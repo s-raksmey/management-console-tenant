@@ -2,12 +2,12 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { 
-  Users, 
-  FileText, 
-  Shield, 
-  Activity, 
-  TrendingUp, 
+import {
+  Users,
+  FileText,
+  Shield,
+  Activity,
+  TrendingUp,
   AlertTriangle,
   CheckCircle,
   Clock,
@@ -43,25 +43,19 @@ import {
   AlertCircle,
   TrendingDown
 } from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import Link from 'next/link';
-import { useUserManagement, UserStats } from '@/hooks/useUserManagement';
+import { StatCard, MetricCard, ActivityFeed, StatCardSkeleton, MetricCardSkeleton, ActivityFeedSkeleton } from './shared';
+import type { ActivityItem } from './shared';
+import { UserStats, useUserManagement } from '@/hooks/useUserManagement';
 import { useArticles } from '@/hooks/useGraphQL';
 import { useEditorial } from '@/hooks/useEditorial';
 import { usePermissions } from '@/hooks/usePermissions';
+import { Button } from '@/components/ui/button';
 import { Permission } from '@/components/permissions/PermissionGuard';
-import { 
-  StatCard, 
-  MetricCard, 
-  ActivityFeed, 
-  StatCardSkeleton, 
-  MetricCardSkeleton,
-  ActivityFeedSkeleton,
-  type ActivityItem 
-} from './shared';
+import Link from 'next/link';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Progress } from '@radix-ui/react-progress';
+import AccountRequestsPanel from './AccountRequestsPanel';
 
 interface SystemHealth {
   uptime: number;
@@ -633,6 +627,8 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Admin System Sidebar */}
           <div className="space-y-6">
+            {/* Account Requests Workflow */}
+            <AccountRequestsPanel />
             {/* System Health */}
             <Card>
               <CardHeader className="pb-3">
@@ -698,7 +694,6 @@ export const AdminDashboard: React.FC = () => {
                 )}
               </CardContent>
             </Card>
-
             {/* System Activity Feed */}
             <Card>
               <CardHeader className="pb-3">

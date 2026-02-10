@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { LayoutWrapper } from './layout-wrapper';
+import { ApolloClientProvider } from '@/components/providers/ApolloClientProvider';
 
 interface ClientLayoutWrapperProps {
   children: React.ReactNode;
@@ -47,9 +48,9 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     );
   }
 
-  // For public routes (like login), render without layout wrapper
+  // For public routes (like login), render without layout wrapper but with ApolloProvider
   if (isPublicRoute) {
-    return <>{children}</>;
+    return <ApolloClientProvider>{children}</ApolloClientProvider>;
   }
 
   // For protected routes, ensure user is authenticated
@@ -64,10 +65,12 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     );
   }
 
-  // Render with full layout for authenticated users
+  // Render with full layout for authenticated users, wrapped in ApolloProvider
   return (
-    <LayoutWrapper>
-      {children}
-    </LayoutWrapper>
+    <ApolloClientProvider>
+      <LayoutWrapper>
+        {children}
+      </LayoutWrapper>
+    </ApolloClientProvider>
   );
 }
