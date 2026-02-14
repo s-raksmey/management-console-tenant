@@ -204,10 +204,15 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
       }
 
       try {
-        const stats = await RegistrationRequestService.getRegistrationStats();
-        setPendingRegistrationCount(stats.pendingApproval || 0);
+        // Use listRegistrationRequests to get pending approval count
+        const response = await RegistrationRequestService.listRegistrationRequests({
+          status: 'PENDING_APPROVAL',
+          take: 1, // We only need the count, not the actual data
+          skip: 0
+        });
+        setPendingRegistrationCount(response.totalCount || 0);
       } catch (error) {
-        console.error('Error loading registration stats:', error);
+        console.error('Error loading registration count:', error);
         setPendingRegistrationCount(0);
       }
     };
