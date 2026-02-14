@@ -16,7 +16,8 @@ import {
   XCircle,
   Send,
   FileText,
-  Archive
+  Archive,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -89,6 +90,8 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
     switch (type) {
       case 'SUBMISSION':
         return { label: 'Submission', accent: 'bg-blue-100 text-blue-700', icon: Send };
+      case 'USER_REGISTRATION_REQUEST':
+        return { label: 'New Account Request', accent: 'bg-indigo-100 text-indigo-700', icon: UserPlus };
       case 'APPROVAL':
       case 'PUBLICATION':
         return { label: 'Approved', accent: 'bg-green-100 text-green-700', icon: CheckCircle };
@@ -115,6 +118,9 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const getNotificationTarget = (notification: NotificationRecord) => {
     if (notification.type === 'SUBMISSION') {
       return '/review';
+    }
+    if (notification.type === 'USER_REGISTRATION_REQUEST') {
+      return '/users/requests';
     }
     if (
       notification.type === 'REVISION_REQUESTED' ||

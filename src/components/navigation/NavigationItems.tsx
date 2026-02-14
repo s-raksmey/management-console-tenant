@@ -14,6 +14,7 @@ import {
   Calendar,
   Bell,
   Archive,
+  UserPlus,
 } from "lucide-react";
 import { Permission } from '../permissions/PermissionGuard';
 
@@ -133,6 +134,13 @@ export const getNavigationItems = (
           icon: Users,
           description: "View all users",
           permissions: [Permission.VIEW_ALL_USERS],
+        },
+        {
+          name: "Registration Requests",
+          href: "/users/requests",
+          icon: UserPlus,
+          description: "Review new user requests",
+          permissions: [Permission.MANAGE_USERS],
         },
         {
           name: "Role Management",
