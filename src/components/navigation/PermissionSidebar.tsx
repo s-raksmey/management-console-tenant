@@ -21,6 +21,7 @@ import { getNavigationItems, NavigationItem } from "./NavigationItems";
 import { useState, useEffect } from "react";
 import { useCounts } from "@/hooks/useCounts";
 import { useArticles } from "@/hooks/useGraphQL";
+import { RegistrationRequestService } from "@/services/registrationRequest.gql";
 
 interface PermissionSidebarProps {
   collapsed: boolean;
@@ -41,9 +42,22 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
   isActive,
   level = 0,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const hasChildren = item.children && item.children.length > 0;
   const pathname = usePathname();
+  const hasChildren = item.children && item.children.length > 0;
+  
+  // Auto-expand if current path matches any child
+  const shouldAutoExpand = hasChildren && item.children?.some(child => 
+    pathname === child.href || pathname.startsWith(child.href + '/')
+  );
+  
+  const [isExpanded, setIsExpanded] = useState(shouldAutoExpand || false);
+
+  // Update expanded state when pathname changes
+  useEffect(() => {
+    if (shouldAutoExpand && !isExpanded) {
+      setIsExpanded(true);
+    }
+  }, [shouldAutoExpand, isExpanded]);
 
   const itemContent = (
     <div
@@ -165,6 +179,7 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
   const { counts } = useCounts(userRole);
   const { getArticles } = useArticles();
   const [reviewQueueCount, setReviewQueueCount] = useState(0);
+  const [pendingRegistrationCount, setPendingRegistrationCount] = useState(0);
 
   useEffect(() => {
     const loadReviewCount = async () => {
@@ -181,10 +196,30 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
     loadReviewCount();
   }, [getArticles, userRole]);
 
+  useEffect(() => {
+    const loadRegistrationCount = async () => {
+      if (!userRole || userRole.toString().toUpperCase() !== 'ADMIN') {
+        setPendingRegistrationCount(0);
+        return;
+      }
+
+      try {
+        const stats = await RegistrationRequestService.getRegistrationStats();
+        setPendingRegistrationCount(stats.pendingApproval || 0);
+      } catch (error) {
+        console.error('Error loading registration stats:', error);
+        setPendingRegistrationCount(0);
+      }
+    };
+
+    loadRegistrationCount();
+  }, [userRole]);
+
   const navigationItems = getNavigationItems(
     {
       ...counts,
       reviewQueue: reviewQueueCount,
+      pendingRegistrations: pendingRegistrationCount,
     },
     userRole
   );
