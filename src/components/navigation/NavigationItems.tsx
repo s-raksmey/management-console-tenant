@@ -40,7 +40,6 @@ export const getNavigationItems = (
     categories: number; 
     media: number;
     reviewQueue?: number;
-    pendingRegistrations?: number;
   },
   userRole?: string
 ): NavigationItem[] => {
@@ -140,7 +139,6 @@ export const getNavigationItems = (
           name: "Registration Requests",
           href: "/users/requests",
           icon: UserPlus,
-          badge: counts.pendingRegistrations && counts.pendingRegistrations > 0 ? counts.pendingRegistrations.toString() : null,
           description: "Review new user requests",
           permissions: [Permission.MANAGE_USERS],
         },
