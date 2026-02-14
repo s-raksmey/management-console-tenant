@@ -21,7 +21,7 @@ import { getNavigationItems, NavigationItem } from "./NavigationItems";
 import { useState, useEffect } from "react";
 import { useCounts } from "@/hooks/useCounts";
 import { useArticles } from "@/hooks/useGraphQL";
-import { RegistrationRequestService } from "@/services/registrationRequest.gql";
+
 
 interface PermissionSidebarProps {
   collapsed: boolean;
@@ -179,7 +179,7 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
   const { counts } = useCounts(userRole);
   const { getArticles } = useArticles();
   const [reviewQueueCount, setReviewQueueCount] = useState(0);
-  const [pendingRegistrationCount, setPendingRegistrationCount] = useState(0);
+
 
   useEffect(() => {
     const loadReviewCount = async () => {
@@ -196,35 +196,12 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
     loadReviewCount();
   }, [getArticles, userRole]);
 
-  useEffect(() => {
-    const loadRegistrationCount = async () => {
-      if (!userRole || userRole.toString().toUpperCase() !== 'ADMIN') {
-        setPendingRegistrationCount(0);
-        return;
-      }
 
-      try {
-        // Use listRegistrationRequests to get pending approval count
-        const response = await RegistrationRequestService.listRegistrationRequests({
-          status: 'PENDING_APPROVAL',
-          take: 1, // We only need the count, not the actual data
-          skip: 0
-        });
-        setPendingRegistrationCount(response.totalCount || 0);
-      } catch (error) {
-        console.error('Error loading registration count:', error);
-        setPendingRegistrationCount(0);
-      }
-    };
-
-    loadRegistrationCount();
-  }, [userRole]);
 
   const navigationItems = getNavigationItems(
     {
       ...counts,
       reviewQueue: reviewQueueCount,
-      pendingRegistrations: pendingRegistrationCount,
     },
     userRole
   );
