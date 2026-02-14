@@ -91,6 +91,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
       case 'SUBMISSION':
         return { label: 'Submission', accent: 'bg-blue-100 text-blue-700', icon: Send };
       case 'USER_REGISTRATION_REQUEST':
+      case 'ACCOUNT_REQUEST':
         return { label: 'New Account Request', accent: 'bg-indigo-100 text-indigo-700', icon: UserPlus };
       case 'APPROVAL':
       case 'PUBLICATION':
@@ -116,11 +117,15 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   };
 
   const getNotificationTarget = (notification: NotificationRecord) => {
+    // Debug logging to see what notification types we're getting
+    console.log('Getting target for notification type:', notification.type);
+    
     if (notification.type === 'SUBMISSION') {
       return '/review';
     }
-    if (notification.type === 'USER_REGISTRATION_REQUEST') {
-      return '/users/requests';
+    if (notification.type === 'USER_REGISTRATION_REQUEST' || notification.type === 'ACCOUNT_REQUEST') {
+      console.log('User registration/account request detected, routing to /users/requests/test for debugging');
+      return '/users/requests/test';
     }
     if (
       notification.type === 'REVISION_REQUESTED' ||
@@ -135,6 +140,8 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
     if (notification.articleId) {
       return `/articles/${notification.articleId}`;
     }
+    
+    console.log('No target found for notification type:', notification.type);
     return undefined;
   };
 
@@ -187,6 +194,13 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   }, [user?.id, getNotifications, getUnreadCount]);
 
   const handleNotificationClick = async (notification: NotificationRecord, targetPath?: string) => {
+    // Debug logging to understand what's happening
+    console.log('Notification clicked:', {
+      type: notification.type,
+      targetPath,
+      notification
+    });
+
     if (!notification.isRead) {
       const result = await markNotificationRead(notification.id);
       if (result?.markNotificationRead?.isRead) {
@@ -202,7 +216,10 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
     }
 
     if (targetPath) {
+      console.log('Navigating to:', targetPath);
       router.push(targetPath);
+    } else {
+      console.log('No target path provided for notification:', notification.type);
     }
   };
 
@@ -515,9 +532,11 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                         const target = getNotificationTarget(notification);
                         const actionLabel = target === '/review'
                           ? 'Review queue'
-                          : target
-                            ? 'Open article'
-                            : 'View details';
+                          : target === '/users/requests'
+                            ? 'Review request'
+                            : target
+                              ? 'Open article'
+                              : 'View details';
                         const fromLabel = getNotificationFromLabel(notification);
 
                         return (
