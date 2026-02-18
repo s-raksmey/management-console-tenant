@@ -4,23 +4,24 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
 import { useMutation } from '@apollo/client/react';
-import { SUBMIT_ACCOUNT_REQUEST_MUTATION } from '@/services/createAccountRequest.gql';
+import { SUBMIT_REGISTRATION_REQUEST_MUTATION } from '@/services/registrationSubmission.gql';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
   onSwitchToLogin?: () => void;
 }
 
-type SubmitAccountRequestResult = {
-  submitAccountRequest?: {
+type SubmitRegistrationRequestResult = {
+  submitRegistrationRequest?: {
     success: boolean;
     message?: string;
+    registrationId?: string;
   };
 };
 
 export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
 
-  const [submitAccountRequest, { loading: isLoading }] = useMutation<SubmitAccountRequestResult>(SUBMIT_ACCOUNT_REQUEST_MUTATION);
+  const [submitRegistrationRequest, { loading: isLoading }] = useMutation<SubmitRegistrationRequestResult>(SUBMIT_REGISTRATION_REQUEST_MUTATION);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -55,17 +56,17 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     }
 
     try {
-      const { data } = await submitAccountRequest({
+      const { data } = await submitRegistrationRequest({
         variables: {
           input: {
             email: formData.email,
-            requesterName: formData.name,
+            name: formData.name,
             requestedRole: formData.role,
             password: formData.password,
           },
         },
       });
-      if (data?.submitAccountRequest?.success) {
+      if (data?.submitRegistrationRequest?.success) {
         setSuccess(true);
         onSuccess?.();
         // Redirect to login after a short delay
@@ -73,7 +74,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           onSwitchToLogin?.();
         }, 1200);
       } else {
-        setError(data?.submitAccountRequest?.message || 'Request failed');
+        setError(data?.submitRegistrationRequest?.message || 'Request failed');
       }
     } catch (error) {
       setError('An unexpected error occurred');
@@ -110,7 +111,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         {success ? (
           <div className="bg-green-50 border border-green-200 rounded-md p-4 text-center">
             <h2 className="text-lg font-semibold text-green-700 mb-2">Request Submitted</h2>
-            <p className="text-green-700">Your account request has been submitted and is pending admin approval. You will receive an email if your request is approved.</p>
+            <p className="text-green-700">Your registration request has been submitted! Please check your email to verify your address, then wait for admin approval.</p>
             {onSwitchToLogin && (
               <button
                 type="button"
