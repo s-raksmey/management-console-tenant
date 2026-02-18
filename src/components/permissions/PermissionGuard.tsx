@@ -60,6 +60,7 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.DELETE_USER,
     Permission.VIEW_ALL_USERS,
     Permission.MANAGE_USER_ROLES,
+    Permission.MANAGE_USERS,
     Permission.CREATE_ARTICLE,
     Permission.UPDATE_OWN_ARTICLE,
     Permission.UPDATE_ANY_ARTICLE,
