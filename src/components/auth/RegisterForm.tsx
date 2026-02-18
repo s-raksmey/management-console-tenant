@@ -4,30 +4,38 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
 import { useMutation } from '@apollo/client/react';
-import { SUBMIT_REGISTRATION_REQUEST_MUTATION } from '@/services/registrationSubmission.gql';
+import { SUBMIT_ACCOUNT_REQUEST_MUTATION } from '@/services/createAccountRequest.gql';
 
 interface RegisterFormProps {
   onSuccess?: () => void;
   onSwitchToLogin?: () => void;
 }
 
-type SubmitRegistrationRequestResult = {
-  submitRegistrationRequest?: {
+type SubmitAccountRequestResult = {
+  submitAccountRequest?: {
     success: boolean;
     message?: string;
-    registrationId?: string;
+    request?: {
+      id: string;
+      email: string;
+      requesterName: string;
+      requestedRole: string;
+      status: string;
+      createdAt: string;
+      updatedAt?: string;
+      userId?: string;
+    };
   };
 };
 
 export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
-
-  const [submitRegistrationRequest, { loading: isLoading }] = useMutation<SubmitRegistrationRequestResult>(SUBMIT_REGISTRATION_REQUEST_MUTATION);
+  const [submitAccountRequest, { loading: isLoading }] = useMutation<SubmitAccountRequestResult>(SUBMIT_ACCOUNT_REQUEST_MUTATION);
   const [formData, setFormData] = useState({
-    name: '',
+    requesterName: '',
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'AUTHOR' as 'ADMIN' | 'EDITOR' | 'AUTHOR',
+    requestedRole: 'AUTHOR' as 'ADMIN' | 'EDITOR' | 'AUTHOR',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -40,7 +48,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     setSuccess(false);
 
     // Validation
-    if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword) {
+    if (!formData.requesterName || !formData.email || !formData.password || !formData.confirmPassword) {
       setError('Please fill in all fields');
       return;
     }
@@ -56,17 +64,16 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
     }
 
     try {
-      const { data } = await submitRegistrationRequest({
+      const { data } = await submitAccountRequest({
         variables: {
           input: {
             email: formData.email,
-            name: formData.name,
-            requestedRole: formData.role,
-            password: formData.password,
+            requesterName: formData.requesterName,
+            requestedRole: formData.requestedRole,
           },
         },
       });
-      if (data?.submitRegistrationRequest?.success) {
+      if (data?.submitAccountRequest?.success) {
         setSuccess(true);
         onSuccess?.();
         // Redirect to login after a short delay
@@ -74,7 +81,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           onSwitchToLogin?.();
         }, 1200);
       } else {
-        setError(data?.submitRegistrationRequest?.message || 'Request failed');
+        setError(data?.submitAccountRequest?.message || 'Request failed');
       }
     } catch (error) {
       setError('An unexpected error occurred');
@@ -127,14 +134,14 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name Field */}
           <div>
-            <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="requesterName" className="block text-sm font-medium text-slate-700 mb-2">
               Full Name
             </label>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={formData.name}
+              id="requesterName"
+              name="requesterName"
+              value={formData.requesterName}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter your full name"
@@ -163,13 +170,13 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
 
           {/* Role Field */}
           <div>
-            <label htmlFor="role" className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="requestedRole" className="block text-sm font-medium text-slate-700 mb-2">
               Role
             </label>
             <select
-              id="role"
-              name="role"
-              value={formData.role}
+              id="requestedRole"
+              name="requestedRole"
+              value={formData.requestedRole}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               disabled={isLoading}
