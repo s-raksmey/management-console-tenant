@@ -6,16 +6,20 @@ import {
 } from '../services/accountRequest.gql';
 
 type AccountRequest = {
-  // define the fields of an account request here, for example:
   id: string;
-  // ...other fields
+  email: string;
+  requesterName: string;
+  requestedRole: string;
+  status: string;
+  customMessage?: string;
+  createdAt: string;
 };
 
 type AccountRequestsData = {
   accountRequests: AccountRequest[];
 };
 
-export function useAccountRequests(status = 'pending') {
+export function useAccountRequests(status?: string) {
   const { data, loading, error, refetch } = useQuery<AccountRequestsData>(ACCOUNT_REQUESTS_QUERY, {
     variables: { status },
   });
