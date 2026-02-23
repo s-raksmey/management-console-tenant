@@ -221,7 +221,6 @@ export default function CategoriesPage() {
       const input = {
         name: formData.name,
         slug: formData.slug,
-        description: null, // Remove description to avoid errors
       };
 
       let savedCategory;
@@ -749,4 +748,3 @@ export default function CategoriesPage() {
     </div>
   );
 }
-
