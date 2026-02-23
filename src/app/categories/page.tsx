@@ -1,158 +1,628 @@
 'use client';
 
 import { useState, useEffect } from "react";
-import { useCategories } from "@/hooks/useGraphQL";
-import { CategoryList } from "@/components/categories/CategoryList";
-import { CategoryForm, CategoryFormData } from "@/components/categories/CategoryForm";
+import { useCategories, useGraphQL } from "@/hooks/useGraphQL";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Edit, Plus, Save, X } from "lucide-react";
+import { useToastHelpers } from "@/components/ui/toast";
 import { Category, M_CREATE_CATEGORY, M_UPDATE_CATEGORY, M_DELETE_CATEGORY } from "@/services/category.gql";
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
 
+interface Topic {
+  id: string;
+  slug: string;
+  title: string;
+  description?: string;
+  categoryId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface CategoryFormData {
+  name: string;
+  slug: string;
+  description?: string;
+}
+
+interface TopicFormData {
+  title: string;
+  slug: string;
+  description?: string;
+}
+
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
-  const [showForm, setShowForm] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [topics, setTopics] = useState<Topic[]>([]);
+  const [showTopicForm, setShowTopicForm] = useState(false);
+  const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
   
   const { getCategories, loading: categoriesLoading } = useCategories();
+  const { query } = useGraphQL();
+  const { showSuccess, showError } = useToastHelpers();
   const client = getAuthenticatedGqlClient();
+
+  // Form state
+  const [formData, setFormData] = useState<CategoryFormData>({
+    name: "",
+    slug: "",
+    description: "",
+  });
+
+  const [topicFormData, setTopicFormData] = useState<TopicFormData>({
+    title: "",
+    slug: "",
+    description: "",
+  });
 
   useEffect(() => {
     loadCategories();
   }, []);
 
+  // Load topics when editing a category
+  useEffect(() => {
+    if (editingCategory) {
+      loadTopicsForCategory(editingCategory.slug);
+    } else {
+      setTopics([]);
+    }
+  }, [editingCategory]);
+
   const loadCategories = async () => {
     try {
-      setError(null);
       const response = await getCategories();
       if (response?.categories) {
         setCategories(response.categories);
       }
     } catch (err) {
       console.error('Error loading categories:', err);
-      setError('Failed to load categories');
+      showError('Error', 'Failed to load categories');
     }
   };
 
-  const handleCreate = () => {
+  const loadTopicsForCategory = async (categorySlug: string) => {
+    try {
+      const TOPICS_BY_CATEGORY_QUERY = `
+        query GetTopicsByCategory($categorySlug: String!) {
+          topicsByCategory(categorySlug: $categorySlug) {
+            id
+            slug
+            title
+            description
+            categoryId
+            createdAt
+            updatedAt
+          }
+        }
+      `;
+
+      const result = await query(TOPICS_BY_CATEGORY_QUERY, { categorySlug });
+      setTopics(result.topicsByCategory || []);
+    } catch (err) {
+      console.error("Failed to load topics:", err);
+      showError("Error", "Failed to load topics");
+    }
+  };
+
+  const generateSlug = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .replace(/-+/g, "-")
+      .trim();
+  };
+
+  const handleNameChange = (name: string) => {
+    setFormData(prev => ({
+      ...prev,
+      name,
+      slug: prev.slug || generateSlug(name)
+    }));
+  };
+
+  const handleTopicTitleChange = (title: string) => {
+    setTopicFormData(prev => ({
+      ...prev,
+      title,
+      slug: prev.slug || generateSlug(title)
+    }));
+  };
+
+  const resetForm = () => {
+    setFormData({
+      name: "",
+      slug: "",
+      description: "",
+    });
     setEditingCategory(null);
-    setShowForm(true);
+    setTopics([]);
+    setShowTopicForm(false);
+    setEditingTopic(null);
+    resetTopicForm();
   };
 
-  const handleEdit = (category: Category) => {
+  const resetTopicForm = () => {
+    setTopicFormData({
+      title: "",
+      slug: "",
+      description: "",
+    });
+    setShowTopicForm(false);
+    setEditingTopic(null);
+  };
+
+  const startEditing = (category: Category) => {
+    setFormData({
+      name: category.name,
+      slug: category.slug,
+      description: category.description || "",
+    });
     setEditingCategory(category);
-    setShowForm(true);
   };
 
-  const handleFormSubmit = async (data: CategoryFormData) => {
+  const startEditingTopic = (topic: Topic) => {
+    setTopicFormData({
+      title: topic.title,
+      slug: topic.slug,
+      description: topic.description || "",
+    });
+    setEditingTopic(topic);
+    setShowTopicForm(true);
+  };
+
+  const saveCategory = async () => {
+    if (!formData.name.trim()) {
+      showError("Validation Error", "Name is required");
+      return;
+    }
+
+    if (!formData.slug.trim()) {
+      showError("Validation Error", "Slug is required");
+      return;
+    }
+
     setIsLoading(true);
-    setError(null);
 
     try {
+      const input = {
+        name: formData.name,
+        slug: formData.slug,
+        description: formData.description || null,
+      };
+
       if (editingCategory) {
         // Update existing category
         await client.request(M_UPDATE_CATEGORY, {
           id: editingCategory.id,
-          input: data
+          input
         });
+        showSuccess("Success", "Category updated successfully");
       } else {
         // Create new category
         await client.request(M_CREATE_CATEGORY, {
-          input: data
+          input
         });
+        showSuccess("Success", "Category created successfully");
       }
 
-      // Reload categories and close form
+      // Reload categories and reset form
       await loadCategories();
-      setShowForm(false);
-      setEditingCategory(null);
+      resetForm();
     } catch (err: any) {
       console.error('Error saving category:', err);
-      setError(err.message || 'Failed to save category');
+      showError("Error", err.message || 'Failed to save category');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDelete = async (category: Category) => {
+  const saveTopic = async () => {
+    if (!editingCategory) {
+      showError("Error", "Please save the category first");
+      return;
+    }
+
+    if (!topicFormData.title.trim()) {
+      showError("Validation Error", "Topic title is required");
+      return;
+    }
+
+    if (!topicFormData.slug.trim()) {
+      showError("Validation Error", "Topic slug is required");
+      return;
+    }
+
     setIsLoading(true);
-    setError(null);
+
+    try {
+      const UPSERT_TOPIC_MUTATION = `
+        mutation UpsertTopic($id: ID, $input: UpsertTopicInput!) {
+          upsertTopic(id: $id, input: $input) {
+            id
+            slug
+            title
+            description
+            categoryId
+            createdAt
+            updatedAt
+          }
+        }
+      `;
+
+      const input = {
+        categorySlug: editingCategory.slug,
+        slug: topicFormData.slug,
+        title: topicFormData.title,
+        description: topicFormData.description || null,
+        coverImageUrl: null,
+        coverVideoUrl: null,
+      };
+
+      const variables = {
+        id: editingTopic?.id || null,
+        input,
+      };
+
+      const result = await query(UPSERT_TOPIC_MUTATION, variables);
+      
+      if (result.upsertTopic) {
+        showSuccess("Success", editingTopic ? "Topic updated successfully" : "Topic created successfully");
+        resetTopicForm();
+        loadTopicsForCategory(editingCategory.slug);
+      }
+    } catch (err: any) {
+      console.error("Failed to save topic:", err);
+      showError("Error", err.message || "Failed to save topic");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteTopic = async (topicId: string, topicTitle: string) => {
+    if (!confirm(`Are you sure you want to delete the topic "${topicTitle}"?`)) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const DELETE_TOPIC_MUTATION = `
+        mutation DeleteTopic($id: ID!) {
+          deleteTopic(id: $id)
+        }
+      `;
+
+      const result = await query(DELETE_TOPIC_MUTATION, { id: topicId });
+      
+      if (result.deleteTopic) {
+        showSuccess("Success", "Topic deleted successfully");
+        if (editingCategory) {
+          loadTopicsForCategory(editingCategory.slug);
+        }
+      }
+    } catch (err: any) {
+      console.error("Failed to delete topic:", err);
+      showError("Error", err.message || "Failed to delete topic");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteCategory = async (categoryId: string, categoryName: string) => {
+    if (!confirm(`Are you sure you want to delete the category "${categoryName}"?`)) {
+      return;
+    }
+
+    setIsLoading(true);
 
     try {
       await client.request(M_DELETE_CATEGORY, {
-        id: category.id
+        id: categoryId
       });
 
-      // Reload categories
+      showSuccess("Success", "Category deleted successfully");
       await loadCategories();
     } catch (err: any) {
       console.error('Error deleting category:', err);
-      setError(err.message || 'Failed to delete category');
+      showError("Error", err.message || 'Failed to delete category');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleFormCancel = () => {
-    setShowForm(false);
-    setEditingCategory(null);
-    setError(null);
-  };
-
-  if (categoriesLoading && categories.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Categories</h1>
-          <p className="text-slate-600">Loading categories...</p>
+  return (
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Category Management</h1>
+          <p className="text-muted-foreground">
+            Create and manage categories with their topics (sub-categories)
+          </p>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className="space-y-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Categories</h1>
-        <p className="text-slate-600">Organize your content with categories.</p>
-      </div>
-
-      {/* Error Display */}
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex items-start">
-            <div className="text-red-600 text-sm">⚠️</div>
-            <div className="ml-3">
-              <h4 className="text-sm font-medium text-red-900">Error</h4>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
+      {/* Category Form - Always visible for create, switches to edit mode */}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            {editingCategory ? "Edit Category" : "Create New Category"}
+          </CardTitle>
+          <CardDescription>
+            {editingCategory 
+              ? `Editing category: ${editingCategory.name} - Manage its topics below`
+              : "Add a new category to organize your articles and content"
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Name <span className="text-red-500">*</span>
+              </label>
+              <Input
+                value={formData.name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="Enter category name..."
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Slug <span className="text-red-500">*</span>
+              </label>
+              <Input
+                value={formData.slug}
+                onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+                placeholder="category-slug"
+              />
             </div>
           </div>
-        </div>
-      )}
 
-      {/* Category Form */}
-      {showForm && (
-        <div className="bg-white rounded-lg border border-slate-200 p-6">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">
-            {editingCategory ? 'Edit Category' : 'Create New Category'}
-          </h2>
-          <CategoryForm
-            category={editingCategory}
-            onSubmit={handleFormSubmit}
-            onCancel={handleFormCancel}
-            isLoading={isLoading}
-          />
-        </div>
+          <div>
+            <label className="text-sm font-medium mb-2 block">Description</label>
+            <Textarea
+              value={formData.description}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              placeholder="Optional description for this category..."
+              rows={3}
+            />
+          </div>
+
+          <div className="flex items-center gap-2 pt-4">
+            <Button 
+              onClick={saveCategory} 
+              disabled={isLoading}
+              className="flex items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {editingCategory ? "Update Category" : "Create Category"}
+            </Button>
+            {editingCategory && (
+              <Button variant="outline" onClick={resetForm} className="flex items-center gap-2">
+                <X className="h-4 w-4" />
+                Cancel
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Topics Management - Only show when editing a category */}
+      {editingCategory && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Topics in {editingCategory.name}</span>
+              <Button 
+                onClick={() => setShowTopicForm(true)} 
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Topic
+              </Button>
+            </CardTitle>
+            <CardDescription>
+              Manage sub-categories (topics) for this category. These will appear as "Markets", "Economy", etc.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Topic Form */}
+            {showTopicForm && (
+              <div className="border rounded-lg p-4 bg-muted/20">
+                <h4 className="font-medium mb-3">
+                  {editingTopic ? "Edit Topic" : "Add New Topic"}
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Title <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      value={topicFormData.title}
+                      onChange={(e) => handleTopicTitleChange(e.target.value)}
+                      placeholder="e.g. Markets, Economy, Companies..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">
+                      Slug <span className="text-red-500">*</span>
+                    </label>
+                    <Input
+                      value={topicFormData.slug}
+                      onChange={(e) => setTopicFormData(prev => ({ ...prev, slug: e.target.value }))}
+                      placeholder="e.g. markets, economy, companies..."
+                    />
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="text-sm font-medium mb-2 block">Description</label>
+                  <Textarea
+                    value={topicFormData.description}
+                    onChange={(e) => setTopicFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Optional description for this topic..."
+                    rows={2}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={saveTopic} 
+                    disabled={isLoading}
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {editingTopic ? "Update Topic" : "Add Topic"}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={resetTopicForm} 
+                    size="sm"
+                    className="flex items-center gap-2"
+                  >
+                    <X className="h-4 w-4" />
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Topics List */}
+            {topics.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No topics yet for this category.</p>
+                <p>Click "Add Topic" to create sub-categories like "Markets", "Economy", etc.</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground mb-3">
+                  Sub-categories (topics) for {editingCategory.name}:
+                </p>
+                {topics.map((topic) => (
+                  <div
+                    key={topic.id}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-medium">{topic.title}</h4>
+                        <Badge variant="outline" className="text-xs">{topic.slug}</Badge>
+                      </div>
+                      {topic.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {topic.description}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => startEditingTopic(topic)}
+                        disabled={isLoading}
+                        className="flex items-center gap-1"
+                      >
+                        <Edit className="h-3 w-3" />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => deleteTopic(topic.id, topic.title)}
+                        disabled={isLoading}
+                        className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* Categories List */}
-      <CategoryList
-        categories={categories}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onCreate={handleCreate}
-        isLoading={isLoading}
-      />
+      <Card>
+        <CardHeader>
+          <CardTitle>All Categories</CardTitle>
+          <CardDescription>
+            {categories.length === 0 
+              ? "No categories found. Create your first category above."
+              : `${categories.length} categor${categories.length === 1 ? 'y' : 'ies'} found`
+            }
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {categories.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No categories yet.</p>
+              <p>Create your first category to get started!</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {categories.map((category) => (
+                <div
+                  key={category.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
+                >
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold">{category.name}</h3>
+                      <Badge variant="secondary">{category.slug}</Badge>
+                    </div>
+                    {category.description && (
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {category.description}
+                      </p>
+                    )}
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                      <span>Created: {new Date(category.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => startEditing(category)}
+                      disabled={isLoading}
+                      className="flex items-center gap-1"
+                    >
+                      <Edit className="h-3 w-3" />
+                      Edit & Manage Topics
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => deleteCategory(category.id, category.name)}
+                      disabled={isLoading}
+                      className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Delete
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {categoriesLoading && (
+        <div className="text-center py-4">
+          <p>Loading...</p>
+        </div>
+      )}
     </div>
   );
 }
+
