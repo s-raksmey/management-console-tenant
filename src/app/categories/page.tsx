@@ -5,7 +5,7 @@ import { useCategories } from "@/hooks/useGraphQL";
 import { CategoryList } from "@/components/categories/CategoryList";
 import { CategoryForm, CategoryFormData } from "@/components/categories/CategoryForm";
 import { Category, M_CREATE_CATEGORY, M_UPDATE_CATEGORY, M_DELETE_CATEGORY } from "@/services/category.gql";
-import { getGqlClient } from "@/services/graphql-client";
+import { getAuthenticatedGqlClient } from "@/services/graphql-client";
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -15,7 +15,7 @@ export default function CategoriesPage() {
   const [error, setError] = useState<string | null>(null);
   
   const { getCategories, loading: categoriesLoading } = useCategories();
-  const client = getGqlClient();
+  const client = getAuthenticatedGqlClient();
 
   useEffect(() => {
     loadCategories();
