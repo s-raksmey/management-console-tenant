@@ -75,12 +75,17 @@ export default function CategoriesPage() {
 
   const loadCategories = async () => {
     try {
+      console.log('🔄 Loading categories...');
       const response = await getCategories();
+      console.log('📦 Categories response:', response);
       if (response?.categories) {
+        console.log(`✅ Setting ${response.categories.length} categories`);
         setCategories(response.categories);
+      } else {
+        console.warn('⚠️ No categories in response');
       }
     } catch (err) {
-      console.error('Error loading categories:', err);
+      console.error('❌ Error loading categories:', err);
       showError('Error', 'Failed to load categories');
     }
   };
@@ -378,8 +383,20 @@ export default function CategoriesPage() {
         id: categoryId
       });
 
+      // Immediately update local state to remove the deleted category
+      setCategories(prevCategories => 
+        prevCategories.filter(category => category.id !== categoryId)
+      );
+
       showSuccess("Success", "Category deleted successfully");
-      await loadCategories();
+      
+      // Also refresh from server to ensure consistency
+      try {
+        await loadCategories();
+      } catch (refreshErr) {
+        console.warn('Failed to refresh categories after deletion:', refreshErr);
+        // Don't show error to user since deletion was successful
+      }
     } catch (err: any) {
       console.error('Error deleting category:', err);
       showError("Error", err.message || 'Failed to delete category');
