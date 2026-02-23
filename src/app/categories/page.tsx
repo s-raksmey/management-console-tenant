@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useCategories, useGraphQL } from "@/hooks/useGraphQL";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit, Plus, Save, X } from "lucide-react";
@@ -29,13 +28,11 @@ interface Topic {
 interface CategoryFormData {
   name: string;
   slug: string;
-  description?: string;
 }
 
 interface TopicFormData {
   title: string;
   slug: string;
-  description?: string;
 }
 
 export default function CategoriesPage() {
@@ -45,6 +42,7 @@ export default function CategoriesPage() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [showTopicForm, setShowTopicForm] = useState(false);
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
+  const [pendingTopics, setPendingTopics] = useState<TopicFormData[]>([]);
   
   const { getCategories, loading: categoriesLoading } = useCategories();
   const { query } = useGraphQL();
@@ -55,13 +53,11 @@ export default function CategoriesPage() {
   const [formData, setFormData] = useState<CategoryFormData>({
     name: "",
     slug: "",
-    description: "",
   });
 
   const [topicFormData, setTopicFormData] = useState<TopicFormData>({
     title: "",
     slug: "",
-    description: "",
   });
 
   useEffect(() => {
@@ -146,12 +142,12 @@ export default function CategoriesPage() {
     setFormData({
       name: "",
       slug: "",
-      description: "",
     });
     setEditingCategory(null);
     setTopics([]);
     setShowTopicForm(false);
     setEditingTopic(null);
+    setPendingTopics([]);
     resetTopicForm();
   };
 
@@ -159,7 +155,6 @@ export default function CategoriesPage() {
     setTopicFormData({
       title: "",
       slug: "",
-      description: "",
     });
     setShowTopicForm(false);
     setEditingTopic(null);
@@ -169,19 +164,44 @@ export default function CategoriesPage() {
     setFormData({
       name: category.name,
       slug: category.slug,
-      description: category.description || "",
     });
     setEditingCategory(category);
+    setPendingTopics([]); // Clear pending topics when editing existing category
   };
 
   const startEditingTopic = (topic: Topic) => {
     setTopicFormData({
       title: topic.title,
       slug: topic.slug,
-      description: topic.description || "",
     });
     setEditingTopic(topic);
     setShowTopicForm(true);
+  };
+
+  const addPendingTopic = () => {
+    if (!topicFormData.title.trim()) {
+      showError("Validation Error", "Topic title is required");
+      return;
+    }
+
+    if (!topicFormData.slug.trim()) {
+      showError("Validation Error", "Topic slug is required");
+      return;
+    }
+
+    // Check for duplicate slugs in pending topics
+    if (pendingTopics.some(t => t.slug === topicFormData.slug)) {
+      showError("Validation Error", "Topic slug must be unique");
+      return;
+    }
+
+    setPendingTopics(prev => [...prev, { ...topicFormData }]);
+    resetTopicForm();
+    showSuccess("Success", "Topic added to list");
+  };
+
+  const removePendingTopic = (index: number) => {
+    setPendingTopics(prev => prev.filter((_, i) => i !== index));
   };
 
   const saveCategory = async () => {
@@ -201,8 +221,10 @@ export default function CategoriesPage() {
       const input = {
         name: formData.name,
         slug: formData.slug,
-        description: formData.description || null,
+        description: null, // Remove description to avoid errors
       };
+
+      let savedCategory;
 
       if (editingCategory) {
         // Update existing category
@@ -210,13 +232,28 @@ export default function CategoriesPage() {
           id: editingCategory.id,
           input
         });
+        savedCategory = { ...editingCategory, ...input };
         showSuccess("Success", "Category updated successfully");
       } else {
         // Create new category
-        await client.request(M_CREATE_CATEGORY, {
+        const result = await client.request(M_CREATE_CATEGORY, {
           input
         });
+        savedCategory = result.createCategory;
         showSuccess("Success", "Category created successfully");
+
+        // Create pending topics for new category
+        if (pendingTopics.length > 0) {
+          for (const pendingTopic of pendingTopics) {
+            try {
+              await createTopicForCategory(savedCategory.slug, pendingTopic);
+            } catch (err) {
+              console.error("Failed to create topic:", pendingTopic.title, err);
+              showError("Warning", `Failed to create topic: ${pendingTopic.title}`);
+            }
+          }
+          showSuccess("Success", `Created ${pendingTopics.length} topics for ${savedCategory.name}`);
+        }
       }
 
       // Reload categories and reset form
@@ -228,6 +265,42 @@ export default function CategoriesPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const createTopicForCategory = async (categorySlug: string, topicData: TopicFormData) => {
+    const UPSERT_TOPIC_MUTATION = `
+      mutation UpsertTopic($id: ID, $input: UpsertTopicInput!) {
+        upsertTopic(id: $id, input: $input) {
+          id
+          slug
+          title
+          description
+          category {
+            id
+            name
+            slug
+          }
+          createdAt
+          updatedAt
+        }
+      }
+    `;
+
+    const input = {
+      categorySlug: categorySlug,
+      slug: topicData.slug,
+      title: topicData.title,
+      description: null,
+      coverImageUrl: null,
+      coverVideoUrl: null,
+    };
+
+    const variables = {
+      id: null,
+      input,
+    };
+
+    return await query(UPSERT_TOPIC_MUTATION, variables);
   };
 
   const saveTopic = async () => {
@@ -249,39 +322,7 @@ export default function CategoriesPage() {
     setIsLoading(true);
 
     try {
-      const UPSERT_TOPIC_MUTATION = `
-        mutation UpsertTopic($id: ID, $input: UpsertTopicInput!) {
-          upsertTopic(id: $id, input: $input) {
-            id
-            slug
-            title
-            description
-            category {
-              id
-              name
-              slug
-            }
-            createdAt
-            updatedAt
-          }
-        }
-      `;
-
-      const input = {
-        categorySlug: editingCategory.slug,
-        slug: topicFormData.slug,
-        title: topicFormData.title,
-        description: topicFormData.description || null,
-        coverImageUrl: null,
-        coverVideoUrl: null,
-      };
-
-      const variables = {
-        id: editingTopic?.id || null,
-        input,
-      };
-
-      const result = await query(UPSERT_TOPIC_MUTATION, variables);
+      const result = await createTopicForCategory(editingCategory.slug, topicFormData);
       
       if (result.upsertTopic) {
         showSuccess("Success", editingTopic ? "Topic updated successfully" : "Topic created successfully");
@@ -368,7 +409,7 @@ export default function CategoriesPage() {
           <CardDescription>
             {editingCategory 
               ? `Editing category: ${editingCategory.name} - Manage its topics below`
-              : "Add a new category to organize your articles and content"
+              : "Add a new category and its topics (sub-categories) to organize your articles"
             }
           </CardDescription>
         </CardHeader>
@@ -396,15 +437,104 @@ export default function CategoriesPage() {
             </div>
           </div>
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">Description</label>
-            <Textarea
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Optional description for this category..."
-              rows={3}
-            />
-          </div>
+          {/* Topic Management for New Categories */}
+          {!editingCategory && (
+            <div className="border rounded-lg p-4 bg-muted/20">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium">Add Topics (Sub-Categories)</h4>
+                <Button 
+                  onClick={() => setShowTopicForm(true)} 
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Topic
+                </Button>
+              </div>
+              
+              {/* Topic Form */}
+              {showTopicForm && (
+                <div className="border rounded-lg p-3 bg-background mb-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">
+                        Topic Title <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        value={topicFormData.title}
+                        onChange={(e) => handleTopicTitleChange(e.target.value)}
+                        placeholder="e.g. Markets, Economy, Companies..."
+                        size="sm"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium mb-1 block">
+                        Topic Slug <span className="text-red-500">*</span>
+                      </label>
+                      <Input
+                        value={topicFormData.slug}
+                        onChange={(e) => setTopicFormData(prev => ({ ...prev, slug: e.target.value }))}
+                        placeholder="e.g. markets, economy, companies..."
+                        size="sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      onClick={addPendingTopic} 
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-3 w-3" />
+                      Add to List
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={resetTopicForm} 
+                      size="sm"
+                      className="flex items-center gap-2"
+                    >
+                      <X className="h-3 w-3" />
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Pending Topics List */}
+              {pendingTopics.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Topics to be created:</p>
+                  {pendingTopics.map((topic, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 border rounded bg-background"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">{topic.title}</span>
+                        <Badge variant="outline" className="text-xs">{topic.slug}</Badge>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removePendingTopic(index)}
+                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {pendingTopics.length === 0 && !showTopicForm && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Click "Add Topic" to create sub-categories like "Markets", "Economy", etc.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="flex items-center gap-2 pt-4">
             <Button 
@@ -414,6 +544,7 @@ export default function CategoriesPage() {
             >
               <Save className="h-4 w-4" />
               {editingCategory ? "Update Category" : "Create Category"}
+              {!editingCategory && pendingTopics.length > 0 && ` & ${pendingTopics.length} Topics`}
             </Button>
             {editingCategory && (
               <Button variant="outline" onClick={resetForm} className="flex items-center gap-2">
@@ -473,15 +604,6 @@ export default function CategoriesPage() {
                     />
                   </div>
                 </div>
-                <div className="mb-4">
-                  <label className="text-sm font-medium mb-2 block">Description</label>
-                  <Textarea
-                    value={topicFormData.description}
-                    onChange={(e) => setTopicFormData(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Optional description for this topic..."
-                    rows={2}
-                  />
-                </div>
                 <div className="flex items-center gap-2">
                   <Button 
                     onClick={saveTopic} 
@@ -526,11 +648,6 @@ export default function CategoriesPage() {
                         <h4 className="font-medium">{topic.title}</h4>
                         <Badge variant="outline" className="text-xs">{topic.slug}</Badge>
                       </div>
-                      {topic.description && (
-                        <p className="text-sm text-muted-foreground">
-                          {topic.description}
-                        </p>
-                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -591,11 +708,6 @@ export default function CategoriesPage() {
                       <h3 className="font-semibold">{category.name}</h3>
                       <Badge variant="secondary">{category.slug}</Badge>
                     </div>
-                    {category.description && (
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {category.description}
-                      </p>
-                    )}
                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
                       <span>Created: {new Date(category.createdAt).toLocaleDateString()}</span>
                     </div>
@@ -637,3 +749,4 @@ export default function CategoriesPage() {
     </div>
   );
 }
+
