@@ -13,6 +13,7 @@ import {
   Image,
   ChevronLeft,
   ChevronRight,
+  Hash,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,13 @@ const getNavigation = (counts: { articles: number; users: number; categories: nu
       icon: Tags,
       badge: counts.categories > 0 ? counts.categories.toString() : null,
       description: "Organize content"
+    },
+    {
+      name: "Topics",
+      href: "/topics",
+      icon: Hash,
+      badge: null,
+      description: "Manage topics"
     },
     {
       name: "Media",

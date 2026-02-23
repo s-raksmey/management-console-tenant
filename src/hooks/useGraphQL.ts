@@ -583,6 +583,41 @@ export function useCategories() {
   };
 }
 
+export function useTopics() {
+  const { query, loading, error } = useGraphQL();
+
+  const getTopics = useCallback(async () => {
+    const TOPICS_QUERY = `
+      query GetTopics {
+        topics {
+          id
+          slug
+          title
+          description
+          coverImageUrl
+          coverVideoUrl
+          categoryId
+          createdAt
+          updatedAt
+          category {
+            id
+            name
+            slug
+          }
+        }
+      }
+    `;
+
+    return await query(TOPICS_QUERY);
+  }, [query]);
+
+  return {
+    getTopics,
+    loading,
+    error,
+  };
+}
+
 export function useSearch() {
   const { query, loading, error } = useGraphQL();
 
