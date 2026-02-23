@@ -17,7 +17,11 @@ interface Topic {
   slug: string;
   title: string;
   description?: string;
-  categoryId: string;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
   createdAt: string;
   updatedAt: string;
 }
@@ -94,7 +98,11 @@ export default function CategoriesPage() {
             slug
             title
             description
-            categoryId
+            category {
+              id
+              name
+              slug
+            }
             createdAt
             updatedAt
           }
@@ -248,7 +256,11 @@ export default function CategoriesPage() {
             slug
             title
             description
-            categoryId
+            category {
+              id
+              name
+              slug
+            }
             createdAt
             updatedAt
           }
@@ -625,4 +637,3 @@ export default function CategoriesPage() {
     </div>
   );
 }
-
