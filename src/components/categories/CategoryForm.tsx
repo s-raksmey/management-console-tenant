@@ -15,7 +15,6 @@ interface CategoryFormProps {
 export interface CategoryFormData {
   name: string;
   slug: string;
-  description?: string;
 }
 
 function slugify(text: string): string {
@@ -31,7 +30,6 @@ export function CategoryForm({ category, onSubmit, onCancel, isLoading = false }
   const [formData, setFormData] = useState<CategoryFormData>({
     name: category?.name || "",
     slug: category?.slug || "",
-    description: category?.description || "",
   });
 
   const [errors, setErrors] = useState<Partial<CategoryFormData>>({});
@@ -107,10 +105,7 @@ export function CategoryForm({ category, onSubmit, onCancel, isLoading = false }
     }
   };
 
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const description = e.target.value;
-    setFormData(prev => ({ ...prev, description }));
-  };
+
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -153,20 +148,7 @@ export function CategoryForm({ category, onSubmit, onCancel, isLoading = false }
         </p>
       </div>
 
-      <div className="space-y-2">
-        <label htmlFor="description" className="block text-sm font-medium text-slate-700">
-          Description
-        </label>
-        <textarea
-          id="description"
-          value={formData.description}
-          onChange={handleDescriptionChange}
-          placeholder="Optional description for this category"
-          rows={3}
-          disabled={isLoading}
-          className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-slate-50 disabled:text-slate-500"
-        />
-      </div>
+
 
       <div className="flex justify-end space-x-2 pt-4">
         <Button

@@ -94,9 +94,7 @@ export function CategoryList({
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Slug
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-                    Description
-                  </th>
+
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
                     Created
                   </th>
@@ -118,13 +116,7 @@ export function CategoryList({
                         {category.slug}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-slate-600 max-w-xs truncate">
-                        {category.description || (
-                          <span className="italic text-slate-400">No description</span>
-                        )}
-                      </div>
-                    </td>
+
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-slate-600">
                         {formatDate(category.createdAt)}
