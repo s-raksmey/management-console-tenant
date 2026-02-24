@@ -16,7 +16,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
   const pathname = usePathname();
 
   // Public routes that don't require authentication
-  const publicRoutes = ['/login'];
+  const publicRoutes = ['/login', '/register', '/verify-email'];
   const isPublicRoute = publicRoutes.includes(pathname);
 
   useEffect(() => {
