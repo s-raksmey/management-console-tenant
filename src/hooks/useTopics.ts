@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getAuthenticatedGqlClient } from '@/services/graphql-client';
 
 export interface Topic {
@@ -46,7 +46,7 @@ export function useTopics(): UseTopicsResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadTopicsForCategory = async (categorySlug: string) => {
+  const loadTopicsForCategory = useCallback(async (categorySlug: string) => {
     if (!categorySlug) {
       setTopics([]);
       return;
@@ -65,12 +65,12 @@ export function useTopics(): UseTopicsResult {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const clearTopics = () => {
+  const clearTopics = useCallback(() => {
     setTopics([]);
     setError(null);
-  };
+  }, []);
 
   return {
     topics,
