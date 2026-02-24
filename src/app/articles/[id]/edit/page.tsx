@@ -16,8 +16,9 @@ import { useRevisions } from "@/hooks/useGraphQL";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MEGA_NAV } from "@/data/mega-nav";
+
 import { useCategories } from "@/hooks/useCategories";
+import { useTopics } from "@/hooks/useTopics";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
 import { ArticleStatus, canEditArticle, canViewArticleForEdit } from "@/utils/articlePermissions";
@@ -79,6 +80,7 @@ export default function EditArticlePage() {
   
   // Category validation hook
   const { categories, loading: categoriesLoading, error: categoriesError, isValidCategory } = useCategories();
+  const { topics, loading: topicsLoading, error: topicsError, loadTopicsForCategory, clearTopics } = useTopics();
   
   // Permission hooks
   const { hasPermission, userRole, userId } = usePermissions();
@@ -95,7 +97,7 @@ export default function EditArticlePage() {
   const [authorName, setAuthorName] = useState("");
 
   const [categorySlug, setCategorySlug] = useState<string>(
-    Object.keys(MEGA_NAV)[0]
+    ""
   );
   const [topic, setTopic] = useState<string>("");
 
@@ -126,28 +128,14 @@ export default function EditArticlePage() {
     blocks: [],
   });
 
-  /** Stable derived data */
-  const categoryOptions = useMemo(() => Object.keys(MEGA_NAV), []);
-  const topicOptions = useMemo(() => {
-    if (!categorySlug) return [];
-
-    const cfg = MEGA_NAV[categorySlug];
-    if (!cfg) return [];
-
-    const allItems = [
-      ...cfg.explore.items,
-      ...cfg.shop.items,
-      ...cfg.more.items,
-    ];
-
-    return Array.from(
-      new Set(
-        allItems
-          .map((i) => i.href.split("/").pop())
-          .filter((t): t is string => Boolean(t))
-      )
-    );
-  }, [categorySlug]);
+  // Load topics when category changes
+  useEffect(() => {
+    if (categorySlug) {
+      loadTopicsForCategory(categorySlug);
+    } else {
+      clearTopics();
+    }
+  }, [categorySlug, loadTopicsForCategory, clearTopics]);
   /* -------------------------
      Load article
   ------------------------- */
@@ -164,7 +152,7 @@ export default function EditArticlePage() {
       setSlug(article.slug);
       setExcerpt(article.excerpt ?? "");
       setAuthorName(article.authorName ?? ""); // ✅ ADDED
-      setCategorySlug(article.category?.slug ?? categoryOptions[0]);
+      setCategorySlug(article.category?.slug ?? "");
       setTopic(article.topic ? normalizeTopic(article.topic) : "");
       setStatus(article.status);
       setOriginalStatus(article.status); // Track original status for permission checks
@@ -195,7 +183,7 @@ export default function EditArticlePage() {
       setOriginalTitle(article.title);
       setOriginalSlug(article.slug);
       setOriginalExcerpt(article.excerpt ?? "");
-      setOriginalCategorySlug(article.category?.slug ?? categoryOptions[0]);
+      setOriginalCategorySlug(article.category?.slug ?? "");
       setOriginalTopic(article.topic ? normalizeTopic(article.topic) : "");
       setOriginalIsBreaking(article.isBreaking ?? false);
 
@@ -205,7 +193,7 @@ export default function EditArticlePage() {
     return () => {
       active = false;
     };
-  }, [client, id, categoryOptions]);
+  }, [client, id]);
 
   /* -------------------------
      Actions
@@ -696,18 +684,22 @@ export default function EditArticlePage() {
             <select
               className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
               value={categorySlug}
-              disabled={isReadOnly}
+              disabled={isReadOnly || categoriesLoading}
               onChange={(e) => {
                 setCategorySlug(e.target.value);
                 setTopic("");
               }}
             >
-              {categoryOptions.map((cat) => (
-                <option key={cat} value={cat}>
-                  {MEGA_NAV[cat].root.label}
+              <option value="">— Select Category —</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.slug}>
+                  {category.name}
                 </option>
               ))}
             </select>
+            {categoriesLoading && (
+              <p className="text-xs text-slate-500">Loading categories...</p>
+            )}
           </div>
 
           <div className="grid gap-2">
@@ -717,16 +709,22 @@ export default function EditArticlePage() {
             <select
               className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
               value={topic}
-              disabled={isReadOnly}
+              disabled={isReadOnly || topicsLoading || !categorySlug}
               onChange={(e) => setTopic(e.target.value)}
             >
               <option value="">— No topic —</option>
-              {topicOptions.map((t) => (
-                <option key={t} value={t}>
-                  {titleCase(t)}
+              {topics.map((topicItem) => (
+                <option key={topicItem.id} value={topicItem.slug}>
+                  {topicItem.title}
                 </option>
               ))}
             </select>
+            {topicsLoading && (
+              <p className="text-xs text-slate-500">Loading topics...</p>
+            )}
+            {!categorySlug && (
+              <p className="text-xs text-slate-500">Select a category first</p>
+            )}
           </div>
         </div>
 
@@ -735,6 +733,14 @@ export default function EditArticlePage() {
           <div className="rounded-md border border-red-200 bg-red-50 p-3">
             <p className="text-sm text-red-600">
               <strong>Category Error:</strong> {categoriesError}
+            </p>
+          </div>
+        )}
+
+        {topicsError && (
+          <div className="rounded-md border border-red-200 bg-red-50 p-3">
+            <p className="text-sm text-red-600">
+              <strong>Topics Error:</strong> {topicsError}
             </p>
           </div>
         )}
