@@ -266,12 +266,12 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             {isLoading ? (
               <>
                 <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                Creating account...
+                Submitting request...
               </>
             ) : (
               <>
                 <UserPlus className="-ml-1 mr-2 h-4 w-4" />
-                Create Account
+                Request Account
               </>
             )}
           </button>
