@@ -40,6 +40,11 @@ export enum Permission {
   UPDATE_CATEGORY = 'UPDATE_CATEGORY',
   DELETE_CATEGORY = 'DELETE_CATEGORY',
   
+  // Topic Management
+  CREATE_TOPIC = 'CREATE_TOPIC',
+  UPDATE_TOPIC = 'UPDATE_TOPIC',
+  DELETE_TOPIC = 'DELETE_TOPIC',
+  
   // Settings Management
   VIEW_SETTINGS = 'VIEW_SETTINGS',
   UPDATE_SETTINGS = 'UPDATE_SETTINGS',
@@ -77,6 +82,9 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.CREATE_CATEGORY,
     Permission.UPDATE_CATEGORY,
     Permission.DELETE_CATEGORY,
+    Permission.CREATE_TOPIC,
+    Permission.UPDATE_TOPIC,
+    Permission.DELETE_TOPIC,
     Permission.VIEW_SETTINGS,
     Permission.UPDATE_SETTINGS,
     Permission.VIEW_AUDIT_LOGS,
@@ -96,8 +104,6 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.REVIEW_ARTICLES,
     Permission.APPROVE_ARTICLES,
     Permission.REJECT_ARTICLES,
-    Permission.CREATE_CATEGORY,
-    Permission.UPDATE_CATEGORY,
     Permission.VIEW_SETTINGS,
   ],
   AUTHOR: [

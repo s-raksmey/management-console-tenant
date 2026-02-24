@@ -10,6 +10,7 @@ import { Trash2, Edit, Plus, Save, X } from "lucide-react";
 import { useToastHelpers } from "@/components/ui/toast";
 import { Category, M_CREATE_CATEGORY, M_UPDATE_CATEGORY, M_DELETE_CATEGORY } from "@/services/category.gql";
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
+import { PermissionGuard, Permission } from "@/components/permissions/PermissionGuard";
 
 interface Topic {
   id: string;
@@ -417,18 +418,31 @@ export default function CategoriesPage() {
       </div>
 
       {/* Category Form - Always visible for create, switches to edit mode */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {editingCategory ? "Edit Category" : "Create New Category"}
-          </CardTitle>
-          <CardDescription>
-            {editingCategory 
-              ? `Editing category: ${editingCategory.name} - Manage its topics below`
-              : "Add a new category and its topics (sub-categories) to organize your articles"
-            }
-          </CardDescription>
-        </CardHeader>
+      <PermissionGuard 
+        permissions={editingCategory ? [Permission.UPDATE_CATEGORY] : [Permission.CREATE_CATEGORY]}
+        fallback={
+          <Card>
+            <CardHeader>
+              <CardTitle>Access Restricted</CardTitle>
+              <CardDescription>
+                You don't have permission to {editingCategory ? "edit categories" : "create new categories"}. Contact your administrator for access.
+              </CardDescription>
+            </CardHeader>
+          </Card>
+        }
+      >
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {editingCategory ? "Edit Category" : "Create New Category"}
+            </CardTitle>
+            <CardDescription>
+              {editingCategory 
+                ? `Editing category: ${editingCategory.name} - Manage its topics below`
+                : "Add a new category and its topics (sub-categories) to organize your articles"
+              }
+            </CardDescription>
+          </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -571,6 +585,7 @@ export default function CategoriesPage() {
           </div>
         </CardContent>
       </Card>
+      </PermissionGuard>
 
       {/* Topics Management - Only show when editing a category */}
       {editingCategory && (
@@ -578,14 +593,16 @@ export default function CategoriesPage() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Topics in {editingCategory.name}</span>
-              <Button 
-                onClick={() => setShowTopicForm(true)} 
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add Topic
-              </Button>
+              <PermissionGuard permissions={[Permission.CREATE_TOPIC]}>
+                <Button 
+                  onClick={() => setShowTopicForm(true)} 
+                  size="sm"
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Topic
+                </Button>
+              </PermissionGuard>
             </CardTitle>
             <CardDescription>
               Manage sub-categories (topics) for this category. These will appear as "Markets", "Economy", etc.
@@ -594,7 +611,8 @@ export default function CategoriesPage() {
           <CardContent className="space-y-4">
             {/* Topic Form */}
             {showTopicForm && (
-              <div className="border rounded-lg p-4 bg-muted/20">
+              <PermissionGuard permissions={[Permission.CREATE_TOPIC]}>
+                <div className="border rounded-lg p-4 bg-muted/20">
                 <h4 className="font-medium mb-3">
                   {editingTopic ? "Edit Topic" : "Add New Topic"}
                 </h4>
@@ -640,7 +658,8 @@ export default function CategoriesPage() {
                     Cancel
                   </Button>
                 </div>
-              </div>
+                </div>
+              </PermissionGuard>
             )}
 
             {/* Topics List */}

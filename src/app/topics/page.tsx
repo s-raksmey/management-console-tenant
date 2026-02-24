@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit, Plus, Save, X } from "lucide-react";
 import { useToastHelpers } from "@/components/ui/toast";
+import { PermissionGuard, Permission } from "@/components/permissions/PermissionGuard";
 
 interface Topic {
   id: string;
@@ -299,10 +300,12 @@ export default function TopicsPage() {
               </Select>
             </div>
             {selectedCategorySlug && (
-              <Button onClick={startCreating} className="flex items-center gap-2">
-                <Plus className="h-4 w-4" />
-                Add Topic
-              </Button>
+              <PermissionGuard permissions={[Permission.CREATE_TOPIC]}>
+                <Button onClick={startCreating} className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Topic
+                </Button>
+              </PermissionGuard>
             )}
           </div>
         </CardContent>
@@ -310,7 +313,20 @@ export default function TopicsPage() {
 
       {/* Topic Form */}
       {isFormVisible && (
-        <Card>
+        <PermissionGuard 
+          permissions={editingTopic ? [Permission.UPDATE_TOPIC] : [Permission.CREATE_TOPIC]}
+          fallback={
+            <Card>
+              <CardHeader>
+                <CardTitle>Access Restricted</CardTitle>
+                <CardDescription>
+                  You don't have permission to {editingTopic ? "edit topics" : "create new topics"}. Contact your administrator for access.
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          }
+        >
+          <Card>
           <CardHeader>
             <CardTitle>
               {editingTopic ? "Edit Topic" : "Create New Topic"}
@@ -386,7 +402,8 @@ export default function TopicsPage() {
               </Button>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </PermissionGuard>
       )}
 
       {/* Topics List */}
