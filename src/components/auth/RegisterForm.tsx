@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, UserPlus, Loader2 } from 'lucide-react';
 import { useMutation } from '@apollo/client/react';
@@ -281,12 +282,12 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           <div className="mt-6 text-center">
             <p className="text-sm text-slate-600">
               Already have an account?{' '}
-              <a
+              <Link
                 href="/login"
                 className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
               >
                 Sign in here
-              </a>
+              </Link>
             </p>
           </div>
         </>
