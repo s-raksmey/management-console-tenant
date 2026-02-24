@@ -276,22 +276,19 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             )}
           </button>
           </form>
+          
           {/* Login Link */}
-          {onSwitchToLogin && (
-            <div className="mt-6 text-center">
-              <p className="text-sm text-slate-600">
-                Already have an account?{' '}
-                <button
-                  type="button"
-                  onClick={onSwitchToLogin}
-                  className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-                  disabled={isLoading}
-                >
-                  Sign in here
-                </button>
-              </p>
-            </div>
-          )}
+          <div className="mt-6 text-center">
+            <p className="text-sm text-slate-600">
+              Already have an account?{' '}
+              <a
+                href="/login"
+                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+              >
+                Sign in here
+              </a>
+            </p>
+          </div>
         </>
         )}
       </div>

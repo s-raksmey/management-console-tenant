@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { LoginForm } from '@/components/auth/LoginForm';
-import { RegisterForm } from '@/components/auth/RegisterForm';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated, isLoading } = useAuth();
-  const [isLogin, setIsLogin] = useState(true);
+  const verified = searchParams.get('verified');
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -59,26 +59,40 @@ export default function LoginPage() {
           </motion.div>
         </div>
 
-        {/* Form Container */}
+        {/* Success message for verified users */}
+        {verified === 'true' && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg"
+          >
+            <p className="text-sm text-green-800 text-center">
+              ✅ Email verified successfully! You can now sign in with your credentials.
+            </p>
+          </motion.div>
+        )}
+
+        {/* Login Form */}
         <motion.div
-          key={isLogin ? 'login' : 'register'}
-          initial={{ opacity: 0, x: isLogin ? -20 : 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: isLogin ? 20 : -20 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          {isLogin ? (
-            <LoginForm
-              onSuccess={handleAuthSuccess}
-              onSwitchToRegister={() => setIsLogin(false)}
-            />
-          ) : (
-            <RegisterForm
-              onSuccess={handleAuthSuccess}
-              onSwitchToLogin={() => setIsLogin(true)}
-            />
-          )}
+          <LoginForm onSuccess={handleAuthSuccess} />
         </motion.div>
+
+        {/* Registration Link */}
+        <div className="mt-6 text-center">
+          <p className="text-sm text-slate-600">
+            Don't have an account?{' '}
+            <a 
+              href="/register" 
+              className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+            >
+              Request access here
+            </a>
+          </p>
+        </div>
 
         {/* Footer */}
         <div className="mt-8 text-center">
