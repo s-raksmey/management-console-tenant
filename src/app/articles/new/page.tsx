@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
 import { M_UPSERT_ARTICLE } from "@/services/article.gql";
