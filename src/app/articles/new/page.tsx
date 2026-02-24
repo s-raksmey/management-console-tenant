@@ -9,8 +9,8 @@ import { useArticleMutations } from "@/hooks/useGraphQL";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MEGA_NAV } from "@/data/mega-nav";
 import { useCategories } from "@/hooks/useCategories";
+import { useTopics } from "@/hooks/useTopics";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
 import { ArticleStatus } from "@/utils/articlePermissions";
@@ -55,8 +55,9 @@ export default function NewArticlePage() {
   const editorRef = useRef<NewsEditorRef>(null);
   const { performWorkflowAction, requestBreakingNews } = useArticleMutations();
   
-  // Category validation hook
+  // Category and topic hooks
   const { categories, loading: categoriesLoading, error: categoriesError, isValidCategory } = useCategories();
+  const { topics, loading: topicsLoading, error: topicsError, loadTopicsForCategory, clearTopics } = useTopics();
   
   // Permission hooks
   const { hasPermission, userRole } = usePermissions();
@@ -68,9 +69,7 @@ export default function NewArticlePage() {
   /* ✅ ADDED */
   const [authorName, setAuthorName] = useState("");
 
-  const [categorySlug, setCategorySlug] = useState<string>(
-    Object.keys(MEGA_NAV)[0]
-  );
+  const [categorySlug, setCategorySlug] = useState<string>("");
   const [topic, setTopic] = useState<string>("");
 
   const [status, setStatus] = useState<ArticleStatus>("DRAFT");
@@ -80,27 +79,22 @@ export default function NewArticlePage() {
   const [saving, setSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const categoryOptions = Object.keys(MEGA_NAV);
-  const topicOptions = useMemo(() => {
-    if (!categorySlug) return [];
+  // Set default category when categories load
+  useEffect(() => {
+    if (categories.length > 0 && !categorySlug) {
+      setCategorySlug(categories[0].slug);
+    }
+  }, [categories, categorySlug]);
 
-    const cfg = MEGA_NAV[categorySlug];
-    if (!cfg) return [];
-
-    const allItems = [
-      ...cfg.explore.items,
-      ...cfg.shop.items,
-      ...cfg.more.items,
-    ];
-
-    return Array.from(
-      new Set(
-        allItems
-          .map((i) => i.href.split("/").pop())
-          .filter((t): t is string => Boolean(t))
-      )
-    );
-  }, [categorySlug]);
+  // Load topics when category changes
+  useEffect(() => {
+    if (categorySlug) {
+      loadTopicsForCategory(categorySlug);
+      setTopic(""); // Reset topic when category changes
+    } else {
+      clearTopics();
+    }
+  }, [categorySlug, loadTopicsForCategory, clearTopics]);
 
   /* -------------------------
      Save
@@ -108,8 +102,12 @@ export default function NewArticlePage() {
   async function save() {
     if (!title) return;
 
-    // Validate category exists in database
+    // Validate category is selected and exists in database
     setValidationError(null);
+    if (!categorySlug) {
+      setValidationError("Please select a category.");
+      return;
+    }
     if (!categoriesLoading && !isValidCategory(categorySlug)) {
       setValidationError(`Category "${categorySlug}" does not exist in the database. Please select a valid category.`);
       return;
@@ -177,8 +175,12 @@ export default function NewArticlePage() {
   async function publish() {
     if (!title) return;
 
-    // Validate category exists in database
+    // Validate category is selected and exists in database
     setValidationError(null);
+    if (!categorySlug) {
+      setValidationError("Please select a category.");
+      return;
+    }
     if (!categoriesLoading && !isValidCategory(categorySlug)) {
       setValidationError(`Category "${categorySlug}" does not exist in the database. Please select a valid category.`);
       return;
@@ -304,13 +306,18 @@ export default function NewArticlePage() {
                 setCategorySlug(e.target.value);
                 setTopic("");
               }}
+              disabled={categoriesLoading}
             >
-              {categoryOptions.map((cat) => (
-                <option key={cat} value={cat}>
-                  {MEGA_NAV[cat].root.label}
+              <option value="">— Select Category —</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.slug}>
+                  {category.name}
                 </option>
               ))}
             </select>
+            {categoriesLoading && (
+              <p className="text-xs text-slate-500">Loading categories...</p>
+            )}
           </div>
 
           <div className="grid gap-2">
@@ -321,14 +328,21 @@ export default function NewArticlePage() {
               className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
+              disabled={topicsLoading || !categorySlug}
             >
               <option value="">— No topic —</option>
-              {topicOptions.map((t) => (
-                <option key={t} value={t}>
-                  {titleCase(t)}
+              {topics.map((topicItem) => (
+                <option key={topicItem.id} value={topicItem.slug}>
+                  {topicItem.title}
                 </option>
               ))}
             </select>
+            {topicsLoading && (
+              <p className="text-xs text-slate-500">Loading topics...</p>
+            )}
+            {!categorySlug && (
+              <p className="text-xs text-slate-500">Select a category first</p>
+            )}
           </div>
         </div>
 
@@ -337,6 +351,14 @@ export default function NewArticlePage() {
           <div className="rounded-md border border-red-200 bg-red-50 p-3">
             <p className="text-sm text-red-600">
               <strong>Category Error:</strong> {categoriesError}
+            </p>
+          </div>
+        )}
+        
+        {topicsError && (
+          <div className="rounded-md border border-red-200 bg-red-50 p-3">
+            <p className="text-sm text-red-600">
+              <strong>Topics Error:</strong> {topicsError}
             </p>
           </div>
         )}
