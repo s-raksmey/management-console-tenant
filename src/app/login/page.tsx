@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { useAuth } from '@/contexts/AuthContext';
@@ -85,12 +86,12 @@ export default function LoginPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-slate-600">
             Don't have an account?{' '}
-            <a 
+            <Link 
               href="/register" 
               className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
             >
               Request access here
-            </a>
+            </Link>
           </p>
         </div>
 

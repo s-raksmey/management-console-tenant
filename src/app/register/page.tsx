@@ -1,12 +1,25 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 
 export default function RegisterPage() {
+  // Debug: Log when this component renders
+  console.log('🔵 RegisterPage component is rendering');
+  
+  // Set page title
+  useEffect(() => {
+    document.title = 'Request Account - Pulse News Admin';
+  }, []);
+  
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-blue-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      {/* Debug indicator */}
+      <div className="fixed top-4 left-4 bg-green-500 text-white px-4 py-2 rounded-lg font-bold z-50">
+        ✅ REGISTER PAGE LOADED
+      </div>
+      
       <div className="w-full max-w-md">
         {/* Logo/Brand */}
         <div className="text-center mb-8">
@@ -30,7 +43,7 @@ export default function RegisterPage() {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.1 }}
-            className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4"
+            className="bg-blue-100 border-2 border-blue-300 rounded-lg p-6 mb-4 shadow-lg"
           >
             <h2 className="text-2xl font-bold text-blue-900 mb-2">
               Request Account
