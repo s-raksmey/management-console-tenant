@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useSearch } from '@/hooks/useGraphQL';
 import { Article } from '@/types/article';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Search, Filter, X, Eye, Edit } from 'lucide-react';
+import { Search, Filter, X, Eye, Edit, AlertCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
@@ -27,6 +27,7 @@ const statusColors = {
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const initialQuery = searchParams.get('q') || '';
   
   const [searchQuery, setSearchQuery] = useState(initialQuery);
@@ -34,14 +35,31 @@ export default function SearchPage() {
   const [totalCount, setTotalCount] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const [filters, setFilters] = useState({
-    status: 'ALL',
-    categorySlug: '',
-    topic: '',
+    status: searchParams.get('status') || 'ALL',
+    categorySlug: searchParams.get('category') || '',
+    topic: searchParams.get('topic') || '',
+    sortBy: searchParams.get('sortBy') || 'relevance',
+    sortOrder: searchParams.get('sortOrder') || 'desc',
   });
   const [showFilters, setShowFilters] = useState(false);
 
-  const { searchArticles, loading, error } = useSearch();
+  const { searchArticles, getSearchSuggestions, loading, error } = useSearch();
+
+  const updateURL = useCallback((query: string, newFilters: typeof filters) => {
+    const params = new URLSearchParams();
+    if (query) params.set('q', query);
+    if (newFilters.status !== 'ALL') params.set('status', newFilters.status);
+    if (newFilters.categorySlug) params.set('category', newFilters.categorySlug);
+    if (newFilters.topic) params.set('topic', newFilters.topic);
+    if (newFilters.sortBy !== 'relevance') params.set('sortBy', newFilters.sortBy);
+    if (newFilters.sortOrder !== 'desc') params.set('sortOrder', newFilters.sortOrder);
+    
+    const newURL = params.toString() ? `/search?${params.toString()}` : '/search';
+    router.replace(newURL, { scroll: false });
+  }, [router]);
 
   const performSearch = useCallback(async (query: string, page = 0, resetResults = true) => {
     if (!query.trim()) {
@@ -51,25 +69,29 @@ export default function SearchPage() {
       return;
     }
 
-    const searchInput = {
-      query: query.trim(),
-      categorySlug: filters.categorySlug || undefined,
-      status: filters.status !== 'ALL' ? filters.status : undefined,
-      authorName: filters.topic || undefined, // Map topic filter to authorName search
-      take: 20,
-      skip: page * 20,
-      sortBy: 'relevance',
-      sortOrder: 'desc',
-    };
+    try {
+      const searchInput = {
+        query: query.trim(),
+        categorySlug: filters.categorySlug || undefined,
+        status: filters.status !== 'ALL' ? filters.status : undefined,
+        authorName: filters.topic || undefined, // Map topic filter to authorName search
+        take: 20,
+        skip: page * 20,
+        sortBy: filters.sortBy || 'relevance',
+        sortOrder: filters.sortOrder || 'desc',
+      };
 
-    const response = await searchArticles(searchInput);
-    
-    if (response?.searchArticles) {
-      const newResults = response.searchArticles.articles || [];
-      setResults(resetResults ? newResults : [...results, ...newResults]);
-      setTotalCount(response.searchArticles.totalCount || 0);
-      setHasMore(response.searchArticles.hasMore || false);
-      setCurrentPage(page);
+      const response = await searchArticles(searchInput);
+      
+      if (response?.searchArticles) {
+        const newResults = response.searchArticles.articles || [];
+        setResults(resetResults ? newResults : [...results, ...newResults]);
+        setTotalCount(response.searchArticles.totalCount || 0);
+        setHasMore(response.searchArticles.hasMore || false);
+        setCurrentPage(page);
+      }
+    } catch (err) {
+      console.error('Search error:', err);
     }
   }, [searchArticles, filters, results]);
 
@@ -79,25 +101,63 @@ export default function SearchPage() {
     }
   }, []);
 
+  // Handle search suggestions
+  useEffect(() => {
+    if (searchQuery.length > 2) {
+      const timeoutId = setTimeout(async () => {
+        try {
+          const response = await getSearchSuggestions(searchQuery, 5);
+          if (response?.searchSuggestions) {
+            setSuggestions(response.searchSuggestions);
+            setShowSuggestions(true);
+          }
+        } catch (err) {
+          console.error('Suggestions error:', err);
+          setSuggestions([]);
+        }
+      }, 200);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  }, [searchQuery, getSearchSuggestions]);
+
   useEffect(() => {
     if (searchQuery) {
       const timeoutId = setTimeout(() => {
         performSearch(searchQuery, 0, true);
+        updateURL(searchQuery, filters);
       }, 300);
       return () => clearTimeout(timeoutId);
     }
-  }, [searchQuery, filters]);
+  }, [searchQuery, filters, performSearch, updateURL]);
 
   const handleLoadMore = () => {
     performSearch(searchQuery, currentPage + 1, false);
   };
 
   const clearFilters = () => {
-    setFilters({
+    const newFilters = {
       status: 'ALL',
       categorySlug: '',
       topic: '',
-    });
+      sortBy: 'relevance',
+      sortOrder: 'desc',
+    };
+    setFilters(newFilters);
+    updateURL(searchQuery, newFilters);
+  };
+
+  const handleFilterChange = (key: string, value: string) => {
+    const newFilters = { ...filters, [key]: value };
+    setFilters(newFilters);
+    updateURL(searchQuery, newFilters);
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setSearchQuery(suggestion);
+    setShowSuggestions(false);
   };
 
   const hasActiveFilters = (filters.status !== 'ALL' && filters.status) || filters.categorySlug || filters.topic;
@@ -119,8 +179,29 @@ export default function SearchPage() {
             placeholder="Search articles, titles, content..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
             className="pl-10"
           />
+          
+          {/* Search Suggestions Dropdown */}
+          {showSuggestions && suggestions.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
+              <div className="p-2">
+                <div className="text-xs font-medium text-slate-500 mb-2 px-2">Suggestions</div>
+                {suggestions.map((suggestion, index) => (
+                  <button
+                    key={index}
+                    onClick={() => handleSuggestionClick(suggestion)}
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 rounded-md transition-colors"
+                  >
+                    <Search className="inline h-3 w-3 mr-2 text-slate-400" />
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <Button
           variant="outline"
@@ -150,10 +231,10 @@ export default function SearchPage() {
             )}
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">Status</label>
-              <Select value={filters.status} onValueChange={(value) => setFilters({...filters, status: value})}>
+              <Select value={filters.status} onValueChange={(value) => handleFilterChange('status', value)}>
                 <SelectTrigger>
                   <SelectValue placeholder="All statuses" />
                 </SelectTrigger>
@@ -169,20 +250,58 @@ export default function SearchPage() {
 
             <div>
               <label className="text-sm font-medium text-slate-700 mb-2 block">Category</label>
+              <Select value={filters.categorySlug} onValueChange={(value) => handleFilterChange('categorySlug', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All categories</SelectItem>
+                  <SelectItem value="tech">Technology</SelectItem>
+                  <SelectItem value="world">World</SelectItem>
+                  <SelectItem value="business">Business</SelectItem>
+                  <SelectItem value="sports">Sports</SelectItem>
+                  <SelectItem value="entertainment">Entertainment</SelectItem>
+                  <SelectItem value="politics">Politics</SelectItem>
+                  <SelectItem value="health">Health</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">Author/Topic</label>
               <Input
-                placeholder="Category slug"
-                value={filters.categorySlug}
-                onChange={(e) => setFilters({...filters, categorySlug: e.target.value})}
+                placeholder="Author name or topic"
+                value={filters.topic}
+                onChange={(e) => handleFilterChange('topic', e.target.value)}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium text-slate-700 mb-2 block">Topic</label>
-              <Input
-                placeholder="Topic"
-                value={filters.topic}
-                onChange={(e) => setFilters({...filters, topic: e.target.value})}
-              />
+              <label className="text-sm font-medium text-slate-700 mb-2 block">Sort By</label>
+              <Select value={filters.sortBy} onValueChange={(value) => handleFilterChange('sortBy', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="relevance">Relevance</SelectItem>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="views">Views</SelectItem>
+                  <SelectItem value="title">Title</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-slate-700 mb-2 block">Order</label>
+              <Select value={filters.sortOrder} onValueChange={(value) => handleFilterChange('sortOrder', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="desc">Newest First</SelectItem>
+                  <SelectItem value="asc">Oldest First</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -200,7 +319,25 @@ export default function SearchPage() {
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-            <p className="text-red-600">Error: {error}</p>
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-500" />
+              <div>
+                <h3 className="font-medium text-red-800">Search Error</h3>
+                <p className="text-red-600 text-sm">
+                  {typeof error === 'string' ? error : 'Something went wrong while searching. Please try again.'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {loading && results.length === 0 && searchQuery && (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto mb-4" />
+              <p className="text-slate-600">Searching articles...</p>
+            </div>
           </div>
         )}
 
@@ -233,7 +370,7 @@ export default function SearchPage() {
                       {article.category && <span>{article.category.name}</span>}
                       {article.authorName && <span>by {article.authorName}</span>}
                       <span>{format(new Date(article.updatedAt), 'MMM d, yyyy')}</span>
-                      <span>150 views</span>
+                      <span>{article.viewCount || 0} views</span>
                     </div>
                   </div>
                   
@@ -259,8 +396,16 @@ export default function SearchPage() {
                   variant="outline" 
                   onClick={handleLoadMore}
                   disabled={loading}
+                  className="min-w-[120px]"
                 >
-                  {loading ? 'Loading...' : 'Load More'}
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      Loading...
+                    </>
+                  ) : (
+                    'Load More'
+                  )}
                 </Button>
               </div>
             )}
