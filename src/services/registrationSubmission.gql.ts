@@ -1,5 +1,5 @@
 // src/services/registrationSubmission.gql.ts
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const SUBMIT_REGISTRATION_REQUEST_MUTATION = gql`
   mutation SubmitRegistrationRequest($input: SubmitRegistrationRequestInput!) {
@@ -16,6 +16,14 @@ export const VERIFY_EMAIL_MUTATION = gql`
     verifyEmail(input: $input) {
       success
       message
+      token
+      user {
+        id
+        email
+        name
+        role
+        isActive
+      }
       registrationRequest {
         id
         email

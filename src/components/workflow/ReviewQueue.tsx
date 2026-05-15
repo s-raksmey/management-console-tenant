@@ -17,31 +17,6 @@ import {
   PerformWorkflowActionResponse 
 } from '../../graphql/mutations/articleWorkflow';
 
-interface Article {
-  id: string;
-  title: string;
-  excerpt?: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
-  author: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  category?: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-}
-
-interface ReviewQueueData {
-  articles: Article[];
-  totalCount: number;
-  hasMore: boolean;
-}
-
 interface WorkflowActionResult {
   success: boolean;
   message: string;

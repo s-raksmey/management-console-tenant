@@ -495,7 +495,7 @@ export default function CategoriesPage() {
                         value={topicFormData.title}
                         onChange={(e) => handleTopicTitleChange(e.target.value)}
                         placeholder="e.g. Markets, Economy, Companies..."
-                        size="sm"
+                        className="h-8"
                       />
                     </div>
                     <div>
@@ -506,7 +506,7 @@ export default function CategoriesPage() {
                         value={topicFormData.slug}
                         onChange={(e) => setTopicFormData(prev => ({ ...prev, slug: e.target.value }))}
                         placeholder="e.g. markets, economy, companies..."
-                        size="sm"
+                        className="h-8"
                       />
                     </div>
                   </div>

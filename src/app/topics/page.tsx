@@ -485,7 +485,7 @@ export default function TopicsPage() {
 
       {error && (
         <div className="text-center py-4 text-red-600">
-          <p>Error: {error.message}</p>
+          <p>Error: {error}</p>
         </div>
       )}
     </div>

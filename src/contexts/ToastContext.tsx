@@ -14,7 +14,17 @@ export interface Toast {
   };
 }
 
+type ToastVariant = Toast['type'] | 'default' | 'destructive';
+
+interface ToastInput {
+  title: string;
+  description?: string;
+  variant?: ToastVariant;
+  duration?: number;
+}
+
 interface ToastContextType {
+  toast: (toast: ToastInput) => void;
   toasts: Toast[];
   addToast: (toast: Omit<Toast, 'id'>) => void;
   removeToast: (id: string) => void;
@@ -26,34 +36,49 @@ const ToastContext = createContext<ToastContextType | undefined>(undefined);
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
+  const removeToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(toast => toast.id !== id));
+  }, []);
+
   const addToast = useCallback((toast: Omit<Toast, 'id'>) => {
     const id = Math.random().toString(36).substr(2, 9);
+    const duration = toast.duration ?? 5000;
     const newToast: Toast = {
       ...toast,
       id,
-      duration: toast.duration ?? 5000, // Default 5 seconds
+      duration,
     };
 
     setToasts(prev => [...prev, newToast]);
 
-    // Auto-remove toast after duration
-    if (newToast.duration > 0) {
+    if (duration > 0) {
       setTimeout(() => {
         removeToast(id);
-      }, newToast.duration);
+      }, duration);
     }
-  }, []);
-
-  const removeToast = useCallback((id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
-  }, []);
+  }, [removeToast]);
 
   const clearAllToasts = useCallback(() => {
     setToasts([]);
   }, []);
 
+  const toast = useCallback(({ title, description, variant = 'default', duration }: ToastInput) => {
+    const type = variant === 'destructive'
+      ? 'error'
+      : variant === 'default'
+        ? 'info'
+        : variant;
+
+    addToast({
+      type,
+      title,
+      message: description,
+      duration,
+    });
+  }, [addToast]);
+
   return (
-    <ToastContext.Provider value={{ toasts, addToast, removeToast, clearAllToasts }}>
+    <ToastContext.Provider value={{ toast, toasts, addToast, removeToast, clearAllToasts }}>
       {children}
     </ToastContext.Provider>
   );

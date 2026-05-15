@@ -91,7 +91,7 @@ export function RegistrationRequestsPage() {
         toast({
           title: "Request Approved",
           description: result.message,
-          variant: "default"
+          variant: "success"
         });
         
         // Remove from current list and reload data
@@ -130,7 +130,7 @@ export function RegistrationRequestsPage() {
         toast({
           title: "Request Rejected",
           description: result.message,
-          variant: "default"
+          variant: "success"
         });
         
         // Remove from current list and reload data
@@ -171,7 +171,7 @@ export function RegistrationRequestsPage() {
         toast({
           title: "Bulk Approval Complete",
           description: `${selectedRequests.size} requests approved successfully`,
-          variant: "default"
+          variant: "success"
         });
         
         setSelectedRequests(new Set());
@@ -206,7 +206,7 @@ export function RegistrationRequestsPage() {
         toast({
           title: "Bulk Rejection Complete",
           description: `${selectedRequests.size} requests rejected`,
-          variant: "default"
+          variant: "success"
         });
         
         setSelectedRequests(new Set());

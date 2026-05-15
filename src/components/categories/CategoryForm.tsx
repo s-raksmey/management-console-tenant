@@ -77,7 +77,6 @@ export function CategoryForm({ category, onSubmit, onCancel, isLoading = false }
       await onSubmit({
         name: formData.name.trim(),
         slug: formData.slug.trim(),
-        description: formData.description?.trim() || undefined,
       });
     } catch (error) {
       console.error("Form submission error:", error);
