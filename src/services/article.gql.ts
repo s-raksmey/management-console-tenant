@@ -7,6 +7,7 @@ export const Q_CATEGORIES = /* GraphQL */ `
     categories {
       id
       name
+      nameKhmer
       slug
     }
   }
@@ -262,7 +263,10 @@ export const Q_TOP_STORIES = /* GraphQL */ `
       topic
       contentJson
       publishedAt
-      category { name slug }
+      category {
+        name
+        slug
+      }
     }
   }
 `;
@@ -276,7 +280,10 @@ export const Q_EDITORS_PICKS = /* GraphQL */ `
       excerpt
       topic
       contentJson
-      category { name slug }
+      category {
+        name
+        slug
+      }
     }
   }
 `;
@@ -291,7 +298,10 @@ export const Q_BREAKING_NEWS = /* GraphQL */ `
       topic
       contentJson
       publishedAt
-      category { name slug }
+      category {
+        name
+        slug
+      }
     }
   }
 `;
@@ -305,7 +315,10 @@ export const Q_TRENDING = /* GraphQL */ `
       topic
       contentJson
       publishedAt
-      category { name slug }
+      category {
+        name
+        slug
+      }
     }
   }
 `;
@@ -364,7 +377,10 @@ export const M_REQUEST_ARTICLE_REVISION = /* GraphQL */ `
 
 export const M_APPROVE_ARTICLE_REVISION = /* GraphQL */ `
   mutation ApproveArticleRevision($requestId: ID!, $reviewComment: String) {
-    approveArticleRevision(requestId: $requestId, reviewComment: $reviewComment) {
+    approveArticleRevision(
+      requestId: $requestId
+      reviewComment: $reviewComment
+    ) {
       id
       title
       status
@@ -415,7 +431,10 @@ export const Q_BREAKING_NEWS_REQUESTS = /* GraphQL */ `
 
 export const M_REJECT_ARTICLE_REVISION = /* GraphQL */ `
   mutation RejectArticleRevision($requestId: ID!, $reviewComment: String) {
-    rejectArticleRevision(requestId: $requestId, reviewComment: $reviewComment) {
+    rejectArticleRevision(
+      requestId: $requestId
+      reviewComment: $reviewComment
+    ) {
       id
       status
       reviewComment

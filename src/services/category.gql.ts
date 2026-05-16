@@ -9,6 +9,7 @@ export const Q_CATEGORIES = gql`
     categories {
       id
       name
+      nameKhmer
       slug
       createdAt
       updatedAt
@@ -25,6 +26,7 @@ export const M_CREATE_CATEGORY = gql`
     createCategory(input: $input) {
       id
       name
+      nameKhmer
       slug
       createdAt
       updatedAt
@@ -37,6 +39,7 @@ export const M_UPDATE_CATEGORY = gql`
     updateCategory(id: $id, input: $input) {
       id
       name
+      nameKhmer
       slug
       createdAt
       updatedAt
@@ -57,6 +60,7 @@ export const M_DELETE_CATEGORY = gql`
 export interface Category {
   id: string;
   name: string;
+  nameKhmer?: string | null;
   slug: string;
   createdAt: string;
   updatedAt: string;
@@ -64,10 +68,12 @@ export interface Category {
 
 export interface CreateCategoryInput {
   name: string;
+  nameKhmer?: string | null;
   slug: string;
 }
 
 export interface UpdateCategoryInput {
   name?: string;
+  nameKhmer?: string | null;
   slug?: string;
 }

@@ -1,15 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { 
-  Bell, 
-  Search, 
-  User, 
-  Settings, 
-  LogOut, 
-  Moon, 
-  Sun, 
+import {
+  Bell,
+  Search,
+  User,
+  Settings,
+  LogOut,
+  Moon,
+  Sun,
   Globe,
   ChevronDown,
   CheckCircle,
@@ -17,7 +18,7 @@ import {
   Send,
   FileText,
   Archive,
-  UserPlus
+  UserPlus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,7 +40,11 @@ import {
 import { MobileNavTrigger } from "./mobile-nav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSearch } from "@/hooks/useGraphQL";
-import { useNotifications, type NotificationRecord, type NotificationTypeValue } from "@/hooks/useNotifications";
+import {
+  useNotifications,
+  type NotificationRecord,
+  type NotificationTypeValue,
+} from "@/hooks/useNotifications";
 import { useVisibilityPolling } from "@/hooks/usePolling";
 import { formatDistanceToNow } from "date-fns";
 
@@ -54,8 +59,10 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const { searchArticles } = useSearch();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Array<{ id: string; title: string; slug: string }>>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<
+    Array<{ id: string; title: string; slug: string }>
+  >([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -80,54 +87,101 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   };
 
   const formatNotificationTime = (value?: string | null) => {
-    if (!value) return '';
+    if (!value) return "";
     const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
+    if (Number.isNaN(date.getTime())) return "";
     return formatDistanceToNow(date, { addSuffix: true });
   };
 
   const getNotificationMeta = (type: NotificationTypeValue) => {
     switch (type) {
-      case 'SUBMISSION':
-        return { label: 'Submission', accent: 'bg-blue-100 text-blue-700', icon: Send };
-      case 'USER_REGISTRATION_REQUEST':
-      case 'ACCOUNT_REQUEST':
-        return { label: 'New Account Request', accent: 'bg-indigo-100 text-indigo-700', icon: UserPlus };
-      case 'APPROVAL':
-      case 'PUBLICATION':
-        return { label: 'Approved', accent: 'bg-green-100 text-green-700', icon: CheckCircle };
-      case 'REJECTION':
-        return { label: 'Rejected', accent: 'bg-red-100 text-red-700', icon: XCircle };
-      case 'REVISION_REQUESTED':
-        return { label: 'Revision', accent: 'bg-purple-100 text-purple-700', icon: FileText };
-      case 'REVISION_APPROVED':
-        return { label: 'Revision', accent: 'bg-green-100 text-green-700', icon: CheckCircle };
-      case 'REVISION_REJECTED':
-        return { label: 'Revision', accent: 'bg-red-100 text-red-700', icon: XCircle };
-      case 'REVISION_CONSUMED':
-        return { label: 'Revision', accent: 'bg-slate-100 text-slate-700', icon: Archive };
-      case 'UNPUBLICATION':
-      case 'ARCHIVE':
-        return { label: 'Archived', accent: 'bg-slate-100 text-slate-700', icon: Archive };
-      case 'DRAFT_SAVED':
-        return { label: 'Draft', accent: 'bg-amber-100 text-amber-700', icon: FileText };
+      case "SUBMISSION":
+        return {
+          label: "Submission",
+          accent: "bg-blue-100 text-blue-700",
+          icon: Send,
+        };
+      case "USER_REGISTRATION_REQUEST":
+      case "ACCOUNT_REQUEST":
+        return {
+          label: "New Account Request",
+          accent: "bg-indigo-100 text-indigo-700",
+          icon: UserPlus,
+        };
+      case "APPROVAL":
+      case "PUBLICATION":
+        return {
+          label: "Approved",
+          accent: "bg-green-100 text-green-700",
+          icon: CheckCircle,
+        };
+      case "REJECTION":
+        return {
+          label: "Rejected",
+          accent: "bg-red-100 text-red-700",
+          icon: XCircle,
+        };
+      case "REVISION_REQUESTED":
+        return {
+          label: "Revision",
+          accent: "bg-purple-100 text-purple-700",
+          icon: FileText,
+        };
+      case "REVISION_APPROVED":
+        return {
+          label: "Revision",
+          accent: "bg-green-100 text-green-700",
+          icon: CheckCircle,
+        };
+      case "REVISION_REJECTED":
+        return {
+          label: "Revision",
+          accent: "bg-red-100 text-red-700",
+          icon: XCircle,
+        };
+      case "REVISION_CONSUMED":
+        return {
+          label: "Revision",
+          accent: "bg-slate-100 text-slate-700",
+          icon: Archive,
+        };
+      case "UNPUBLICATION":
+      case "ARCHIVE":
+        return {
+          label: "Archived",
+          accent: "bg-slate-100 text-slate-700",
+          icon: Archive,
+        };
+      case "DRAFT_SAVED":
+        return {
+          label: "Draft",
+          accent: "bg-amber-100 text-amber-700",
+          icon: FileText,
+        };
       default:
-        return { label: 'Update', accent: 'bg-slate-100 text-slate-700', icon: FileText };
+        return {
+          label: "Update",
+          accent: "bg-slate-100 text-slate-700",
+          icon: FileText,
+        };
     }
   };
 
   const getNotificationTarget = (notification: NotificationRecord) => {
-    if (notification.type === 'SUBMISSION') {
-      return '/review';
-    }
-    if (notification.type === 'USER_REGISTRATION_REQUEST' || notification.type === 'ACCOUNT_REQUEST') {
-      return '/users/requests';
+    if (notification.type === "SUBMISSION") {
+      return "/review";
     }
     if (
-      notification.type === 'REVISION_REQUESTED' ||
-      notification.type === 'REVISION_APPROVED' ||
-      notification.type === 'REVISION_REJECTED' ||
-      notification.type === 'REVISION_CONSUMED'
+      notification.type === "USER_REGISTRATION_REQUEST" ||
+      notification.type === "ACCOUNT_REQUEST"
+    ) {
+      return "/users/requests";
+    }
+    if (
+      notification.type === "REVISION_REQUESTED" ||
+      notification.type === "REVISION_APPROVED" ||
+      notification.type === "REVISION_REJECTED" ||
+      notification.type === "REVISION_CONSUMED"
     ) {
       if (notification.articleId) {
         return `/articles/${notification.articleId}/edit`;
@@ -148,7 +202,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
       return `From: ${fromUser.email.trim()}`;
     }
 
-    if (!notification.metadata || typeof notification.metadata !== 'object') {
+    if (!notification.metadata || typeof notification.metadata !== "object") {
       return null;
     }
 
@@ -156,11 +210,11 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
     const fromUserName = metadata.fromUserName;
     const fromUserEmail = metadata.fromUserEmail;
 
-    if (typeof fromUserName === 'string' && fromUserName.trim()) {
+    if (typeof fromUserName === "string" && fromUserName.trim()) {
       return `From: ${fromUserName.trim()}`;
     }
 
-    if (typeof fromUserEmail === 'string' && fromUserEmail.trim()) {
+    if (typeof fromUserEmail === "string" && fromUserEmail.trim()) {
       return `From: ${fromUserEmail.trim()}`;
     }
 
@@ -187,16 +241,23 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
     }
   }, [user?.id, getNotifications, getUnreadCount]);
 
-  const handleNotificationClick = async (notification: NotificationRecord, targetPath?: string) => {
+  const handleNotificationClick = async (
+    notification: NotificationRecord,
+    targetPath?: string,
+  ) => {
     if (!notification.isRead) {
       const result = await markNotificationRead(notification.id);
       if (result?.markNotificationRead?.isRead) {
         setNotifications((prev) =>
           prev.map((item) =>
             item.id === notification.id
-              ? { ...item, isRead: true, readAt: result.markNotificationRead.readAt ?? item.readAt }
-              : item
-          )
+              ? {
+                  ...item,
+                  isRead: true,
+                  readAt: result.markNotificationRead.readAt ?? item.readAt,
+                }
+              : item,
+          ),
         );
         setUnreadCount((prev) => Math.max(0, prev - 1));
       }
@@ -216,7 +277,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
           ...item,
           isRead: true,
           readAt: item.readAt ?? new Date().toISOString(),
-        }))
+        })),
       );
       setUnreadCount(0);
     }
@@ -225,9 +286,9 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   // Get user initials for avatar
   const getUserInitials = (name: string) => {
     return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
+      .split(" ")
+      .map((word) => word.charAt(0))
+      .join("")
       .toUpperCase()
       .slice(0, 2);
   };
@@ -235,14 +296,14 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   // Get role badge color
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
-      case 'ADMIN':
-        return 'bg-red-100 text-red-800';
-      case 'EDITOR':
-        return 'bg-blue-100 text-blue-800';
-      case 'AUTHOR':
-        return 'bg-green-100 text-green-800';
+      case "ADMIN":
+        return "bg-red-100 text-red-800";
+      case "EDITOR":
+        return "bg-blue-100 text-blue-800";
+      case "AUTHOR":
+        return "bg-green-100 text-green-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
@@ -250,17 +311,22 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const highlightMatch = (text: string, query: string) => {
     if (!query.trim()) return text;
 
-    const parts = text.split(new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi'));
+    const parts = text.split(
+      new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"),
+    );
     return (
       <>
-        {parts.map((part, index) => 
+        {parts.map((part, index) =>
           part.toLowerCase() === query.toLowerCase() ? (
-            <mark key={index} className="bg-yellow-200 text-slate-900 font-medium">
+            <mark
+              key={index}
+              className="bg-yellow-200 text-slate-900 font-medium"
+            >
               {part}
             </mark>
           ) : (
             part
-          )
+          ),
         )}
       </>
     );
@@ -269,14 +335,14 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const isCmdOrCtrl = event.metaKey || event.ctrlKey;
-      if (isCmdOrCtrl && event.key.toLowerCase() === 'k') {
+      if (isCmdOrCtrl && event.key.toLowerCase() === "k") {
         event.preventDefault();
         searchInputRef.current?.focus();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   useEffect(() => {
@@ -298,7 +364,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
             id: article.id,
             title: article.title,
             slug: article.slug,
-          }))
+          })),
         );
       } catch {
         setSearchResults([]);
@@ -331,7 +397,9 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
             <div className="w-8 h-8 bg-slate-900 rounded-md flex items-center justify-center">
               <span className="text-white font-semibold text-sm">PN</span>
             </div>
-            <span className="font-semibold tracking-tight text-slate-900">Pulse News</span>
+            <span className="font-semibold tracking-tight text-slate-900">
+              Pulse News
+            </span>
           </div>
         )}
 
@@ -346,9 +414,11 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
             }}
           >
             <div className="relative">
-              <Search className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${
-                searchFocused ? 'text-blue-500' : 'text-slate-500'
-              }`} />
+              <Search
+                className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${
+                  searchFocused ? "text-blue-500" : "text-slate-500"
+                }`}
+              />
               <input
                 ref={searchInputRef}
                 name="search"
@@ -356,8 +426,8 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                 placeholder="Search articles, categories, users... (Ctrl+K)"
                 className={`w-full rounded-full border pl-10 pr-12 py-2 text-sm placeholder:text-slate-500 transition-colors duration-200 ${
                   searchFocused
-                    ? 'border-slate-300 bg-white'
-                    : 'border-slate-200 bg-slate-50/80 hover:bg-white'
+                    ? "border-slate-300 bg-white"
+                    : "border-slate-200 bg-slate-50/80 hover:bg-white"
                 }`}
                 onFocus={() => {
                   setSearchFocused(true);
@@ -397,12 +467,14 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                             onMouseDown={(event) => event.preventDefault()}
                             onClick={() => {
                               setShowSuggestions(false);
-                              setSearchQuery('');
+                              setSearchQuery("");
                               router.push(`/articles/${result.id}`);
                             }}
                           >
                             <Search className="h-4 w-4 mr-2 text-slate-400 flex-shrink-0" />
-                            <span className="truncate">{highlightMatch(result.title, searchQuery)}</span>
+                            <span className="truncate">
+                              {highlightMatch(result.title, searchQuery)}
+                            </span>
                           </button>
                         </li>
                       ))}
@@ -410,10 +482,14 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                   ) : (
                     <div className="px-4 py-6 text-center">
                       <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-2">
-                        <Search className="h-5 w-5 text-slate-400" />      
+                        <Search className="h-5 w-5 text-slate-400" />
                       </div>
-                      <p className="text-sm font-medium text-slate-700 mb-1">No results found</p>
-                      <p className="text-xs text-slate-500">Try searching with different keywords</p>
+                      <p className="text-sm font-medium text-slate-700 mb-1">
+                        No results found
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Try searching with different keywords
+                      </p>
                     </div>
                   )}
                 </div>
@@ -424,7 +500,6 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
 
         {/* Right side actions */}
         <div className="flex items-center gap-1.5">
-
           {/* Language Selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -463,27 +538,34 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{isDarkMode ? 'Light mode' : 'Dark mode'}</p>
+              <p>{isDarkMode ? "Light mode" : "Dark mode"}</p>
             </TooltipContent>
           </Tooltip>
 
           {/* Notifications */}
           <DropdownMenu onOpenChange={(open) => open && loadNotifications()}>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="relative h-8 w-8 p-0">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="relative h-8 w-8 p-0"
+              >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
                   <Badge
                     variant="destructive"
                     className="absolute items-center justify-center -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs animate-pulse"
                   >
-                    {unreadCount > 9 ? '9+' : unreadCount}
+                    {unreadCount > 9 ? "9+" : unreadCount}
                   </Badge>
                 )}
                 <span className="sr-only">Notifications</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-96 p-0 overflow-hidden">
+            <DropdownMenuContent
+              align="end"
+              className="w-96 p-0 overflow-hidden"
+            >
               <DropdownMenuLabel className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-800">
                 Notifications
                 {unreadCount > 0 && (
@@ -506,22 +588,31 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                     <DropdownMenuItem
                       key={notification.id}
                       className={`group flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors ${
-                        notification.isRead ? 'bg-white hover:bg-slate-50' : 'bg-blue-50/60 hover:bg-blue-50'
+                        notification.isRead
+                          ? "bg-white hover:bg-slate-50"
+                          : "bg-blue-50/60 hover:bg-blue-50"
                       }`}
-                      onClick={() => handleNotificationClick(notification, getNotificationTarget(notification))}
+                      onClick={() =>
+                        handleNotificationClick(
+                          notification,
+                          getNotificationTarget(notification),
+                        )
+                      }
                     >
                       {(() => {
                         const meta = getNotificationMeta(notification.type);
                         const Icon = meta.icon;
                         const target = getNotificationTarget(notification);
-                        const actionLabel = target === '/review'
-                          ? 'Review queue'
-                          : target === '/users/requests'
-                            ? 'Review request'
-                            : target
-                              ? 'Open article'
-                              : 'View details';
-                        const fromLabel = getNotificationFromLabel(notification);
+                        const actionLabel =
+                          target === "/review"
+                            ? "Review queue"
+                            : target === "/users/requests"
+                              ? "Review request"
+                              : target
+                                ? "Open article"
+                                : "View details";
+                        const fromLabel =
+                          getNotificationFromLabel(notification);
 
                         return (
                           <>
@@ -537,7 +628,9 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                                   {notification.title}
                                 </div>
                                 <span className="text-xs text-slate-500 ml-auto whitespace-nowrap">
-                                  {formatNotificationTime(notification.createdAt)}
+                                  {formatNotificationTime(
+                                    notification.createdAt,
+                                  )}
                                 </span>
                               </div>
                               {notification.message && (
@@ -550,7 +643,9 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                                   {actionLabel}
                                 </span>
                                 {fromLabel && (
-                                  <span className="truncate">• {fromLabel}</span>
+                                  <span className="truncate">
+                                    • {fromLabel}
+                                  </span>
                                 )}
                               </div>
                             </div>
@@ -564,8 +659,12 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                     <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-2">
                       <Bell className="h-5 w-5 text-slate-400" />
                     </div>
-                    <p className="text-sm font-medium text-slate-700 mb-1">No notifications</p>
-                    <p className="text-xs text-slate-500">You are all caught up</p>
+                    <p className="text-sm font-medium text-slate-700 mb-1">
+                      No notifications
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      You are all caught up
+                    </p>
                   </div>
                 )}
               </div>
@@ -583,24 +682,31 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
           {/* User profile dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 h-8 px-2">
+              <Button
+                variant="ghost"
+                className="flex items-center gap-2 h-8 px-2"
+              >
                 <Avatar className="h-7 w-7">
                   <AvatarImage src="/avatar.png" />
                   <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs">
-                    {user ? getUserInitials(user.name) : 'U'}
+                    {user ? getUserInitials(user.name) : "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:block text-left">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-slate-900">{user?.name || 'User'}</p>
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-xs px-1.5 py-0.5 ${getRoleBadgeColor(user?.role || '')}`}
+                    <p className="text-sm font-medium text-slate-900">
+                      {user?.name || "User"}
+                    </p>
+                    <Badge
+                      variant="secondary"
+                      className={`text-xs px-1.5 py-0.5 ${getRoleBadgeColor(user?.role || "")}`}
                     >
-                      {user?.role || 'USER'}
+                      {user?.role || "USER"}
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-500">{user?.email || 'user@example.com'}</p>
+                  <p className="text-xs text-slate-500">
+                    {user?.email || "user@example.com"}
+                  </p>
                 </div>
                 <ChevronDown className="h-3 w-3 text-slate-500 hidden md:block" />
               </Button>
@@ -609,28 +715,34 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
               <DropdownMenuLabel>
                 <div className="flex flex-col space-y-1">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium">{user?.name || 'User'}</p>
-                    <Badge 
-                      variant="secondary" 
-                      className={`text-xs px-1.5 py-0.5 ${getRoleBadgeColor(user?.role || '')}`}
+                    <p className="text-sm font-medium">
+                      {user?.name || "User"}
+                    </p>
+                    <Badge
+                      variant="secondary"
+                      className={`text-xs px-1.5 py-0.5 ${getRoleBadgeColor(user?.role || "")}`}
                     >
-                      {user?.role || 'USER'}
+                      {user?.role || "USER"}
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-500">{user?.email || 'user@example.com'}</p>
+                  <p className="text-xs text-slate-500">
+                    {user?.email || "user@example.com"}
+                  </p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="cursor-pointer">
-                <User className="mr-2 h-4 w-4" />
-                Profile
+              <DropdownMenuItem asChild>
+                <Link href="/profile" className="cursor-pointer">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="cursor-pointer">
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="cursor-pointer text-red-600 focus:text-red-600"
                 onClick={handleLogout}
               >
