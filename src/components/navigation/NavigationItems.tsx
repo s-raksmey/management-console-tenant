@@ -1,5 +1,5 @@
 // src/components/navigation/NavigationItems.tsx
-'use client';
+"use client";
 
 import {
   LayoutDashboard,
@@ -16,7 +16,7 @@ import {
   Archive,
   UserPlus,
 } from "lucide-react";
-import { Permission } from '../permissions/PermissionGuard';
+import { Permission } from "../permissions/PermissionGuard";
 
 export interface NavigationItem {
   name: string;
@@ -34,14 +34,14 @@ export interface NavigationItem {
  * Get navigation items based on user permissions and role
  */
 export const getNavigationItems = (
-  counts: { 
-    articles: number; 
-    users: number; 
-    categories: number; 
+  counts: {
+    articles: number;
+    users: number;
+    categories: number;
     media: number;
     reviewQueue?: number;
   },
-  userRole?: string
+  userRole?: string,
 ): NavigationItem[] => {
   const navigationItems: NavigationItem[] = [
     // Dashboard - Available to all users
@@ -106,6 +106,15 @@ export const getNavigationItems = (
       icon: Image,
       badge: counts.media > 0 ? counts.media.toString() : null,
       description: "Files & images",
+      permissions: [Permission.CREATE_ARTICLE],
+    },
+
+    {
+      name: "Carousel",
+      href: "/carousel",
+      icon: Image,
+      badge: null,
+      description: "Homepage hero slides",
       permissions: [Permission.CREATE_ARTICLE],
     },
 
@@ -214,7 +223,7 @@ export const getQuickActions = (userRole?: string): NavigationItem[] => {
   ];
 
   // Add role-specific quick actions
-  if (userRole === 'ADMIN') {
+  if (userRole === "ADMIN") {
     baseActions.push(
       {
         name: "New User",
@@ -229,9 +238,9 @@ export const getQuickActions = (userRole?: string): NavigationItem[] => {
         icon: Tags,
         description: "Create new category",
         permissions: [Permission.CREATE_CATEGORY],
-      }
+      },
     );
-  } else if (userRole === 'EDITOR') {
+  } else if (userRole === "EDITOR") {
     baseActions.push(
       {
         name: "Review Queue",
@@ -246,7 +255,7 @@ export const getQuickActions = (userRole?: string): NavigationItem[] => {
         icon: Tags,
         description: "Create new category",
         permissions: [Permission.CREATE_CATEGORY],
-      }
+      },
     );
   }
 
@@ -256,25 +265,27 @@ export const getQuickActions = (userRole?: string): NavigationItem[] => {
 /**
  * Get breadcrumb items for current path
  */
-export const getBreadcrumbs = (pathname: string): { name: string; href: string }[] => {
-  const segments = pathname.split('/').filter(Boolean);
+export const getBreadcrumbs = (
+  pathname: string,
+): { name: string; href: string }[] => {
+  const segments = pathname.split("/").filter(Boolean);
   const breadcrumbs: { name: string; href: string }[] = [
-    { name: 'Dashboard', href: '/' }
+    { name: "Dashboard", href: "/" },
   ];
 
-  let currentPath = '';
+  let currentPath = "";
   segments.forEach((segment, index) => {
     currentPath += `/${segment}`;
-    
+
     // Convert segment to readable name
     const name = segment
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
-    
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+
     breadcrumbs.push({
       name,
-      href: currentPath
+      href: currentPath,
     });
   });
 

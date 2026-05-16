@@ -52,6 +52,11 @@ const getNavigation = (userRole?: string) => {
       icon: Image,
     },
     {
+      name: "Carousel",
+      href: "/carousel",
+      icon: Image,
+    },
+    {
       name: "Analytics",
       href: "/analytics",
       icon: BarChart3,
@@ -111,7 +116,7 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
                   "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
                   isActive
                     ? "bg-blue-50 text-blue-700 border border-blue-200"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -131,7 +136,11 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
   );
 }
 
-export function MobileNavTrigger({ onOpenChange }: { onOpenChange: (open: boolean) => void }) {
+export function MobileNavTrigger({
+  onOpenChange,
+}: {
+  onOpenChange: (open: boolean) => void;
+}) {
   return (
     <Button
       variant="outline"
