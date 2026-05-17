@@ -11,13 +11,24 @@ interface ClientLayoutWrapperProps {
 }
 
 export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   // Public routes that don't require authentication
   const publicRoutes = ['/login', '/register', '/verify-email'];
   const isPublicRoute = publicRoutes.includes(pathname);
+  const superAdminAllowedRoutes = [
+    '/',
+    '/tenants',
+    '/users',
+    '/audit',
+    '/settings',
+    '/profile',
+  ];
+  const isSuperAdminRouteAllowed = superAdminAllowedRoutes.some((route) =>
+    route === '/' ? pathname === route : pathname === route || pathname.startsWith(`${route}/`)
+  );
 
   useEffect(() => {
     // Don't redirect while loading
@@ -34,7 +45,25 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
       router.push('/');
       return;
     }
-  }, [isAuthenticated, isLoading, isPublicRoute, pathname, router]);
+
+    if (
+      isAuthenticated &&
+      user?.role === 'SUPER_ADMIN' &&
+      !isPublicRoute &&
+      !isSuperAdminRouteAllowed
+    ) {
+      router.push('/');
+      return;
+    }
+  }, [
+    isAuthenticated,
+    isLoading,
+    isPublicRoute,
+    isSuperAdminRouteAllowed,
+    pathname,
+    router,
+    user?.role,
+  ]);
 
   // Show loading spinner while checking authentication
   if (isLoading) {
@@ -60,6 +89,20 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <p className="text-slate-600">Redirecting to login...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    user?.role === 'SUPER_ADMIN' &&
+    !isPublicRoute &&
+    !isSuperAdminRouteAllowed
+  ) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-slate-600">Redirecting to platform dashboard...</p>
         </div>
       </div>
     );

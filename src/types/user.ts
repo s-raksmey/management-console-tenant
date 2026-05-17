@@ -1,6 +1,7 @@
 // src/types/user.ts
 
-export type UserRole = 'ADMIN' | 'EDITOR' | 'AUTHOR';
+export type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR';
+export type AssignableUserRole = UserRole;
 export type UserStatus = 'ACTIVE' | 'INACTIVE';
 export type UserSortBy = 'name' | 'email' | 'role' | 'createdAt';
 export type SortOrder = 'asc' | 'desc';
@@ -32,6 +33,7 @@ export interface UserStats {
   activeUsers: number;
   inactiveUsers: number;
   usersByRole: {
+    superAdmin?: number;
     admin: number;
     editor: number;
     author: number;
@@ -65,7 +67,7 @@ export interface CreateUserInput {
   name: string;
   email: string;
   password: string;
-  role?: UserRole;
+  role?: AssignableUserRole;
   isActive?: boolean;
   sendWelcomeEmail?: boolean;
 }
@@ -88,7 +90,7 @@ export interface UpdateUserProfileInput {
 
 export interface UpdateUserRoleInput {
   userId: string;
-  role: UserRole;
+  role: AssignableUserRole;
 }
 
 export interface UpdateUserStatusInput {

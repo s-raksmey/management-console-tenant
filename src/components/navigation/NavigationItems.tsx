@@ -15,6 +15,7 @@ import {
   Bell,
   Archive,
   UserPlus,
+  Building2,
 } from "lucide-react";
 import { Permission } from "../permissions/PermissionGuard";
 
@@ -43,6 +44,50 @@ export const getNavigationItems = (
   },
   userRole?: string,
 ): NavigationItem[] => {
+  if (userRole === "SUPER_ADMIN") {
+    return [
+      {
+        name: "Dashboard",
+        href: "/",
+        icon: LayoutDashboard,
+        badge: null,
+        description: "Platform overview",
+      },
+      {
+        name: "Tenant Management",
+        href: "/tenants",
+        icon: Building2,
+        badge: null,
+        description: "Manage tenant websites",
+        permissions: [Permission.SYSTEM_ADMINISTRATION],
+      },
+      {
+        name: "User Management",
+        href: "/users",
+        icon: Users,
+        badge: counts.users > 0 ? counts.users.toString() : null,
+        description: "Manage platform users",
+        permissions: [Permission.VIEW_ALL_USERS],
+      },
+      {
+        name: "Logs",
+        href: "/audit",
+        icon: Archive,
+        badge: null,
+        description: "System activity logs",
+        permissions: [Permission.VIEW_AUDIT_LOGS],
+      },
+      {
+        name: "Settings",
+        href: "/settings",
+        icon: Settings,
+        badge: null,
+        description: "Platform configuration",
+        permissions: [Permission.VIEW_SETTINGS],
+      },
+    ];
+  }
+
   const navigationItems: NavigationItem[] = [
     // Dashboard - Available to all users
     {
@@ -52,6 +97,19 @@ export const getNavigationItems = (
       badge: null,
       description: "Overview & stats",
     },
+
+    ...(userRole === "ADMIN"
+      ? [
+          {
+            name: "Website Settings",
+            href: "/tenants",
+            icon: Building2,
+            badge: null,
+            description: "Tenant website setup",
+            permissions: [Permission.SYSTEM_ADMINISTRATION],
+          },
+        ]
+      : []),
 
     // Articles - Available to all users with different permissions
     {
@@ -223,7 +281,24 @@ export const getQuickActions = (userRole?: string): NavigationItem[] => {
   ];
 
   // Add role-specific quick actions
-  if (userRole === "ADMIN") {
+  if (userRole === "SUPER_ADMIN") {
+    baseActions.push(
+      {
+        name: "New Tenant",
+        href: "/tenants",
+        icon: Building2,
+        description: "Create tenant website",
+        permissions: [Permission.SYSTEM_ADMINISTRATION],
+      },
+      {
+        name: "New User",
+        href: "/users/new",
+        icon: Users,
+        description: "Create new user",
+        permissions: [Permission.CREATE_USER],
+      },
+    );
+  } else if (userRole === "ADMIN") {
     baseActions.push(
       {
         name: "New User",

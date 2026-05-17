@@ -11,7 +11,8 @@ import {
   Tags,
   Image,
   Menu,
-  X,
+  Building2,
+  Archive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface MobileNavProps {
   open: boolean;
@@ -30,12 +32,51 @@ interface MobileNavProps {
 }
 
 const getNavigation = (userRole?: string) => {
+  if (userRole === "SUPER_ADMIN") {
+    return [
+      {
+        name: "Dashboard",
+        href: "/",
+        icon: LayoutDashboard,
+      },
+      {
+        name: "Tenant Management",
+        href: "/tenants",
+        icon: Building2,
+      },
+      {
+        name: "User Management",
+        href: "/users",
+        icon: Users,
+      },
+      {
+        name: "Logs",
+        href: "/audit",
+        icon: Archive,
+      },
+      {
+        name: "Settings",
+        href: "/settings",
+        icon: Settings,
+      },
+    ];
+  }
+
   const baseItems = [
     {
       name: "Dashboard",
       href: "/",
       icon: LayoutDashboard,
     },
+    ...(userRole === "ADMIN"
+      ? [
+          {
+            name: "Website Settings",
+            href: "/tenants",
+            icon: Building2,
+          },
+        ]
+      : []),
     {
       name: "Articles",
       href: "/articles",
@@ -83,8 +124,18 @@ const getNavigation = (userRole?: string) => {
 export function MobileNav({ open, onOpenChange }: MobileNavProps) {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { activeTenant } = useTenant();
   const userRole = user?.role?.toString().toUpperCase();
   const navigation = getNavigation(userRole);
+  const brandName =
+    userRole === "SUPER_ADMIN" ? "Pulse News" : activeTenant?.name || "Pulse News";
+  const brandInitials = brandName
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -93,10 +144,12 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
         <SheetHeader className="text-left">
           <SheetTitle className="flex items-center space-x-2">
             <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">P</span>
+              <span className="text-white font-bold text-sm">
+                {brandInitials || "PN"}
+              </span>
             </div>
             <div>
-              <div className="font-semibold text-slate-900">Pulse News</div>
+              <div className="font-semibold text-slate-900">{brandName}</div>
               <div className="text-xs text-slate-500">Admin Dashboard</div>
             </div>
           </SheetTitle>
@@ -128,7 +181,7 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
 
         <div className="absolute bottom-4 left-4 right-4">
           <div className="text-xs text-slate-500 text-center">
-            © 2024 Pulse News
+            © 2024 {brandName}
           </div>
         </div>
       </SheetContent>

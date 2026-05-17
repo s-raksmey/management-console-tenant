@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { PermissionGuard } from "../permissions/PermissionGuard";
 import { usePermissions } from "../../hooks/usePermissions";
 import { getNavigationItems, NavigationItem } from "./NavigationItems";
@@ -175,10 +176,20 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
 export function PermissionSidebar({ collapsed, onToggle, className }: PermissionSidebarProps) {
   const pathname = usePathname();
   const { user, isLoading } = useAuth();
+  const { activeTenant } = useTenant();
   const { userRole } = usePermissions();
   const { counts } = useCounts(userRole);
   const { getArticles } = useArticles();
   const [reviewQueueCount, setReviewQueueCount] = useState(0);
+  const brandName =
+    userRole === "SUPER_ADMIN" ? "Pulse News" : activeTenant?.name || "Pulse News";
+  const brandInitials = brandName
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
 
   useEffect(() => {
@@ -245,10 +256,14 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
             className="flex items-center gap-3"
           >
             <div className="w-8 h-8 bg-slate-900 rounded-md flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">PN</span>
+              <span className="text-white font-semibold text-sm">
+                {brandInitials || "PN"}
+              </span>
             </div>
             <div className="leading-tight">
-              <p className="text-sm font-semibold text-slate-900">Pulse News</p>
+              <p className="text-sm font-semibold text-slate-900 truncate max-w-[170px]">
+                {brandName}
+              </p>
               <p className="text-xs text-slate-500 capitalize">{userRole?.toLowerCase()} Panel</p>
             </div>
           </motion.div>

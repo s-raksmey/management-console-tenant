@@ -1,63 +1,94 @@
 // src/components/permissions/PermissionGuard.tsx
-'use client';
+"use client";
 
-import React from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import React from "react";
+import { useAuth } from "../../contexts/AuthContext";
 
 /**
  * Permission definitions matching the backend
  */
 export enum Permission {
   // User Management
-  CREATE_USER = 'CREATE_USER',
-  UPDATE_USER = 'UPDATE_USER',
-  DELETE_USER = 'DELETE_USER',
-  VIEW_ALL_USERS = 'VIEW_ALL_USERS',
-  MANAGE_USER_ROLES = 'MANAGE_USER_ROLES',
-  MANAGE_USERS = 'MANAGE_USERS',
-  
+  CREATE_USER = "CREATE_USER",
+  UPDATE_USER = "UPDATE_USER",
+  DELETE_USER = "DELETE_USER",
+  VIEW_ALL_USERS = "VIEW_ALL_USERS",
+  MANAGE_USER_ROLES = "MANAGE_USER_ROLES",
+  MANAGE_USERS = "MANAGE_USERS",
+
   // Article Management
-  CREATE_ARTICLE = 'CREATE_ARTICLE',
-  UPDATE_OWN_ARTICLE = 'UPDATE_OWN_ARTICLE',
-  UPDATE_ANY_ARTICLE = 'UPDATE_ANY_ARTICLE',
-  DELETE_OWN_ARTICLE = 'DELETE_OWN_ARTICLE',
-  DELETE_ANY_ARTICLE = 'DELETE_ANY_ARTICLE',
-  PUBLISH_ARTICLE = 'PUBLISH_ARTICLE',
-  UNPUBLISH_ARTICLE = 'UNPUBLISH_ARTICLE',
-  
+  CREATE_ARTICLE = "CREATE_ARTICLE",
+  UPDATE_OWN_ARTICLE = "UPDATE_OWN_ARTICLE",
+  UPDATE_ANY_ARTICLE = "UPDATE_ANY_ARTICLE",
+  DELETE_OWN_ARTICLE = "DELETE_OWN_ARTICLE",
+  DELETE_ANY_ARTICLE = "DELETE_ANY_ARTICLE",
+  PUBLISH_ARTICLE = "PUBLISH_ARTICLE",
+  UNPUBLISH_ARTICLE = "UNPUBLISH_ARTICLE",
+
   // Article Features
-  SET_FEATURED = 'SET_FEATURED',
-  SET_BREAKING_NEWS = 'SET_BREAKING_NEWS',
-  SET_EDITORS_PICK = 'SET_EDITORS_PICK',
-  
+  SET_FEATURED = "SET_FEATURED",
+  SET_BREAKING_NEWS = "SET_BREAKING_NEWS",
+  SET_EDITORS_PICK = "SET_EDITORS_PICK",
+
   // Content Review
-  REVIEW_ARTICLES = 'REVIEW_ARTICLES',
-  APPROVE_ARTICLES = 'APPROVE_ARTICLES',
-  REJECT_ARTICLES = 'REJECT_ARTICLES',
-  
+  REVIEW_ARTICLES = "REVIEW_ARTICLES",
+  APPROVE_ARTICLES = "APPROVE_ARTICLES",
+  REJECT_ARTICLES = "REJECT_ARTICLES",
+
   // Category Management
-  CREATE_CATEGORY = 'CREATE_CATEGORY',
-  UPDATE_CATEGORY = 'UPDATE_CATEGORY',
-  DELETE_CATEGORY = 'DELETE_CATEGORY',
-  
+  CREATE_CATEGORY = "CREATE_CATEGORY",
+  UPDATE_CATEGORY = "UPDATE_CATEGORY",
+  DELETE_CATEGORY = "DELETE_CATEGORY",
+
   // Topic Management
-  CREATE_TOPIC = 'CREATE_TOPIC',
-  UPDATE_TOPIC = 'UPDATE_TOPIC',
-  DELETE_TOPIC = 'DELETE_TOPIC',
-  
+  CREATE_TOPIC = "CREATE_TOPIC",
+  UPDATE_TOPIC = "UPDATE_TOPIC",
+  DELETE_TOPIC = "DELETE_TOPIC",
+
   // Settings Management
-  VIEW_SETTINGS = 'VIEW_SETTINGS',
-  UPDATE_SETTINGS = 'UPDATE_SETTINGS',
-  
+  VIEW_SETTINGS = "VIEW_SETTINGS",
+  UPDATE_SETTINGS = "UPDATE_SETTINGS",
+
   // System Management
-  VIEW_AUDIT_LOGS = 'VIEW_AUDIT_LOGS',
-  SYSTEM_ADMINISTRATION = 'SYSTEM_ADMINISTRATION',
+  VIEW_AUDIT_LOGS = "VIEW_AUDIT_LOGS",
+  SYSTEM_ADMINISTRATION = "SYSTEM_ADMINISTRATION",
 }
 
 /**
  * Role-based permission matrix (matching backend)
  */
 const ROLE_PERMISSIONS: Record<string, Permission[]> = {
+  SUPER_ADMIN: [
+    Permission.CREATE_USER,
+    Permission.UPDATE_USER,
+    Permission.DELETE_USER,
+    Permission.VIEW_ALL_USERS,
+    Permission.MANAGE_USER_ROLES,
+    Permission.MANAGE_USERS,
+    Permission.CREATE_ARTICLE,
+    Permission.UPDATE_OWN_ARTICLE,
+    Permission.UPDATE_ANY_ARTICLE,
+    Permission.DELETE_OWN_ARTICLE,
+    Permission.DELETE_ANY_ARTICLE,
+    Permission.PUBLISH_ARTICLE,
+    Permission.UNPUBLISH_ARTICLE,
+    Permission.SET_FEATURED,
+    Permission.SET_BREAKING_NEWS,
+    Permission.SET_EDITORS_PICK,
+    Permission.REVIEW_ARTICLES,
+    Permission.APPROVE_ARTICLES,
+    Permission.REJECT_ARTICLES,
+    Permission.CREATE_CATEGORY,
+    Permission.UPDATE_CATEGORY,
+    Permission.DELETE_CATEGORY,
+    Permission.CREATE_TOPIC,
+    Permission.UPDATE_TOPIC,
+    Permission.DELETE_TOPIC,
+    Permission.VIEW_SETTINGS,
+    Permission.UPDATE_SETTINGS,
+    Permission.VIEW_AUDIT_LOGS,
+    Permission.SYSTEM_ADMINISTRATION,
+  ],
   ADMIN: [
     // Full access to everything
     Permission.CREATE_USER,
@@ -117,24 +148,33 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
 /**
  * Permission utility functions
  */
-export const hasPermission = (userRole: string, permission: Permission): boolean => {
+export const hasPermission = (
+  userRole: string,
+  permission: Permission,
+): boolean => {
   const rolePermissions = ROLE_PERMISSIONS[userRole?.toUpperCase()] || [];
   return rolePermissions.includes(permission);
 };
 
-export const hasAnyPermission = (userRole: string, permissions: Permission[]): boolean => {
-  return permissions.some(permission => hasPermission(userRole, permission));
+export const hasAnyPermission = (
+  userRole: string,
+  permissions: Permission[],
+): boolean => {
+  return permissions.some((permission) => hasPermission(userRole, permission));
 };
 
-export const hasAllPermissions = (userRole: string, permissions: Permission[]): boolean => {
-  return permissions.every(permission => hasPermission(userRole, permission));
+export const hasAllPermissions = (
+  userRole: string,
+  permissions: Permission[],
+): boolean => {
+  return permissions.every((permission) => hasPermission(userRole, permission));
 };
 
 export const canAccessResource = (
   userRole: string,
   userId: string,
   resourceUserId: string,
-  requiredPermissions: Permission[]
+  requiredPermissions: Permission[],
 ): boolean => {
   // Check if user owns the resource
   if (userId === resourceUserId) {
@@ -182,24 +222,22 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   if (!user) {
     if (showError) {
       return (
-        <div className="text-red-600 text-sm">
-          Authentication required
-        </div>
+        <div className="text-red-600 text-sm">Authentication required</div>
       );
     }
     return <>{fallback}</>;
   }
 
-  const userRole = user.role?.toString().toUpperCase() || '';
+  const userRole = user.role?.toString().toUpperCase() || "";
 
   // Check role-based access
   if (roles.length > 0) {
-    const hasRole = roles.some(role => userRole === role.toUpperCase());
+    const hasRole = roles.some((role) => userRole === role.toUpperCase());
     if (!hasRole) {
       if (showError) {
         return (
           <div className="text-red-600 text-sm">
-            Access denied: Required role {roles.join(' or ')}
+            Access denied: Required role {roles.join(" or ")}
           </div>
         );
       }
@@ -213,10 +251,15 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
 
     if (resourceUserId) {
       // Resource-based permission check
-      hasAccess = canAccessResource(userRole, user.id, resourceUserId, permissions);
+      hasAccess = canAccessResource(
+        userRole,
+        user.id,
+        resourceUserId,
+        permissions,
+      );
     } else {
       // General permission check
-      hasAccess = requireAll 
+      hasAccess = requireAll
         ? hasAllPermissions(userRole, permissions)
         : hasAnyPermission(userRole, permissions);
     }
@@ -246,7 +289,7 @@ export const withPermissions = <P extends object>(
     requireAll?: boolean;
     fallback?: React.ReactNode;
     showError?: boolean;
-  } = {}
+  } = {},
 ) => {
   const WrappedComponent: React.FC<P> = (props) => (
     <PermissionGuard

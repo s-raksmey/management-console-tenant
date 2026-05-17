@@ -15,7 +15,8 @@ import {
   UserCheck, 
   UserX,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Plus
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,10 +46,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useUserManagement, User, ListUsersInput } from '@/hooks/useUserManagement';
+import { useToastHelpers } from '@/components/ui/toast';
 
 interface UserListProps {}
 
 export const UserList: React.FC<UserListProps> = () => {
+  const { showSuccess, showError } = useToastHelpers();
   const { 
     listUsers, 
     updateUserRole, 
@@ -66,7 +69,7 @@ export const UserList: React.FC<UserListProps> = () => {
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'ADMIN' | 'EDITOR' | 'AUTHOR' | 'ALL'>('ALL');
+  const [roleFilter, setRoleFilter] = useState<'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR' | 'ALL'>('ALL');
   const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'INACTIVE' | 'ALL'>('ALL');
   const [sortBy, setSortBy] = useState<'name' | 'email' | 'role' | 'createdAt' | 'updatedAt'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -100,7 +103,7 @@ export const UserList: React.FC<UserListProps> = () => {
   };
 
   const handleRoleFilter = (value: string) => {
-    setRoleFilter(value as 'ADMIN' | 'EDITOR' | 'AUTHOR' | 'ALL');
+    setRoleFilter(value as 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR' | 'ALL');
     setCurrentPage(1);
   };
 
@@ -109,19 +112,33 @@ export const UserList: React.FC<UserListProps> = () => {
     setCurrentPage(1);
   };
 
-  const handleUpdateRole = async (userId: string, newRole: 'ADMIN' | 'EDITOR' | 'AUTHOR') => {
+  const handleUpdateRole = async (
+    userId: string,
+    newRole: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR',
+  ) => {
+    if (
+      newRole === 'SUPER_ADMIN' &&
+      !confirm('Make this user a super admin? They will be able to manage all tenants and platform settings.')
+    ) {
+      return;
+    }
+
     const result = await updateUserRole({ userId, role: newRole });
     if (result?.success) {
-      // Refresh the user list
+      showSuccess('Role Updated', result.message || `User role updated to ${newRole}.`);
       fetchUsers(currentPage);
+    } else {
+      showError('Role Update Failed', result?.message || 'Failed to update user role.');
     }
   };
 
   const handleUpdateStatus = async (userId: string, isActive: boolean) => {
     const result = await updateUserStatus({ userId, isActive });
     if (result?.success) {
-      // Refresh the user list
+      showSuccess('User Updated', result.message || 'User status updated.');
       fetchUsers(currentPage);
+    } else {
+      showError('Status Update Failed', result?.message || 'Failed to update user status.');
     }
   };
 
@@ -129,14 +146,17 @@ export const UserList: React.FC<UserListProps> = () => {
     if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
       const result = await deleteUser(userId);
       if (result?.success) {
-        // Refresh the user list
+        showSuccess('User Deleted', result.message || 'User deleted.');
         fetchUsers(currentPage);
+      } else {
+        showError('Delete Failed', result?.message || 'Failed to delete user.');
       }
     }
   };
 
   const getRoleIcon = (role: string) => {
     switch (role) {
+      case 'SUPER_ADMIN': return <ShieldCheck className="h-4 w-4" />;
       case 'ADMIN': return <Shield className="h-4 w-4" />;
       case 'EDITOR': return <ShieldCheck className="h-4 w-4" />;
       case 'AUTHOR': return <Users className="h-4 w-4" />;
@@ -146,6 +166,7 @@ export const UserList: React.FC<UserListProps> = () => {
 
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
+      case 'SUPER_ADMIN': return 'outline';
       case 'ADMIN': return 'destructive';
       case 'EDITOR': return 'default';
       case 'AUTHOR': return 'secondary';
@@ -194,6 +215,12 @@ export const UserList: React.FC<UserListProps> = () => {
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-1">Manage user accounts, roles, and permissions</p>
         </div>
+        <Button asChild>
+          <Link href="/users/new">
+            <Plus className="h-4 w-4 mr-2" />
+            Create User
+          </Link>
+        </Button>
       </div>
 
       {/* Filters */}
@@ -223,6 +250,7 @@ export const UserList: React.FC<UserListProps> = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Roles</SelectItem>
+                <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
                 <SelectItem value="ADMIN">Admin</SelectItem>
                 <SelectItem value="EDITOR">Editor</SelectItem>
                 <SelectItem value="AUTHOR">Author</SelectItem>
@@ -303,6 +331,14 @@ export const UserList: React.FC<UserListProps> = () => {
                             <Edit className="h-4 w-4 mr-2" />
                             Edit User
                           </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => handleUpdateRole(user.id, 'SUPER_ADMIN')}
+                          disabled={user.role === 'SUPER_ADMIN'}
+                        >
+                          <ShieldCheck className="h-4 w-4 mr-2" />
+                          Make Super Admin
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 

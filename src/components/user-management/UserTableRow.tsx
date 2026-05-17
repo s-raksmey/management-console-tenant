@@ -4,8 +4,9 @@
 import { useState } from 'react';
 import { MoreHorizontal, Edit, Trash2, Shield, UserCheck, UserX } from 'lucide-react';
 import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 import { UserService } from '../../services/user.gql';
-import type { User } from '../../types/user';
+import type { AssignableUserRole, User } from '../../types/user';
 
 interface UserTableRowProps {
   user: User;
@@ -22,15 +23,20 @@ export default function UserTableRow({
   onUserUpdate, 
   onUserDelete 
 }: UserTableRowProps) {
+  const { user: currentUser } = useAuth();
   const [showActions, setShowActions] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const roleOptions: AssignableUserRole[] =
+    currentUser?.role === 'SUPER_ADMIN'
+      ? ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR']
+      : ['ADMIN', 'EDITOR', 'AUTHOR'];
 
-  const handleRoleChange = async (newRole: string) => {
+  const handleRoleChange = async (newRole: AssignableUserRole) => {
     try {
       setIsUpdating(true);
       const result = await UserService.updateUserRole({
         userId: user.id,
-        role: newRole as any,
+        role: newRole,
       });
       
       if (result.success && result.user) {
@@ -150,7 +156,7 @@ export default function UserTableRow({
                 <div className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                   Change Role
                 </div>
-                {['ADMIN', 'EDITOR', 'AUTHOR'].map((role) => (
+                {roleOptions.map((role) => (
                   <button
                     key={role}
                     onClick={() => handleRoleChange(role)}
@@ -202,4 +208,3 @@ export default function UserTableRow({
     </tr>
   );
 }
-

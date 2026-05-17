@@ -14,6 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Hash,
+  Building2,
+  Archive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useCounts } from "@/hooks/useCounts";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 
 interface SidebarProps {
   collapsed: boolean;
@@ -29,6 +32,46 @@ interface SidebarProps {
 }
 
 const getNavigation = (counts: { articles: number; users: number; categories: number; media: number }, userRole?: string) => {
+  if (userRole === "SUPER_ADMIN") {
+    return [
+      {
+        name: "Dashboard",
+        href: "/",
+        icon: LayoutDashboard,
+        badge: null,
+        description: "Platform overview"
+      },
+      {
+        name: "Tenant Management",
+        href: "/tenants",
+        icon: Building2,
+        badge: null,
+        description: "Manage tenant websites"
+      },
+      {
+        name: "User Management",
+        href: "/users",
+        icon: Users,
+        badge: counts.users > 0 ? counts.users.toString() : null,
+        description: "Manage platform users"
+      },
+      {
+        name: "Logs",
+        href: "/audit",
+        icon: Archive,
+        badge: null,
+        description: "System activity logs"
+      },
+      {
+        name: "Settings",
+        href: "/settings",
+        icon: Settings,
+        badge: null,
+        description: "Platform config"
+      }
+    ];
+  }
+
   // Base navigation items available to all users
   const baseItems = [
     {
@@ -38,6 +81,17 @@ const getNavigation = (counts: { articles: number; users: number; categories: nu
       badge: null,
       description: "Overview & stats"
     },
+    ...(userRole === 'ADMIN'
+      ? [
+          {
+            name: "Website Settings",
+            href: "/tenants",
+            icon: Building2,
+            badge: null,
+            description: "Tenant website setup"
+          },
+        ]
+      : []),
     {
       name: "Articles",
       href: "/articles",
@@ -102,9 +156,19 @@ const getNavigation = (counts: { articles: number; users: number; categories: nu
 export function Sidebar({ collapsed, onToggle, className }: SidebarProps) {
   const pathname = usePathname();
   const { user, isLoading } = useAuth();
+  const { activeTenant } = useTenant();
   
   // Ensure we have a stable user role value with proper normalization
   const userRole = user?.role?.toString().toUpperCase();
+  const brandName =
+    userRole === "SUPER_ADMIN" ? "Pulse News" : activeTenant?.name || "Pulse News";
+  const brandInitials = brandName
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
   
   const { counts, loading } = useCounts(userRole);
   const navigation = getNavigation(counts, userRole);
@@ -154,10 +218,14 @@ export function Sidebar({ collapsed, onToggle, className }: SidebarProps) {
             className="flex items-center space-x-3"
           >
             <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-lg">PN</span>
+              <span className="text-white font-bold text-lg">
+                {brandInitials || "PN"}
+              </span>
             </div>
             <div>
-              <h1 className="font-bold text-slate-900 text-lg">Pulse News</h1>
+              <h1 className="font-bold text-slate-900 text-lg truncate max-w-[170px]">
+                {brandName}
+              </h1>
               <p className="text-xs text-slate-500 font-medium">Admin Dashboard</p>
             </div>
           </motion.div>
@@ -165,7 +233,9 @@ export function Sidebar({ collapsed, onToggle, className }: SidebarProps) {
         
         {collapsed && (
           <div className="h-10 w-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg mx-auto">
-            <span className="text-white font-bold text-lg">PN</span>
+            <span className="text-white font-bold text-lg">
+              {brandInitials || "PN"}
+            </span>
           </div>
         )}
         
@@ -284,7 +354,7 @@ export function Sidebar({ collapsed, onToggle, className }: SidebarProps) {
               </div>
             </div>
             <div className="text-xs text-slate-500 text-center">
-              © 2024 Pulse News
+              © 2024 {brandName}
             </div>
           </motion.div>
         )}

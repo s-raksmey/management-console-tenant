@@ -591,6 +591,7 @@ export class UserService {
 
   static getRoleDisplayName(role: string): string {
     const roleNames = {
+      SUPER_ADMIN: 'Super Administrator',
       ADMIN: 'Administrator',
       EDITOR: 'Editor',
       AUTHOR: 'Author',
@@ -604,6 +605,7 @@ export class UserService {
 
   static getRoleBadgeColor(role: string): string {
     const colors = {
+      SUPER_ADMIN: 'bg-purple-100 text-purple-800',
       ADMIN: 'bg-red-100 text-red-800',
       EDITOR: 'bg-blue-100 text-blue-800',
       AUTHOR: 'bg-green-100 text-green-800',

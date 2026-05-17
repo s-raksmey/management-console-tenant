@@ -1,6 +1,23 @@
 // src/services/graphql-client.ts
 import { GraphQLClient } from "graphql-request"
 
+export const SELECTED_TENANT_ID_KEY = "pulse_news_admin_selected_tenant_id";
+
+export function getSelectedTenantId() {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(SELECTED_TENANT_ID_KEY);
+}
+
+export function setSelectedTenantId(tenantId: string | null) {
+  if (typeof window === "undefined") return;
+
+  if (tenantId) {
+    localStorage.setItem(SELECTED_TENANT_ID_KEY, tenantId);
+  } else {
+    localStorage.removeItem(SELECTED_TENANT_ID_KEY);
+  }
+}
+
 export function getGqlClient() {
   return new GraphQLClient(
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql"
@@ -32,6 +49,11 @@ export function getAuthenticatedGqlClient(token?: string) {
   
   if (authToken) {
     client.setHeader('Authorization', `Bearer ${authToken}`);
+  }
+
+  const selectedTenantId = getSelectedTenantId();
+  if (selectedTenantId) {
+    client.setHeader("x-tenant-id", selectedTenantId);
   }
   
   return client;

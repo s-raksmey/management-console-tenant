@@ -3,8 +3,9 @@
 
 import { useState } from 'react';
 import { X, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { UserService } from '../../services/user.gql';
-import type { CreateUserInput, UserRole } from '../../types/user';
+import type { AssignableUserRole, CreateUserInput } from '../../types/user';
 
 interface UserCreateModalProps {
   isOpen: boolean;
@@ -13,6 +14,8 @@ interface UserCreateModalProps {
 }
 
 export default function UserCreateModal({ isOpen, onClose, onUserCreated }: UserCreateModalProps) {
+  const { user } = useAuth();
+  const canAssignSuperAdmin = user?.role === 'SUPER_ADMIN';
   const [formData, setFormData] = useState<CreateUserInput>({
     name: '',
     email: '',
@@ -164,10 +167,13 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
             <select
               id="role"
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value as UserRole })}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as AssignableUserRole })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               disabled={loading}
             >
+              {canAssignSuperAdmin && (
+                <option value="SUPER_ADMIN">Super Admin</option>
+              )}
               <option value="AUTHOR">Author</option>
               <option value="EDITOR">Editor</option>
               <option value="ADMIN">Admin</option>

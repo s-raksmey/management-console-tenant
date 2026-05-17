@@ -19,6 +19,7 @@ import {
   FileText,
   Archive,
   UserPlus,
+  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/tooltip";
 import { MobileNavTrigger } from "./mobile-nav";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { useSearch } from "@/hooks/useGraphQL";
 import {
   useNotifications,
@@ -56,6 +58,7 @@ interface HeaderProps {
 export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { activeTenant } = useTenant();
   const { searchArticles } = useSearch();
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -69,6 +72,15 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
+  const brandName =
+    user?.role === "SUPER_ADMIN" ? "Pulse News" : activeTenant?.name || "Pulse News";
+  const brandInitials = brandName
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const {
     getNotifications,
@@ -395,10 +407,12 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
         {showBrand && (
           <div className="hidden lg:flex items-center gap-2 mr-4">
             <div className="w-8 h-8 bg-slate-900 rounded-md flex items-center justify-center">
-              <span className="text-white font-semibold text-sm">PN</span>
+              <span className="text-white font-semibold text-sm">
+                {brandInitials || "PN"}
+              </span>
             </div>
             <span className="font-semibold tracking-tight text-slate-900">
-              Pulse News
+              {brandName}
             </span>
           </div>
         )}
@@ -500,6 +514,15 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
 
         {/* Right side actions */}
         <div className="flex items-center gap-1.5">
+          {activeTenant && user?.role !== "SUPER_ADMIN" && (
+            <div className="hidden h-8 max-w-[220px] items-center gap-2 px-2 md:flex">
+              <Building2 className="h-4 w-4 text-slate-500" />
+              <span className="truncate text-sm font-medium text-slate-700">
+                {activeTenant.name}
+              </span>
+            </div>
+          )}
+
           {/* Language Selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

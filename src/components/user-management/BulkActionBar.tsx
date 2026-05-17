@@ -3,8 +3,9 @@
 
 import { useState } from 'react';
 import { Users, Shield, UserCheck, UserX, X } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { UserService } from '../../services/user.gql';
-import type { UserRole } from '../../types/user';
+import type { AssignableUserRole } from '../../types/user';
 
 interface BulkActionBarProps {
   selectedUserIds: string[];
@@ -17,12 +18,17 @@ export default function BulkActionBar({
   onClearSelection, 
   onBulkActionComplete 
 }: BulkActionBarProps) {
+  const { user } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
+  const roleOptions: AssignableUserRole[] =
+    user?.role === 'SUPER_ADMIN'
+      ? ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR']
+      : ['ADMIN', 'EDITOR', 'AUTHOR'];
 
   if (selectedUserIds.length === 0) return null;
 
-  const handleBulkRoleUpdate = async (role: UserRole) => {
+  const handleBulkRoleUpdate = async (role: AssignableUserRole) => {
     if (!confirm(`Are you sure you want to change the role of ${selectedUserIds.length} users to ${UserService.getRoleDisplayName(role)}?`)) {
       return;
     }
@@ -92,7 +98,7 @@ export default function BulkActionBar({
                   <div className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
                     Set Role for {selectedUserIds.length} users
                   </div>
-                  {(['ADMIN', 'EDITOR', 'AUTHOR'] as UserRole[]).map((role) => (
+                  {roleOptions.map((role) => (
                     <button
                       key={role}
                       onClick={() => handleBulkRoleUpdate(role)}
@@ -147,4 +153,3 @@ export default function BulkActionBar({
     </div>
   );
 }
-

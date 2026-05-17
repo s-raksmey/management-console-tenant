@@ -1,12 +1,13 @@
 // src/components/dashboard/RoleDashboard.tsx
-'use client';
+"use client";
 
-import React from 'react';
-import { usePermissions } from '../../hooks/usePermissions';
-import { PermissionGuard } from '../permissions/PermissionGuard';
-import AdminDashboard from './AdminDashboard';
-import EditorDashboard from './EditorDashboard';
-import AuthorDashboard from './AuthorDashboard';
+import React from "react";
+import { usePermissions } from "../../hooks/usePermissions";
+import { PermissionGuard } from "../permissions/PermissionGuard";
+import AdminDashboard from "./AdminDashboard";
+import EditorDashboard from "./EditorDashboard";
+import AuthorDashboard from "./AuthorDashboard";
+import SuperAdminDashboard from "./SuperAdminDashboard";
 
 interface RoleDashboardProps {
   // Optional props to pass specific data to each dashboard
@@ -40,26 +41,35 @@ export const RoleDashboard: React.FC<RoleDashboardProps> = ({
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Admin Dashboard */}
-      <PermissionGuard roles={['ADMIN']} fallback={null}>
+      <PermissionGuard roles={["SUPER_ADMIN"]} fallback={null}>
+        <SuperAdminDashboard />
+      </PermissionGuard>
+
+      {/* Admin Dashboard */}
+      <PermissionGuard roles={["ADMIN"]} fallback={null}>
         <AdminDashboard />
       </PermissionGuard>
 
       {/* Editor Dashboard */}
-      <PermissionGuard roles={['EDITOR']} fallback={null}>
+      <PermissionGuard roles={["EDITOR"]} fallback={null}>
         <EditorDashboard />
       </PermissionGuard>
 
       {/* Author Dashboard */}
-      <PermissionGuard roles={['AUTHOR']} fallback={null}>
+      <PermissionGuard roles={["AUTHOR"]} fallback={null}>
         <AuthorDashboard />
       </PermissionGuard>
 
       {/* Fallback for unknown roles */}
-      {!['ADMIN', 'EDITOR', 'AUTHOR'].includes(userRole || '') && (
+      {!["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"].includes(
+        userRole || "",
+      ) && (
         <div className="flex items-center justify-center min-h-screen">
           <div className="text-center">
             <div className="text-6xl mb-4">🤔</div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Unknown Role</h1>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Unknown Role
+            </h1>
             <p className="text-gray-600 mb-4">
               Your user role ({userRole}) is not recognized.
             </p>

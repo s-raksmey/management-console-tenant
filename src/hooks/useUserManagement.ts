@@ -11,7 +11,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'EDITOR' | 'AUTHOR';
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR';
   isActive: boolean;
   createdAt: string;
 }
@@ -69,7 +69,7 @@ export interface ListUsersInput {
   take?: number;
   skip?: number;
   search?: string;
-  role?: 'ADMIN' | 'EDITOR' | 'AUTHOR';
+  role?: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR';
   status?: 'ACTIVE' | 'INACTIVE';
   sortBy?: 'name' | 'email' | 'role' | 'createdAt' | 'updatedAt';
   sortOrder?: 'asc' | 'desc';
@@ -79,7 +79,7 @@ export interface CreateUserInput {
   name: string;
   email: string;
   password: string;
-  role?: 'ADMIN' | 'EDITOR' | 'AUTHOR';
+  role?: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR';
   isActive?: boolean;
   sendWelcomeEmail?: boolean;
 }
@@ -92,7 +92,7 @@ export interface UpdateUserProfileInput {
 
 export interface UpdateUserRoleInput {
   userId: string;
-  role: 'ADMIN' | 'EDITOR' | 'AUTHOR';
+  role: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR';
 }
 
 export interface UpdateUserStatusInput {
@@ -419,7 +419,7 @@ export function useUserManagement() {
     return response?.deleteUser || null;
   }, [executeQuery]);
 
-  const bulkUpdateUserRoles = useCallback(async (userIds: string[], role: 'ADMIN' | 'EDITOR' | 'AUTHOR'): Promise<UserManagementResult | null> => {
+  const bulkUpdateUserRoles = useCallback(async (userIds: string[], role: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR'): Promise<UserManagementResult | null> => {
     const response = await executeQuery<{ bulkUpdateUserRoles: UserManagementResult }>(BULK_UPDATE_USER_ROLES_MUTATION, { userIds, role });
     return response?.bulkUpdateUserRoles || null;
   }, [executeQuery]);

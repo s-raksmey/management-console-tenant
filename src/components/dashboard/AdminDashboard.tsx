@@ -56,6 +56,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@radix-ui/react-progress';
 import AccountRequestsPanel from './AccountRequestsPanel';
+import { useTenant } from '@/contexts/TenantContext';
 
 interface SystemHealth {
   uptime: number;
@@ -127,6 +128,7 @@ interface DashboardStats {
 }
 
 export const AdminDashboard: React.FC = () => {
+  const { activeTenant } = useTenant();
   const { getUserStats, getBasicStats, getUserActivity, loading: userLoading, error: userError } = useUserManagement();
   const { getArticles, loading: articlesLoading, error: articlesError } = useArticles();
   const { getEditorialStats, loading: editorialLoading } = useEditorial();
@@ -145,6 +147,7 @@ export const AdminDashboard: React.FC = () => {
   const [systemActivity, setSystemActivity] = useState<ActivityItem[]>([]);
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const tenantName = activeTenant?.name || 'Tenant';
 
   const loadDashboardData = async () => {
     try {
@@ -345,9 +348,11 @@ export const AdminDashboard: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <Shield className="h-6 w-6 text-red-600" />
-              Admin Dashboard
+              {tenantName} Dashboard
             </h1>
-            <p className="text-gray-600 text-sm">Full system control and platform governance</p>
+            <p className="text-gray-600 text-sm">
+              Manage content, users, settings, and public website configuration
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <Button 
@@ -364,7 +369,7 @@ export const AdminDashboard: React.FC = () => {
               <Link href="/settings">
                 <Button size="sm" className="bg-red-600 hover:bg-red-700">
                   <Settings className="h-4 w-4 mr-2" />
-                  System Settings
+                  Website Settings
                 </Button>
               </Link>
             )}
@@ -496,7 +501,7 @@ export const AdminDashboard: React.FC = () => {
                       <Users className="h-5 w-5 text-red-600" />
                       User Management
                     </CardTitle>
-                    <CardDescription>Platform users by role and management tools</CardDescription>
+                    <CardDescription>Tenant users by role and management tools</CardDescription>
                   </div>
                   {hasPermission(Permission.VIEW_ALL_USERS) && (
                     <Link href="/users">
@@ -557,12 +562,12 @@ export const AdminDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            {/* Platform Analytics Section */}
+            {/* Website Analytics Section */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-red-600" />
-                  Platform Analytics
+                  Website Analytics
                 </CardTitle>
                 <CardDescription>Content performance and approval metrics</CardDescription>
               </CardHeader>
@@ -687,7 +692,7 @@ export const AdminDashboard: React.FC = () => {
                     {hasPermission(Permission.SYSTEM_ADMINISTRATION) && (
                       <Button size="sm" variant="outline" className="w-full mt-3">
                         <Settings className="h-4 w-4 mr-2" />
-                        System Settings
+                        Website Settings
                       </Button>
                     )}
                   </>
@@ -701,7 +706,7 @@ export const AdminDashboard: React.FC = () => {
                   <Activity className="h-5 w-5 text-red-600" />
                   System Activity
                 </CardTitle>
-                <CardDescription>Recent platform activity</CardDescription>
+                <CardDescription>Recent tenant activity</CardDescription>
               </CardHeader>
               <CardContent>
                 {loading ? (
