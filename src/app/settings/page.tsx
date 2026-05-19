@@ -26,8 +26,12 @@ import {
   UpdateSettingInput,
 } from "@/services/settings.gql";
 import { SettingsCategory } from "@/components/settings";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 
 export default function SettingsPage() {
+  const { user } = useAuth();
+  const { activeTenant, refreshTenants } = useTenant();
   const [settings, setSettings] = React.useState<Setting[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -87,6 +91,14 @@ export default function SettingsPage() {
             : setting,
         ),
       );
+
+      if (
+        ["site.name", "site.description", "site.logo_url", "site.public_base_url"].includes(
+          input.key,
+        )
+      ) {
+        await refreshTenants();
+      }
     } catch (err) {
       console.error("Failed to update setting:", err);
       throw err; // Re-throw to let the component handle the error
@@ -106,6 +118,14 @@ export default function SettingsPage() {
             : setting,
         ),
       );
+
+      if (
+        ["site.name", "site.description", "site.logo_url", "site.public_base_url"].includes(
+          key,
+        )
+      ) {
+        await refreshTenants();
+      }
     } catch (err) {
       console.error("Failed to reset setting:", err);
       throw err; // Re-throw to let the component handle the error
@@ -130,15 +150,33 @@ export default function SettingsPage() {
     return filteredSettings.filter((setting) => setting.type === category)
       .length;
   };
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const pageTitle = isSuperAdmin ? "Platform Settings" : "Website Settings";
+  const pageDescription = isSuperAdmin
+    ? "Configure platform-level defaults used outside tenant-specific websites."
+    : `Configure ${activeTenant?.name || "this tenant"} public website identity, SEO, content, users, and integrations.`;
+  const visibleCategories = React.useMemo(
+    () =>
+      Object.entries(SETTING_CATEGORIES).filter(([key]) => {
+        if (!isSuperAdmin) return true;
+        return [
+          SettingType.SITE,
+          SettingType.EMAIL,
+          SettingType.API,
+          SettingType.MAINTENANCE,
+        ].includes(key as SettingType);
+      }),
+    [isSuperAdmin],
+  );
 
   if (loading) {
     return (
       <div className="space-y-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Settings</h1>
-          <p className="text-slate-600">
-            Configure your system preferences and options.
-          </p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            {pageTitle}
+          </h1>
+          <p className="text-slate-600">{pageDescription}</p>
         </div>
 
         <Card>
@@ -155,10 +193,10 @@ export default function SettingsPage() {
     return (
       <div className="space-y-6">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Settings</h1>
-          <p className="text-slate-600">
-            Configure your system preferences and options.
-          </p>
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            {pageTitle}
+          </h1>
+          <p className="text-slate-600">{pageDescription}</p>
         </div>
 
         <Card>
@@ -184,13 +222,30 @@ export default function SettingsPage() {
       <div className="mb-8">
         <div className="flex items-center space-x-3 mb-2">
           <SettingsIcon className="h-8 w-8 text-slate-700" />
-          <h1 className="text-3xl font-bold text-slate-900">System Settings</h1>
+          <h1 className="text-3xl font-bold text-slate-900">{pageTitle}</h1>
         </div>
-        <p className="text-slate-600">
-          Configure your system preferences and options. Changes are saved
-          automatically.
-        </p>
+        <p className="text-slate-600">{pageDescription}</p>
       </div>
+
+      {isSuperAdmin && (
+        <Card className="border-blue-100 bg-blue-50/60">
+          <CardContent className="p-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-blue-950">
+                  Platform mode
+                </p>
+                <p className="text-sm text-blue-800">
+                  Tenant website branding, SEO, content, and user policies are managed inside each tenant.
+                </p>
+              </div>
+              <Badge variant="outline" className="w-fit bg-white">
+                Super Admin
+              </Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Search */}
       <div className="relative">
@@ -208,8 +263,14 @@ export default function SettingsPage() {
         value={selectedCategory}
         onValueChange={(value) => setSelectedCategory(value as SettingType)}
       >
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
-          {Object.entries(SETTING_CATEGORIES).map(([key, info]) => {
+        <TabsList
+          className={
+            isSuperAdmin
+              ? "grid w-full grid-cols-2 lg:grid-cols-4"
+              : "grid w-full grid-cols-4 lg:grid-cols-8"
+          }
+        >
+          {visibleCategories.map(([key, info]) => {
             const count = getCategoryCount(key as SettingType);
             return (
               <TabsTrigger
@@ -232,10 +293,10 @@ export default function SettingsPage() {
           })}
         </TabsList>
 
-        {Object.values(SettingType).map((category) => (
+        {visibleCategories.map(([category]) => (
           <TabsContent key={category} value={category} className="mt-6">
             <SettingsCategory
-              category={category}
+              category={category as SettingType}
               settings={filteredSettings}
               onUpdateSetting={handleUpdateSetting}
               onResetSetting={handleResetSetting}

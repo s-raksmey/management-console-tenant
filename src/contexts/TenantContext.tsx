@@ -62,13 +62,20 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
 
     try {
+      if (user.role === "SUPER_ADMIN") {
+        const options = await TenantService.listTenants();
+        setSelectedTenantId(null);
+        setTenantOptions(options);
+        setMemberships([]);
+        setActiveTenant(null);
+        return;
+      }
+
       const selectedTenantId = getSelectedTenantId();
-      const myMemberships =
-        user.role === "SUPER_ADMIN" ? [] : await TenantService.listMyTenants();
-      const options =
-        user.role === "SUPER_ADMIN"
-          ? await TenantService.listTenants()
-          : myMemberships.map(tenantFromMembership);
+      const myMemberships = await TenantService.listMyTenants();
+      const options = myMemberships
+        .map(tenantFromMembership)
+        .filter((tenant) => tenant.status === "ACTIVE");
 
       const nextTenant =
         options.find((tenant) => tenant.id === selectedTenantId) ||

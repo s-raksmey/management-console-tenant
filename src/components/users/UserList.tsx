@@ -1,7 +1,7 @@
 // src/components/users/UserList.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { 
   Users, 
@@ -47,11 +47,14 @@ import {
 } from '@/components/ui/table';
 import { useUserManagement, User, ListUsersInput } from '@/hooks/useUserManagement';
 import { useToastHelpers } from '@/components/ui/toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface UserListProps {}
 
 export const UserList: React.FC<UserListProps> = () => {
   const { showSuccess, showError } = useToastHelpers();
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
   const { 
     listUsers, 
     updateUserRole, 
@@ -74,7 +77,7 @@ export const UserList: React.FC<UserListProps> = () => {
   const [sortBy, setSortBy] = useState<'name' | 'email' | 'role' | 'createdAt' | 'updatedAt'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const fetchUsers = async (page = 1) => {
+  const fetchUsers = useCallback(async (page = 1) => {
     const input: ListUsersInput = {
       take: pageSize,
       skip: (page - 1) * pageSize,
@@ -91,11 +94,36 @@ export const UserList: React.FC<UserListProps> = () => {
       setTotalCount(result.totalCount);
       setHasMore(result.hasMore);
     }
-  };
+  }, [listUsers, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
 
   useEffect(() => {
-    fetchUsers(currentPage);
-  }, [currentPage, searchTerm, roleFilter, statusFilter, sortBy, sortOrder]);
+    let isCurrent = true;
+
+    const loadUsers = async () => {
+      const input: ListUsersInput = {
+        take: pageSize,
+        skip: (currentPage - 1) * pageSize,
+        search: searchTerm || undefined,
+        role: roleFilter === 'ALL' ? undefined : roleFilter,
+        status: statusFilter === 'ALL' ? undefined : statusFilter,
+        sortBy,
+        sortOrder,
+      };
+
+      const result = await listUsers(input);
+      if (result && isCurrent) {
+        setUsers(result.users);
+        setTotalCount(result.totalCount);
+        setHasMore(result.hasMore);
+      }
+    };
+
+    void loadUsers();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [currentPage, listUsers, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -126,7 +154,7 @@ export const UserList: React.FC<UserListProps> = () => {
     const result = await updateUserRole({ userId, role: newRole });
     if (result?.success) {
       showSuccess('Role Updated', result.message || `User role updated to ${newRole}.`);
-      fetchUsers(currentPage);
+      void fetchUsers(currentPage);
     } else {
       showError('Role Update Failed', result?.message || 'Failed to update user role.');
     }
@@ -136,7 +164,7 @@ export const UserList: React.FC<UserListProps> = () => {
     const result = await updateUserStatus({ userId, isActive });
     if (result?.success) {
       showSuccess('User Updated', result.message || 'User status updated.');
-      fetchUsers(currentPage);
+      void fetchUsers(currentPage);
     } else {
       showError('Status Update Failed', result?.message || 'Failed to update user status.');
     }
@@ -147,7 +175,7 @@ export const UserList: React.FC<UserListProps> = () => {
       const result = await deleteUser(userId);
       if (result?.success) {
         showSuccess('User Deleted', result.message || 'User deleted.');
-        fetchUsers(currentPage);
+        void fetchUsers(currentPage);
       } else {
         showError('Delete Failed', result?.message || 'Failed to delete user.');
       }
@@ -213,7 +241,11 @@ export const UserList: React.FC<UserListProps> = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-1">Manage user accounts, roles, and permissions</p>
+          <p className="text-gray-600 mt-1">
+            {isSuperAdmin
+              ? 'Manage platform super admins and tenant admins.'
+              : 'Manage this tenant’s admins, editors, and authors.'}
+          </p>
         </div>
         <Button asChild>
           <Link href="/users/new">
@@ -250,10 +282,16 @@ export const UserList: React.FC<UserListProps> = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">All Roles</SelectItem>
-                <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-                <SelectItem value="ADMIN">Admin</SelectItem>
-                <SelectItem value="EDITOR">Editor</SelectItem>
-                <SelectItem value="AUTHOR">Author</SelectItem>
+                {isSuperAdmin && (
+                  <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
+                )}
+                <SelectItem value="ADMIN">Tenant Admin</SelectItem>
+                {!isSuperAdmin && (
+                  <>
+                    <SelectItem value="EDITOR">Editor</SelectItem>
+                    <SelectItem value="AUTHOR">Author</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
             <Select value={statusFilter} onValueChange={handleStatusFilter}>
@@ -288,6 +326,7 @@ export const UserList: React.FC<UserListProps> = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
+                {isSuperAdmin && <TableHead>Tenant</TableHead>}
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -304,6 +343,27 @@ export const UserList: React.FC<UserListProps> = () => {
                       {user.role}
                     </Badge>
                   </TableCell>
+                  {isSuperAdmin && (
+                    <TableCell>
+                      {user.role === 'SUPER_ADMIN' ? (
+                        <Badge variant="outline">Platform</Badge>
+                      ) : user.tenantMemberships?.length ? (
+                        <div className="flex flex-wrap gap-1">
+                          {user.tenantMemberships.map((membership) => (
+                            <Badge
+                              key={membership.id}
+                              variant="secondary"
+                              className="max-w-[220px] truncate"
+                            >
+                              {membership.tenant.name}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-sm text-slate-500">No tenant</span>
+                      )}
+                    </TableCell>
+                  )}
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(user.isActive) as any} className="gap-1">
                       {user.isActive ? (
@@ -333,35 +393,43 @@ export const UserList: React.FC<UserListProps> = () => {
                           </Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleUpdateRole(user.id, 'SUPER_ADMIN')}
-                          disabled={user.role === 'SUPER_ADMIN'}
-                        >
-                          <ShieldCheck className="h-4 w-4 mr-2" />
-                          Make Super Admin
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
+                        {isSuperAdmin && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => handleUpdateRole(user.id, 'SUPER_ADMIN')}
+                              disabled={user.role === 'SUPER_ADMIN'}
+                            >
+                              <ShieldCheck className="h-4 w-4 mr-2" />
+                              Make Super Admin
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                          </>
+                        )}
                         <DropdownMenuItem 
                           onClick={() => handleUpdateRole(user.id, 'ADMIN')}
                           disabled={user.role === 'ADMIN'}
                         >
                           <Shield className="h-4 w-4 mr-2" />
-                          Make Admin
+                          Make Tenant Admin
                         </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleUpdateRole(user.id, 'EDITOR')}
-                          disabled={user.role === 'EDITOR'}
-                        >
-                          <ShieldCheck className="h-4 w-4 mr-2" />
-                          Make Editor
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleUpdateRole(user.id, 'AUTHOR')}
-                          disabled={user.role === 'AUTHOR'}
-                        >
-                          <Users className="h-4 w-4 mr-2" />
-                          Make Author
-                        </DropdownMenuItem>
+                        {!isSuperAdmin && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() => handleUpdateRole(user.id, 'EDITOR')}
+                              disabled={user.role === 'EDITOR'}
+                            >
+                              <ShieldCheck className="h-4 w-4 mr-2" />
+                              Make Editor
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleUpdateRole(user.id, 'AUTHOR')}
+                              disabled={user.role === 'AUTHOR'}
+                            >
+                              <Users className="h-4 w-4 mr-2" />
+                              Make Author
+                            </DropdownMenuItem>
+                          </>
+                        )}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
                           onClick={() => handleUpdateStatus(user.id, !user.isActive)}

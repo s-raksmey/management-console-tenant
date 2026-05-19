@@ -16,11 +16,13 @@ interface UserCreateModalProps {
 export default function UserCreateModal({ isOpen, onClose, onUserCreated }: UserCreateModalProps) {
   const { user } = useAuth();
   const canAssignSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const roleLabel = canAssignSuperAdmin ? 'Platform Role' : 'Tenant Role';
+  const defaultRole: AssignableUserRole = canAssignSuperAdmin ? 'ADMIN' : 'AUTHOR';
   const [formData, setFormData] = useState<CreateUserInput>({
     name: '',
     email: '',
     password: '',
-    role: 'AUTHOR',
+    role: defaultRole,
     isActive: true,
     sendWelcomeEmail: true,
   });
@@ -42,7 +44,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
           name: '',
           email: '',
           password: '',
-          role: 'AUTHOR',
+          role: defaultRole,
           isActive: true,
           sendWelcomeEmail: true,
         });
@@ -63,7 +65,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
         name: '',
         email: '',
         password: '',
-        role: 'AUTHOR',
+        role: defaultRole,
         isActive: true,
         sendWelcomeEmail: true,
       });
@@ -162,7 +164,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
           {/* Role Field */}
           <div>
             <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-              Role
+              {roleLabel}
             </label>
             <select
               id="role"
@@ -174,9 +176,13 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
               {canAssignSuperAdmin && (
                 <option value="SUPER_ADMIN">Super Admin</option>
               )}
-              <option value="AUTHOR">Author</option>
-              <option value="EDITOR">Editor</option>
-              <option value="ADMIN">Admin</option>
+              <option value="ADMIN">Tenant Admin</option>
+              {!canAssignSuperAdmin && (
+                <>
+                  <option value="EDITOR">Editor</option>
+                  <option value="AUTHOR">Author</option>
+                </>
+              )}
             </select>
           </div>
 

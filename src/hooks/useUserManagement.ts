@@ -14,6 +14,17 @@ export interface User {
   role: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR';
   isActive: boolean;
   createdAt: string;
+  tenantMemberships?: Array<{
+    id: string;
+    role: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR';
+    isActive: boolean;
+    tenant: {
+      id: string;
+      name: string;
+      slug: string;
+      status: 'ACTIVE' | 'SUSPENDED' | 'ARCHIVED';
+    };
+  }>;
 }
 
 export interface UserListResult {
@@ -130,6 +141,17 @@ const LIST_USERS_QUERY = `
         role
         isActive
         createdAt
+        tenantMemberships {
+          id
+          role
+          isActive
+          tenant {
+            id
+            name
+            slug
+            status
+          }
+        }
       }
       totalCount
       hasMore

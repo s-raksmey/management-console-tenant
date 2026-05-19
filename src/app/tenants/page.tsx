@@ -2,12 +2,14 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import {
+  Archive,
   Building2,
   Check,
   Copy,
   Edit2,
   Loader2,
   Plus,
+  RotateCcw,
   UserPlus,
   X,
 } from "lucide-react";
@@ -75,11 +77,16 @@ export default function TenantsPage() {
   const [savingTenant, setSavingTenant] = useState(false);
   const [savingAdmin, setSavingAdmin] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [savingLifecycleId, setSavingLifecycleId] = useState<string | null>(
+    null,
+  );
   const [tenantForm, setTenantForm] = useState<CreateTenantInput>(emptyTenant);
   const [adminForm, setAdminForm] =
     useState<CreateTenantAdminInput>(emptyAdmin);
   const [editingTenantId, setEditingTenantId] = useState<string | null>(null);
   const [editTenantForm, setEditTenantForm] = useState<UpdateTenantInput>({});
+  const publicApiUrl =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql";
 
   const copyTenantValue = async (label: string, value: string) => {
     try {
@@ -89,6 +96,25 @@ export default function TenantsPage() {
       showError("Copy Failed", `Could not copy ${label}.`);
     }
   };
+
+  const buildPublicEnv = (tenant: Tenant) =>
+    [
+      `NEXT_PUBLIC_API_URL=${publicApiUrl}`,
+      `NEXT_PUBLIC_TENANT_ID=${tenant.id}`,
+      `NEXT_PUBLIC_TENANT_SLUG=${tenant.slug}`,
+    ].join("\n");
+  const activeTenantCount = tenants.filter(
+    (tenant) => tenant.status === "ACTIVE",
+  ).length;
+  const archivedTenantCount = tenants.filter(
+    (tenant) => tenant.status === "ARCHIVED",
+  ).length;
+  const tenantAdminCount = tenants.reduce(
+    (total, tenant) =>
+      total +
+      tenant.memberships.filter((member) => member.role === "ADMIN").length,
+    0,
+  );
 
   useEffect(() => {
     showErrorRef.current = showError;
@@ -131,7 +157,7 @@ export default function TenantsPage() {
 
     if (
       !window.confirm(
-        `Create tenant website "${tenantForm.name.trim()}" with starter content?`,
+        `Create tenant website "${tenantForm.name.trim()}"?`,
       )
     ) {
       return;
@@ -280,11 +306,56 @@ export default function TenantsPage() {
     }
   };
 
+  const updateTenantLifecycle = async (
+    tenant: Tenant,
+    nextStatus: TenantStatus,
+  ) => {
+    const isArchiving = nextStatus === "ARCHIVED";
+    const actionLabel = isArchiving ? "archive" : "restore";
+
+    if (
+      !window.confirm(
+        `Are you sure you want to ${actionLabel} "${tenant.name}"?`,
+      )
+    ) {
+      return;
+    }
+
+    setSavingLifecycleId(tenant.id);
+    try {
+      const updatedTenant = await TenantService.updateTenant(tenant.id, {
+        status: nextStatus,
+        isActive: !isArchiving,
+      });
+
+      setTenants((current) =>
+        current.map((item) =>
+          item.id === updatedTenant.id ? updatedTenant : item,
+        ),
+      );
+      showSuccess(
+        isArchiving ? "Tenant Archived" : "Tenant Restored",
+        isArchiving
+          ? `${tenant.name} is hidden from public/admin access.`
+          : `${tenant.name} is active again.`,
+      );
+      await refreshTenants();
+    } catch (error: any) {
+      showError(
+        "Error",
+        error?.response?.errors?.[0]?.message ||
+          `Failed to ${actionLabel} tenant.`,
+      );
+    } finally {
+      setSavingLifecycleId(null);
+    }
+  };
+
   return (
     <main className="space-y-6 p-6">
       <div>
         <p className="text-sm font-semibold uppercase text-blue-600">
-          Platform
+          {isSuperAdmin ? "Tenant Control" : "Website Control"}
         </p>
         <h1 className="mt-2 text-3xl font-bold text-slate-950">
           {isSuperAdmin ? "Tenant Websites" : "Website Settings"}
@@ -297,16 +368,51 @@ export default function TenantsPage() {
       </div>
 
       {isSuperAdmin && (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase text-slate-500">
+                Active Tenants
+              </p>
+              <p className="mt-2 text-3xl font-bold text-slate-950">
+                {activeTenantCount}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase text-slate-500">
+                Tenant Admins
+              </p>
+              <p className="mt-2 text-3xl font-bold text-slate-950">
+                {tenantAdminCount}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs font-semibold uppercase text-slate-500">
+                Archived
+              </p>
+              <p className="mt-2 text-3xl font-bold text-slate-950">
+                {archivedTenantCount}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {isSuperAdmin && (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Create Tenant Website</CardTitle>
-            <CardDescription>
-              This creates the tenant and its first public/admin site config.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-4" onSubmit={createTenant}>
+          <Card>
+            <CardHeader>
+              <CardTitle>Create Tenant Website</CardTitle>
+              <CardDescription>
+                Create a clean tenant shell. Tenant content starts empty except required settings.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-4" onSubmit={createTenant}>
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="tenant-name">Tenant Name</Label>
@@ -396,11 +502,11 @@ export default function TenantsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+          <Card>
           <CardHeader>
             <CardTitle>Create Tenant Admin</CardTitle>
             <CardDescription>
-              Assign a user to manage one tenant website.
+              Create or attach a platform tenant admin. Authors and editors are managed inside each tenant.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -586,7 +692,7 @@ export default function TenantsPage() {
                           tenant admin
                         </p>
                       </div>
-                      <div className="flex items-start justify-end">
+                      <div className="flex flex-col items-end gap-2">
                         <Button
                           type="button"
                           variant={isEditing ? "secondary" : "outline"}
@@ -602,6 +708,105 @@ export default function TenantsPage() {
                           )}
                           {isEditing ? "Cancel" : "Edit"}
                         </Button>
+                        {isSuperAdmin && tenant.status !== "ARCHIVED" && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={savingLifecycleId === tenant.id}
+                            onClick={() =>
+                              updateTenantLifecycle(tenant, "ARCHIVED")
+                            }
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            {savingLifecycleId === tenant.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Archive className="mr-2 h-4 w-4" />
+                            )}
+                            Archive
+                          </Button>
+                        )}
+                        {isSuperAdmin && tenant.status === "ARCHIVED" && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={savingLifecycleId === tenant.id}
+                            onClick={() =>
+                              updateTenantLifecycle(tenant, "ACTIVE")
+                            }
+                          >
+                            {savingLifecycleId === tenant.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <RotateCcw className="mr-2 h-4 w-4" />
+                            )}
+                            Restore
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid gap-3 rounded-md border bg-slate-50 p-3 lg:grid-cols-[minmax(0,1fr)_220px]">
+                      <div>
+                        <p className="text-xs font-semibold uppercase text-slate-500">
+                          Public Website Connection
+                        </p>
+                        <pre className="mt-2 overflow-x-auto rounded-md border bg-white p-3 text-xs leading-5 text-slate-700">
+                          {buildPublicEnv(tenant)}
+                        </pre>
+                        <p className="mt-2 text-xs text-slate-500">
+                          Use these values in the public website `.env`, then restart the public dev server.
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            copyTenantValue(
+                              "Public website environment",
+                              buildPublicEnv(tenant),
+                            )
+                          }
+                        >
+                          <Copy className="mr-2 h-4 w-4" />
+                          Copy Env
+                        </Button>
+                        {site?.publicBaseUrl && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              window.open(
+                                site.publicBaseUrl ?? undefined,
+                                "_blank",
+                                "noreferrer",
+                              )
+                            }
+                          >
+                            Open Public
+                          </Button>
+                        )}
+                        {site?.adminBaseUrl && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              window.open(
+                                site.adminBaseUrl ?? undefined,
+                                "_blank",
+                                "noreferrer",
+                              )
+                            }
+                          >
+                            Open Admin
+                          </Button>
+                        )}
                       </div>
                     </div>
 

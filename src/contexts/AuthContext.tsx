@@ -11,6 +11,7 @@ import {
   getGqlClient,
   getAuthenticatedGqlClient,
   getSelectedTenantId,
+  setSelectedTenantId,
 } from "@/services/graphql-client";
 import { gql } from "graphql-request";
 
@@ -182,6 +183,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await client.request<{ me: AuthResponse }>(ME_QUERY);
 
       if (response.me.success && response.me.user) {
+        if (response.me.user.role === "SUPER_ADMIN") {
+          setSelectedTenantId(null);
+        }
         setUser(response.me.user);
       } else {
         throw new Error(response.me.message || "Failed to get user data");
@@ -209,6 +213,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const authResponse = response.login;
 
       if (authResponse.success && authResponse.token && authResponse.user) {
+        if (authResponse.user.role === "SUPER_ADMIN") {
+          setSelectedTenantId(null);
+        }
         // Store token and user data
         setStoredToken(authResponse.token);
         setToken(authResponse.token);
@@ -248,6 +255,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         // If user data is available, use it
         if (authResponse.user) {
+          if (authResponse.user.role === "SUPER_ADMIN") {
+            setSelectedTenantId(null);
+          }
           setUser(authResponse.user);
         } else {
           // If user is null (due to server error), try to fetch user data using the token
@@ -260,6 +270,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }>(ME_QUERY);
 
             if (meResponse.me.success && meResponse.me.user) {
+              if (meResponse.me.user.role === "SUPER_ADMIN") {
+                setSelectedTenantId(null);
+              }
               setUser(meResponse.me.user);
             }
           } catch (meError) {
@@ -297,6 +310,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }>(ME_QUERY);
 
           if (meResponse.me.success && meResponse.me.user) {
+            if (meResponse.me.user.role === "SUPER_ADMIN") {
+              setSelectedTenantId(null);
+            }
             setUser(meResponse.me.user);
           }
         } catch (meError) {
@@ -327,6 +343,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Logout function
   const logout = (): void => {
     removeStoredToken();
+    setSelectedTenantId(null);
     setToken(null);
     setUser(null);
   };
