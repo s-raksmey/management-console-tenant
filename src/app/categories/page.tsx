@@ -678,19 +678,22 @@ export default function CategoriesPage() {
                       Optional topics can be created with this category.
                     </p>
                   </div>
-                  <Button
-                    onClick={() => setShowTopicForm(true)}
-                    size="sm"
-                    variant="outline"
-                    className="flex items-center gap-2"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add Topic
-                  </Button>
+                  <PermissionGuard permissions={[Permission.CREATE_TOPIC]} fallback={null}>
+                    <Button
+                      onClick={() => setShowTopicForm(true)}
+                      size="sm"
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Topic
+                    </Button>
+                  </PermissionGuard>
                 </div>
 
                 {/* Topic Form */}
                 {showTopicForm && (
+                  <PermissionGuard permissions={[Permission.CREATE_TOPIC]} fallback={null}>
                   <div className="mb-3 rounded-md border bg-white p-4">
                     <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_220px]">
                       <div className="space-y-1.5">
@@ -759,6 +762,7 @@ export default function CategoriesPage() {
                       </Button>
                     </div>
                   </div>
+                  </PermissionGuard>
                 )}
 
                 {/* Pending Topics List */}
@@ -958,28 +962,32 @@ export default function CategoriesPage() {
                       </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => startEditingTopic(topic)}
-                        disabled={isLoading}
-                        className="flex items-center gap-1"
-                      >
-                        <Edit className="h-3 w-3" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          requestDeleteTopic(topic.id, topic.title)
-                        }
-                        disabled={isLoading}
-                        className="flex items-center gap-1 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Delete
-                      </Button>
+                      <PermissionGuard permissions={[Permission.UPDATE_TOPIC]} fallback={null}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditingTopic(topic)}
+                          disabled={isLoading}
+                          className="flex items-center gap-1"
+                        >
+                          <Edit className="h-3 w-3" />
+                          Edit
+                        </Button>
+                      </PermissionGuard>
+                      <PermissionGuard permissions={[Permission.DELETE_TOPIC]} fallback={null}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() =>
+                            requestDeleteTopic(topic.id, topic.title)
+                          }
+                          disabled={isLoading}
+                          className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </Button>
+                      </PermissionGuard>
                     </div>
                   </div>
                 ))}
@@ -1031,28 +1039,32 @@ export default function CategoriesPage() {
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => startEditing(category)}
-                      disabled={isLoading}
-                      className="flex items-center gap-1"
-                    >
-                      <Edit className="h-3 w-3" />
-                      Edit & Manage Topics
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        requestDeleteCategory(category.id, category.name)
-                      }
-                      disabled={isLoading}
-                      className="flex items-center gap-1 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                      Delete
-                    </Button>
+                    <PermissionGuard permissions={[Permission.UPDATE_CATEGORY]} fallback={null}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => startEditing(category)}
+                        disabled={isLoading}
+                        className="flex items-center gap-1"
+                      >
+                        <Edit className="h-3 w-3" />
+                        Edit & Manage Topics
+                      </Button>
+                    </PermissionGuard>
+                    <PermissionGuard permissions={[Permission.DELETE_CATEGORY]} fallback={null}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          requestDeleteCategory(category.id, category.name)
+                        }
+                        disabled={isLoading}
+                        className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                        Delete
+                      </Button>
+                    </PermissionGuard>
                   </div>
                 </div>
               ))}

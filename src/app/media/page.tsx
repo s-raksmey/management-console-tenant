@@ -8,8 +8,13 @@ import { FileUpload } from '@/components/media/file-upload';
 import { MediaGrid } from '@/components/media/media-grid';
 import { MediaFilters } from '@/components/media/media-filters';
 import type { MediaFile, MediaFilters as MediaFiltersType } from '@/types/media';
+import { Permission, PermissionGuard } from '@/components/permissions/PermissionGuard';
+import { usePermissions } from '@/hooks/usePermissions';
+import { getAuthFetchHeaders } from '@/services/graphql-client';
 
 export default function MediaPage() {
+  const { hasPermission } = usePermissions();
+  const canManageMedia = hasPermission(Permission.MANAGE_MEDIA);
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [folders, setFolders] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +31,9 @@ export default function MediaPage() {
   const loadFiles = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/media/upload');
+      const response = await fetch('/api/media/upload', {
+        headers: getAuthFetchHeaders(),
+      });
       const data = await response.json();
       
       if (data.success) {
@@ -128,6 +135,7 @@ export default function MediaPage() {
   };
 
   const handleBulkDelete = async () => {
+    if (!canManageMedia) return;
     if (selectedFiles.length === 0) return;
     
     const filesToDelete = files.filter(file => selectedFiles.includes(file.id));
@@ -137,6 +145,7 @@ export default function MediaPage() {
       const deletePromises = filesToDelete.map(file =>
         fetch(`/api/media/upload?id=${file.id}&filename=${file.filename}`, {
           method: 'DELETE',
+          headers: getAuthFetchHeaders(),
         })
       );
       
@@ -164,9 +173,12 @@ export default function MediaPage() {
   };
 
   const handleFileDelete = async (file: MediaFile) => {
+    if (!canManageMedia) return;
+
     try {
       const response = await fetch(`/api/media/upload?id=${file.id}&filename=${file.filename}`, {
         method: 'DELETE',
+        headers: getAuthFetchHeaders(),
       });
       
       const data = await response.json();
@@ -211,7 +223,8 @@ export default function MediaPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <PermissionGuard permissions={[Permission.VIEW_MEDIA, Permission.MANAGE_MEDIA]} showError>
+      <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -271,7 +284,7 @@ export default function MediaPage() {
       <Tabs defaultValue="library" className="space-y-6">
         <TabsList>
           <TabsTrigger value="library">Library</TabsTrigger>
-          <TabsTrigger value="upload">Upload</TabsTrigger>
+          {canManageMedia && <TabsTrigger value="upload">Upload</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="library" className="space-y-6">
@@ -283,7 +296,7 @@ export default function MediaPage() {
           />
 
           {/* Select All */}
-          {filteredFiles.length > 0 && (
+          {canManageMedia && filteredFiles.length > 0 && (
             <div className="flex items-center gap-2 p-4 bg-slate-50 rounded-lg">
               <input
                 type="checkbox"
@@ -299,7 +312,7 @@ export default function MediaPage() {
           )}
 
           {/* Selection Actions */}
-          {selectedFiles.length > 0 && (
+          {canManageMedia && selectedFiles.length > 0 && (
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-blue-900">
@@ -337,18 +350,21 @@ export default function MediaPage() {
               onFileDelete={handleFileDelete}
               onFileEdit={handleFileEdit}
               selectedFiles={selectedFiles}
-              selectable={true}
+              selectable={canManageMedia}
             />
           )}
         </TabsContent>
 
-        <TabsContent value="upload" className="space-y-6">
-          <FileUpload
-            onUploadComplete={handleUploadComplete}
-            maxFiles={10}
-          />
-        </TabsContent>
+        {canManageMedia && (
+          <TabsContent value="upload" className="space-y-6">
+            <FileUpload
+              onUploadComplete={handleUploadComplete}
+              maxFiles={10}
+            />
+          </TabsContent>
+        )}
       </Tabs>
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }

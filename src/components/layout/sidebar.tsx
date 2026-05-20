@@ -11,11 +11,12 @@ import {
   BarChart3,
   Tags,
   Image,
+  Shield,
   ChevronLeft,
   ChevronRight,
   Hash,
-  Building2,
   Archive,
+  Building2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,16 @@ import { Separator } from "@/components/ui/separator";
 import { useCounts } from "@/hooks/useCounts";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
+import { Permission } from "@/components/permissions/PermissionGuard";
+import { usePermissions } from "@/hooks/usePermissions";
+
+type SidebarNavigationItem = {
+  name: string;
+  href: string;
+  icon: typeof LayoutDashboard;
+  badge: string | null;
+  description: string;
+};
 
 interface SidebarProps {
   collapsed: boolean;
@@ -31,9 +42,35 @@ interface SidebarProps {
   className?: string;
 }
 
-const getNavigation = (counts: { articles: number; users: number; categories: number; media: number }, userRole?: string) => {
+const getNavigation = (
+  counts: { articles: number; users: number; categories: number; media: number },
+  userRole?: string,
+  permissions: {
+    canViewSettings: boolean;
+    canViewUsers: boolean;
+    canViewMedia: boolean;
+    canViewAnalytics: boolean;
+    canViewCarousel: boolean;
+    canViewAuditLogs: boolean;
+    canSystemAdmin: boolean;
+    canManageRoles: boolean;
+    canManageStructure: boolean;
+    canUpdateSettings: boolean;
+  } = {
+    canViewSettings: false,
+    canViewUsers: false,
+    canViewMedia: false,
+    canViewAnalytics: false,
+    canViewCarousel: false,
+    canViewAuditLogs: false,
+    canSystemAdmin: false,
+    canManageRoles: false,
+    canManageStructure: false,
+    canUpdateSettings: false,
+  },
+) => {
   if (userRole === "SUPER_ADMIN") {
-    return [
+    const platformItems: SidebarNavigationItem[] = [
       {
         name: "Dashboard",
         href: "/",
@@ -41,35 +78,69 @@ const getNavigation = (counts: { articles: number; users: number; categories: nu
         badge: null,
         description: "Platform overview"
       },
-      {
-        name: "Tenant Management",
-        href: "/tenants",
-        icon: Building2,
+    ];
+
+    if (permissions.canViewAnalytics) {
+      platformItems.push({
+        name: "Analytics",
+        href: "/analytics",
+        icon: BarChart3,
         badge: null,
-        description: "Manage tenant websites"
-      },
-      {
+        description: "Platform analytics"
+      });
+    }
+
+    if (permissions.canViewUsers) {
+      platformItems.push({
         name: "User Management",
         href: "/users",
         icon: Users,
         badge: counts.users > 0 ? counts.users.toString() : null,
         description: "Manage platform users"
-      },
-      {
+      });
+    }
+
+    if (permissions.canSystemAdmin) {
+      platformItems.push({
+        name: "Tenant Management",
+        href: "/tenants",
+        icon: Building2,
+        badge: null,
+        description: "Manage tenant websites"
+      });
+    }
+
+    if (permissions.canManageRoles) {
+      platformItems.push({
+        name: "Role Management",
+        href: "/users/roles",
+        icon: Shield,
+        badge: null,
+        description: "Manage role permissions"
+      });
+    }
+
+    if (permissions.canViewAuditLogs) {
+      platformItems.push({
         name: "Logs",
         href: "/audit",
         icon: Archive,
         badge: null,
         description: "System activity logs"
-      },
-      {
+      });
+    }
+
+    if (permissions.canViewSettings) {
+      platformItems.push({
         name: "Settings",
         href: "/settings",
         icon: Settings,
         badge: null,
         description: "Platform config"
-      }
-    ];
+      });
+    }
+
+    return platformItems;
   }
 
   // Base navigation items available to all users
@@ -81,17 +152,6 @@ const getNavigation = (counts: { articles: number; users: number; categories: nu
       badge: null,
       description: "Overview & stats"
     },
-    ...(userRole === 'ADMIN'
-      ? [
-          {
-            name: "Website Settings",
-            href: "/tenants",
-            icon: Building2,
-            badge: null,
-            description: "Tenant website setup"
-          },
-        ]
-      : []),
     {
       name: "Articles",
       href: "/articles",
@@ -99,38 +159,68 @@ const getNavigation = (counts: { articles: number; users: number; categories: nu
       badge: counts.articles > 0 ? counts.articles.toString() : null,
       description: "Manage content"
     },
-    {
-      name: "Categories",
-      href: "/categories",
-      icon: Tags,
-      badge: counts.categories > 0 ? counts.categories.toString() : null,
-      description: "Organize content"
-    },
-    {
-      name: "Topics",
-      href: "/topics",
-      icon: Hash,
+  ];
+
+  if (permissions.canUpdateSettings || permissions.canSystemAdmin) {
+    baseItems.push({
+      name: "Website Settings",
+      href: "/tenants",
+      icon: Building2,
       badge: null,
-      description: "Manage topics"
-    },
-    {
+      description: "Tenant website setup"
+    });
+  }
+
+  if (permissions.canManageStructure) {
+    baseItems.push(
+      {
+        name: "Categories",
+        href: "/categories",
+        icon: Tags,
+        badge: counts.categories > 0 ? counts.categories.toString() : null,
+        description: "Organize content"
+      },
+      {
+        name: "Topics",
+        href: "/topics",
+        icon: Hash,
+        badge: null,
+        description: "Manage topics"
+      },
+    );
+  }
+
+  if (permissions.canViewMedia) {
+    baseItems.push({
       name: "Media",
       href: "/media",
       icon: Image,
       badge: counts.media > 0 ? counts.media.toString() : null,
       description: "Files & images"
-    },
-    {
+    });
+  }
+
+  if (permissions.canViewCarousel) {
+    baseItems.push({
+      name: "Carousel",
+      href: "/carousel",
+      icon: Image,
+      badge: null,
+      description: "Homepage hero slides"
+    });
+  }
+
+  if (permissions.canViewAnalytics) {
+    baseItems.push({
       name: "Analytics",
       href: "/analytics",
       icon: BarChart3,
       badge: null,
       description: "Performance data"
-    }
-  ];
+    });
+  }
 
-  // Only add Users navigation for ADMIN role
-  if (userRole === 'ADMIN') {
+  if (permissions.canViewUsers) {
     baseItems.push({
       name: "Users",
       href: "/users",
@@ -140,28 +230,29 @@ const getNavigation = (counts: { articles: number; users: number; categories: nu
     });
   }
 
-  // Settings item (available to all users)
-  const settingsItem = {
-    name: "Settings",
-    href: "/settings",
-    icon: Settings,
-    badge: null,
-    description: "System config"
-  };
+  if (permissions.canViewSettings) {
+    baseItems.push({
+      name: "Settings",
+      href: "/settings",
+      icon: Settings,
+      badge: null,
+      description: "Website configuration"
+    });
+  }
 
-  // Combine all items: base + admin + settings
-  return [...baseItems, settingsItem];
+  return baseItems;
 };
 
 export function Sidebar({ collapsed, onToggle, className }: SidebarProps) {
   const pathname = usePathname();
   const { user, isLoading } = useAuth();
   const { activeTenant } = useTenant();
+  const { hasPermission } = usePermissions();
   
   // Ensure we have a stable user role value with proper normalization
   const userRole = user?.role?.toString().toUpperCase();
   const brandName =
-    userRole === "SUPER_ADMIN" ? "Pulse News" : activeTenant?.name || "Pulse News";
+    userRole === "SUPER_ADMIN" ? "Management Console" : activeTenant?.name || "Pulse News";
   const brandInitials = brandName
     .split(" ")
     .filter(Boolean)
@@ -171,7 +262,28 @@ export function Sidebar({ collapsed, onToggle, className }: SidebarProps) {
     .toUpperCase();
   
   const { counts, loading } = useCounts(userRole);
-  const navigation = getNavigation(counts, userRole);
+  const navigation = getNavigation(counts, userRole, {
+    canViewSettings: hasPermission(Permission.VIEW_SETTINGS),
+    canViewUsers: hasPermission(Permission.VIEW_ALL_USERS),
+    canViewMedia:
+      hasPermission(Permission.VIEW_MEDIA) || hasPermission(Permission.MANAGE_MEDIA),
+    canViewAnalytics: hasPermission(Permission.VIEW_ANALYTICS),
+    canViewCarousel:
+      hasPermission(Permission.CREATE_CAROUSEL) ||
+      hasPermission(Permission.UPDATE_CAROUSEL) ||
+      hasPermission(Permission.DELETE_CAROUSEL),
+    canViewAuditLogs: hasPermission(Permission.VIEW_AUDIT_LOGS),
+    canSystemAdmin: hasPermission(Permission.SYSTEM_ADMINISTRATION),
+    canManageRoles: hasPermission(Permission.MANAGE_USER_ROLES),
+    canUpdateSettings: hasPermission(Permission.UPDATE_SETTINGS),
+    canManageStructure:
+      hasPermission(Permission.CREATE_CATEGORY) ||
+      hasPermission(Permission.UPDATE_CATEGORY) ||
+      hasPermission(Permission.DELETE_CATEGORY) ||
+      hasPermission(Permission.CREATE_TOPIC) ||
+      hasPermission(Permission.UPDATE_TOPIC) ||
+      hasPermission(Permission.DELETE_TOPIC),
+  });
 
   // Don't render navigation until user data is loaded to prevent flashing
   if (isLoading) {

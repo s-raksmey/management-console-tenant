@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   Activity,
+  BarChart3,
   Building2,
   Clock,
   ExternalLink,
@@ -55,6 +56,7 @@ export default function SuperAdminDashboard() {
         if (auditResult.status === "fulfilled") {
           setAuditLogs(auditResult.value.logs);
         }
+
       })
       .finally(() => {
         if (mounted) setLoading(false);
@@ -101,6 +103,12 @@ export default function SuperAdminDashboard() {
       icon: Activity,
     },
     {
+      title: "Analytics",
+      description: "Review platform-wide charts and performance trends.",
+      href: "/analytics",
+      icon: BarChart3,
+    },
+    {
       title: "Settings",
       description: "Control platform configuration.",
       href: "/settings",
@@ -113,10 +121,10 @@ export default function SuperAdminDashboard() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase text-blue-600">
-            Platform Control
+            Management Console
           </p>
           <h1 className="mt-2 text-3xl font-bold text-slate-950">
-            Super Admin Dashboard
+            System Dashboard
           </h1>
           <p className="mt-2 text-sm text-slate-600">
             Monitor tenant websites, platform users, system logs, and settings.

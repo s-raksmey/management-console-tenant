@@ -11,7 +11,7 @@ interface ClientLayoutWrapperProps {
 }
 
 export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isInitializing } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -22,6 +22,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     '/',
     '/tenants',
     '/users',
+    '/analytics',
     '/audit',
     '/settings',
     '/profile',
@@ -32,7 +33,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
 
   useEffect(() => {
     // Don't redirect while loading
-    if (isLoading) return;
+    if (isInitializing) return;
 
     // If not authenticated and trying to access protected route
     if (!isAuthenticated && !isPublicRoute) {
@@ -57,7 +58,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     }
   }, [
     isAuthenticated,
-    isLoading,
+    isInitializing,
     isPublicRoute,
     isSuperAdminRouteAllowed,
     pathname,
@@ -66,7 +67,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
   ]);
 
   // Show loading spinner while checking authentication
-  if (isLoading) {
+  if (isInitializing) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">

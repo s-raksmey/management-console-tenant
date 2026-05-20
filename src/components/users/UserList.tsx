@@ -48,13 +48,19 @@ import {
 import { useUserManagement, User, ListUsersInput } from '@/hooks/useUserManagement';
 import { useToastHelpers } from '@/components/ui/toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { Permission, PermissionGuard } from '@/components/permissions/PermissionGuard';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface UserListProps {}
 
 export const UserList: React.FC<UserListProps> = () => {
   const { showSuccess, showError } = useToastHelpers();
   const { user: currentUser } = useAuth();
+  const { hasPermission } = usePermissions();
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+  const canUpdateUser = hasPermission(Permission.UPDATE_USER);
+  const canDeleteUser = hasPermission(Permission.DELETE_USER);
+  const canManageRoles = hasPermission(Permission.MANAGE_USER_ROLES);
   const { 
     listUsers, 
     updateUserRole, 
@@ -82,7 +88,7 @@ export const UserList: React.FC<UserListProps> = () => {
       take: pageSize,
       skip: (page - 1) * pageSize,
       search: searchTerm || undefined,
-      role: roleFilter === 'ALL' ? undefined : roleFilter,
+      role: isSuperAdmin ? 'SUPER_ADMIN' : roleFilter === 'ALL' ? undefined : roleFilter,
       status: statusFilter === 'ALL' ? undefined : statusFilter,
       sortBy,
       sortOrder,
@@ -94,7 +100,7 @@ export const UserList: React.FC<UserListProps> = () => {
       setTotalCount(result.totalCount);
       setHasMore(result.hasMore);
     }
-  }, [listUsers, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
+  }, [isSuperAdmin, listUsers, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
 
   useEffect(() => {
     let isCurrent = true;
@@ -104,7 +110,7 @@ export const UserList: React.FC<UserListProps> = () => {
         take: pageSize,
         skip: (currentPage - 1) * pageSize,
         search: searchTerm || undefined,
-        role: roleFilter === 'ALL' ? undefined : roleFilter,
+        role: isSuperAdmin ? 'SUPER_ADMIN' : roleFilter === 'ALL' ? undefined : roleFilter,
         status: statusFilter === 'ALL' ? undefined : statusFilter,
         sortBy,
         sortOrder,
@@ -123,7 +129,7 @@ export const UserList: React.FC<UserListProps> = () => {
     return () => {
       isCurrent = false;
     };
-  }, [currentPage, listUsers, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
+  }, [currentPage, isSuperAdmin, listUsers, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -243,16 +249,18 @@ export const UserList: React.FC<UserListProps> = () => {
           <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
           <p className="text-gray-600 mt-1">
             {isSuperAdmin
-              ? 'Manage platform super admins and tenant admins.'
+              ? 'Manage platform super admins only.'
               : 'Manage this tenant’s admins, editors, and authors.'}
           </p>
         </div>
-        <Button asChild>
-          <Link href="/users/new">
-            <Plus className="h-4 w-4 mr-2" />
-            Create User
-          </Link>
-        </Button>
+        <PermissionGuard permissions={[Permission.CREATE_USER]} fallback={null}>
+          <Button asChild>
+            <Link href="/users/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Create User
+            </Link>
+          </Button>
+        </PermissionGuard>
       </div>
 
       {/* Filters */}
@@ -276,24 +284,23 @@ export const UserList: React.FC<UserListProps> = () => {
                 />
               </div>
             </div>
-            <Select value={roleFilter} onValueChange={handleRoleFilter}>
-              <SelectTrigger className="w-[150px]">
-                <SelectValue placeholder="All Roles" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">All Roles</SelectItem>
-                {isSuperAdmin && (
-                  <SelectItem value="SUPER_ADMIN">Super Admin</SelectItem>
-                )}
-                <SelectItem value="ADMIN">Tenant Admin</SelectItem>
-                {!isSuperAdmin && (
-                  <>
-                    <SelectItem value="EDITOR">Editor</SelectItem>
-                    <SelectItem value="AUTHOR">Author</SelectItem>
-                  </>
-                )}
-              </SelectContent>
-            </Select>
+            {isSuperAdmin ? (
+              <div className="flex h-10 items-center rounded-md border bg-slate-50 px-3 text-sm font-medium text-slate-700">
+                Super Admins
+              </div>
+            ) : (
+              <Select value={roleFilter} onValueChange={handleRoleFilter}>
+                <SelectTrigger className="w-[150px]">
+                  <SelectValue placeholder="All Roles" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All Roles</SelectItem>
+                  <SelectItem value="ADMIN">Tenant Admin</SelectItem>
+                  <SelectItem value="EDITOR">Editor</SelectItem>
+                  <SelectItem value="AUTHOR">Author</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
             <Select value={statusFilter} onValueChange={handleStatusFilter}>
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="All Status" />
@@ -326,7 +333,6 @@ export const UserList: React.FC<UserListProps> = () => {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
-                {isSuperAdmin && <TableHead>Tenant</TableHead>}
                 <TableHead>Status</TableHead>
                 <TableHead>Created</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -343,27 +349,6 @@ export const UserList: React.FC<UserListProps> = () => {
                       {user.role}
                     </Badge>
                   </TableCell>
-                  {isSuperAdmin && (
-                    <TableCell>
-                      {user.role === 'SUPER_ADMIN' ? (
-                        <Badge variant="outline">Platform</Badge>
-                      ) : user.tenantMemberships?.length ? (
-                        <div className="flex flex-wrap gap-1">
-                          {user.tenantMemberships.map((membership) => (
-                            <Badge
-                              key={membership.id}
-                              variant="secondary"
-                              className="max-w-[220px] truncate"
-                            >
-                              {membership.tenant.name}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-slate-500">No tenant</span>
-                      )}
-                    </TableCell>
-                  )}
                   <TableCell>
                     <Badge variant={getStatusBadgeVariant(user.isActive) as any} className="gap-1">
                       {user.isActive ? (
@@ -386,34 +371,24 @@ export const UserList: React.FC<UserListProps> = () => {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem asChild>
-                          <Link href={`/users/${user.id}/edit`}>
-                            <Edit className="h-4 w-4 mr-2" />
-                            Edit User
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        {isSuperAdmin && (
-                          <>
-                            <DropdownMenuItem
-                              onClick={() => handleUpdateRole(user.id, 'SUPER_ADMIN')}
-                              disabled={user.role === 'SUPER_ADMIN'}
-                            >
-                              <ShieldCheck className="h-4 w-4 mr-2" />
-                              Make Super Admin
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                          </>
+                        {canUpdateUser && (
+                          <DropdownMenuItem asChild>
+                            <Link href={`/users/${user.id}/edit`}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit User
+                            </Link>
+                          </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem 
-                          onClick={() => handleUpdateRole(user.id, 'ADMIN')}
-                          disabled={user.role === 'ADMIN'}
-                        >
-                          <Shield className="h-4 w-4 mr-2" />
-                          Make Tenant Admin
-                        </DropdownMenuItem>
-                        {!isSuperAdmin && (
+                        <DropdownMenuSeparator />
+                        {!isSuperAdmin && canManageRoles && (
                           <>
+                            <DropdownMenuItem 
+                              onClick={() => handleUpdateRole(user.id, 'ADMIN')}
+                              disabled={user.role === 'ADMIN'}
+                            >
+                              <Shield className="h-4 w-4 mr-2" />
+                              Make Tenant Admin
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => handleUpdateRole(user.id, 'EDITOR')}
                               disabled={user.role === 'EDITOR'}
@@ -430,30 +405,38 @@ export const UserList: React.FC<UserListProps> = () => {
                             </DropdownMenuItem>
                           </>
                         )}
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={() => handleUpdateStatus(user.id, !user.isActive)}
-                        >
-                          {user.isActive ? (
-                            <>
-                              <UserX className="h-4 w-4 mr-2" />
-                              Deactivate
-                            </>
-                          ) : (
-                            <>
-                              <UserCheck className="h-4 w-4 mr-2" />
-                              Activate
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={() => handleDeleteUser(user.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete User
-                        </DropdownMenuItem>
+                        {canUpdateUser && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleUpdateStatus(user.id, !user.isActive)}
+                            >
+                              {user.isActive ? (
+                                <>
+                                  <UserX className="h-4 w-4 mr-2" />
+                                  Deactivate
+                                </>
+                              ) : (
+                                <>
+                                  <UserCheck className="h-4 w-4 mr-2" />
+                                  Activate
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                        {canDeleteUser && (
+                          <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteUser(user.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete User
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>

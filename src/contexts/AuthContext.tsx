@@ -5,6 +5,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
 } from "react";
 import {
@@ -14,6 +15,8 @@ import {
   setSelectedTenantId,
 } from "@/services/graphql-client";
 import { gql } from "graphql-request";
+import { setDynamicRolePermissions, type Permission } from "@/components/permissions/PermissionGuard";
+import { RolePermissionService } from "@/services/role-permissions.gql";
 
 // Types
 export interface User {
@@ -30,6 +33,14 @@ export interface AuthResponse {
   message: string;
   token?: string;
   user?: User;
+  requiresTwoFactor?: boolean;
+  twoFactorSetupRequired?: boolean;
+  twoFactorToken?: string;
+  twoFactorSetup?: {
+    secret: string;
+    otpAuthUrl: string;
+    qrCodeUrl: string;
+  };
 }
 
 export interface LoginCredentials {
@@ -48,8 +59,16 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
+  isInitializing: boolean;
+  permissionsReady: boolean;
   isAuthenticated: boolean;
+  rolePermissions: Record<string, Permission[]>;
+  refreshRolePermissions: () => Promise<void>;
   login: (credentials: LoginCredentials) => Promise<AuthResponse>;
+  verifyTwoFactorLogin: (input: {
+    twoFactorToken: string;
+    code: string;
+  }) => Promise<AuthResponse>;
   register: (data: RegisterData) => Promise<AuthResponse>;
   logout: () => void;
   refreshUser: () => Promise<void>;
@@ -59,6 +78,32 @@ interface AuthContextType {
 const LOGIN_MUTATION = gql`
   mutation Login($input: LoginInput!) {
     login(input: $input) {
+      success
+      message
+      token
+      requiresTwoFactor
+      twoFactorSetupRequired
+      twoFactorToken
+      twoFactorSetup {
+        secret
+        otpAuthUrl
+        qrCodeUrl
+      }
+      user {
+        id
+        email
+        name
+        role
+        isActive
+        primaryTenantId
+      }
+    }
+  }
+`;
+
+const VERIFY_TWO_FACTOR_LOGIN_MUTATION = gql`
+  mutation VerifyTwoFactorLogin($input: VerifyTwoFactorLoginInput!) {
+    verifyTwoFactorLogin(input: $input) {
       success
       message
       token
@@ -152,6 +197,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [permissionsReady, setPermissionsReady] = useState(false);
+  const [rolePermissions, setRolePermissions] = useState<Record<string, Permission[]>>({});
 
   // Initialize auth state from localStorage
   useEffect(() => {
@@ -166,11 +214,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.error("Failed to refresh user:", error);
           // Token might be invalid, clear it
           removeStoredToken();
+          setDynamicRolePermissions(null);
+          setRolePermissions({});
           setToken(null);
+          setPermissionsReady(true);
         }
+      } else {
+        setPermissionsReady(true);
       }
 
       setIsLoading(false);
+      setIsInitializing(false);
     };
 
     initializeAuth();
@@ -187,12 +241,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSelectedTenantId(null);
         }
         setUser(response.me.user);
+        await refreshRolePermissions();
       } else {
         throw new Error(response.me.message || "Failed to get user data");
       }
     } catch (error) {
       console.error("Error refreshing user:", error);
       throw error;
+    }
+  };
+
+  const refreshRolePermissions = useCallback(async (): Promise<void> => {
+    try {
+      setPermissionsReady(false);
+      const matrix = await RolePermissionService.getMatrix();
+      const next = Object.fromEntries(
+        matrix.map((item) => [item.role, item.permissions]),
+      ) as Record<string, Permission[]>;
+
+      setRolePermissions(next);
+      setDynamicRolePermissions(next);
+    } catch (error) {
+      console.warn("Could not refresh role permissions:", error);
+      setRolePermissions({});
+      setDynamicRolePermissions({});
+    } finally {
+      setPermissionsReady(true);
+    }
+  }, []);
+
+  const completeLogin = async (authResponse: AuthResponse) => {
+    if (authResponse.success && authResponse.token && authResponse.user) {
+      if (authResponse.user.role === "SUPER_ADMIN") {
+        setSelectedTenantId(null);
+      }
+
+      setStoredToken(authResponse.token);
+      setToken(authResponse.token);
+      setUser(authResponse.user);
+      await refreshRolePermissions();
     }
   };
 
@@ -212,15 +299,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const authResponse = response.login;
 
-      if (authResponse.success && authResponse.token && authResponse.user) {
-        if (authResponse.user.role === "SUPER_ADMIN") {
-          setSelectedTenantId(null);
-        }
-        // Store token and user data
-        setStoredToken(authResponse.token);
-        setToken(authResponse.token);
-        setUser(authResponse.user);
-      }
+      await completeLogin(authResponse);
 
       return authResponse;
     } catch (error) {
@@ -228,6 +307,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return {
         success: false,
         message: "Network error occurred. Please try again.",
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const verifyTwoFactorLogin = async (input: {
+    twoFactorToken: string;
+    code: string;
+  }): Promise<AuthResponse> => {
+    try {
+      setIsLoading(true);
+      const client = getGqlClient();
+      const response = await client.request<{
+        verifyTwoFactorLogin: AuthResponse;
+      }>(VERIFY_TWO_FACTOR_LOGIN_MUTATION, {
+        input,
+      });
+
+      const authResponse = response.verifyTwoFactorLogin;
+      await completeLogin(authResponse);
+      return authResponse;
+    } catch (error) {
+      console.error("Two-factor login error:", error);
+      return {
+        success: false,
+        message: "Verification failed. Please try again.",
       };
     } finally {
       setIsLoading(false);
@@ -259,6 +365,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setSelectedTenantId(null);
           }
           setUser(authResponse.user);
+          await refreshRolePermissions();
         } else {
           // If user is null (due to server error), try to fetch user data using the token
           try {
@@ -274,6 +381,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setSelectedTenantId(null);
               }
               setUser(meResponse.me.user);
+              await refreshRolePermissions();
             }
           } catch (meError) {
             console.warn(
@@ -314,6 +422,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               setSelectedTenantId(null);
             }
             setUser(meResponse.me.user);
+            await refreshRolePermissions();
           }
         } catch (meError) {
           console.warn(
@@ -344,6 +453,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = (): void => {
     removeStoredToken();
     setSelectedTenantId(null);
+    setDynamicRolePermissions(null);
+    setRolePermissions({});
+    setPermissionsReady(true);
     setToken(null);
     setUser(null);
   };
@@ -352,11 +464,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     user,
     token,
     isLoading,
+    rolePermissions,
+    permissionsReady,
+    isInitializing,
     isAuthenticated: !!user && !!token,
     login,
+    verifyTwoFactorLogin,
     register,
     logout,
     refreshUser: () => refreshUser(),
+    refreshRolePermissions,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

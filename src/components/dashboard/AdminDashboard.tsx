@@ -369,7 +369,7 @@ export const AdminDashboard: React.FC = () => {
               <Link href="/settings">
                 <Button size="sm" className="bg-red-600 hover:bg-red-700">
                   <Settings className="h-4 w-4 mr-2" />
-                  Website Settings
+                  Settings
                 </Button>
               </Link>
             )}
@@ -692,7 +692,7 @@ export const AdminDashboard: React.FC = () => {
                     {hasPermission(Permission.SYSTEM_ADMINISTRATION) && (
                       <Button size="sm" variant="outline" className="w-full mt-3">
                         <Settings className="h-4 w-4 mr-2" />
-                        Website Settings
+                        Settings
                       </Button>
                     )}
                   </>

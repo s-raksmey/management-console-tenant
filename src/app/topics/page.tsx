@@ -450,24 +450,28 @@ export default function TopicsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => startEditing(topic)}
-                        className="flex items-center gap-1"
-                      >
-                        <Edit className="h-3 w-3" />
-                        Edit
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => deleteTopic(topic.id, topic.title)}
-                        className="flex items-center gap-1 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Delete
-                      </Button>
+                      <PermissionGuard permissions={[Permission.UPDATE_TOPIC]} fallback={null}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => startEditing(topic)}
+                          className="flex items-center gap-1"
+                        >
+                          <Edit className="h-3 w-3" />
+                          Edit
+                        </Button>
+                      </PermissionGuard>
+                      <PermissionGuard permissions={[Permission.DELETE_TOPIC]} fallback={null}>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => deleteTopic(topic.id, topic.title)}
+                          className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Delete
+                        </Button>
+                      </PermissionGuard>
                     </div>
                   </div>
                 ))}

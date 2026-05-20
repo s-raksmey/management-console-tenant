@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { PermissionSidebar } from "../navigation/PermissionSidebar";
 import { Header } from "./header";
@@ -12,9 +13,11 @@ interface LayoutWrapperProps {
 }
 
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
+  const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const isWidePage = pathname === "/settings" || pathname === "/tenants";
 
   useEffect(() => {
     const checkMobile = () => {
@@ -57,7 +60,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
 
         {/* Page Content */}
         <main className="flex-1 p-4 md:p-6 lg:p-8">
-          <div className="mx-auto max-w-7xl space-y-6">
+          <div className={isWidePage ? "w-full space-y-6" : "mx-auto max-w-7xl space-y-6"}>
             {children}
           </div>
         </main>

@@ -5,6 +5,66 @@ import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import type { MediaFile, MediaType, MediaUploadOptions } from "@/types/media";
 
+type RolePermissionConfig = {
+  role: string;
+  permissions: string[];
+};
+
+async function requireMediaPermission(req: Request, allowedPermissions: string[]) {
+  const authorization = req.headers.get("authorization");
+  if (!authorization) {
+    return NextResponse.json(
+      { success: false, message: "Authentication required" },
+      { status: 401 }
+    );
+  }
+
+  const response = await fetch(process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      authorization,
+      ...(req.headers.get("x-tenant-id")
+        ? { "x-tenant-id": req.headers.get("x-tenant-id") as string }
+        : {}),
+    },
+    body: JSON.stringify({
+      query: `
+        query MediaPermissionCheck {
+          me {
+            success
+            user {
+              role
+            }
+          }
+          rolePermissionMatrix {
+            role
+            permissions
+          }
+        }
+      `,
+    }),
+  });
+
+  const result = await response.json();
+  const userRole = result?.data?.me?.user?.role;
+  const matrix = (result?.data?.rolePermissionMatrix || []) as RolePermissionConfig[];
+  const rolePermissions =
+    matrix.find((item) => item.role === userRole)?.permissions || [];
+  const hasAccess = allowedPermissions.some((permission) =>
+    rolePermissions.includes(permission)
+  );
+
+  if (!result?.data?.me?.success || !hasAccess) {
+    return NextResponse.json(
+      { success: false, message: "Permission denied" },
+      { status: 403 }
+    );
+  }
+
+  return null;
+}
+
 // File type mappings
 const MIME_TYPE_MAP: Record<string, MediaType> = {
   // Images
@@ -100,6 +160,9 @@ async function processImage(
 
 export async function POST(req: Request) {
   try {
+    const permissionError = await requireMediaPermission(req, ["MANAGE_MEDIA"]);
+    if (permissionError) return permissionError;
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const optionsStr = formData.get("options") as string | null;
@@ -205,6 +268,9 @@ export async function POST(req: Request) {
 
 export async function GET(req: Request) {
   try {
+    const permissionError = await requireMediaPermission(req, ["VIEW_MEDIA", "MANAGE_MEDIA"]);
+    if (permissionError) return permissionError;
+
     const { searchParams } = new URL(req.url);
     const folder = searchParams.get('folder') || '';
     
@@ -267,6 +333,9 @@ export async function GET(req: Request) {
 
 export async function DELETE(req: Request) {
   try {
+    const permissionError = await requireMediaPermission(req, ["MANAGE_MEDIA"]);
+    if (permissionError) return permissionError;
+
     const { searchParams } = new URL(req.url);
     const fileId = searchParams.get('id');
     const filename = searchParams.get('filename');

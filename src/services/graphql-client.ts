@@ -19,9 +19,16 @@ export function setSelectedTenantId(tenantId: string | null) {
 }
 
 export function getGqlClient() {
-  return new GraphQLClient(
+  const client = new GraphQLClient(
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql"
-  )
+  );
+
+  const selectedTenantId = getSelectedTenantId();
+  if (selectedTenantId) {
+    client.setHeader("x-tenant-id", selectedTenantId);
+  }
+
+  return client;
 }
 
 export function getAuthenticatedGqlClient(token?: string) {
@@ -57,4 +64,22 @@ export function getAuthenticatedGqlClient(token?: string) {
   }
   
   return client;
+}
+
+export function getAuthFetchHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {};
+
+  if (typeof window === "undefined") return headers;
+
+  const authToken = localStorage.getItem("pulse_news_admin_token");
+  if (authToken) {
+    headers.Authorization = `Bearer ${authToken}`;
+  }
+
+  const selectedTenantId = getSelectedTenantId();
+  if (selectedTenantId) {
+    headers["x-tenant-id"] = selectedTenantId;
+  }
+
+  return headers;
 }

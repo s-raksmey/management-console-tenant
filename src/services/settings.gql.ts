@@ -244,6 +244,10 @@ export function getSettingInputType(key: string, value: any): 'text' | 'number' 
   if (typeof value === 'boolean') {
     return 'boolean';
   }
+
+  if (key.includes('role') || key.includes('timezone') || key.includes('frequency')) {
+    return 'select';
+  }
   
   if (typeof value === 'number') {
     return 'number';
@@ -263,10 +267,6 @@ export function getSettingInputType(key: string, value: any): 'text' | 'number' 
   
   if (key.includes('description') || key.includes('message') || key.includes('css')) {
     return 'textarea';
-  }
-  
-  if (key.includes('role') || key.includes('timezone') || key.includes('frequency')) {
-    return 'select';
   }
   
   return 'text';

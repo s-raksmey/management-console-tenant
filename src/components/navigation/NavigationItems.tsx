@@ -11,8 +11,6 @@ import {
   Image,
   ClipboardList,
   Shield,
-  Calendar,
-  Bell,
   Archive,
   UserPlus,
   Building2,
@@ -70,6 +68,22 @@ export const getNavigationItems = (
         permissions: [Permission.VIEW_ALL_USERS],
       },
       {
+        name: "Role Management",
+        href: "/users/roles",
+        icon: Shield,
+        badge: null,
+        description: "Manage role permissions",
+        permissions: [Permission.MANAGE_USER_ROLES],
+      },
+    {
+      name: "Analytics",
+      href: "/analytics",
+      icon: BarChart3,
+      badge: null,
+      description: "Platform analytics",
+      permissions: [Permission.VIEW_ANALYTICS],
+    },
+      {
         name: "Logs",
         href: "/audit",
         icon: Archive,
@@ -98,19 +112,6 @@ export const getNavigationItems = (
       description: "Overview & stats",
     },
 
-    ...(userRole === "ADMIN"
-      ? [
-          {
-            name: "Website Settings",
-            href: "/tenants",
-            icon: Building2,
-            badge: null,
-            description: "Tenant website setup",
-            permissions: [Permission.SYSTEM_ADMINISTRATION],
-          },
-        ]
-      : []),
-
     // Articles - Available to all users with different permissions
     {
       name: "Articles",
@@ -118,14 +119,26 @@ export const getNavigationItems = (
       icon: FileText,
       badge: counts.articles > 0 ? counts.articles.toString() : null,
       description: "Manage content",
-      permissions: [Permission.CREATE_ARTICLE],
+      permissions: [
+        Permission.CREATE_ARTICLE,
+        Permission.UPDATE_OWN_ARTICLE,
+        Permission.UPDATE_ANY_ARTICLE,
+        Permission.DELETE_OWN_ARTICLE,
+        Permission.DELETE_ANY_ARTICLE,
+        Permission.PUBLISH_ARTICLE,
+        Permission.REVIEW_ARTICLES,
+      ],
       children: [
         {
           name: "All Articles",
           href: "/articles",
           icon: FileText,
           description: "View all articles",
-          permissions: [Permission.CREATE_ARTICLE],
+          permissions: [
+            Permission.UPDATE_ANY_ARTICLE,
+            Permission.PUBLISH_ARTICLE,
+            Permission.REVIEW_ARTICLES,
+          ],
         },
         {
           name: "My Articles",
@@ -135,6 +148,15 @@ export const getNavigationItems = (
           permissions: [Permission.UPDATE_OWN_ARTICLE],
         },
       ],
+    },
+
+    {
+      name: "Website Settings",
+      href: "/tenants",
+      icon: Building2,
+      badge: null,
+      description: "Tenant website setup",
+      permissions: [Permission.UPDATE_SETTINGS, Permission.SYSTEM_ADMINISTRATION],
     },
 
     // Review Queue - Editors and Admins only
@@ -147,14 +169,21 @@ export const getNavigationItems = (
       permissions: [Permission.REVIEW_ARTICLES],
     },
 
-    // Categories - Authors can view, Editors+ can manage
+    // Categories and topics - visible to roles with structure management access
     {
       name: "Categories",
       href: "/categories",
       icon: Tags,
       badge: counts.categories > 0 ? counts.categories.toString() : null,
       description: "Organize content",
-      permissions: [Permission.CREATE_ARTICLE], // Authors can view categories
+      permissions: [
+        Permission.CREATE_CATEGORY,
+        Permission.UPDATE_CATEGORY,
+        Permission.DELETE_CATEGORY,
+        Permission.CREATE_TOPIC,
+        Permission.UPDATE_TOPIC,
+        Permission.DELETE_TOPIC,
+      ],
     },
 
     // Media - Available to all content creators
@@ -164,7 +193,7 @@ export const getNavigationItems = (
       icon: Image,
       badge: counts.media > 0 ? counts.media.toString() : null,
       description: "Files & images",
-      permissions: [Permission.CREATE_ARTICLE],
+      permissions: [Permission.VIEW_MEDIA, Permission.MANAGE_MEDIA],
     },
 
     {
@@ -173,7 +202,11 @@ export const getNavigationItems = (
       icon: Image,
       badge: null,
       description: "Homepage hero slides",
-      permissions: [Permission.CREATE_ARTICLE],
+      permissions: [
+        Permission.CREATE_CAROUSEL,
+        Permission.UPDATE_CAROUSEL,
+        Permission.DELETE_CAROUSEL,
+      ],
     },
 
     // Analytics - Available to all users
@@ -183,7 +216,7 @@ export const getNavigationItems = (
       icon: BarChart3,
       badge: null,
       description: "Performance data",
-      permissions: [Permission.CREATE_ARTICLE],
+      permissions: [Permission.VIEW_ANALYTICS],
     },
 
     // User Management - Admins only
@@ -229,39 +262,16 @@ export const getNavigationItems = (
       permissions: [Permission.VIEW_AUDIT_LOGS],
     },
 
-    // Settings - View for all, Update for Admins
-    {
-      name: "Settings",
-      href: "/settings",
-      icon: Settings,
-      badge: null,
-      description: "System configuration",
-      permissions: [Permission.VIEW_SETTINGS],
-      children: [
-        {
-          name: "General",
-          href: "/settings/general",
-          icon: Settings,
-          description: "General settings",
-          permissions: [Permission.VIEW_SETTINGS],
-        },
-        {
-          name: "Security",
-          href: "/settings/security",
-          icon: Shield,
-          description: "Security settings",
-          permissions: [Permission.UPDATE_SETTINGS],
-        },
-        {
-          name: "Email",
-          href: "/settings/email",
-          icon: Bell,
-          description: "Email configuration",
-          permissions: [Permission.UPDATE_SETTINGS],
-        },
-      ],
-    },
   ];
+
+  navigationItems.push({
+    name: "Settings",
+    href: "/settings",
+    icon: Settings,
+    badge: null,
+    description: "Website configuration",
+    permissions: [Permission.VIEW_SETTINGS],
+  });
 
   return navigationItems;
 };
@@ -278,61 +288,42 @@ export const getQuickActions = (userRole?: string): NavigationItem[] => {
       description: "Create new article",
       permissions: [Permission.CREATE_ARTICLE],
     },
+    {
+      name: "New Tenant",
+      href: "/tenants",
+      icon: Building2,
+      description: "Create tenant website",
+      permissions: [Permission.SYSTEM_ADMINISTRATION],
+    },
+    {
+      name: "New User",
+      href: "/users/new",
+      icon: Users,
+      description: "Create new user",
+      permissions: [Permission.CREATE_USER],
+    },
+    {
+      name: "New Category",
+      href: "/categories/new",
+      icon: Tags,
+      description: "Create new category",
+      permissions: [Permission.CREATE_CATEGORY],
+    },
+    {
+      name: "Review Queue",
+      href: "/review",
+      icon: ClipboardList,
+      description: "Review articles",
+      permissions: [Permission.REVIEW_ARTICLES],
+    },
+    {
+      name: "New Slide",
+      href: "/carousel/new",
+      icon: Image,
+      description: "Create carousel slide",
+      permissions: [Permission.CREATE_CAROUSEL],
+    },
   ];
-
-  // Add role-specific quick actions
-  if (userRole === "SUPER_ADMIN") {
-    baseActions.push(
-      {
-        name: "New Tenant",
-        href: "/tenants",
-        icon: Building2,
-        description: "Create tenant website",
-        permissions: [Permission.SYSTEM_ADMINISTRATION],
-      },
-      {
-        name: "New User",
-        href: "/users/new",
-        icon: Users,
-        description: "Create new user",
-        permissions: [Permission.CREATE_USER],
-      },
-    );
-  } else if (userRole === "ADMIN") {
-    baseActions.push(
-      {
-        name: "New User",
-        href: "/users/new",
-        icon: Users,
-        description: "Create new user",
-        permissions: [Permission.CREATE_USER],
-      },
-      {
-        name: "New Category",
-        href: "/categories/new",
-        icon: Tags,
-        description: "Create new category",
-        permissions: [Permission.CREATE_CATEGORY],
-      },
-    );
-  } else if (userRole === "EDITOR") {
-    baseActions.push(
-      {
-        name: "Review Queue",
-        href: "/review",
-        icon: ClipboardList,
-        description: "Review articles",
-        permissions: [Permission.REVIEW_ARTICLES],
-      },
-      {
-        name: "New Category",
-        href: "/categories/new",
-        icon: Tags,
-        description: "Create new category",
-        permissions: [Permission.CREATE_CATEGORY],
-      },
-    );
-  }
 
   return baseActions;
 };

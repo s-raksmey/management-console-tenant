@@ -14,7 +14,7 @@ import { useTopics } from "@/hooks/useTopics";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
 import { ArticleStatus } from "@/utils/articlePermissions";
-import { Permission } from "@/components/permissions/PermissionGuard";
+import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
 
 import type { OutputData } from "@editorjs/editorjs";
 import type { NewsEditorRef } from "@/components/editor/news-editor";
@@ -230,6 +230,7 @@ export default function NewArticlePage() {
 
 
   return (
+    <PermissionGuard permissions={[Permission.CREATE_ARTICLE]} showError>
     <main className="space-y-4">
       {/* ---------- Header ---------- */}
       <div className="flex items-center justify-between">
@@ -456,5 +457,6 @@ export default function NewArticlePage() {
       {/* ---------- Editor ---------- */}
       <NewsEditor ref={editorRef} />
     </main>
+    </PermissionGuard>
   );
 }

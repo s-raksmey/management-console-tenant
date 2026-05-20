@@ -5,12 +5,20 @@ import {
   Archive,
   Building2,
   Check,
+  ChevronDown,
   Copy,
   Edit2,
+  ExternalLink,
+  Globe2,
+  KeyRound,
   Loader2,
+  Mail,
   Plus,
   RotateCcw,
+  Server,
+  Shield,
   UserPlus,
+  Users,
   X,
 } from "lucide-react";
 import {
@@ -21,21 +29,26 @@ import {
   TenantStatus,
   UpdateTenantInput,
 } from "@/services/tenant.gql";
+import { UserService } from "@/services/user.gql";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { useToastHelpers } from "@/components/ui/toast";
-import { useTenant } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
+import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
+import { usePermissions } from "@/hooks/usePermissions";
 
 const emptyTenant: CreateTenantInput = {
   name: "",
@@ -66,27 +79,50 @@ function toSlug(value: string) {
     .replace(/^-|-$/g, "");
 }
 
+function statusBadgeVariant(status: TenantStatus) {
+  if (status === "ACTIVE") return "outline";
+  if (status === "SUSPENDED") return "secondary";
+  return "destructive";
+}
+
 export default function TenantsPage() {
   const { showSuccess, showError } = useToastHelpers();
   const { refreshTenants } = useTenant();
   const { user } = useAuth();
+  const { hasPermission } = usePermissions();
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const showErrorRef = useRef(showError);
+
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingTenant, setSavingTenant] = useState(false);
   const [savingAdmin, setSavingAdmin] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
-  const [savingLifecycleId, setSavingLifecycleId] = useState<string | null>(
-    null,
-  );
+  const [savingLifecycleId, setSavingLifecycleId] = useState<string | null>(null);
+  const [savingTwoFactorUserId, setSavingTwoFactorUserId] = useState<string | null>(null);
+  const [tenantDialogOpen, setTenantDialogOpen] = useState(false);
+  const [adminDialogOpen, setAdminDialogOpen] = useState(false);
   const [tenantForm, setTenantForm] = useState<CreateTenantInput>(emptyTenant);
-  const [adminForm, setAdminForm] =
-    useState<CreateTenantAdminInput>(emptyAdmin);
+  const [adminForm, setAdminForm] = useState<CreateTenantAdminInput>(emptyAdmin);
   const [editingTenantId, setEditingTenantId] = useState<string | null>(null);
+  const [expandedUsersTenantId, setExpandedUsersTenantId] = useState<string | null>(null);
+  const [expandedConnectionTenantId, setExpandedConnectionTenantId] = useState<string | null>(null);
   const [editTenantForm, setEditTenantForm] = useState<UpdateTenantInput>({});
+
   const publicApiUrl =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql";
+
+  const activeTenantCount = tenants.filter((tenant) => tenant.status === "ACTIVE").length;
+  const archivedTenantCount = tenants.filter((tenant) => tenant.status === "ARCHIVED").length;
+  const tenantUserCount = tenants.reduce(
+    (total, tenant) => total + tenant.memberships.length,
+    0,
+  );
+  const activeSiteCount = tenants.reduce(
+    (total, tenant) => total + tenant.sites.filter((site) => site.isActive).length,
+    0,
+  );
+  const selectedUserTenant = tenants.find((tenant) => tenant.id === adminForm.tenantId);
 
   const copyTenantValue = async (label: string, value: string) => {
     try {
@@ -103,18 +139,6 @@ export default function TenantsPage() {
       `NEXT_PUBLIC_TENANT_ID=${tenant.id}`,
       `NEXT_PUBLIC_TENANT_SLUG=${tenant.slug}`,
     ].join("\n");
-  const activeTenantCount = tenants.filter(
-    (tenant) => tenant.status === "ACTIVE",
-  ).length;
-  const archivedTenantCount = tenants.filter(
-    (tenant) => tenant.status === "ARCHIVED",
-  ).length;
-  const tenantAdminCount = tenants.reduce(
-    (total, tenant) =>
-      total +
-      tenant.memberships.filter((member) => member.role === "ADMIN").length,
-    0,
-  );
 
   useEffect(() => {
     showErrorRef.current = showError;
@@ -125,9 +149,8 @@ export default function TenantsPage() {
     try {
       const items = isSuperAdmin
         ? await TenantService.listTenants()
-        : await TenantService.getActiveTenant().then((tenant) =>
-            tenant ? [tenant] : [],
-          );
+        : await TenantService.getActiveTenant().then((tenant) => (tenant ? [tenant] : []));
+
       setTenants(items);
       setAdminForm((current) => ({
         ...current,
@@ -155,11 +178,7 @@ export default function TenantsPage() {
       return;
     }
 
-    if (
-      !window.confirm(
-        `Create tenant website "${tenantForm.name.trim()}"?`,
-      )
-    ) {
+    if (!window.confirm(`Create tenant website "${tenantForm.name.trim()}"?`)) {
       return;
     }
 
@@ -174,9 +193,11 @@ export default function TenantsPage() {
         adminBaseUrl: tenantForm.adminBaseUrl?.trim() || null,
         primaryLocale: tenantForm.primaryLocale || "en",
       });
+
       setTenants((current) => [tenant, ...current]);
       setAdminForm((current) => ({ ...current, tenantId: tenant.id }));
       setTenantForm(emptyTenant);
+      setTenantDialogOpen(false);
       showSuccess("Tenant Created", `${tenant.name} is ready.`);
       await refreshTenants();
     } catch (error: any) {
@@ -192,20 +213,12 @@ export default function TenantsPage() {
   const createTenantAdmin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (
-      !adminForm.tenantId ||
-      !adminForm.email.trim() ||
-      !adminForm.name.trim()
-    ) {
+    if (!adminForm.tenantId || !adminForm.email.trim() || !adminForm.name.trim()) {
       showError("Validation Error", "Tenant, name, and email are required.");
       return;
     }
 
-    if (
-      !window.confirm(
-        `Create ${adminForm.name.trim()} as a tenant admin for this website?`,
-      )
-    ) {
+    if (!window.confirm(`Create ${adminForm.name.trim()} as a tenant ${adminForm.role?.toLowerCase()}?`)) {
       return;
     }
 
@@ -217,29 +230,60 @@ export default function TenantsPage() {
         name: adminForm.name.trim(),
         password: adminForm.password?.trim() || null,
       });
-      setAdminForm((current) => ({
-        ...emptyAdmin,
-        tenantId: current.tenantId,
-      }));
-      showSuccess(
-        "Tenant Admin Created",
-        "The user can now manage this tenant.",
-      );
+      setAdminForm((current) => ({ ...emptyAdmin, tenantId: current.tenantId }));
+      setAdminDialogOpen(false);
+      showSuccess("Tenant User Created", "The user can now access this tenant.");
       await loadTenants();
     } catch (error: any) {
       showError(
         "Error",
-        error?.response?.errors?.[0]?.message ||
-          "Failed to create tenant admin.",
+        error?.response?.errors?.[0]?.message || "Failed to create tenant user.",
       );
     } finally {
       setSavingAdmin(false);
     }
   };
 
+  const resetUserTwoFactor = async (targetUser: { id: string; name: string }) => {
+    if (
+      !window.confirm(
+        `Reset two-factor setup for "${targetUser.name}"? They will need to scan a new QR code on next login.`,
+      )
+    ) {
+      return;
+    }
+
+    setSavingTwoFactorUserId(targetUser.id);
+    try {
+      const result = await UserService.resetUserTwoFactor(targetUser.id);
+      if (!result.success) {
+        showError("Error", result.message || "Failed to reset two-factor setup.");
+        return;
+      }
+
+      showSuccess("Two-Factor Reset", result.message);
+      await loadTenants();
+    } catch (error: any) {
+      showError(
+        "Error",
+        error?.response?.errors?.[0]?.message || "Failed to reset two-factor setup.",
+      );
+    } finally {
+      setSavingTwoFactorUserId(null);
+    }
+  };
+
+  const openCreateTenantUser = (tenant: Tenant) => {
+    setAdminForm({
+      ...emptyAdmin,
+      tenantId: tenant.id,
+      role: "AUTHOR",
+    });
+    setAdminDialogOpen(true);
+  };
+
   const startTenantEdit = (tenant: Tenant) => {
-    const site =
-      tenant.sites.find((item) => item.isPrimary) ?? tenant.sites[0];
+    const site = tenant.sites.find((item) => item.isPrimary) ?? tenant.sites[0];
 
     setEditingTenantId(tenant.id);
     setEditTenantForm({
@@ -268,11 +312,7 @@ export default function TenantsPage() {
       return;
     }
 
-    if (
-      !window.confirm(
-        `Save changes to tenant "${editTenantForm.name.trim()}"?`,
-      )
-    ) {
+    if (!window.confirm(`Save changes to tenant "${editTenantForm.name.trim()}"?`)) {
       return;
     }
 
@@ -306,18 +346,11 @@ export default function TenantsPage() {
     }
   };
 
-  const updateTenantLifecycle = async (
-    tenant: Tenant,
-    nextStatus: TenantStatus,
-  ) => {
+  const updateTenantLifecycle = async (tenant: Tenant, nextStatus: TenantStatus) => {
     const isArchiving = nextStatus === "ARCHIVED";
     const actionLabel = isArchiving ? "archive" : "restore";
 
-    if (
-      !window.confirm(
-        `Are you sure you want to ${actionLabel} "${tenant.name}"?`,
-      )
-    ) {
+    if (!window.confirm(`Are you sure you want to ${actionLabel} "${tenant.name}"?`)) {
       return;
     }
 
@@ -329,9 +362,7 @@ export default function TenantsPage() {
       });
 
       setTenants((current) =>
-        current.map((item) =>
-          item.id === updatedTenant.id ? updatedTenant : item,
-        ),
+        current.map((item) => (item.id === updatedTenant.id ? updatedTenant : item)),
       );
       showSuccess(
         isArchiving ? "Tenant Archived" : "Tenant Restored",
@@ -343,8 +374,7 @@ export default function TenantsPage() {
     } catch (error: any) {
       showError(
         "Error",
-        error?.response?.errors?.[0]?.message ||
-          `Failed to ${actionLabel} tenant.`,
+        error?.response?.errors?.[0]?.message || `Failed to ${actionLabel} tenant.`,
       );
     } finally {
       setSavingLifecycleId(null);
@@ -352,361 +382,231 @@ export default function TenantsPage() {
   };
 
   return (
-    <main className="space-y-6 p-6">
-      <div>
-        <p className="text-sm font-semibold uppercase text-blue-600">
-          {isSuperAdmin ? "Tenant Control" : "Website Control"}
-        </p>
-        <h1 className="mt-2 text-3xl font-bold text-slate-950">
-          {isSuperAdmin ? "Tenant Websites" : "Website Settings"}
-        </h1>
-        <p className="mt-2 text-sm text-slate-600">
-          {isSuperAdmin
-            ? "Create clean tenant admin/public websites and assign tenant admins."
-            : "Manage this tenant admin website and public website identity."}
-        </p>
-      </div>
+    <PermissionGuard permissions={[Permission.SYSTEM_ADMINISTRATION, Permission.UPDATE_SETTINGS]} showError>
+      <main className="space-y-6">
+      <section className="rounded-lg border bg-white p-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+          <div className="max-w-3xl">
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+              {isSuperAdmin ? "Tenant Control" : "Website Control"}
+            </p>
+            <h1 className="mt-2 text-3xl font-bold text-slate-950">
+              {isSuperAdmin ? "Tenant Websites" : "Current Website"}
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {isSuperAdmin
+                ? "Create tenant websites, inspect users, and manage each tenant from one place."
+                : "Manage this tenant admin website and public website identity."}
+            </p>
+          </div>
 
-      {isSuperAdmin && (
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-xs font-semibold uppercase text-slate-500">
-                Active Tenants
-              </p>
-              <p className="mt-2 text-3xl font-bold text-slate-950">
-                {activeTenantCount}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-xs font-semibold uppercase text-slate-500">
-                Tenant Admins
-              </p>
-              <p className="mt-2 text-3xl font-bold text-slate-950">
-                {tenantAdminCount}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <p className="text-xs font-semibold uppercase text-slate-500">
-                Archived
-              </p>
-              <p className="mt-2 text-3xl font-bold text-slate-950">
-                {archivedTenantCount}
-              </p>
-            </CardContent>
-          </Card>
+          {isSuperAdmin && (
+            <div className="w-full xl:w-auto">
+              <button
+                type="button"
+                onClick={() => setTenantDialogOpen(true)}
+                className="group w-full rounded-lg border border-blue-200 bg-blue-600 p-4 text-left text-white shadow-sm transition hover:bg-blue-700 xl:w-[320px]"
+              >
+                <div className="flex items-center gap-3">
+                  <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white/15">
+                    <Globe2 className="h-5 w-5" />
+                  </span>
+                  <span>
+                    <span className="block font-semibold">Create Tenant Website</span>
+                    <span className="mt-0.5 block text-xs text-blue-100">
+                      New admin and public site
+                    </span>
+                  </span>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
-      )}
 
-      {isSuperAdmin && (
-        <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
-          <Card>
-            <CardHeader>
-              <CardTitle>Create Tenant Website</CardTitle>
-              <CardDescription>
-                Create a clean tenant shell. Tenant content starts empty except required settings.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-4" onSubmit={createTenant}>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="tenant-name">Tenant Name</Label>
-                  <Input
-                    id="tenant-name"
-                    value={tenantForm.name}
-                    onChange={(event) =>
-                      setTenantForm((current) => ({
-                        ...current,
-                        name: event.target.value,
-                        slug: current.slug || toSlug(event.target.value),
-                      }))
-                    }
-                    placeholder="Pulse Business"
-                  />
+        {isSuperAdmin && (
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              ["Active Tenants", activeTenantCount, Building2],
+              ["Tenant Users", tenantUserCount, Users],
+              ["Active Sites", activeSiteCount, Globe2],
+              ["Archived", archivedTenantCount, Archive],
+            ].map(([label, value, Icon]) => {
+              const StatIcon = Icon as typeof Building2;
+              return (
+                <div key={label as string} className="rounded-md border bg-slate-50 p-4">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase text-slate-500">
+                      {label as string}
+                    </p>
+                    <StatIcon className="h-4 w-4 text-slate-500" />
+                  </div>
+                  <p className="mt-2 text-3xl font-bold text-slate-950">
+                    {value as number}
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="tenant-slug">Slug</Label>
-                  <Input
-                    id="tenant-slug"
-                    value={tenantForm.slug ?? ""}
-                    onChange={(event) =>
-                      setTenantForm((current) => ({
-                        ...current,
-                        slug: toSlug(event.target.value),
-                      }))
-                    }
-                    placeholder="pulse-business"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="tenant-description">Description</Label>
-                <Textarea
-                  id="tenant-description"
-                  value={tenantForm.description ?? ""}
-                  onChange={(event) =>
-                    setTenantForm((current) => ({
-                      ...current,
-                      description: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="public-url">Public URL</Label>
-                  <Input
-                    id="public-url"
-                    value={tenantForm.publicBaseUrl ?? ""}
-                    onChange={(event) =>
-                      setTenantForm((current) => ({
-                        ...current,
-                        publicBaseUrl: event.target.value,
-                      }))
-                    }
-                    placeholder="http://localhost:3000"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="admin-url">Admin URL</Label>
-                  <Input
-                    id="admin-url"
-                    value={tenantForm.adminBaseUrl ?? ""}
-                    onChange={(event) =>
-                      setTenantForm((current) => ({
-                        ...current,
-                        adminBaseUrl: event.target.value,
-                      }))
-                    }
-                    placeholder="http://localhost:3001"
-                  />
-                </div>
-              </div>
-
-              <Button type="submit" disabled={savingTenant}>
-                {savingTenant ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="mr-2 h-4 w-4" />
-                )}
-                Create Tenant
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-          <Card>
-          <CardHeader>
-            <CardTitle>Create Tenant Admin</CardTitle>
-            <CardDescription>
-              Create or attach a platform tenant admin. Authors and editors are managed inside each tenant.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form className="space-y-4" onSubmit={createTenantAdmin}>
-              <div className="space-y-2">
-                <Label htmlFor="admin-tenant">Tenant</Label>
-                <select
-                  id="admin-tenant"
-                  value={adminForm.tenantId}
-                  onChange={(event) =>
-                    setAdminForm((current) => ({
-                      ...current,
-                      tenantId: event.target.value,
-                    }))
-                  }
-                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
-                >
-                  <option value="">Select tenant</option>
-                  {tenants.map((tenant) => (
-                    <option key={tenant.id} value={tenant.id}>
-                      {tenant.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="admin-name">Name</Label>
-                <Input
-                  id="admin-name"
-                  value={adminForm.name}
-                  onChange={(event) =>
-                    setAdminForm((current) => ({
-                      ...current,
-                      name: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="admin-email">Email</Label>
-                <Input
-                  id="admin-email"
-                  type="email"
-                  value={adminForm.email}
-                  onChange={(event) =>
-                    setAdminForm((current) => ({
-                      ...current,
-                      email: event.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="admin-password">Password</Label>
-                <Input
-                  id="admin-password"
-                  type="password"
-                  value={adminForm.password ?? ""}
-                  onChange={(event) =>
-                    setAdminForm((current) => ({
-                      ...current,
-                      password: event.target.value,
-                    }))
-                  }
-                  placeholder="Required for new users"
-                />
-              </div>
-              <Button type="submit" disabled={savingAdmin}>
-                {savingAdmin ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <UserPlus className="mr-2 h-4 w-4" />
-                )}
-                Create Tenant Admin
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </section>
 
       <Card>
-        <CardHeader>
-          <CardTitle>{isSuperAdmin ? "All Tenants" : "Current Website"}</CardTitle>
-          <CardDescription>
-            {isSuperAdmin
-              ? `${tenants.length} tenant websites configured`
-              : "Update the name, URLs, locale, and active state for this tenant"}
-          </CardDescription>
+        <CardHeader className="border-b">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <CardTitle>{isSuperAdmin ? "Tenants" : "Website"}</CardTitle>
+              <CardDescription>
+                {isSuperAdmin
+                  ? `${tenants.length} tenant website${tenants.length !== 1 ? "s" : ""} configured`
+                  : "Update the name, URLs, locale, and active state for this tenant"}
+              </CardDescription>
+            </div>
+            <Button type="button" variant="outline" size="sm" onClick={() => void loadTenants()}>
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center py-12 text-slate-500">
+            <div className="flex items-center justify-center py-16 text-slate-500">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Loading tenants...
             </div>
           ) : tenants.length === 0 ? (
-            <div className="rounded-md border border-dashed py-12 text-center">
+            <div className="py-16 text-center">
               <Building2 className="mx-auto h-10 w-10 text-slate-400" />
               <p className="mt-3 text-sm text-slate-500">No tenants yet.</p>
             </div>
           ) : (
-            <div className="divide-y rounded-md border">
+            <div className="divide-y">
               {tenants.map((tenant) => {
-                const site =
-                  tenant.sites.find((item) => item.isPrimary) ??
-                  tenant.sites[0];
+                const site = tenant.sites.find((item) => item.isPrimary) ?? tenant.sites[0];
                 const isEditing = editingTenantId === tenant.id;
+                const adminCount = tenant.memberships.filter((member) => member.role === "ADMIN").length;
+                const isUsersExpanded = expandedUsersTenantId === tenant.id;
+                const isConnectionExpanded = expandedConnectionTenantId === tenant.id;
 
                 return (
-                  <div
-                    key={tenant.id}
-                    className="space-y-4 p-4"
-                  >
-                    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_260px_220px_180px_120px]">
-                      <div>
+                  <div key={tenant.id} className="space-y-4 p-5">
+                    <div className="grid gap-5 xl:grid-cols-[minmax(260px,1fr)_minmax(320px,1.3fr)_260px]">
+                      <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="font-semibold text-slate-950">
+                          <h2 className="truncate text-lg font-semibold text-slate-950">
                             {tenant.name}
                           </h2>
-                          <Badge variant="outline">{tenant.status}</Badge>
+                          <Badge variant={statusBadgeVariant(tenant.status) as any}>
+                            {tenant.status}
+                          </Badge>
                           {site?.isActive === false && (
                             <Badge variant="secondary">Site Disabled</Badge>
                           )}
                         </div>
-                        <p className="mt-1 text-sm text-slate-500">
-                          /{tenant.slug}
-                        </p>
+                        <p className="mt-1 text-sm text-slate-500">/{tenant.slug}</p>
                         {tenant.description && (
-                          <p className="mt-2 text-sm text-slate-600">
+                          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
                             {tenant.description}
                           </p>
                         )}
+
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setExpandedUsersTenantId((current) =>
+                                current === tenant.id ? null : tenant.id,
+                              )
+                            }
+                          >
+                            <Users className="mr-2 h-4 w-4" />
+                            Users
+                            <Badge variant="secondary" className="ml-2">
+                              {tenant.memberships.length}
+                            </Badge>
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setExpandedConnectionTenantId((current) =>
+                                current === tenant.id ? null : tenant.id,
+                              )
+                            }
+                          >
+                            <Server className="mr-2 h-4 w-4" />
+                            Connection
+                            <ChevronDown
+                              className={`ml-1 h-4 w-4 transition-transform ${
+                                isConnectionExpanded ? "rotate-180" : ""
+                              }`}
+                            />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="space-y-2 text-sm">
-                        <p className="text-xs font-semibold uppercase text-slate-500">
-                          Tenant Keys
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => copyTenantValue("Tenant ID", tenant.id)}
-                          className="flex w-full items-center justify-between gap-2 rounded-md border bg-slate-50 px-2 py-1.5 text-left text-xs text-slate-700 hover:bg-slate-100"
-                        >
-                          <span className="min-w-0 truncate">
-                            ID: {tenant.id}
-                          </span>
-                          <Copy className="h-3.5 w-3.5 flex-shrink-0" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            copyTenantValue("Tenant slug", tenant.slug)
-                          }
-                          className="flex w-full items-center justify-between gap-2 rounded-md border bg-slate-50 px-2 py-1.5 text-left text-xs text-slate-700 hover:bg-slate-100"
-                        >
-                          <span className="min-w-0 truncate">
-                            Slug: {tenant.slug}
-                          </span>
-                          <Copy className="h-3.5 w-3.5 flex-shrink-0" />
-                        </button>
+
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <div className="rounded-md border bg-slate-50 p-3">
+                          <p className="text-xs font-semibold uppercase text-slate-500">
+                            Public Site
+                          </p>
+                          <p className="mt-2 truncate text-sm font-medium text-slate-900">
+                            {site?.publicBaseUrl || "Not set"}
+                          </p>
+                          {site?.publicBaseUrl && (
+                            <Button
+                              type="button"
+                              variant="link"
+                              size="sm"
+                              className="mt-1 h-auto p-0"
+                              onClick={() =>
+                                window.open(site.publicBaseUrl ?? undefined, "_blank", "noreferrer")
+                              }
+                            >
+                              Open public
+                              <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                        <div className="rounded-md border bg-slate-50 p-3">
+                          <p className="text-xs font-semibold uppercase text-slate-500">
+                            Admin Site
+                          </p>
+                          <p className="mt-2 truncate text-sm font-medium text-slate-900">
+                            {site?.adminBaseUrl || "Not set"}
+                          </p>
+                          {site?.adminBaseUrl && (
+                            <Button
+                              type="button"
+                              variant="link"
+                              size="sm"
+                              className="mt-1 h-auto p-0"
+                              onClick={() =>
+                                window.open(site.adminBaseUrl ?? undefined, "_blank", "noreferrer")
+                              }
+                            >
+                              Open admin
+                              <ExternalLink className="ml-1 h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-sm">
-                        <p className="text-xs font-semibold uppercase text-slate-500">
-                          Public
-                        </p>
-                        <p className="mt-1 truncate text-slate-700">
-                          {site?.publicBaseUrl || "Not set"}
-                        </p>
-                        <p className="mt-1 truncate text-slate-500">
-                          {site?.adminBaseUrl || "No admin URL"}
-                        </p>
-                      </div>
-                      <div className="text-sm">
-                        <p className="text-xs font-semibold uppercase text-slate-500">
-                          Admins
-                        </p>
-                        <p className="mt-1 text-slate-700">
-                          {
-                            tenant.memberships.filter(
-                              (member) => member.role === "ADMIN",
-                            ).length
-                          }{" "}
-                          tenant admin
-                        </p>
-                      </div>
-                      <div className="flex flex-col items-end gap-2">
+
+                      <div className="flex flex-col gap-2 xl:items-end">
+                        <div className="mb-1 text-sm text-slate-600">
+                          <span className="font-medium text-slate-950">{adminCount}</span>{" "}
+                          tenant admin{adminCount !== 1 ? "s" : ""}
+                        </div>
                         <Button
                           type="button"
                           variant={isEditing ? "secondary" : "outline"}
                           size="sm"
-                          onClick={() =>
-                            isEditing ? cancelTenantEdit() : startTenantEdit(tenant)
-                          }
+                          onClick={() => (isEditing ? cancelTenantEdit() : startTenantEdit(tenant))}
                         >
-                          {isEditing ? (
-                            <X className="mr-2 h-4 w-4" />
-                          ) : (
-                            <Edit2 className="mr-2 h-4 w-4" />
-                          )}
-                          {isEditing ? "Cancel" : "Edit"}
+                          {isEditing ? <X className="mr-2 h-4 w-4" /> : <Edit2 className="mr-2 h-4 w-4" />}
+                          {isEditing ? "Cancel Edit" : "Edit Tenant"}
                         </Button>
                         {isSuperAdmin && tenant.status !== "ARCHIVED" && (
                           <Button
@@ -714,9 +614,7 @@ export default function TenantsPage() {
                             variant="outline"
                             size="sm"
                             disabled={savingLifecycleId === tenant.id}
-                            onClick={() =>
-                              updateTenantLifecycle(tenant, "ARCHIVED")
-                            }
+                            onClick={() => updateTenantLifecycle(tenant, "ARCHIVED")}
                             className="text-red-600 hover:text-red-700"
                           >
                             {savingLifecycleId === tenant.id ? (
@@ -733,9 +631,7 @@ export default function TenantsPage() {
                             variant="outline"
                             size="sm"
                             disabled={savingLifecycleId === tenant.id}
-                            onClick={() =>
-                              updateTenantLifecycle(tenant, "ACTIVE")
-                            }
+                            onClick={() => updateTenantLifecycle(tenant, "ACTIVE")}
                           >
                             {savingLifecycleId === tenant.id ? (
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -748,93 +644,183 @@ export default function TenantsPage() {
                       </div>
                     </div>
 
-                    <div className="grid gap-3 rounded-md border bg-slate-50 p-3 lg:grid-cols-[minmax(0,1fr)_220px]">
-                      <div>
-                        <p className="text-xs font-semibold uppercase text-slate-500">
-                          Public Website Connection
-                        </p>
-                        <pre className="mt-2 overflow-x-auto rounded-md border bg-white p-3 text-xs leading-5 text-slate-700">
-                          {buildPublicEnv(tenant)}
-                        </pre>
-                        <p className="mt-2 text-xs text-slate-500">
-                          Use these values in the public website `.env`, then restart the public dev server.
-                        </p>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            copyTenantValue(
-                              "Public website environment",
-                              buildPublicEnv(tenant),
-                            )
-                          }
-                        >
-                          <Copy className="mr-2 h-4 w-4" />
-                          Copy Env
-                        </Button>
-                        {site?.publicBaseUrl && (
+                    {isConnectionExpanded && (
+                      <div className="grid gap-3 rounded-md border bg-slate-50 p-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+                        <div>
+                          <p className="text-xs font-semibold uppercase text-slate-500">
+                            Public Website Environment
+                          </p>
+                          <pre className="mt-2 overflow-x-auto rounded-md border bg-white p-3 text-xs leading-5 text-slate-700">
+                            {buildPublicEnv(tenant)}
+                          </pre>
+                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                            <button
+                              type="button"
+                              onClick={() => copyTenantValue("Tenant ID", tenant.id)}
+                              className="flex items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+                            >
+                              <span className="truncate">ID: {tenant.id}</span>
+                              <Copy className="h-3.5 w-3.5 flex-shrink-0" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => copyTenantValue("Tenant slug", tenant.slug)}
+                              className="flex items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+                            >
+                              <span className="truncate">Slug: {tenant.slug}</span>
+                              <Copy className="h-3.5 w-3.5 flex-shrink-0" />
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
                             onClick={() =>
-                              window.open(
-                                site.publicBaseUrl ?? undefined,
-                                "_blank",
-                                "noreferrer",
-                              )
+                              copyTenantValue("Public website environment", buildPublicEnv(tenant))
                             }
                           >
-                            Open Public
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copy Env
                           </Button>
-                        )}
-                        {site?.adminBaseUrl && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() =>
-                              window.open(
-                                site.adminBaseUrl ?? undefined,
-                                "_blank",
-                                "noreferrer",
-                              )
-                            }
-                          >
-                            Open Admin
-                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {isUsersExpanded && (
+                      <div className="rounded-md border bg-white">
+                        <div className="flex flex-col gap-2 border-b bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <h3 className="flex items-center gap-2 font-semibold text-slate-950">
+                              <Users className="h-4 w-4 text-blue-600" />
+                              Tenant Users
+                            </h3>
+                            <p className="text-sm text-slate-500">
+                              {tenant.memberships.length} user{tenant.memberships.length !== 1 ? "s" : ""} in {tenant.name}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="outline" className="w-fit bg-white">
+                              {tenant.slug}
+                            </Badge>
+                            {hasPermission(Permission.CREATE_USER) && (
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => openCreateTenantUser(tenant)}
+                              >
+                                <UserPlus className="mr-2 h-4 w-4" />
+                                Add User
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {tenant.memberships.length === 0 ? (
+                          <div className="p-6 text-center text-sm text-slate-500">
+                            No users are assigned to this tenant yet.
+                          </div>
+                        ) : (
+                          <div className="overflow-x-auto">
+                            <table className="w-full min-w-[760px] text-sm">
+                              <thead>
+                                <tr className="border-b text-left text-xs font-semibold uppercase text-slate-500">
+                                  <th className="px-4 py-3">User</th>
+                                  <th className="px-4 py-3">Email</th>
+                                  <th className="px-4 py-3">Tenant Role</th>
+                                  <th className="px-4 py-3">Platform Role</th>
+                                  <th className="px-4 py-3">Status</th>
+                                  <th className="px-4 py-3">Two-Factor</th>
+                                  <th className="px-4 py-3">Created</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {tenant.memberships.map((membership) => (
+                                  <tr key={membership.id} className="border-b last:border-0">
+                                    <td className="px-4 py-3">
+                                      <p className="font-medium text-slate-950">
+                                        {membership.user.name}
+                                      </p>
+                                      <p className="text-xs text-slate-500">ID: {membership.user.id}</p>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex items-center gap-2 text-slate-700">
+                                        <Mail className="h-3.5 w-3.5 text-slate-400" />
+                                        {membership.user.email}
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <Badge variant="secondary" className="gap-1">
+                                        <Shield className="h-3 w-3" />
+                                        {membership.role}
+                                      </Badge>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <Badge variant="outline">{membership.user.role}</Badge>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex flex-wrap gap-1">
+                                        <Badge variant={membership.user.isActive ? "default" : "secondary"}>
+                                          {membership.user.isActive ? "Account Active" : "Account Inactive"}
+                                        </Badge>
+                                        {!membership.isActive && (
+                                          <Badge variant="secondary">Membership Inactive</Badge>
+                                        )}
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                      <div className="flex flex-col gap-2">
+                                        <Badge
+                                          variant={membership.user.twoFactorEnabled ? "outline" : "secondary"}
+                                          className="w-fit"
+                                        >
+                                          {membership.user.twoFactorEnabled ? "Enabled" : "Needs Setup"}
+                                        </Badge>
+                                        <Button
+                                          type="button"
+                                          variant="outline"
+                                          size="sm"
+                                          className="w-fit"
+                                          disabled={savingTwoFactorUserId === membership.user.id}
+                                          onClick={() => void resetUserTwoFactor(membership.user)}
+                                        >
+                                          {savingTwoFactorUserId === membership.user.id ? (
+                                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                          ) : (
+                                            <KeyRound className="mr-2 h-3.5 w-3.5" />
+                                          )}
+                                          Show QR Again
+                                        </Button>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3 text-slate-600">
+                                      {new Date(membership.user.createdAt).toLocaleDateString()}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
                         )}
                       </div>
-                    </div>
+                    )}
 
                     {isEditing && (
-                      <form
-                        className="rounded-md border bg-slate-50 p-4"
-                        onSubmit={updateTenant}
-                      >
+                      <form className="rounded-md border bg-slate-50 p-4" onSubmit={updateTenant}>
                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-name-${tenant.id}`}>
-                              Tenant Name
-                            </Label>
+                            <Label htmlFor={`edit-name-${tenant.id}`}>Tenant Name</Label>
                             <Input
                               id={`edit-name-${tenant.id}`}
                               value={editTenantForm.name ?? ""}
                               onChange={(event) =>
-                                setEditTenantForm((current) => ({
-                                  ...current,
-                                  name: event.target.value,
-                                }))
+                                setEditTenantForm((current) => ({ ...current, name: event.target.value }))
                               }
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-slug-${tenant.id}`}>
-                              Slug
-                            </Label>
+                            <Label htmlFor={`edit-slug-${tenant.id}`}>Slug</Label>
                             <Input
                               id={`edit-slug-${tenant.id}`}
                               value={editTenantForm.slug ?? ""}
@@ -847,9 +833,7 @@ export default function TenantsPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-status-${tenant.id}`}>
-                              Status
-                            </Label>
+                            <Label htmlFor={`edit-status-${tenant.id}`}>Status</Label>
                             <select
                               id={`edit-status-${tenant.id}`}
                               value={editTenantForm.status ?? "ACTIVE"}
@@ -869,9 +853,7 @@ export default function TenantsPage() {
                             </select>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-public-${tenant.id}`}>
-                              Public URL
-                            </Label>
+                            <Label htmlFor={`edit-public-${tenant.id}`}>Public URL</Label>
                             <Input
                               id={`edit-public-${tenant.id}`}
                               value={editTenantForm.publicBaseUrl ?? ""}
@@ -884,9 +866,7 @@ export default function TenantsPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-admin-${tenant.id}`}>
-                              Admin URL
-                            </Label>
+                            <Label htmlFor={`edit-admin-${tenant.id}`}>Admin URL</Label>
                             <Input
                               id={`edit-admin-${tenant.id}`}
                               value={editTenantForm.adminBaseUrl ?? ""}
@@ -899,9 +879,7 @@ export default function TenantsPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-locale-${tenant.id}`}>
-                              Primary Locale
-                            </Label>
+                            <Label htmlFor={`edit-locale-${tenant.id}`}>Primary Locale</Label>
                             <Input
                               id={`edit-locale-${tenant.id}`}
                               value={editTenantForm.primaryLocale ?? "en"}
@@ -916,9 +894,7 @@ export default function TenantsPage() {
                         </div>
 
                         <div className="mt-4 space-y-2">
-                          <Label htmlFor={`edit-description-${tenant.id}`}>
-                            Description
-                          </Label>
+                          <Label htmlFor={`edit-description-${tenant.id}`}>Description</Label>
                           <Textarea
                             id={`edit-description-${tenant.id}`}
                             value={editTenantForm.description ?? ""}
@@ -947,11 +923,7 @@ export default function TenantsPage() {
                         </label>
 
                         <div className="mt-4 flex justify-end gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={cancelTenantEdit}
-                          >
+                          <Button type="button" variant="outline" onClick={cancelTenantEdit}>
                             Cancel
                           </Button>
                           <Button type="submit" disabled={savingEdit}>
@@ -972,6 +944,199 @@ export default function TenantsPage() {
           )}
         </CardContent>
       </Card>
-    </main>
+
+      <Dialog open={tenantDialogOpen} onOpenChange={setTenantDialogOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Create Tenant Website</DialogTitle>
+            <DialogDescription>
+              Create a clean tenant admin and public website. Content starts empty.
+            </DialogDescription>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={createTenant}>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="tenant-name">Tenant Name</Label>
+                <Input
+                  id="tenant-name"
+                  value={tenantForm.name}
+                  onChange={(event) =>
+                    setTenantForm((current) => ({
+                      ...current,
+                      name: event.target.value,
+                      slug: current.slug || toSlug(event.target.value),
+                    }))
+                  }
+                  placeholder="Pulse Business"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="tenant-slug">Slug</Label>
+                <Input
+                  id="tenant-slug"
+                  value={tenantForm.slug ?? ""}
+                  onChange={(event) =>
+                    setTenantForm((current) => ({
+                      ...current,
+                      slug: toSlug(event.target.value),
+                    }))
+                  }
+                  placeholder="pulse-business"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="tenant-description">Description</Label>
+              <Textarea
+                id="tenant-description"
+                value={tenantForm.description ?? ""}
+                onChange={(event) =>
+                  setTenantForm((current) => ({
+                    ...current,
+                    description: event.target.value,
+                  }))
+                }
+              />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="public-url">Public URL</Label>
+                <Input
+                  id="public-url"
+                  value={tenantForm.publicBaseUrl ?? ""}
+                  onChange={(event) =>
+                    setTenantForm((current) => ({
+                      ...current,
+                      publicBaseUrl: event.target.value,
+                    }))
+                  }
+                  placeholder="http://localhost:3000"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-url">Admin URL</Label>
+                <Input
+                  id="admin-url"
+                  value={tenantForm.adminBaseUrl ?? ""}
+                  onChange={(event) =>
+                    setTenantForm((current) => ({
+                      ...current,
+                      adminBaseUrl: event.target.value,
+                    }))
+                  }
+                  placeholder="http://localhost:3001"
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setTenantDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={savingTenant}>
+                {savingTenant ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Plus className="mr-2 h-4 w-4" />
+                )}
+                Create Tenant
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create Tenant User</DialogTitle>
+            <DialogDescription>
+              Create a user directly inside this tenant and choose their role.
+            </DialogDescription>
+          </DialogHeader>
+          <form className="space-y-4" onSubmit={createTenantAdmin}>
+            <div className="space-y-2">
+              <Label>Tenant</Label>
+              <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm">
+                <p className="font-medium text-slate-950">
+                  {selectedUserTenant?.name || "Select from a tenant's Users panel"}
+                </p>
+                {selectedUserTenant && (
+                  <p className="text-xs text-slate-500">/{selectedUserTenant.slug}</p>
+                )}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin-name">Name</Label>
+              <Input
+                id="admin-name"
+                value={adminForm.name}
+                onChange={(event) =>
+                  setAdminForm((current) => ({ ...current, name: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin-email">Email</Label>
+              <Input
+                id="admin-email"
+                type="email"
+                value={adminForm.email}
+                onChange={(event) =>
+                  setAdminForm((current) => ({ ...current, email: event.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin-role">Role</Label>
+              <select
+                id="admin-role"
+                value={adminForm.role ?? "AUTHOR"}
+                onChange={(event) =>
+                  setAdminForm((current) => ({
+                    ...current,
+                    role: event.target.value as "ADMIN" | "EDITOR" | "AUTHOR",
+                  }))
+                }
+                className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+              >
+                <option value="ADMIN">Admin</option>
+                <option value="EDITOR">Editor</option>
+                <option value="AUTHOR">Author</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin-password">Password</Label>
+              <Input
+                id="admin-password"
+                type="password"
+                value={adminForm.password ?? ""}
+                onChange={(event) =>
+                  setAdminForm((current) => ({ ...current, password: event.target.value }))
+                }
+                placeholder="Required for new users"
+              />
+            </div>
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setAdminDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={savingAdmin}>
+                {savingAdmin ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <UserPlus className="mr-2 h-4 w-4" />
+                )}
+                Create User
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      </main>
+    </PermissionGuard>
   );
 }

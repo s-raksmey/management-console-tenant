@@ -7,6 +7,8 @@ import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { UserService } from '../../services/user.gql';
 import type { AssignableUserRole, User } from '../../types/user';
+import { Permission } from '../permissions/PermissionGuard';
+import { usePermissions } from '@/hooks/usePermissions';
 
 interface UserTableRowProps {
   user: User;
@@ -24,8 +26,12 @@ export default function UserTableRow({
   onUserDelete 
 }: UserTableRowProps) {
   const { user: currentUser } = useAuth();
+  const { hasPermission } = usePermissions();
   const [showActions, setShowActions] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const canUpdateUser = hasPermission(Permission.UPDATE_USER);
+  const canDeleteUser = hasPermission(Permission.DELETE_USER);
+  const canManageRoles = hasPermission(Permission.MANAGE_USER_ROLES);
   const roleOptions: AssignableUserRole[] =
     currentUser?.role === 'SUPER_ADMIN'
       ? ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR']
@@ -149,57 +155,67 @@ export default function UserTableRow({
             <MoreHorizontal className="h-5 w-5" />
           </button>
 
-          {showActions && (
+          {showActions && (canUpdateUser || canDeleteUser || canManageRoles) && (
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-slate-200 z-10">
               <div className="py-1">
                 {/* Role Change Options */}
-                <div className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                  Change Role
-                </div>
-                {roleOptions.map((role) => (
-                  <button
-                    key={role}
-                    onClick={() => handleRoleChange(role)}
-                    disabled={user.role === role}
-                    className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center space-x-2 ${
-                      user.role === role ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700'
-                    }`}
-                  >
-                    <Shield className="h-4 w-4" />
-                    <span>{UserService.getRoleDisplayName(role)}</span>
-                  </button>
-                ))}
+                {canManageRoles && (
+                  <>
+                    <div className="px-4 py-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      Change Role
+                    </div>
+                    {roleOptions.map((role) => (
+                      <button
+                        key={role}
+                        onClick={() => handleRoleChange(role)}
+                        disabled={user.role === role}
+                        className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center space-x-2 ${
+                          user.role === role ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700'
+                        }`}
+                      >
+                        <Shield className="h-4 w-4" />
+                        <span>{UserService.getRoleDisplayName(role)}</span>
+                      </button>
+                    ))}
 
-                <div className="border-t border-slate-200 my-1"></div>
+                    <div className="border-t border-slate-200 my-1"></div>
+                  </>
+                )}
 
                 {/* Status Toggle */}
-                <button
-                  onClick={handleStatusToggle}
-                  className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
-                >
-                  {user.isActive ? (
-                    <>
-                      <UserX className="h-4 w-4" />
-                      <span>Deactivate User</span>
-                    </>
-                  ) : (
-                    <>
-                      <UserCheck className="h-4 w-4" />
-                      <span>Activate User</span>
-                    </>
-                  )}
-                </button>
+                {canUpdateUser && (
+                  <>
+                    <button
+                      onClick={handleStatusToggle}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
+                    >
+                      {user.isActive ? (
+                        <>
+                          <UserX className="h-4 w-4" />
+                          <span>Deactivate User</span>
+                        </>
+                      ) : (
+                        <>
+                          <UserCheck className="h-4 w-4" />
+                          <span>Activate User</span>
+                        </>
+                      )}
+                    </button>
 
-                <div className="border-t border-slate-200 my-1"></div>
+                    <div className="border-t border-slate-200 my-1"></div>
+                  </>
+                )}
 
                 {/* Delete */}
-                <button
-                  onClick={handleDelete}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span>Delete User</span>
-                </button>
+                {canDeleteUser && (
+                  <button
+                    onClick={handleDelete}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Delete User</span>
+                  </button>
+                )}
               </div>
             </div>
           )}

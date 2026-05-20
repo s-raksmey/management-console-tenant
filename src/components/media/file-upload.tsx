@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import type { MediaFile, MediaUploadProgress, MediaUploadOptions } from '@/types/media';
+import { getAuthFetchHeaders } from '@/services/graphql-client';
 
 interface FileUploadProps {
   onUploadComplete?: (files: MediaFile[]) => void;
@@ -54,6 +55,7 @@ export function FileUpload({
 
     const response = await fetch('/api/media/upload', {
       method: 'POST',
+      headers: getAuthFetchHeaders(),
       body: formData,
     });
 

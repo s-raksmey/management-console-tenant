@@ -21,7 +21,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useTopics } from "@/hooks/useTopics";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
-import { ArticleStatus, canEditArticle, canViewArticleForEdit } from "@/utils/articlePermissions";
+import { ArticleStatus, canDeleteArticle, canEditArticle, canViewArticleForEdit } from "@/utils/articlePermissions";
 import { ArticleBreakingNewsRequestStatus } from "@/types/article";
 import { Permission } from "@/components/permissions/PermissionGuard";
 import { format } from "date-fns";
@@ -573,6 +573,7 @@ export default function EditArticlePage() {
     currentRevisionRequest?.status
   );
   const isReadOnly = !canEdit;
+  const canDelete = canDeleteArticle(articleAuthorId, userId, userRole, hasPermission);
 
   const canRequestRevision =
     articleAuthorId === userId &&
@@ -633,9 +634,11 @@ export default function EditArticlePage() {
           <Button onClick={save} disabled={saving || !title || isReadOnly}>
             Save
           </Button>
-          <Button variant="ghost" onClick={remove} disabled={saving}>
-            Delete
-          </Button>
+          {canDelete && (
+            <Button variant="ghost" onClick={remove} disabled={saving}>
+              Delete
+            </Button>
+          )}
         </div>
       </div>
 

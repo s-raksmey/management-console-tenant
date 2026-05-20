@@ -26,6 +26,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 import { useAuthorStats } from '@/hooks/useAuthorStats';
+import { Permission } from '@/components/permissions/PermissionGuard';
+import { usePermissions } from '@/hooks/usePermissions';
 import { 
   StatCard, 
   MetricCard, 
@@ -37,6 +39,7 @@ import {
 } from './shared';
 
 export const AuthorDashboard: React.FC = () => {
+  const { hasPermission } = usePermissions();
   const {
     loading,
     error,
@@ -146,12 +149,14 @@ export const AuthorDashboard: React.FC = () => {
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Link href="/articles/new">
-            <Button className="bg-blue-600 hover:bg-blue-700">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Article
-            </Button>
-          </Link>
+          {hasPermission(Permission.CREATE_ARTICLE) && (
+            <Link href="/articles/new">
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                <PlusCircle className="h-4 w-4 mr-2" />
+                New Article
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 

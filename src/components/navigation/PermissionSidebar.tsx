@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
-import { PermissionGuard } from "../permissions/PermissionGuard";
+import { Permission, PermissionGuard } from "../permissions/PermissionGuard";
 import { usePermissions } from "../../hooks/usePermissions";
 import { getNavigationItems, NavigationItem } from "./NavigationItems";
 import { useState, useEffect } from "react";
@@ -177,12 +177,12 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
   const pathname = usePathname();
   const { user, isLoading } = useAuth();
   const { activeTenant } = useTenant();
-  const { userRole } = usePermissions();
+  const { hasPermission, userRole } = usePermissions();
   const { counts } = useCounts(userRole);
   const { getArticles } = useArticles();
   const [reviewQueueCount, setReviewQueueCount] = useState(0);
   const brandName =
-    userRole === "SUPER_ADMIN" ? "Pulse News" : activeTenant?.name || "Pulse News";
+    userRole === "SUPER_ADMIN" ? "Management Console" : activeTenant?.name || "Pulse News";
   const brandInitials = brandName
     .split(" ")
     .filter(Boolean)
@@ -194,7 +194,7 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
 
   useEffect(() => {
     const loadReviewCount = async () => {
-      if (!userRole || userRole.toString().toUpperCase() === 'AUTHOR') {
+      if (!hasPermission(Permission.REVIEW_ARTICLES)) {
         setReviewQueueCount(0);
         return;
       }
@@ -205,7 +205,7 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
     };
 
     loadReviewCount();
-  }, [getArticles, userRole]);
+  }, [getArticles, hasPermission]);
 
 
 

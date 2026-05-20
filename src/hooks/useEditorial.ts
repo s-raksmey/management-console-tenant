@@ -1,8 +1,8 @@
 // src/hooks/useEditorial.ts
 import { useState, useCallback } from 'react';
 import { getAuthenticatedGqlClient } from '@/services/graphql-client';
-import { useAuth } from '@/contexts/AuthContext';
-import { hasPermission, UserRole } from '@/utils/rbac';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Permission } from '@/components/permissions/PermissionGuard';
 
 // ============================================================================
 // TYPES AND INTERFACES
@@ -62,7 +62,7 @@ export interface AuthorPerformance {
 export function useEditorial() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { hasPermission } = usePermissions();
 
   const executeQuery = useCallback(async (query: string, variables?: any) => {
     try {
@@ -81,10 +81,8 @@ export function useEditorial() {
 
   // Get editorial dashboard statistics with RBAC filtering
   const getEditorialStats = useCallback(async (): Promise<EditorialStats> => {
-    const userRole = user?.role as UserRole;
-    
     // Check if user has permission to view editorial stats
-    if (!hasPermission(userRole, 'REVIEW_ARTICLES')) {
+    if (!hasPermission(Permission.REVIEW_ARTICLES)) {
       throw new Error('Insufficient permissions to view editorial statistics');
     }
 
@@ -147,14 +145,12 @@ export function useEditorial() {
       contentScore: 0,
       approvalRate: approvalRate,
     };
-  }, [executeQuery, user]);
+  }, [executeQuery, hasPermission]);
 
   // Get pending articles for review with RBAC filtering
   const getPendingArticles = useCallback(async (limit = 10): Promise<PendingArticle[]> => {
-    const userRole = user?.role as UserRole;
-    
     // Check if user has permission to view pending articles
-    if (!hasPermission(userRole, 'REVIEW_ARTICLES')) {
+    if (!hasPermission(Permission.REVIEW_ARTICLES)) {
       throw new Error('Insufficient permissions to view pending articles');
     }
 
@@ -193,14 +189,12 @@ export function useEditorial() {
       status: article.status,
       wordCount: undefined, // Field doesn't exist in schema
     }));
-  }, [executeQuery, user]);
+  }, [executeQuery, hasPermission]);
 
   // Get recent editorial actions with RBAC filtering
   const getRecentActions = useCallback(async (limit = 10): Promise<EditorialAction[]> => {
-    const userRole = user?.role as UserRole;
-    
     // Check if user has permission to view editorial actions
-    if (!hasPermission(userRole, 'VIEW_ANALYTICS')) {
+    if (!hasPermission(Permission.VIEW_ANALYTICS)) {
       throw new Error('Insufficient permissions to view editorial actions');
     }
 
@@ -323,26 +317,22 @@ export function useEditorial() {
       // Final fallback: return empty array with proper error handling
       throw new Error('Unable to fetch editorial actions. Please ensure the GraphQL server is running and the schema includes editorialActions query.');
     }
-  }, [executeQuery, user]);
+  }, [executeQuery, hasPermission]);
 
   // Get author performance metrics with RBAC filtering
   const getAuthorPerformance = useCallback(async (limit = 10): Promise<AuthorPerformance[]> => {
-    const userRole = user?.role as UserRole;
-    
     // Check if user has permission to view author performance
-    if (!hasPermission(userRole, 'VIEW_ANALYTICS')) {
+    if (!hasPermission(Permission.VIEW_ANALYTICS)) {
       throw new Error('Insufficient permissions to view author performance metrics');
     }
 
     return [];
-  }, [user]);
+  }, [hasPermission]);
 
   // Approve an article with RBAC check
   const approveArticle = useCallback(async (articleId: string) => {
-    const userRole = user?.role as UserRole;
-    
     // Check if user has permission to approve articles
-    if (!hasPermission(userRole, 'PUBLISH_ARTICLE')) {
+    if (!hasPermission(Permission.PUBLISH_ARTICLE)) {
       throw new Error('Insufficient permissions to approve articles');
     }
 
@@ -362,14 +352,12 @@ export function useEditorial() {
     return await executeQuery(APPROVE_ARTICLE_MUTATION, {
       input: { articleId, action: 'APPROVE', notifyAuthor: true },
     });
-  }, [executeQuery, user]);
+  }, [executeQuery, hasPermission]);
 
   // Reject an article with RBAC check
   const rejectArticle = useCallback(async (articleId: string, reason?: string) => {
-    const userRole = user?.role as UserRole;
-    
     // Check if user has permission to reject articles
-    if (!hasPermission(userRole, 'REVIEW_ARTICLES')) {
+    if (!hasPermission(Permission.REVIEW_ARTICLES)) {
       throw new Error('Insufficient permissions to reject articles');
     }
 
@@ -389,14 +377,12 @@ export function useEditorial() {
     return await executeQuery(REJECT_ARTICLE_MUTATION, {
       input: { articleId, action: 'REJECT', reason, notifyAuthor: true },
     });
-  }, [executeQuery, user]);
+  }, [executeQuery, hasPermission]);
 
   // Feature an article with RBAC check
   const featureArticle = useCallback(async (articleId: string) => {
-    const userRole = user?.role as UserRole;
-    
     // Check if user has permission to feature articles
-    if (!hasPermission(userRole, 'FEATURE_ARTICLES')) {
+    if (!hasPermission(Permission.SET_FEATURED)) {
       throw new Error('Insufficient permissions to feature articles');
     }
 
@@ -413,7 +399,7 @@ export function useEditorial() {
       id: articleId, 
       input: { featured: true } 
     });
-  }, [executeQuery, user]);
+  }, [executeQuery, hasPermission]);
 
   return {
     loading,

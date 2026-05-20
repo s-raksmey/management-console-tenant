@@ -33,7 +33,7 @@ export default function MyArticlesPage() {
   const { getLatestRevisionRequest } = useRevisions();
   const { setArticleStatus, performWorkflowAction, deleteArticle, loading: mutationLoading } = useArticleMutations();
   const { user } = useAuth();
-  const { userRole, hasPermission, isAdmin } = usePermissions();
+  const { userRole, hasPermission } = usePermissions();
   const { showSuccess, showError, showInfo } = useToastHelpers();
 
   useEffect(() => {
@@ -236,12 +236,14 @@ export default function MyArticlesPage() {
           >
             {isPolling ? 'Pause Updates' : 'Resume Updates'}
           </Button>
-          <Link href="/articles/new">
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              New Article
-            </Button>
-          </Link>
+          {hasPermission(Permission.CREATE_ARTICLE) && (
+            <Link href="/articles/new">
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New Article
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -349,13 +351,15 @@ export default function MyArticlesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem asChild>
-                            <Link href={`/articles/${article.id}/edit`}>
-                              <Edit className="mr-2 h-4 w-4" />
-                              Edit
-                            </Link>
-                          </DropdownMenuItem>
-                          {article.status === 'DRAFT' && (
+                          {hasPermission(Permission.UPDATE_OWN_ARTICLE) && (
+                            <DropdownMenuItem asChild>
+                              <Link href={`/articles/${article.id}/edit`}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                              </Link>
+                            </DropdownMenuItem>
+                          )}
+                          {article.status === 'DRAFT' && hasPermission(Permission.CREATE_ARTICLE) && (
                             <DropdownMenuItem 
                               onClick={() => handleStatusChange(article.id, 'REVIEW')}
                               disabled={mutationLoading}
@@ -379,7 +383,7 @@ export default function MyArticlesPage() {
                               </DropdownMenuItem>
                             </>
                           )}
-                          {article.status === 'PUBLISHED' && isAdmin && (
+                          {article.status === 'PUBLISHED' && hasPermission(Permission.UNPUBLISH_ARTICLE) && (
                             <DropdownMenuItem 
                               onClick={() => handleStatusChange(article.id, 'ARCHIVED')}
                               disabled={mutationLoading}
@@ -387,14 +391,16 @@ export default function MyArticlesPage() {
                               Archive
                             </DropdownMenuItem>
                           )}
-                          <DropdownMenuItem 
-                            onClick={() => handleDelete(article.id)}
-                            disabled={mutationLoading}
-                            className="text-red-600"
-                          >
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Delete
-                          </DropdownMenuItem>
+                          {hasPermission(Permission.DELETE_OWN_ARTICLE) && (
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(article.id)}
+                              disabled={mutationLoading}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </td>

@@ -4,10 +4,8 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { HelpCircle, Eye, EyeOff } from 'lucide-react';
-import { Setting, getSettingInputType, formatSettingValue } from '@/services/settings.gql';
+import { Eye, EyeOff } from 'lucide-react';
+import { Setting, getSettingInputType } from '@/services/settings.gql';
 import { SettingInputProps } from '@/types/settings';
 
 export function SettingInput({ setting, value, onChange, error, disabled = false }: SettingInputProps) {
@@ -52,7 +50,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
             value={value || ''}
             onChange={(e) => handleInputChange(e.target.value)}
             disabled={disabled}
-            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex min-h-[96px] w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             placeholder={`Enter ${setting.label.toLowerCase()}`}
           />
         );
@@ -167,51 +165,12 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <label className="text-sm font-medium text-slate-900">
-            {setting.label}
-          </label>
-          {setting.isRequired && (
-            <Badge variant="secondary" className="text-xs">
-              Required
-            </Badge>
-          )}
-          {setting.isPublic && (
-            <Badge variant="outline" className="text-xs">
-              Public
-            </Badge>
-          )}
-        </div>
-        
-        {setting.description && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-auto p-1">
-                  <HelpCircle className="h-4 w-4 text-slate-400" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="left" className="max-w-xs">
-                <p className="text-sm">{setting.description}</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-      </div>
-
+      <label className="sr-only">{setting.label}</label>
       {renderInput()}
 
       {error && (
         <p className="text-sm text-red-600">{error}</p>
       )}
-
-      <div className="flex items-center justify-between text-xs text-slate-500">
-        <span>Key: {setting.key}</span>
-        {!isPassword && (
-          <span>Current: {formatSettingValue(setting.value, setting.key)}</span>
-        )}
-      </div>
     </div>
   );
 }

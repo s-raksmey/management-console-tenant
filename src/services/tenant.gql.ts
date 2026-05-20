@@ -35,6 +35,10 @@ export type TenantMembership = {
     email: string;
     name: string;
     role: TenantRole;
+    isActive: boolean;
+    twoFactorEnabled?: boolean;
+    twoFactorSetupAt?: string | null;
+    createdAt: string;
   };
 };
 
@@ -104,6 +108,10 @@ const TENANT_FIELDS = gql`
         email
         name
         role
+        isActive
+        twoFactorEnabled
+        twoFactorSetupAt
+        createdAt
       }
     }
   }

@@ -13,6 +13,7 @@ import {
   Menu,
   Building2,
   Archive,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,41 +26,98 @@ import {
 } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
+import { Permission } from "@/components/permissions/PermissionGuard";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface MobileNavProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const getNavigation = (userRole?: string) => {
+const getNavigation = (
+  userRole?: string,
+  permissions: {
+    canViewSettings: boolean;
+    canViewUsers: boolean;
+    canViewMedia: boolean;
+    canViewAnalytics: boolean;
+    canViewCarousel: boolean;
+    canViewAuditLogs: boolean;
+    canSystemAdmin: boolean;
+    canManageRoles: boolean;
+    canManageStructure: boolean;
+    canUpdateSettings: boolean;
+  } = {
+    canViewSettings: false,
+    canViewUsers: false,
+    canViewMedia: false,
+    canViewAnalytics: false,
+    canViewCarousel: false,
+    canViewAuditLogs: false,
+    canSystemAdmin: false,
+    canManageRoles: false,
+    canManageStructure: false,
+    canUpdateSettings: false,
+  },
+) => {
   if (userRole === "SUPER_ADMIN") {
-    return [
+    const platformItems = [
       {
         name: "Dashboard",
         href: "/",
         icon: LayoutDashboard,
       },
-      {
+    ];
+
+    if (permissions.canSystemAdmin) {
+      platformItems.push({
         name: "Tenant Management",
         href: "/tenants",
         icon: Building2,
-      },
-      {
+      });
+    }
+
+    if (permissions.canViewUsers) {
+      platformItems.push({
         name: "User Management",
         href: "/users",
         icon: Users,
-      },
-      {
+      });
+    }
+
+    if (permissions.canManageRoles) {
+      platformItems.push({
+        name: "Role Management",
+        href: "/users/roles",
+        icon: Shield,
+      });
+    }
+
+    if (permissions.canViewAnalytics) {
+      platformItems.push({
+        name: "Analytics",
+        href: "/analytics",
+        icon: BarChart3,
+      });
+    }
+
+    if (permissions.canViewAuditLogs) {
+      platformItems.push({
         name: "Logs",
         href: "/audit",
         icon: Archive,
-      },
-      {
+      });
+    }
+
+    if (permissions.canViewSettings) {
+      platformItems.push({
         name: "Settings",
         href: "/settings",
         icon: Settings,
-      },
-    ];
+      });
+    }
+
+    return platformItems;
   }
 
   const baseItems = [
@@ -68,43 +126,54 @@ const getNavigation = (userRole?: string) => {
       href: "/",
       icon: LayoutDashboard,
     },
-    ...(userRole === "ADMIN"
-      ? [
-          {
-            name: "Website Settings",
-            href: "/tenants",
-            icon: Building2,
-          },
-        ]
-      : []),
     {
       name: "Articles",
       href: "/articles",
       icon: FileText,
     },
-    {
+  ];
+
+  if (permissions.canUpdateSettings || permissions.canSystemAdmin) {
+    baseItems.push({
+      name: "Website Settings",
+      href: "/tenants",
+      icon: Building2,
+    });
+  }
+
+  if (permissions.canManageStructure) {
+    baseItems.push({
       name: "Categories",
       href: "/categories",
       icon: Tags,
-    },
-    {
+    });
+  }
+
+  if (permissions.canViewMedia) {
+    baseItems.push({
       name: "Media",
       href: "/media",
       icon: Image,
-    },
-    {
+    });
+  }
+
+  if (permissions.canViewCarousel) {
+    baseItems.push({
       name: "Carousel",
       href: "/carousel",
       icon: Image,
-    },
-    {
+    });
+  }
+
+  if (permissions.canViewAnalytics) {
+    baseItems.push({
       name: "Analytics",
       href: "/analytics",
       icon: BarChart3,
-    },
-  ];
+    });
+  }
 
-  if (userRole === "ADMIN") {
+  if (permissions.canViewUsers) {
     baseItems.push({
       name: "Users",
       href: "/users",
@@ -112,11 +181,13 @@ const getNavigation = (userRole?: string) => {
     });
   }
 
-  baseItems.push({
-    name: "Settings",
-    href: "/settings",
-    icon: Settings,
-  });
+  if (permissions.canViewSettings) {
+    baseItems.push({
+      name: "Settings",
+      href: "/settings",
+      icon: Settings,
+    });
+  }
 
   return baseItems;
 };
@@ -125,10 +196,32 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
   const pathname = usePathname();
   const { user } = useAuth();
   const { activeTenant } = useTenant();
+  const { hasPermission } = usePermissions();
   const userRole = user?.role?.toString().toUpperCase();
-  const navigation = getNavigation(userRole);
+  const navigation = getNavigation(userRole, {
+    canViewSettings: hasPermission(Permission.VIEW_SETTINGS),
+    canViewUsers: hasPermission(Permission.VIEW_ALL_USERS),
+    canViewMedia:
+      hasPermission(Permission.VIEW_MEDIA) || hasPermission(Permission.MANAGE_MEDIA),
+    canViewAnalytics: hasPermission(Permission.VIEW_ANALYTICS),
+    canViewCarousel:
+      hasPermission(Permission.CREATE_CAROUSEL) ||
+      hasPermission(Permission.UPDATE_CAROUSEL) ||
+      hasPermission(Permission.DELETE_CAROUSEL),
+    canViewAuditLogs: hasPermission(Permission.VIEW_AUDIT_LOGS),
+    canSystemAdmin: hasPermission(Permission.SYSTEM_ADMINISTRATION),
+    canManageRoles: hasPermission(Permission.MANAGE_USER_ROLES),
+    canUpdateSettings: hasPermission(Permission.UPDATE_SETTINGS),
+    canManageStructure:
+      hasPermission(Permission.CREATE_CATEGORY) ||
+      hasPermission(Permission.UPDATE_CATEGORY) ||
+      hasPermission(Permission.DELETE_CATEGORY) ||
+      hasPermission(Permission.CREATE_TOPIC) ||
+      hasPermission(Permission.UPDATE_TOPIC) ||
+      hasPermission(Permission.DELETE_TOPIC),
+  });
   const brandName =
-    userRole === "SUPER_ADMIN" ? "Pulse News" : activeTenant?.name || "Pulse News";
+    userRole === "SUPER_ADMIN" ? "Management Console" : activeTenant?.name || "Pulse News";
   const brandInitials = brandName
     .split(" ")
     .filter(Boolean)

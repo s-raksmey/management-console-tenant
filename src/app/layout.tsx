@@ -9,7 +9,7 @@ import { ToastProvider } from "@/contexts/ToastContext"
 import { ClientLayoutWrapper } from "@/components/layout/client-layout-wrapper"
 
 export const metadata: Metadata = {
-  title: "Pulse News Admin",
+  title: "Management Console",
   description: "Modern CMS dashboard with responsive design",
 }
 

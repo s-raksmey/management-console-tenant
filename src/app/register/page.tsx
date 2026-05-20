@@ -10,7 +10,7 @@ export default function RegisterPage() {
   
   // Set page title
   useEffect(() => {
-    document.title = 'Request Account - Pulse News Admin';
+    document.title = 'Request Account - Management Console';
   }, []);
   
   return (
@@ -29,10 +29,10 @@ export default function RegisterPage() {
             transition={{ duration: 0.3 }}
           >
             <h1 className="text-3xl font-bold text-slate-900 mb-2">
-              Pulse News
+              Management Console
             </h1>
             <p className="text-slate-600">
-              Admin Dashboard
+              System Administration
             </p>
           </motion.div>
         </div>
@@ -49,7 +49,7 @@ export default function RegisterPage() {
               Request Account
             </h2>
             <p className="text-blue-700 text-sm">
-              Apply to join the Pulse News admin team as an author, editor, or admin
+              Apply for access to the management console
             </p>
           </motion.div>
         </div>
@@ -66,7 +66,7 @@ export default function RegisterPage() {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-500">
-            © 2024 Pulse News. All rights reserved.
+            © 2024 Management Console. All rights reserved.
           </p>
         </div>
       </div>

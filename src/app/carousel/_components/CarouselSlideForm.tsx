@@ -9,7 +9,7 @@ import {
   UploadCloud,
   X,
 } from "lucide-react";
-import { getAuthenticatedGqlClient } from "@/services/graphql-client";
+import { getAuthFetchHeaders, getAuthenticatedGqlClient } from "@/services/graphql-client";
 import {
   CarouselSlide,
   CarouselSlideInput,
@@ -175,6 +175,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
 
       const response = await fetch("/api/media/upload", {
         method: "POST",
+        headers: getAuthFetchHeaders(),
         body: payload,
       });
       const data = await response.json();

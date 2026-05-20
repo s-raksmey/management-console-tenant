@@ -8,6 +8,7 @@ import { CarouselSlide, Q_HOME_CAROUSEL_SLIDES } from "@/services/carousel.gql";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CarouselSlideForm } from "../../_components/CarouselSlideForm";
+import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
 
 export default function EditCarouselSlidePage() {
   const params = useParams<{ id: string }>();
@@ -89,15 +90,17 @@ export default function EditCarouselSlidePage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-950">Edit Slide</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Update the homepage hero slide content and image.
-        </p>
-      </div>
+    <PermissionGuard permissions={[Permission.UPDATE_CAROUSEL]} showError>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-950">Edit Slide</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Update the homepage hero slide content and image.
+          </p>
+        </div>
 
-      <CarouselSlideForm slide={slide} />
-    </div>
+        <CarouselSlideForm slide={slide} />
+      </div>
+    </PermissionGuard>
   );
 }

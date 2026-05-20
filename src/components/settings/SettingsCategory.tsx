@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Save, RotateCcw, AlertTriangle } from 'lucide-react';
@@ -146,55 +146,39 @@ export function SettingsCategory({
   }
 
   return (
-    <div className="space-y-6">
-      {/* Category Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <div className="text-2xl">{categoryInfo.icon}</div>
-              <div>
-                <CardTitle className="text-xl">
-                  {categoryInfo.label}
-                </CardTitle>
-                <p className="text-sm text-slate-600 mt-1">
-                  {categoryInfo.description}
-                </p>
-              </div>
+    <div className="space-y-5">
+      {hasAnyChanges && (
+        <div className="sticky top-4 z-10 rounded-md border border-blue-200 bg-blue-50/95 p-3 shadow-sm backdrop-blur">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2">
+              <Badge variant="secondary">
+                {totalChanges} unsaved change{totalChanges !== 1 ? 's' : ''}
+              </Badge>
+              <p className="text-sm text-blue-900">
+                Save your changes before leaving this category.
+              </p>
             </div>
-            
-            <div className="flex items-center space-x-2">
-              {hasAnyChanges && (
-                <>
-                  <Badge variant="secondary" className="text-xs">
-                    {totalChanges} unsaved change{totalChanges !== 1 ? 's' : ''}
-                  </Badge>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={resetAllChanges}
-                    disabled={loading}
-                  >
-                    <RotateCcw className="h-4 w-4 mr-1" />
-                    Reset All
-                  </Button>
-                  <Button
-                    size="sm"
-                    onClick={saveAllChanges}
-                    disabled={loading}
-                  >
-                    <Save className="h-4 w-4 mr-1" />
-                    Save All
-                  </Button>
-                </>
-              )}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={resetAllChanges}
+                disabled={loading}
+                className="bg-white"
+              >
+                <RotateCcw className="mr-2 h-4 w-4" />
+                Discard
+              </Button>
+              <Button size="sm" onClick={saveAllChanges} disabled={loading}>
+                <Save className="mr-2 h-4 w-4" />
+                Save All
+              </Button>
             </div>
           </div>
-        </CardHeader>
-      </Card>
+        </div>
+      )}
 
-      {/* Settings Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+      <div className="grid gap-4 xl:grid-cols-2">
         {categorySettings.map((setting) => (
           <SettingCard
             key={setting.key}

@@ -1,12 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { RotateCcw, Save, AlertCircle } from 'lucide-react';
-import { Setting, formatSettingValue } from '@/services/settings.gql';
+import { RotateCcw, Save } from 'lucide-react';
+import { Setting } from '@/services/settings.gql';
 import { SettingInput } from './SettingInput';
 
 interface SettingCardProps {
@@ -52,51 +51,37 @@ export function SettingCard({
   };
 
   return (
-    <Card className={`transition-all duration-200 ${hasChanges ? 'ring-2 ring-blue-500 ring-opacity-50' : ''}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <CardTitle className="text-base font-medium">
-              {setting.label}
-            </CardTitle>
-            {setting.isRequired && (
-              <Badge variant="secondary" className="text-xs">
-                Required
-              </Badge>
-            )}
-            {setting.isPublic && (
-              <Badge variant="outline" className="text-xs">
-                Public
-              </Badge>
+    <Card className={`transition-all duration-200 ${hasChanges ? 'border-blue-300 bg-blue-50/40 shadow-sm' : 'border-slate-200 shadow-none'}`}>
+      <CardContent className="space-y-4 p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base font-semibold text-slate-950">
+                {setting.label}
+              </h3>
+              {setting.isRequired && (
+                <Badge variant="secondary" className="text-xs">
+                  Required
+                </Badge>
+              )}
+              {setting.isPublic && (
+                <Badge variant="outline" className="bg-white text-xs">
+                  Public
+                </Badge>
+              )}
+            </div>
+            {setting.description && (
+              <p className="mt-1 text-sm leading-5 text-slate-600">
+                {setting.description}
+              </p>
             )}
           </div>
-          
-          <div className="flex items-center space-x-1">
-            {hasChanges && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center">
-                      <AlertCircle className="h-4 w-4 text-blue-500" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Unsaved changes</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
+
+          <div className={`mt-0.5 rounded-full px-2.5 py-1 text-xs font-medium ${hasChanges ? 'bg-blue-100 text-blue-700' : 'bg-emerald-50 text-emerald-700'}`}>
+            {hasChanges ? 'Unsaved' : 'Saved'}
           </div>
         </div>
-        
-        {setting.description && (
-          <p className="text-sm text-slate-600 mt-1">
-            {setting.description}
-          </p>
-        )}
-      </CardHeader>
 
-      <CardContent className="space-y-4">
         <SettingInput
           setting={setting}
           value={value}
@@ -105,30 +90,18 @@ export function SettingCard({
           disabled={loading || isSaving || isResetting}
         />
 
-        <div className="flex items-center justify-between pt-2 border-t border-slate-100">
-          <div className="text-xs text-slate-500">
-            <span className="font-mono">{setting.key}</span>
-          </div>
-          
+        <div className="flex justify-end border-t border-slate-100 pt-3">
           <div className="flex items-center space-x-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleReset}
-                    disabled={loading || isSaving || isResetting || !hasChanges}
-                    className="h-8 px-2"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Reset to default value</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleReset}
+              disabled={loading || isSaving || isResetting || !hasChanges}
+              className="h-8 bg-white px-3"
+            >
+              <RotateCcw className="mr-1.5 h-3 w-3" />
+              Undo
+            </Button>
 
             <Button
               size="sm"
@@ -151,11 +124,6 @@ export function SettingCard({
           </div>
         </div>
 
-        {error && (
-          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{error}</p>
-          </div>
-        )}
       </CardContent>
     </Card>
   );

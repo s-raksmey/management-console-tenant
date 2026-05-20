@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/card";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToastHelpers } from "@/components/ui/toast";
+import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
 
 export default function CarouselListPage() {
   const [slides, setSlides] = useState<CarouselSlide[]>([]);
@@ -91,12 +92,14 @@ export default function CarouselListPage() {
             sub-category pages.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/carousel/new">
-            <Plus className="mr-2 h-4 w-4" />
-            New Slide
-          </Link>
-        </Button>
+        <PermissionGuard permissions={[Permission.CREATE_CAROUSEL]} fallback={null}>
+          <Button asChild>
+            <Link href="/carousel/new">
+              <Plus className="mr-2 h-4 w-4" />
+              New Slide
+            </Link>
+          </Button>
+        </PermissionGuard>
       </div>
 
       <Card>
@@ -116,12 +119,14 @@ export default function CarouselListPage() {
               <p className="mt-3 text-sm font-medium text-slate-700">
                 No carousel slides yet
               </p>
-              <Button asChild className="mt-4">
-                <Link href="/carousel/new">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create First Slide
-                </Link>
-              </Button>
+              <PermissionGuard permissions={[Permission.CREATE_CAROUSEL]} fallback={null}>
+                <Button asChild className="mt-4">
+                  <Link href="/carousel/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create First Slide
+                  </Link>
+                </Button>
+              </PermissionGuard>
             </div>
           ) : (
             <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200">
@@ -174,22 +179,26 @@ export default function CarouselListPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 lg:flex-col lg:items-stretch lg:justify-center">
-                    <Button type="button" variant="outline" size="sm" asChild>
-                      <Link href={`/carousel/${slide.id}/edit`}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </Link>
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 hover:text-red-700"
-                      onClick={() => setDeleteTarget(slide)}
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Delete
-                    </Button>
+                    <PermissionGuard permissions={[Permission.UPDATE_CAROUSEL]} fallback={null}>
+                      <Button type="button" variant="outline" size="sm" asChild>
+                        <Link href={`/carousel/${slide.id}/edit`}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </Link>
+                      </Button>
+                    </PermissionGuard>
+                    <PermissionGuard permissions={[Permission.DELETE_CAROUSEL]} fallback={null}>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => setDeleteTarget(slide)}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </Button>
+                    </PermissionGuard>
                   </div>
                 </div>
               ))}

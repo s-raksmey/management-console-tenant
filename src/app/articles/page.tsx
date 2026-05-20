@@ -22,7 +22,7 @@ import {
 import { MoreHorizontal, Edit, Trash2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { usePermissions } from "@/hooks/usePermissions";
-import { Permission } from "@/components/permissions/PermissionGuard";
+import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
 
 const statusColors = {
   DRAFT: "bg-gray-100 text-gray-800",
@@ -206,6 +206,15 @@ export default function AdminArticlesPage() {
   };
 
   return (
+    <PermissionGuard
+      permissions={[
+        Permission.UPDATE_ANY_ARTICLE,
+        Permission.PUBLISH_ARTICLE,
+        Permission.REVIEW_ARTICLES,
+        Permission.CREATE_ARTICLE,
+      ]}
+      showError
+    >
     <main className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -214,12 +223,14 @@ export default function AdminArticlesPage() {
             Create, edit, and publish articles.
           </p>
         </div>
-        <Link href="/articles/new">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            New Article
-          </Button>
-        </Link>
+        {hasPermission(Permission.CREATE_ARTICLE) && (
+          <Link href="/articles/new">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              New Article
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Filters */}
@@ -258,12 +269,14 @@ export default function AdminArticlesPage() {
         {articles.length === 0 ? (
           <div className="px-4 py-8 text-center text-slate-500">
             No articles found.{" "}
-            <Link
-              href="/articles/new"
-              className="text-blue-600 hover:underline"
-            >
-              Create your first article
-            </Link>
+            {hasPermission(Permission.CREATE_ARTICLE) && (
+              <Link
+                href="/articles/new"
+                className="text-blue-600 hover:underline"
+              >
+                Create your first article
+              </Link>
+            )}
           </div>
         ) : (
           articles.map((article) => (
@@ -378,12 +391,14 @@ export default function AdminArticlesPage() {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem asChild>
-                      <Link href={`/articles/${article.id}/edit`}>
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit
-                      </Link>
-                    </DropdownMenuItem>
+                    {hasPermission(Permission.UPDATE_ANY_ARTICLE) && (
+                      <DropdownMenuItem asChild>
+                        <Link href={`/articles/${article.id}/edit`}>
+                          <Edit className="w-4 h-4 mr-2" />
+                          Edit
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
                     {article.status === "DRAFT" &&
                       hasPermission(Permission.PUBLISH_ARTICLE) && (
                         <DropdownMenuItem
@@ -445,14 +460,16 @@ export default function AdminArticlesPage() {
                           </DropdownMenuItem>
                         </>
                       )}
-                    <DropdownMenuItem
-                      onClick={() => requestDelete(article)}
-                      disabled={mutationLoading}
-                      className="text-red-600"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
+                    {hasPermission(Permission.DELETE_ANY_ARTICLE) && (
+                      <DropdownMenuItem
+                        onClick={() => requestDelete(article)}
+                        disabled={mutationLoading}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -476,5 +493,6 @@ export default function AdminArticlesPage() {
         }}
       />
     </main>
+    </PermissionGuard>
   );
 }

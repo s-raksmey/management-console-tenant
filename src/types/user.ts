@@ -12,6 +12,8 @@ export interface User {
   name: string;
   role: UserRole;
   isActive: boolean;
+  twoFactorEnabled?: boolean;
+  twoFactorSetupAt?: string | null;
   createdAt: string;
 }
 

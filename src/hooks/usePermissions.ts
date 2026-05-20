@@ -15,10 +15,10 @@ import {
  * Custom hook for permission checking
  */
 export const usePermissions = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, rolePermissions, permissionsReady } = useAuth();
 
   const permissions = useMemo(() => {
-    if (!user || isLoading) {
+    if (!user || isLoading || !permissionsReady) {
       return {
         hasPermission: () => false,
         hasAnyPermission: () => false,
@@ -30,7 +30,7 @@ export const usePermissions = () => {
         isAuthor: false,
         userRole: "",
         userId: "",
-        isLoading,
+        isLoading: isLoading || (Boolean(user) && !permissionsReady),
       };
     }
 
@@ -62,7 +62,7 @@ export const usePermissions = () => {
       userId,
       isLoading: false,
     };
-  }, [user, isLoading]);
+  }, [user, isLoading, rolePermissions, permissionsReady]);
 
   return permissions;
 };
@@ -71,17 +71,17 @@ export const usePermissions = () => {
  * Hook for checking specific role
  */
 export const useRole = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, permissionsReady } = useAuth();
 
   return useMemo(() => {
-    if (!user || isLoading) {
+    if (!user || isLoading || !permissionsReady) {
       return {
         role: "",
         isSuperAdmin: false,
         isAdmin: false,
         isEditor: false,
         isAuthor: false,
-        isLoading,
+        isLoading: isLoading || (Boolean(user) && !permissionsReady),
       };
     }
 
@@ -95,7 +95,7 @@ export const useRole = () => {
       isAuthor: role === "AUTHOR",
       isLoading: false,
     };
-  }, [user, isLoading]);
+  }, [user, isLoading, permissionsReady]);
 };
 
 /**

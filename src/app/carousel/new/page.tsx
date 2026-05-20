@@ -1,16 +1,19 @@
 import { CarouselSlideForm } from "../_components/CarouselSlideForm";
+import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
 
 export default function NewCarouselSlidePage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-950">Create Slide</h1>
-        <p className="mt-2 text-sm text-slate-600">
-          Add a new public homepage hero carousel slide.
-        </p>
-      </div>
+    <PermissionGuard permissions={[Permission.CREATE_CAROUSEL]} showError>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-950">Create Slide</h1>
+          <p className="mt-2 text-sm text-slate-600">
+            Add a new public homepage hero carousel slide.
+          </p>
+        </div>
 
-      <CarouselSlideForm />
-    </div>
+        <CarouselSlideForm />
+      </div>
+    </PermissionGuard>
   );
 }

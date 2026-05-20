@@ -73,7 +73,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
   const brandName =
-    user?.role === "SUPER_ADMIN" ? "Pulse News" : activeTenant?.name || "Pulse News";
+    user?.role === "SUPER_ADMIN" ? "Management Console" : activeTenant?.name || "Pulse News";
   const brandInitials = brandName
     .split(" ")
     .filter(Boolean)

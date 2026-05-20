@@ -172,6 +172,25 @@ const UPDATE_USER_STATUS_MUTATION = gql`
   }
 `;
 
+const RESET_USER_TWO_FACTOR_MUTATION = gql`
+  mutation ResetUserTwoFactor($userId: ID!) {
+    resetUserTwoFactor(userId: $userId) {
+      success
+      message
+      user {
+        id
+        email
+        name
+        role
+        isActive
+        twoFactorEnabled
+        twoFactorSetupAt
+        createdAt
+      }
+    }
+  }
+`;
+
 const DELETE_USER_MUTATION = gql`
   mutation DeleteUser($id: ID!) {
     deleteUser(id: $id) {
@@ -432,6 +451,19 @@ export class UserService {
     } catch (error) {
       console.error('Error updating user status:', error);
       throw new Error('Failed to update user status');
+    }
+  }
+
+  static async resetUserTwoFactor(userId: string): Promise<UserManagementResult> {
+    try {
+      const response = await this.getClient().request<{ resetUserTwoFactor: UserManagementResult }>(
+        RESET_USER_TWO_FACTOR_MUTATION,
+        { userId }
+      );
+      return response.resetUserTwoFactor;
+    } catch (error) {
+      console.error('Error resetting user two-factor setup:', error);
+      throw error;
     }
   }
 

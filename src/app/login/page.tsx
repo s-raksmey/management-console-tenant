@@ -10,22 +10,22 @@ import { useAuth } from '@/contexts/AuthContext';
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isInitializing } = useAuth();
   const verified = searchParams.get('verified');
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (!isInitializing && isAuthenticated) {
       router.push('/');
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isInitializing, router]);
 
   const handleAuthSuccess = () => {
     router.push('/');
   };
 
   // Show loading while checking authentication
-  if (isLoading) {
+  if (isInitializing) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -52,10 +52,10 @@ export default function LoginPage() {
             transition={{ duration: 0.3 }}
           >
             <h1 className="text-3xl font-bold text-slate-900 mb-2">
-              Pulse News
+              Management Console
             </h1>
             <p className="text-slate-600">
-              Admin Dashboard
+              System Administration
             </p>
           </motion.div>
         </div>
@@ -98,7 +98,7 @@ export default function LoginPage() {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-xs text-slate-500">
-            © 2024 Pulse News. All rights reserved.
+            © 2024 Management Console. All rights reserved.
           </p>
         </div>
       </div>

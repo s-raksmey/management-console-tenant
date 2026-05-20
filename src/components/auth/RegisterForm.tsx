@@ -104,7 +104,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             Request Account
           </h1>
           <p className="text-slate-600">
-            Join the Pulse News admin team
+            Join the Management Console
           </p>
         </div>
 
