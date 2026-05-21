@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit, Plus, Save, X } from "lucide-react";
 import { useToastHelpers } from "@/components/ui/toast";
 import { PermissionGuard, Permission } from "@/components/permissions/PermissionGuard";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 interface Topic {
   id: string;
@@ -46,6 +47,10 @@ export default function TopicsPage() {
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>("");
   const [isCreating, setIsCreating] = useState(false);
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    topic: Topic | null;
+  }>({ open: false, topic: null });
   
   // Form state
   const [formData, setFormData] = useState({
@@ -238,10 +243,6 @@ export default function TopicsPage() {
   };
 
   const deleteTopic = async (topicId: string, topicTitle: string) => {
-    if (!confirm(`Are you sure you want to delete the topic "${topicTitle}"?`)) {
-      return;
-    }
-
     try {
       const DELETE_TOPIC_MUTATION = `
         mutation DeleteTopic($id: ID!) {
@@ -465,7 +466,7 @@ export default function TopicsPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => deleteTopic(topic.id, topic.title)}
+                          onClick={() => setDeleteDialog({ open: true, topic })}
                           className="flex items-center gap-1 text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-3 w-3" />
@@ -492,6 +493,19 @@ export default function TopicsPage() {
           <p>Error: {error}</p>
         </div>
       )}
+      <ConfirmationDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog((current) => ({ ...current, open }))}
+        title="Delete Topic?"
+        description={`This will permanently delete "${deleteDialog.topic?.title || 'this topic'}". This action cannot be undone.`}
+        confirmText="Delete Topic"
+        variant="destructive"
+        onConfirm={() => {
+          if (deleteDialog.topic) {
+            void deleteTopic(deleteDialog.topic.id, deleteDialog.topic.title);
+          }
+        }}
+      />
     </div>
   );
 }

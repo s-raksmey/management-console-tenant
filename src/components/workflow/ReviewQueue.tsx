@@ -16,6 +16,7 @@ import {
   PerformWorkflowActionVariables, 
   PerformWorkflowActionResponse 
 } from '../../graphql/mutations/articleWorkflow';
+import { ConfirmationDialog } from '../ui/confirmation-dialog';
 
 interface WorkflowActionResult {
   success: boolean;
@@ -35,6 +36,20 @@ export const ReviewQueue: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [processingArticles, setProcessingArticles] = useState<Set<string>>(new Set());
   const [selectedArticles, setSelectedArticles] = useState<Set<string>>(new Set());
+  const [confirmation, setConfirmation] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: 'default' | 'destructive';
+    onConfirm: () => void | Promise<void>;
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    confirmText: 'Confirm',
+    onConfirm: () => {},
+  });
   const [filters, setFilters] = useState({
     categoryId: '',
     authorId: '',
@@ -163,14 +178,29 @@ export const ReviewQueue: React.FC = () => {
       return;
     }
 
-    const reason = prompt(`Enter reason for bulk ${action.toLowerCase()} (optional):`);
-    
     try {
       throw new Error('Bulk actions are not available yet. Please process articles individually.');
     } catch (err) {
       console.error('Bulk workflow action error:', err);
       alert(`Failed to perform bulk ${action.toLowerCase()}`);
     }
+  };
+
+  const requestWorkflowAction = (input: {
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: 'default' | 'destructive';
+    onConfirm: () => void | Promise<void>;
+  }) => {
+    setConfirmation({
+      open: true,
+      title: input.title,
+      description: input.description,
+      confirmText: input.confirmText,
+      variant: input.variant,
+      onConfirm: input.onConfirm,
+    });
   };
 
   const toggleArticleSelection = (articleId: string) => {
@@ -310,7 +340,14 @@ export const ReviewQueue: React.FC = () => {
                         <div className="flex space-x-2 ml-4">
                           <PermissionGuard permissions={[Permission.APPROVE_ARTICLES]}>
                             <button
-                              onClick={() => handleWorkflowAction(article.id, 'APPROVE')}
+                              onClick={() =>
+                                requestWorkflowAction({
+                                  title: 'Approve Article?',
+                                  description: `Approve "${article.title}"?`,
+                                  confirmText: 'Approve',
+                                  onConfirm: () => handleWorkflowAction(article.id, 'APPROVE'),
+                                })
+                              }
                               disabled={processingArticles.has(article.id)}
                               className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50 transition-colors"
                             >
@@ -319,10 +356,15 @@ export const ReviewQueue: React.FC = () => {
                           </PermissionGuard>
                           <PermissionGuard permissions={[Permission.REJECT_ARTICLES]}>
                             <button
-                              onClick={() => {
-                                const reason = prompt('Enter rejection reason (optional):');
-                                handleWorkflowAction(article.id, 'REJECT', reason || undefined);
-                              }}
+                              onClick={() =>
+                                requestWorkflowAction({
+                                  title: 'Reject Article?',
+                                  description: `Reject "${article.title}"?`,
+                                  confirmText: 'Reject',
+                                  variant: 'destructive',
+                                  onConfirm: () => handleWorkflowAction(article.id, 'REJECT'),
+                                })
+                              }
                               disabled={processingArticles.has(article.id)}
                               className="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700 disabled:opacity-50 transition-colors"
                             >
@@ -338,6 +380,20 @@ export const ReviewQueue: React.FC = () => {
             </div>
           </div>
         )}
+        <ConfirmationDialog
+          open={confirmation.open}
+          onOpenChange={(open) =>
+            setConfirmation((current) => ({ ...current, open }))
+          }
+          title={confirmation.title}
+          description={confirmation.description}
+          confirmText={confirmation.confirmText}
+          cancelText="Cancel"
+          variant={confirmation.variant}
+          onConfirm={() => {
+            void confirmation.onConfirm();
+          }}
+        />
       </div>
     </PermissionGuard>
   );

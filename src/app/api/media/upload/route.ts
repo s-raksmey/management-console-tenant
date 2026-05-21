@@ -55,7 +55,10 @@ async function requireMediaPermission(req: Request, allowedPermissions: string[]
     rolePermissions.includes(permission)
   );
 
-  if (!result?.data?.me?.success || !hasAccess) {
+  if (
+    !result?.data?.me?.success ||
+    (userRole !== "SUPER_ADMIN" && !hasAccess)
+  ) {
     return NextResponse.json(
       { success: false, message: "Permission denied" },
       { status: 403 }

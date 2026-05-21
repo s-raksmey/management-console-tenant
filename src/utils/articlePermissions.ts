@@ -158,11 +158,11 @@ export function getAllowedStatusTransitions(
   const validTransitions = STATUS_TRANSITIONS.filter(transition => {
     if (transition.from !== currentStatus) return false;
     
-    // Special case: authors can submit their own articles for review (DRAFT -> REVIEW)
+    // Any role with article creation/update rights can submit owned drafts for review.
     if (transition.from === 'DRAFT' && 
         transition.to === 'REVIEW' && 
         isOwner && 
-        (userRole.toUpperCase() === 'AUTHOR' || userRole.toLowerCase() === 'author')) {
+        (hasPermission(Permission.CREATE_ARTICLE) || hasPermission(Permission.UPDATE_OWN_ARTICLE))) {
       return true;
     }
     
@@ -177,11 +177,11 @@ export function getAllowedStatusTransitions(
     // Check if user has the required permission
     const hasRequiredPermission = hasPermission(transition.requiredPermission);
     if (!hasRequiredPermission) {
-      // Additional fallback for DRAFT -> REVIEW for authors
+      // Additional fallback for DRAFT -> REVIEW for owned articles.
       if (transition.from === 'DRAFT' && 
           transition.to === 'REVIEW' && 
           isOwner && 
-          (userRole.toUpperCase() === 'AUTHOR' || userRole.toLowerCase() === 'author')) {
+          (hasPermission(Permission.CREATE_ARTICLE) || hasPermission(Permission.UPDATE_OWN_ARTICLE))) {
         return true;
       }
       
@@ -223,11 +223,11 @@ export function canChangeStatus(
   
   if (!transition) return false;
   
-  // Special case: authors can submit their own articles for review (DRAFT -> REVIEW)
+  // Any role with article creation/update rights can submit owned drafts for review.
   if (fromStatus === 'DRAFT' && 
       toStatus === 'REVIEW' && 
       isOwner && 
-      (userRole.toUpperCase() === 'AUTHOR' || userRole.toLowerCase() === 'author')) {
+      (hasPermission(Permission.CREATE_ARTICLE) || hasPermission(Permission.UPDATE_OWN_ARTICLE))) {
     return true;
   }
   

@@ -9,6 +9,7 @@ import { UserService } from '../../services/user.gql';
 import type { AssignableUserRole, User } from '../../types/user';
 import { Permission } from '../permissions/PermissionGuard';
 import { usePermissions } from '@/hooks/usePermissions';
+import { ConfirmationDialog } from '../ui/confirmation-dialog';
 
 interface UserTableRowProps {
   user: User;
@@ -29,12 +30,26 @@ export default function UserTableRow({
   const { hasPermission } = usePermissions();
   const [showActions, setShowActions] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [confirmation, setConfirmation] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: 'default' | 'destructive';
+    onConfirm: () => void | Promise<void>;
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    confirmText: 'Confirm',
+    onConfirm: () => {},
+  });
   const canUpdateUser = hasPermission(Permission.UPDATE_USER);
   const canDeleteUser = hasPermission(Permission.DELETE_USER);
   const canManageRoles = hasPermission(Permission.MANAGE_USER_ROLES);
   const roleOptions: AssignableUserRole[] =
     currentUser?.role === 'SUPER_ADMIN'
-      ? ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR']
+      ? ['SUPER_ADMIN', 'ADMIN']
       : ['ADMIN', 'EDITOR', 'AUTHOR'];
 
   const handleRoleChange = async (newRole: AssignableUserRole) => {
@@ -76,10 +91,6 @@ export default function UserTableRow({
   };
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
-      return;
-    }
-
     try {
       setIsUpdating(true);
       const result = await UserService.deleteUser(user.id);
@@ -95,7 +106,26 @@ export default function UserTableRow({
     }
   };
 
+  const requestConfirmation = (input: {
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: 'default' | 'destructive';
+    onConfirm: () => void | Promise<void>;
+  }) => {
+    setConfirmation({
+      open: true,
+      title: input.title,
+      description: input.description,
+      confirmText: input.confirmText,
+      variant: input.variant,
+      onConfirm: input.onConfirm,
+    });
+    setShowActions(false);
+  };
+
   return (
+    <>
     <tr className={`hover:bg-slate-50 ${isUpdating ? 'opacity-50' : ''}`}>
       {/* Selection Checkbox */}
       <td className="px-6 py-4 whitespace-nowrap">
@@ -167,7 +197,14 @@ export default function UserTableRow({
                     {roleOptions.map((role) => (
                       <button
                         key={role}
-                        onClick={() => handleRoleChange(role)}
+                        onClick={() =>
+                          requestConfirmation({
+                            title: 'Change User Role?',
+                            description: `Change ${user.name} to ${UserService.getRoleDisplayName(role)}?`,
+                            confirmText: 'Change Role',
+                            onConfirm: () => handleRoleChange(role),
+                          })
+                        }
                         disabled={user.role === role}
                         className={`w-full text-left px-4 py-2 text-sm hover:bg-slate-50 flex items-center space-x-2 ${
                           user.role === role ? 'text-slate-400 cursor-not-allowed' : 'text-slate-700'
@@ -186,7 +223,15 @@ export default function UserTableRow({
                 {canUpdateUser && (
                   <>
                     <button
-                      onClick={handleStatusToggle}
+                      onClick={() =>
+                        requestConfirmation({
+                          title: user.isActive ? 'Deactivate User?' : 'Activate User?',
+                          description: `${user.isActive ? 'Deactivate' : 'Activate'} ${user.name}?`,
+                          confirmText: user.isActive ? 'Deactivate' : 'Activate',
+                          variant: user.isActive ? 'destructive' : 'default',
+                          onConfirm: handleStatusToggle,
+                        })
+                      }
                       className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
                     >
                       {user.isActive ? (
@@ -209,7 +254,15 @@ export default function UserTableRow({
                 {/* Delete */}
                 {canDeleteUser && (
                   <button
-                    onClick={handleDelete}
+                    onClick={() =>
+                      requestConfirmation({
+                        title: 'Delete User?',
+                        description: `Delete ${user.name}? This action cannot be undone.`,
+                        confirmText: 'Delete User',
+                        variant: 'destructive',
+                        onConfirm: handleDelete,
+                      })
+                    }
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -222,5 +275,20 @@ export default function UserTableRow({
         </div>
       </td>
     </tr>
+    <ConfirmationDialog
+      open={confirmation.open}
+      onOpenChange={(open) =>
+        setConfirmation((current) => ({ ...current, open }))
+      }
+      title={confirmation.title}
+      description={confirmation.description}
+      confirmText={confirmation.confirmText}
+      cancelText="Cancel"
+      variant={confirmation.variant}
+      onConfirm={() => {
+        void confirmation.onConfirm();
+      }}
+    />
+    </>
   );
 }

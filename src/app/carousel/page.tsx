@@ -20,10 +20,26 @@ import {
 } from "@/components/ui/card";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToastHelpers } from "@/components/ui/toast";
-import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
+import { Permission } from "@/components/permissions/PermissionGuard";
+import { usePermissions } from "@/hooks/usePermissions";
+import { useAuth } from "@/contexts/AuthContext";
+import { Tenant, TenantService } from "@/services/tenant.gql";
+
+const CAROUSEL_ACCESS_PERMISSIONS = [
+  Permission.CREATE_CAROUSEL,
+  Permission.UPDATE_CAROUSEL,
+  Permission.DELETE_CAROUSEL,
+];
 
 export default function CarouselListPage() {
+  const { user } = useAuth();
+  const { hasAnyPermission, isLoading: permissionsLoading } = usePermissions();
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const canAccessCarousel =
+    isSuperAdmin || hasAnyPermission(CAROUSEL_ACCESS_PERMISSIONS);
   const [slides, setSlides] = useState<CarouselSlide[]>([]);
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [selectedTenantId, setSelectedTenantId] = useState("");
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<CarouselSlide | null>(null);
   const { showSuccess, showError } = useToastHelpers();
@@ -33,14 +49,54 @@ export default function CarouselListPage() {
     showErrorRef.current = showError;
   }, [showError]);
 
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+
+    let isMounted = true;
+
+    const loadTenants = async () => {
+      try {
+        const items = await TenantService.listTenants();
+        if (!isMounted) return;
+
+        const activeItems = items.filter((tenant) => tenant.status === "ACTIVE");
+        setTenants(activeItems);
+        setSelectedTenantId((current) => current || activeItems[0]?.id || "");
+      } catch {
+        showErrorRef.current("Error", "Failed to load tenant options.");
+      }
+    };
+
+    void loadTenants();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isSuperAdmin]);
+
   const loadSlides = useCallback(async () => {
+    if (permissionsLoading || !canAccessCarousel) return;
+    if (isSuperAdmin && !selectedTenantId) {
+      setSlides([]);
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     try {
       const client = getAuthenticatedGqlClient();
+      if (isSuperAdmin && selectedTenantId) {
+        client.setHeader("x-tenant-id", selectedTenantId);
+      }
       const response = await client.request<{
         homeCarouselSlides: CarouselSlide[];
       }>(Q_HOME_CAROUSEL_SLIDES);
-      setSlides(response.homeCarouselSlides ?? []);
+      setSlides(
+        (response.homeCarouselSlides ?? []).map((slide) => ({
+          ...slide,
+          tenantId: isSuperAdmin ? selectedTenantId : slide.tenantId,
+        })),
+      );
     } catch (error: any) {
       showErrorRef.current(
         "Error",
@@ -50,17 +106,27 @@ export default function CarouselListPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [canAccessCarousel, isSuperAdmin, permissionsLoading, selectedTenantId]);
 
   useEffect(() => {
+    if (permissionsLoading) return;
+
+    if (!canAccessCarousel) {
+      setLoading(false);
+      return;
+    }
+
     void loadSlides();
-  }, [loadSlides]);
+  }, [canAccessCarousel, loadSlides, permissionsLoading]);
 
   const confirmDelete = async () => {
     if (!deleteTarget) return;
 
     try {
       const client = getAuthenticatedGqlClient();
+      if (isSuperAdmin && deleteTarget.tenantId) {
+        client.setHeader("x-tenant-id", deleteTarget.tenantId);
+      }
       const response = await client.request<{
         deleteHomeCarouselSlide: boolean;
       }>(M_DELETE_HOME_CAROUSEL_SLIDE, { id: deleteTarget.id });
@@ -83,7 +149,13 @@ export default function CarouselListPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      {!permissionsLoading && !canAccessCarousel ? (
+        <div className="text-sm text-red-600">
+          Access denied: Insufficient permissions
+        </div>
+      ) : (
+      <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-950">Public Carousel</h1>
@@ -92,15 +164,40 @@ export default function CarouselListPage() {
             sub-category pages.
           </p>
         </div>
-        <PermissionGuard permissions={[Permission.CREATE_CAROUSEL]} fallback={null}>
+        {(isSuperAdmin || hasAnyPermission([Permission.CREATE_CAROUSEL])) && (
           <Button asChild>
             <Link href="/carousel/new">
               <Plus className="mr-2 h-4 w-4" />
               New Slide
             </Link>
           </Button>
-        </PermissionGuard>
+        )}
       </div>
+
+      {isSuperAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Select Tenant</CardTitle>
+            <CardDescription>
+              Super admin carousel changes are applied to the selected tenant public website.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <select
+              value={selectedTenantId}
+              onChange={(event) => setSelectedTenantId(event.target.value)}
+              className="flex h-10 w-full max-w-md rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+            >
+              <option value="">Select tenant</option>
+              {tenants.map((tenant) => (
+                <option key={tenant.id} value={tenant.id}>
+                  {tenant.name} /{tenant.slug}
+                </option>
+              ))}
+            </select>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
@@ -119,14 +216,14 @@ export default function CarouselListPage() {
               <p className="mt-3 text-sm font-medium text-slate-700">
                 No carousel slides yet
               </p>
-              <PermissionGuard permissions={[Permission.CREATE_CAROUSEL]} fallback={null}>
+              {(isSuperAdmin || hasAnyPermission([Permission.CREATE_CAROUSEL])) && (
                 <Button asChild className="mt-4">
                   <Link href="/carousel/new">
                     <Plus className="mr-2 h-4 w-4" />
                     Create First Slide
                   </Link>
                 </Button>
-              </PermissionGuard>
+              )}
             </div>
           ) : (
             <div className="divide-y divide-slate-100 overflow-hidden rounded-lg border border-slate-200">
@@ -179,15 +276,15 @@ export default function CarouselListPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2 lg:flex-col lg:items-stretch lg:justify-center">
-                    <PermissionGuard permissions={[Permission.UPDATE_CAROUSEL]} fallback={null}>
+                    {(isSuperAdmin || hasAnyPermission([Permission.UPDATE_CAROUSEL])) && (
                       <Button type="button" variant="outline" size="sm" asChild>
-                        <Link href={`/carousel/${slide.id}/edit`}>
+                        <Link href={`/carousel/${slide.id}/edit?tenantId=${slide.tenantId}`}>
                           <Edit className="mr-2 h-4 w-4" />
                           Edit
                         </Link>
                       </Button>
-                    </PermissionGuard>
-                    <PermissionGuard permissions={[Permission.DELETE_CAROUSEL]} fallback={null}>
+                    )}
+                    {(isSuperAdmin || hasAnyPermission([Permission.DELETE_CAROUSEL])) && (
                       <Button
                         type="button"
                         variant="outline"
@@ -198,7 +295,7 @@ export default function CarouselListPage() {
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
                       </Button>
-                    </PermissionGuard>
+                    )}
                   </div>
                 </div>
               ))}
@@ -219,6 +316,8 @@ export default function CarouselListPage() {
           void confirmDelete();
         }}
       />
-    </div>
+      </div>
+      )}
+    </>
   );
 }

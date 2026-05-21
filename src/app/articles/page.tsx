@@ -43,6 +43,20 @@ export default function AdminArticlesPage() {
     articleId: null,
     articleTitle: "",
   });
+  const [actionDialog, setActionDialog] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: "default" | "destructive";
+    onConfirm: () => void | Promise<void>;
+  }>({
+    open: false,
+    title: "",
+    description: "",
+    confirmText: "Confirm",
+    onConfirm: () => {},
+  });
   const [revisionRequestStatusById, setRevisionRequestStatusById] = useState<
     Record<string, string>
   >({});
@@ -205,16 +219,37 @@ export default function AdminArticlesPage() {
     }
   };
 
+  const requestArticleAction = (input: {
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: "default" | "destructive";
+    onConfirm: () => void | Promise<void>;
+  }) => {
+    setActionDialog({
+      open: true,
+      title: input.title,
+      description: input.description,
+      confirmText: input.confirmText,
+      variant: input.variant,
+      onConfirm: input.onConfirm,
+    });
+  };
+
+  const hasRowActions = (article: Article) =>
+    hasPermission(Permission.UPDATE_ANY_ARTICLE) ||
+    (article.status === "DRAFT" && hasPermission(Permission.PUBLISH_ARTICLE)) ||
+    (article.status === "REVIEW" &&
+      (hasPermission(Permission.APPROVE_ARTICLES) ||
+        hasPermission(Permission.REJECT_ARTICLES))) ||
+    (article.status === "PUBLISHED" &&
+      hasPermission(Permission.UNPUBLISH_ARTICLE)) ||
+    (article.revisionStatus === "REQUESTED" &&
+      hasPermission(Permission.APPROVE_ARTICLES)) ||
+    hasPermission(Permission.DELETE_ANY_ARTICLE);
+
   return (
-    <PermissionGuard
-      permissions={[
-        Permission.UPDATE_ANY_ARTICLE,
-        Permission.PUBLISH_ARTICLE,
-        Permission.REVIEW_ARTICLES,
-        Permission.CREATE_ARTICLE,
-      ]}
-      showError
-    >
+    <PermissionGuard permissions={[Permission.VIEW_ALL_ARTICLES]} showError>
     <main className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -384,94 +419,134 @@ export default function AdminArticlesPage() {
                 {format(new Date(article.updatedAt), "MMM d, yyyy")}
               </div>
               <div className="col-span-1 text-right">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {hasPermission(Permission.UPDATE_ANY_ARTICLE) && (
-                      <DropdownMenuItem asChild>
-                        <Link href={`/articles/${article.id}/edit`}>
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit
-                        </Link>
-                      </DropdownMenuItem>
-                    )}
-                    {article.status === "DRAFT" &&
-                      hasPermission(Permission.PUBLISH_ARTICLE) && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleStatusChange(article.id, "PUBLISHED")
-                          }
-                          disabled={mutationLoading}
-                        >
-                          Publish
+                {hasRowActions(article) ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {hasPermission(Permission.UPDATE_ANY_ARTICLE) && (
+                        <DropdownMenuItem asChild>
+                          <Link href={`/articles/${article.id}/edit`}>
+                            <Edit className="w-4 h-4 mr-2" />
+                            Edit
+                          </Link>
                         </DropdownMenuItem>
                       )}
-                    {article.status === "REVIEW" &&
-                      hasPermission(Permission.APPROVE_ARTICLES) && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleStatusChange(article.id, "PUBLISHED")
-                          }
-                          disabled={mutationLoading}
-                        >
-                          Approve & Publish
-                        </DropdownMenuItem>
-                      )}
-                    {article.status === "REVIEW" &&
-                      hasPermission(Permission.REJECT_ARTICLES) && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleStatusChange(article.id, "ARCHIVED")
-                          }
-                          disabled={mutationLoading}
-                        >
-                          Reject
-                        </DropdownMenuItem>
-                      )}
-                    {article.status === "PUBLISHED" &&
-                      hasPermission(Permission.UNPUBLISH_ARTICLE) && (
-                        <DropdownMenuItem
-                          onClick={() =>
-                            handleStatusChange(article.id, "DRAFT")
-                          }
-                          disabled={mutationLoading}
-                        >
-                          Unpublish
-                        </DropdownMenuItem>
-                      )}
-                    {article.revisionStatus === "REQUESTED" &&
-                      hasPermission(Permission.APPROVE_ARTICLES) && (
-                        <>
+                      {article.status === "DRAFT" &&
+                        hasPermission(Permission.PUBLISH_ARTICLE) && (
                           <DropdownMenuItem
-                            onClick={() => handleApproveRevision(article.id)}
+                            onClick={() =>
+                              requestArticleAction({
+                                title: "Publish Article?",
+                                description: `Publish "${article.title}" now?`,
+                                confirmText: "Publish",
+                                onConfirm: () => handleStatusChange(article.id, "PUBLISHED"),
+                              })
+                            }
                             disabled={mutationLoading}
                           >
-                            ✓ Approve Revision
+                            Publish
                           </DropdownMenuItem>
+                        )}
+                      {article.status === "REVIEW" &&
+                        hasPermission(Permission.APPROVE_ARTICLES) && (
                           <DropdownMenuItem
-                            onClick={() => handleRejectRevision(article.id)}
+                            onClick={() =>
+                              requestArticleAction({
+                                title: "Approve and Publish?",
+                                description: `Approve "${article.title}" and publish it?`,
+                                confirmText: "Approve & Publish",
+                                onConfirm: () => handleStatusChange(article.id, "PUBLISHED"),
+                              })
+                            }
                             disabled={mutationLoading}
                           >
-                            ✗ Reject Revision
+                            Approve & Publish
                           </DropdownMenuItem>
-                        </>
+                        )}
+                      {article.status === "REVIEW" &&
+                        hasPermission(Permission.REJECT_ARTICLES) && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              requestArticleAction({
+                                title: "Reject Article?",
+                                description: `Reject "${article.title}" and archive it?`,
+                                confirmText: "Reject",
+                                variant: "destructive",
+                                onConfirm: () => handleStatusChange(article.id, "ARCHIVED"),
+                              })
+                            }
+                            disabled={mutationLoading}
+                          >
+                            Reject
+                          </DropdownMenuItem>
+                        )}
+                      {article.status === "PUBLISHED" &&
+                        hasPermission(Permission.UNPUBLISH_ARTICLE) && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              requestArticleAction({
+                                title: "Unpublish Article?",
+                                description: `Move "${article.title}" back to draft?`,
+                                confirmText: "Unpublish",
+                                onConfirm: () => handleStatusChange(article.id, "DRAFT"),
+                              })
+                            }
+                            disabled={mutationLoading}
+                          >
+                            Unpublish
+                          </DropdownMenuItem>
+                        )}
+                      {article.revisionStatus === "REQUESTED" &&
+                        hasPermission(Permission.APPROVE_ARTICLES) && (
+                          <>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                requestArticleAction({
+                                  title: "Approve Revision?",
+                                  description: `Approve the revision request for "${article.title}"?`,
+                                  confirmText: "Approve Revision",
+                                  onConfirm: () => handleApproveRevision(article.id),
+                                })
+                              }
+                              disabled={mutationLoading}
+                            >
+                              ✓ Approve Revision
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                requestArticleAction({
+                                  title: "Reject Revision?",
+                                  description: `Reject the revision request for "${article.title}"?`,
+                                  confirmText: "Reject Revision",
+                                  variant: "destructive",
+                                  onConfirm: () => handleRejectRevision(article.id),
+                                })
+                              }
+                              disabled={mutationLoading}
+                            >
+                              ✗ Reject Revision
+                            </DropdownMenuItem>
+                          </>
+                        )}
+                      {hasPermission(Permission.DELETE_ANY_ARTICLE) && (
+                        <DropdownMenuItem
+                          onClick={() => requestDelete(article)}
+                          disabled={mutationLoading}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
                       )}
-                    {hasPermission(Permission.DELETE_ANY_ARTICLE) && (
-                      <DropdownMenuItem
-                        onClick={() => requestDelete(article)}
-                        disabled={mutationLoading}
-                        className="text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <span className="text-xs text-slate-400">-</span>
+                )}
               </div>
             </div>
           ))
@@ -490,6 +565,20 @@ export default function AdminArticlesPage() {
         variant="destructive"
         onConfirm={() => {
           void confirmDelete();
+        }}
+      />
+      <ConfirmationDialog
+        open={actionDialog.open}
+        onOpenChange={(open) =>
+          setActionDialog((current) => ({ ...current, open }))
+        }
+        title={actionDialog.title}
+        description={actionDialog.description}
+        confirmText={actionDialog.confirmText}
+        cancelText="Cancel"
+        variant={actionDialog.variant}
+        onConfirm={() => {
+          void actionDialog.onConfirm();
         }}
       />
     </main>

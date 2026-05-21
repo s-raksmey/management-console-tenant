@@ -1,19 +1,38 @@
+"use client";
+
 import { CarouselSlideForm } from "../_components/CarouselSlideForm";
-import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
+import { Permission } from "@/components/permissions/PermissionGuard";
+import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function NewCarouselSlidePage() {
-  return (
-    <PermissionGuard permissions={[Permission.CREATE_CAROUSEL]} showError>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold text-slate-950">Create Slide</h1>
-          <p className="mt-2 text-sm text-slate-600">
-            Add a new public homepage hero carousel slide.
-          </p>
-        </div>
+  const { user } = useAuth();
+  const { hasPermission, isLoading } = usePermissions();
+  const canCreate =
+    user?.role === "SUPER_ADMIN" || hasPermission(Permission.CREATE_CAROUSEL);
 
-        <CarouselSlideForm />
+  if (isLoading) {
+    return <div className="text-sm text-slate-500">Loading permissions...</div>;
+  }
+
+  if (!canCreate) {
+    return (
+      <div className="text-sm text-red-600">
+        Access denied: Insufficient permissions
       </div>
-    </PermissionGuard>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-3xl font-bold text-slate-950">Create Slide</h1>
+        <p className="mt-2 text-sm text-slate-600">
+          Add a new public hero carousel slide.
+        </p>
+      </div>
+
+      <CarouselSlideForm />
+    </div>
   );
 }

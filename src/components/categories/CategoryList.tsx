@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Category } from "@/services/category.gql";
 import { Edit, Trash2, Plus } from "lucide-react";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 interface CategoryListProps {
   categories: Category[];
@@ -21,15 +22,13 @@ export function CategoryList({
   isLoading = false 
 }: CategoryListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean;
+    category: Category | null;
+  }>({ open: false, category: null });
 
   const handleDelete = async (category: Category) => {
     if (deletingId) return; // Prevent multiple delete operations
-    
-    const confirmed = window.confirm(
-      `Are you sure you want to delete the category "${category.name}"?\n\nThis action cannot be undone.`
-    );
-    
-    if (!confirmed) return;
 
     setDeletingId(category.id);
     try {
@@ -135,7 +134,7 @@ export function CategoryList({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDelete(category)}
+                          onClick={() => setDeleteDialog({ open: true, category })}
                           disabled={isLoading || deletingId !== null}
                           className="text-red-600 hover:text-red-700 hover:border-red-300"
                         >
@@ -154,6 +153,19 @@ export function CategoryList({
           </div>
         </div>
       )}
+      <ConfirmationDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) => setDeleteDialog((current) => ({ ...current, open }))}
+        title="Delete Category?"
+        description={`This will permanently delete "${deleteDialog.category?.name || 'this category'}". This action cannot be undone.`}
+        confirmText="Delete Category"
+        variant="destructive"
+        onConfirm={() => {
+          if (deleteDialog.category) {
+            void handleDelete(deleteDialog.category);
+          }
+        }}
+      />
     </div>
   );
 }

@@ -32,6 +32,7 @@ import {
 import { UserService } from "@/services/user.gql";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -108,6 +109,20 @@ export default function TenantsPage() {
   const [expandedUsersTenantId, setExpandedUsersTenantId] = useState<string | null>(null);
   const [expandedConnectionTenantId, setExpandedConnectionTenantId] = useState<string | null>(null);
   const [editTenantForm, setEditTenantForm] = useState<UpdateTenantInput>({});
+  const [confirmation, setConfirmation] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: "default" | "destructive";
+    onConfirm: () => void | Promise<void>;
+  }>({
+    open: false,
+    title: "",
+    description: "",
+    confirmText: "Confirm",
+    onConfirm: () => {},
+  });
 
   const publicApiUrl =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql";
@@ -139,6 +154,23 @@ export default function TenantsPage() {
       `NEXT_PUBLIC_TENANT_ID=${tenant.id}`,
       `NEXT_PUBLIC_TENANT_SLUG=${tenant.slug}`,
     ].join("\n");
+
+  const requestConfirmation = (input: {
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: "default" | "destructive";
+    onConfirm: () => void | Promise<void>;
+  }) => {
+    setConfirmation({
+      open: true,
+      title: input.title,
+      description: input.description,
+      confirmText: input.confirmText,
+      variant: input.variant,
+      onConfirm: input.onConfirm,
+    });
+  };
 
   useEffect(() => {
     showErrorRef.current = showError;
@@ -178,10 +210,11 @@ export default function TenantsPage() {
       return;
     }
 
-    if (!window.confirm(`Create tenant website "${tenantForm.name.trim()}"?`)) {
-      return;
-    }
-
+    requestConfirmation({
+      title: "Create Tenant Website?",
+      description: `Create tenant website "${tenantForm.name.trim()}"?`,
+      confirmText: "Create Tenant",
+      onConfirm: async () => {
     setSavingTenant(true);
     try {
       const tenant = await TenantService.createTenant({
@@ -208,6 +241,8 @@ export default function TenantsPage() {
     } finally {
       setSavingTenant(false);
     }
+      },
+    });
   };
 
   const createTenantAdmin = async (event: FormEvent<HTMLFormElement>) => {
@@ -218,10 +253,11 @@ export default function TenantsPage() {
       return;
     }
 
-    if (!window.confirm(`Create ${adminForm.name.trim()} as a tenant ${adminForm.role?.toLowerCase()}?`)) {
-      return;
-    }
-
+    requestConfirmation({
+      title: "Create Tenant User?",
+      description: `Create ${adminForm.name.trim()} as a tenant ${adminForm.role?.toLowerCase()}?`,
+      confirmText: "Create User",
+      onConfirm: async () => {
     setSavingAdmin(true);
     try {
       await TenantService.createTenantAdmin({
@@ -242,17 +278,17 @@ export default function TenantsPage() {
     } finally {
       setSavingAdmin(false);
     }
+      },
+    });
   };
 
   const resetUserTwoFactor = async (targetUser: { id: string; name: string }) => {
-    if (
-      !window.confirm(
-        `Reset two-factor setup for "${targetUser.name}"? They will need to scan a new QR code on next login.`,
-      )
-    ) {
-      return;
-    }
-
+    requestConfirmation({
+      title: "Reset Two-Factor Setup?",
+      description: `Reset two-factor setup for "${targetUser.name}"? They will need to scan a new QR code on next login.`,
+      confirmText: "Reset Two-Factor",
+      variant: "destructive",
+      onConfirm: async () => {
     setSavingTwoFactorUserId(targetUser.id);
     try {
       const result = await UserService.resetUserTwoFactor(targetUser.id);
@@ -271,6 +307,8 @@ export default function TenantsPage() {
     } finally {
       setSavingTwoFactorUserId(null);
     }
+      },
+    });
   };
 
   const openCreateTenantUser = (tenant: Tenant) => {
@@ -311,19 +349,21 @@ export default function TenantsPage() {
       showError("Validation Error", "Tenant name is required.");
       return;
     }
+    const tenantName = editTenantForm.name.trim();
 
-    if (!window.confirm(`Save changes to tenant "${editTenantForm.name.trim()}"?`)) {
-      return;
-    }
-
+    requestConfirmation({
+      title: "Save Tenant Changes?",
+      description: `Save changes to tenant "${tenantName}"?`,
+      confirmText: "Save Tenant",
+      onConfirm: async () => {
     setSavingEdit(true);
     try {
       const tenant = await TenantService.updateTenant(editingTenantId, {
         ...editTenantForm,
-        name: editTenantForm.name.trim(),
+        name: tenantName,
         slug: editTenantForm.slug?.trim()
           ? toSlug(editTenantForm.slug)
-          : toSlug(editTenantForm.name),
+          : toSlug(tenantName),
         description: editTenantForm.description?.trim() || null,
         publicBaseUrl: editTenantForm.publicBaseUrl?.trim() || null,
         adminBaseUrl: editTenantForm.adminBaseUrl?.trim() || null,
@@ -344,16 +384,20 @@ export default function TenantsPage() {
     } finally {
       setSavingEdit(false);
     }
+      },
+    });
   };
 
   const updateTenantLifecycle = async (tenant: Tenant, nextStatus: TenantStatus) => {
     const isArchiving = nextStatus === "ARCHIVED";
     const actionLabel = isArchiving ? "archive" : "restore";
 
-    if (!window.confirm(`Are you sure you want to ${actionLabel} "${tenant.name}"?`)) {
-      return;
-    }
-
+    requestConfirmation({
+      title: `${isArchiving ? "Archive" : "Restore"} Tenant?`,
+      description: `${isArchiving ? "Archive" : "Restore"} "${tenant.name}"?`,
+      confirmText: isArchiving ? "Archive Tenant" : "Restore Tenant",
+      variant: isArchiving ? "destructive" : "default",
+      onConfirm: async () => {
     setSavingLifecycleId(tenant.id);
     try {
       const updatedTenant = await TenantService.updateTenant(tenant.id, {
@@ -379,6 +423,8 @@ export default function TenantsPage() {
     } finally {
       setSavingLifecycleId(null);
     }
+      },
+    });
   };
 
   return (
@@ -1136,6 +1182,20 @@ export default function TenantsPage() {
           </form>
         </DialogContent>
       </Dialog>
+      <ConfirmationDialog
+        open={confirmation.open}
+        onOpenChange={(open) =>
+          setConfirmation((current) => ({ ...current, open }))
+        }
+        title={confirmation.title}
+        description={confirmation.description}
+        confirmText={confirmation.confirmText}
+        cancelText="Cancel"
+        variant={confirmation.variant}
+        onConfirm={() => {
+          void confirmation.onConfirm();
+        }}
+      />
       </main>
     </PermissionGuard>
   );

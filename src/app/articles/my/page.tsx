@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useArticles, useArticleMutations, useRevisions } from "@/hooks/useGraphQL";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import type { Article, ArticleStatus } from "@/types/article";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { useVisibilityPolling } from "@/hooks/usePolling";
@@ -28,6 +29,20 @@ export default function MyArticlesPage() {
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | undefined>();
   const [isPolling, setIsPolling] = useState(true);
   const [revisionRequestStatusById, setRevisionRequestStatusById] = useState<Record<string, string>>({});
+  const [confirmation, setConfirmation] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: "default" | "destructive";
+    onConfirm: () => void | Promise<void>;
+  }>({
+    open: false,
+    title: "",
+    description: "",
+    confirmText: "Confirm",
+    onConfirm: () => {},
+  });
   
   const { getArticles, loading, error } = useArticles();
   const { getLatestRevisionRequest } = useRevisions();
@@ -183,14 +198,29 @@ export default function MyArticlesPage() {
     }
   };
 
+  const requestAction = (input: {
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: "default" | "destructive";
+    onConfirm: () => void | Promise<void>;
+  }) => {
+    setConfirmation({
+      open: true,
+      title: input.title,
+      description: input.description,
+      confirmText: input.confirmText,
+      variant: input.variant,
+      onConfirm: input.onConfirm,
+    });
+  };
+
   const handleDelete = async (articleId: string) => {
-    if (confirm('Are you sure you want to delete this article?')) {
-      try {
-        await deleteArticle(articleId);
-        loadMyArticles(); // Reload articles after deletion
-      } catch (error) {
-        console.error('Error deleting article:', error);
-      }
+    try {
+      await deleteArticle(articleId);
+      loadMyArticles(); // Reload articles after deletion
+    } catch (error) {
+      console.error('Error deleting article:', error);
     }
   };
 
@@ -361,7 +391,14 @@ export default function MyArticlesPage() {
                           )}
                           {article.status === 'DRAFT' && hasPermission(Permission.CREATE_ARTICLE) && (
                             <DropdownMenuItem 
-                              onClick={() => handleStatusChange(article.id, 'REVIEW')}
+                              onClick={() =>
+                                requestAction({
+                                  title: "Submit for Review?",
+                                  description: `Submit "${article.title}" to the review queue?`,
+                                  confirmText: "Submit",
+                                  onConfirm: () => handleStatusChange(article.id, 'REVIEW'),
+                                })
+                              }
                               disabled={mutationLoading}
                             >
                               Submit for Review
@@ -370,13 +407,27 @@ export default function MyArticlesPage() {
                           {article.status === 'REVIEW' && hasPermission && hasPermission(Permission.REVIEW_ARTICLES) && (
                             <>
                               <DropdownMenuItem 
-                                onClick={() => handleStatusChange(article.id, 'PUBLISHED')}
+                                onClick={() =>
+                                  requestAction({
+                                    title: "Publish Article?",
+                                    description: `Publish "${article.title}" now?`,
+                                    confirmText: "Publish",
+                                    onConfirm: () => handleStatusChange(article.id, 'PUBLISHED'),
+                                  })
+                                }
                                 disabled={mutationLoading}
                               >
                                 Publish
                               </DropdownMenuItem>
                               <DropdownMenuItem 
-                                onClick={() => handleStatusChange(article.id, 'DRAFT')}
+                                onClick={() =>
+                                  requestAction({
+                                    title: "Send Back to Draft?",
+                                    description: `Move "${article.title}" back to draft?`,
+                                    confirmText: "Send Back",
+                                    onConfirm: () => handleStatusChange(article.id, 'DRAFT'),
+                                  })
+                                }
                                 disabled={mutationLoading}
                               >
                                 Send Back to Draft
@@ -385,7 +436,15 @@ export default function MyArticlesPage() {
                           )}
                           {article.status === 'PUBLISHED' && hasPermission(Permission.UNPUBLISH_ARTICLE) && (
                             <DropdownMenuItem 
-                              onClick={() => handleStatusChange(article.id, 'ARCHIVED')}
+                              onClick={() =>
+                                requestAction({
+                                  title: "Archive Article?",
+                                  description: `Archive "${article.title}"?`,
+                                  confirmText: "Archive",
+                                  variant: "destructive",
+                                  onConfirm: () => handleStatusChange(article.id, 'ARCHIVED'),
+                                })
+                              }
                               disabled={mutationLoading}
                             >
                               Archive
@@ -393,7 +452,15 @@ export default function MyArticlesPage() {
                           )}
                           {hasPermission(Permission.DELETE_OWN_ARTICLE) && (
                             <DropdownMenuItem 
-                              onClick={() => handleDelete(article.id)}
+                              onClick={() =>
+                                requestAction({
+                                  title: "Delete Article?",
+                                  description: `Delete "${article.title}"? This action cannot be undone.`,
+                                  confirmText: "Delete Article",
+                                  variant: "destructive",
+                                  onConfirm: () => handleDelete(article.id),
+                                })
+                              }
                               disabled={mutationLoading}
                               className="text-red-600"
                             >
@@ -411,6 +478,20 @@ export default function MyArticlesPage() {
           </table>
         </div>
       </div>
+      <ConfirmationDialog
+        open={confirmation.open}
+        onOpenChange={(open) =>
+          setConfirmation((current) => ({ ...current, open }))
+        }
+        title={confirmation.title}
+        description={confirmation.description}
+        confirmText={confirmation.confirmText}
+        cancelText="Cancel"
+        variant={confirmation.variant}
+        onConfirm={() => {
+          void confirmation.onConfirm();
+        }}
+      />
     </div>
   );
 }

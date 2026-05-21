@@ -120,6 +120,26 @@ const getNavigation = (
       });
     }
 
+    if (permissions.canViewMedia) {
+      platformItems.push({
+        name: "Media",
+        href: "/media",
+        icon: Image,
+        badge: counts.media > 0 ? counts.media.toString() : null,
+        description: "Files & images"
+      });
+    }
+
+    if (permissions.canViewCarousel) {
+      platformItems.push({
+        name: "Carousel",
+        href: "/carousel",
+        icon: Image,
+        badge: null,
+        description: "Public hero slides"
+      });
+    }
+
     if (permissions.canViewAuditLogs) {
       platformItems.push({
         name: "Logs",

@@ -50,6 +50,7 @@ import { useToastHelpers } from '@/components/ui/toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Permission, PermissionGuard } from '@/components/permissions/PermissionGuard';
 import { usePermissions } from '@/hooks/usePermissions';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 interface UserListProps {}
 
@@ -82,6 +83,20 @@ export const UserList: React.FC<UserListProps> = () => {
   const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'INACTIVE' | 'ALL'>('ALL');
   const [sortBy, setSortBy] = useState<'name' | 'email' | 'role' | 'createdAt' | 'updatedAt'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [confirmation, setConfirmation] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: 'default' | 'destructive';
+    onConfirm: () => void | Promise<void>;
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    confirmText: 'Confirm',
+    onConfirm: () => {},
+  });
 
   const fetchUsers = useCallback(async (page = 1) => {
     const input: ListUsersInput = {
@@ -150,13 +165,6 @@ export const UserList: React.FC<UserListProps> = () => {
     userId: string,
     newRole: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR',
   ) => {
-    if (
-      newRole === 'SUPER_ADMIN' &&
-      !confirm('Make this user a super admin? They will be able to manage all tenants and platform settings.')
-    ) {
-      return;
-    }
-
     const result = await updateUserRole({ userId, role: newRole });
     if (result?.success) {
       showSuccess('Role Updated', result.message || `User role updated to ${newRole}.`);
@@ -177,15 +185,23 @@ export const UserList: React.FC<UserListProps> = () => {
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
-      const result = await deleteUser(userId);
-      if (result?.success) {
-        showSuccess('User Deleted', result.message || 'User deleted.');
-        void fetchUsers(currentPage);
-      } else {
-        showError('Delete Failed', result?.message || 'Failed to delete user.');
-      }
+    const result = await deleteUser(userId);
+    if (result?.success) {
+      showSuccess('User Deleted', result.message || 'User deleted.');
+      void fetchUsers(currentPage);
+    } else {
+      showError('Delete Failed', result?.message || 'Failed to delete user.');
     }
+  };
+
+  const requestConfirmation = (input: {
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: 'default' | 'destructive';
+    onConfirm: () => void | Promise<void>;
+  }) => {
+    setConfirmation({ open: true, ...input });
   };
 
   const getRoleIcon = (role: string) => {
@@ -383,21 +399,42 @@ export const UserList: React.FC<UserListProps> = () => {
                         {!isSuperAdmin && canManageRoles && (
                           <>
                             <DropdownMenuItem 
-                              onClick={() => handleUpdateRole(user.id, 'ADMIN')}
+                              onClick={() =>
+                                requestConfirmation({
+                                  title: 'Make Tenant Admin?',
+                                  description: `${user.name || user.email} will receive tenant admin access.`,
+                                  confirmText: 'Change Role',
+                                  onConfirm: () => handleUpdateRole(user.id, 'ADMIN'),
+                                })
+                              }
                               disabled={user.role === 'ADMIN'}
                             >
                               <Shield className="h-4 w-4 mr-2" />
                               Make Tenant Admin
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => handleUpdateRole(user.id, 'EDITOR')}
+                              onClick={() =>
+                                requestConfirmation({
+                                  title: 'Make Editor?',
+                                  description: `${user.name || user.email} will receive editor access.`,
+                                  confirmText: 'Change Role',
+                                  onConfirm: () => handleUpdateRole(user.id, 'EDITOR'),
+                                })
+                              }
                               disabled={user.role === 'EDITOR'}
                             >
                               <ShieldCheck className="h-4 w-4 mr-2" />
                               Make Editor
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => handleUpdateRole(user.id, 'AUTHOR')}
+                              onClick={() =>
+                                requestConfirmation({
+                                  title: 'Make Author?',
+                                  description: `${user.name || user.email} will receive author access.`,
+                                  confirmText: 'Change Role',
+                                  onConfirm: () => handleUpdateRole(user.id, 'AUTHOR'),
+                                })
+                              }
                               disabled={user.role === 'AUTHOR'}
                             >
                               <Users className="h-4 w-4 mr-2" />
@@ -409,7 +446,15 @@ export const UserList: React.FC<UserListProps> = () => {
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
-                              onClick={() => handleUpdateStatus(user.id, !user.isActive)}
+                              onClick={() =>
+                                requestConfirmation({
+                                  title: user.isActive ? 'Deactivate User?' : 'Activate User?',
+                                  description: `${user.name || user.email} will be ${user.isActive ? 'blocked from signing in' : 'allowed to sign in again'}.`,
+                                  confirmText: user.isActive ? 'Deactivate' : 'Activate',
+                                  variant: user.isActive ? 'destructive' : 'default',
+                                  onConfirm: () => handleUpdateStatus(user.id, !user.isActive),
+                                })
+                              }
                             >
                               {user.isActive ? (
                                 <>
@@ -429,7 +474,15 @@ export const UserList: React.FC<UserListProps> = () => {
                           <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
-                              onClick={() => handleDeleteUser(user.id)}
+                              onClick={() =>
+                                requestConfirmation({
+                                  title: 'Delete User?',
+                                  description: `This will permanently delete ${user.name || user.email}. This action cannot be undone.`,
+                                  confirmText: 'Delete User',
+                                  variant: 'destructive',
+                                  onConfirm: () => handleDeleteUser(user.id),
+                                })
+                              }
                               className="text-red-600"
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
@@ -473,6 +526,15 @@ export const UserList: React.FC<UserListProps> = () => {
           )}
         </CardContent>
       </Card>
+      <ConfirmationDialog
+        open={confirmation.open}
+        onOpenChange={(open) => setConfirmation((current) => ({ ...current, open }))}
+        title={confirmation.title}
+        description={confirmation.description}
+        confirmText={confirmation.confirmText}
+        variant={confirmation.variant}
+        onConfirm={confirmation.onConfirm}
+      />
     </div>
   );
 };

@@ -34,6 +34,7 @@ import {
   PermissionGuard,
   Permission,
 } from "@/components/permissions/PermissionGuard";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface Topic {
   id: string;
@@ -74,6 +75,7 @@ type ConfirmationState = {
 };
 
 export default function CategoriesPage() {
+  const { hasPermission } = usePermissions();
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -95,6 +97,10 @@ export default function CategoriesPage() {
   const { showSuccess, showError } = useToastHelpers();
   const client = getAuthenticatedGqlClient();
   const showErrorRef = useRef(showError);
+  const canListCategories = hasPermission(Permission.LIST_CATEGORIES);
+  const canCreateCategory = hasPermission(Permission.CREATE_CATEGORY);
+  const canUpdateCategory = hasPermission(Permission.UPDATE_CATEGORY);
+  const canShowCategoryForm = editingCategory ? canUpdateCategory : canCreateCategory;
 
   useEffect(() => {
     showErrorRef.current = showError;
@@ -165,8 +171,10 @@ export default function CategoriesPage() {
   );
 
   useEffect(() => {
-    loadCategories();
-  }, [loadCategories]);
+    if (canListCategories) {
+      loadCategories();
+    }
+  }, [canListCategories, loadCategories]);
 
   // Load topics when editing a category
   useEffect(() => {
@@ -571,7 +579,8 @@ export default function CategoriesPage() {
   };
 
   return (
-    <div className="mx-auto min-h-screen max-w-7xl space-y-5 px-4 py-6 sm:px-6">
+    <PermissionGuard permissions={[Permission.LIST_CATEGORIES]} showError>
+      <div className="mx-auto min-h-screen max-w-7xl space-y-5 px-4 py-6 sm:px-6">
       <div>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
@@ -583,26 +592,8 @@ export default function CategoriesPage() {
         </div>
       </div>
 
-      {/* Category Form - Always visible for create, switches to edit mode */}
-      <PermissionGuard
-        permissions={
-          editingCategory
-            ? [Permission.UPDATE_CATEGORY]
-            : [Permission.CREATE_CATEGORY]
-        }
-        fallback={
-          <Card>
-            <CardHeader>
-              <CardTitle>Access Restricted</CardTitle>
-              <CardDescription>
-                You don&apos;t have permission to{" "}
-                {editingCategory ? "edit categories" : "create new categories"}.
-                Contact your administrator for access.
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        }
-      >
+      {/* Category Form - visible only when the role can create or edit categories */}
+      {canShowCategoryForm && (
         <Card className="overflow-hidden border-slate-200 shadow-sm">
           <CardHeader className="border-b bg-white px-6 py-5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -835,7 +826,7 @@ export default function CategoriesPage() {
             </div>
           </CardContent>
         </Card>
-      </PermissionGuard>
+      )}
 
       {/* Topics Management - Only show when editing a category */}
       {editingCategory && (
@@ -1091,6 +1082,7 @@ export default function CategoriesPage() {
         variant={confirmation.variant}
         onConfirm={confirmation.onConfirm}
       />
-    </div>
+      </div>
+    </PermissionGuard>
   );
 }

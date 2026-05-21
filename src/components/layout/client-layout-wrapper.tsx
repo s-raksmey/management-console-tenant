@@ -23,6 +23,8 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     '/tenants',
     '/users',
     '/analytics',
+    '/media',
+    '/carousel',
     '/audit',
     '/settings',
     '/profile',

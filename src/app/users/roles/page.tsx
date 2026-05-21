@@ -2,16 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Check, Loader2, Shield, SlidersHorizontal } from "lucide-react";
-import { PermissionGuard, Permission } from "@/components/permissions/PermissionGuard";
+import { Permission } from "@/components/permissions/PermissionGuard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { usePermissions } from "@/hooks/usePermissions";
 import { RolePermissionService } from "@/services/role-permissions.gql";
 
 type ManagedRole = "SUPER_ADMIN" | "ADMIN" | "EDITOR" | "AUTHOR";
 type PermissionGroup = {
   title: string;
   description: string;
+  excludedRoles?: ManagedRole[];
   permissions: Array<{
     key: Permission;
     label: string;
@@ -44,8 +46,10 @@ const permissionGroups: PermissionGroup[] = [
   {
     title: "Articles",
     description: "Content creation, editing, and publishing.",
+    excludedRoles: ["SUPER_ADMIN"],
     permissions: [
       { key: Permission.CREATE_ARTICLE, label: "Create articles", description: "Create drafts and submissions." },
+      { key: Permission.VIEW_ALL_ARTICLES, label: "All articles", description: "See articles from every author." },
       { key: Permission.UPDATE_OWN_ARTICLE, label: "Edit own articles", description: "Update articles created by the user." },
       { key: Permission.UPDATE_ANY_ARTICLE, label: "Edit any article", description: "Update articles from any author." },
       { key: Permission.DELETE_OWN_ARTICLE, label: "Delete own articles", description: "Delete own draft content." },
@@ -58,6 +62,7 @@ const permissionGroups: PermissionGroup[] = [
   {
     title: "Editorial",
     description: "Review queue and article promotion controls.",
+    excludedRoles: ["SUPER_ADMIN"],
     permissions: [
       { key: Permission.REVIEW_ARTICLES, label: "Review articles", description: "Access the review queue." },
       { key: Permission.APPROVE_ARTICLES, label: "Approve articles", description: "Approve submitted content." },
@@ -70,7 +75,9 @@ const permissionGroups: PermissionGroup[] = [
   {
     title: "Structure",
     description: "Category, topic, and site organization.",
+    excludedRoles: ["SUPER_ADMIN"],
     permissions: [
+      { key: Permission.LIST_CATEGORIES, label: "List categories", description: "View all categories and topics." },
       { key: Permission.CREATE_CATEGORY, label: "Create categories", description: "Add new categories." },
       { key: Permission.UPDATE_CATEGORY, label: "Update categories", description: "Edit category details." },
       { key: Permission.DELETE_CATEGORY, label: "Delete categories", description: "Remove categories." },
@@ -117,26 +124,6 @@ const defaultRolePermissions: Record<ManagedRole, Permission[]> = {
     Permission.VIEW_ALL_USERS,
     Permission.MANAGE_USER_ROLES,
     Permission.MANAGE_USERS,
-    Permission.CREATE_ARTICLE,
-    Permission.UPDATE_OWN_ARTICLE,
-    Permission.UPDATE_ANY_ARTICLE,
-    Permission.DELETE_OWN_ARTICLE,
-    Permission.DELETE_ANY_ARTICLE,
-    Permission.PUBLISH_ARTICLE,
-    Permission.UNPUBLISH_ARTICLE,
-    Permission.PREVIEW_ARTICLE,
-    Permission.SET_FEATURED,
-    Permission.SET_BREAKING_NEWS,
-    Permission.SET_EDITORS_PICK,
-    Permission.REVIEW_ARTICLES,
-    Permission.APPROVE_ARTICLES,
-    Permission.REJECT_ARTICLES,
-    Permission.CREATE_CATEGORY,
-    Permission.UPDATE_CATEGORY,
-    Permission.DELETE_CATEGORY,
-    Permission.CREATE_TOPIC,
-    Permission.UPDATE_TOPIC,
-    Permission.DELETE_TOPIC,
     Permission.VIEW_SETTINGS,
     Permission.UPDATE_SETTINGS,
     Permission.VIEW_ANALYTICS,
@@ -156,6 +143,7 @@ const defaultRolePermissions: Record<ManagedRole, Permission[]> = {
     Permission.MANAGE_USER_ROLES,
     Permission.MANAGE_USERS,
     Permission.CREATE_ARTICLE,
+    Permission.VIEW_ALL_ARTICLES,
     Permission.UPDATE_OWN_ARTICLE,
     Permission.UPDATE_ANY_ARTICLE,
     Permission.DELETE_OWN_ARTICLE,
@@ -168,6 +156,7 @@ const defaultRolePermissions: Record<ManagedRole, Permission[]> = {
     Permission.REVIEW_ARTICLES,
     Permission.APPROVE_ARTICLES,
     Permission.REJECT_ARTICLES,
+    Permission.LIST_CATEGORIES,
     Permission.CREATE_CATEGORY,
     Permission.UPDATE_CATEGORY,
     Permission.DELETE_CATEGORY,
@@ -187,6 +176,7 @@ const defaultRolePermissions: Record<ManagedRole, Permission[]> = {
   ],
   EDITOR: [
     Permission.CREATE_ARTICLE,
+    Permission.VIEW_ALL_ARTICLES,
     Permission.UPDATE_OWN_ARTICLE,
     Permission.UPDATE_ANY_ARTICLE,
     Permission.DELETE_OWN_ARTICLE,
@@ -214,21 +204,41 @@ const defaultRolePermissions: Record<ManagedRole, Permission[]> = {
   ],
 };
 
+const tenantContentPermissions = new Set<Permission>(
+  permissionGroups
+    .filter((group) => group.excludedRoles?.includes("SUPER_ADMIN"))
+    .flatMap((group) => group.permissions.map((permission) => permission.key)),
+);
+
+function normalizeRolePermissionsForUi(
+  permissions: Record<ManagedRole, Permission[]>,
+): Record<ManagedRole, Permission[]> {
+  return {
+    ...permissions,
+    SUPER_ADMIN: permissions.SUPER_ADMIN.filter(
+      (permission) => !tenantContentPermissions.has(permission),
+    ),
+  };
+}
+
 export default function RoleManagementPage() {
   const { user, rolePermissions: authRolePermissions, refreshRolePermissions } = useAuth();
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const canViewRoleManagement =
+    isSuperAdmin || hasPermission(Permission.MANAGE_USER_ROLES);
   const [savingPermission, setSavingPermission] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [rolePermissions, setRolePermissions] =
     useState<Record<ManagedRole, Permission[]>>(defaultRolePermissions);
 
   useEffect(() => {
-    setRolePermissions({
+    setRolePermissions(normalizeRolePermissionsForUi({
       SUPER_ADMIN: authRolePermissions.SUPER_ADMIN || defaultRolePermissions.SUPER_ADMIN,
       ADMIN: authRolePermissions.ADMIN || defaultRolePermissions.ADMIN,
       EDITOR: authRolePermissions.EDITOR || defaultRolePermissions.EDITOR,
       AUTHOR: authRolePermissions.AUTHOR || defaultRolePermissions.AUTHOR,
-    });
+    }));
   }, [authRolePermissions]);
 
   useEffect(() => {
@@ -268,7 +278,12 @@ export default function RoleManagementPage() {
   };
 
   return (
-    <PermissionGuard permissions={[Permission.MANAGE_USER_ROLES]} showError>
+    <>
+      {!permissionsLoading && !canViewRoleManagement ? (
+        <div className="text-sm text-red-600">
+          Access denied: Insufficient permissions
+        </div>
+      ) : (
       <div className="mx-auto w-full max-w-7xl space-y-6">
         <Card>
           <CardHeader className="gap-4 md:flex-row md:items-center md:justify-between">
@@ -333,7 +348,12 @@ export default function RoleManagementPage() {
             </div>
           )}
 
-          {permissionGroups.map((group) => (
+          {permissionGroups.map((group) => {
+            const visibleRoles = roles.filter(
+              (role) => !group.excludedRoles?.includes(role),
+            );
+
+            return (
             <Card key={group.title}>
               <CardHeader>
                 <div className="flex items-start gap-3">
@@ -352,7 +372,7 @@ export default function RoleManagementPage() {
                     <thead>
                       <tr className="border-b text-left text-xs font-semibold uppercase text-slate-500">
                         <th className="py-3 pr-4">Permission</th>
-                        {roles.map((role) => (
+                        {visibleRoles.map((role) => (
                           <th key={role} className="w-36 px-4 py-3 text-center">
                             {role}
                           </th>
@@ -366,7 +386,7 @@ export default function RoleManagementPage() {
                             <p className="font-medium text-slate-950">{permission.label}</p>
                             <p className="mt-1 text-xs text-slate-500">{permission.description}</p>
                           </td>
-                          {roles.map((role) => {
+                          {visibleRoles.map((role) => {
                             const enabled = rolePermissions[role].includes(permission.key);
                             const savingKey = `${role}:${permission.key}`;
                             const isSaving = savingPermission === savingKey;
@@ -406,9 +426,11 @@ export default function RoleManagementPage() {
                 </div>
               </CardContent>
             </Card>
-          ))}
+          );
+          })}
         </div>
       </div>
-    </PermissionGuard>
+      )}
+    </>
   );
 }

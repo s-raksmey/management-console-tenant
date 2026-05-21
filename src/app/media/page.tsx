@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, FolderPlus, Grid, List, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileUpload } from '@/components/media/file-upload';
 import { MediaGrid } from '@/components/media/media-grid';
@@ -12,9 +13,16 @@ import { Permission, PermissionGuard } from '@/components/permissions/Permission
 import { usePermissions } from '@/hooks/usePermissions';
 import { getAuthFetchHeaders } from '@/services/graphql-client';
 
+const MEDIA_ACCESS_PERMISSIONS = [Permission.VIEW_MEDIA, Permission.MANAGE_MEDIA];
+
 export default function MediaPage() {
-  const { hasPermission } = usePermissions();
+  const {
+    hasPermission,
+    hasAnyPermission,
+    isLoading: permissionsLoading,
+  } = usePermissions();
   const canManageMedia = hasPermission(Permission.MANAGE_MEDIA);
+  const canAccessMedia = hasAnyPermission(MEDIA_ACCESS_PERMISSIONS);
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [folders, setFolders] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -26,9 +34,12 @@ export default function MediaPage() {
     limit: 20,
   });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
   // Load media files
-  const loadFiles = async () => {
+  const loadFiles = React.useCallback(async () => {
+    if (permissionsLoading || !canAccessMedia) return;
+
     try {
       setLoading(true);
       const response = await fetch('/api/media/upload', {
@@ -45,11 +56,18 @@ export default function MediaPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [canAccessMedia, permissionsLoading]);
 
   useEffect(() => {
-    loadFiles();
-  }, []);
+    if (permissionsLoading) return;
+
+    if (!canAccessMedia) {
+      setLoading(false);
+      return;
+    }
+
+    void loadFiles();
+  }, [canAccessMedia, loadFiles, permissionsLoading]);
 
   // Filter and sort files
   const filteredFiles = React.useMemo(() => {
@@ -223,7 +241,7 @@ export default function MediaPage() {
   };
 
   return (
-    <PermissionGuard permissions={[Permission.VIEW_MEDIA, Permission.MANAGE_MEDIA]} showError>
+    <PermissionGuard permissions={MEDIA_ACCESS_PERMISSIONS} showError>
       <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -322,7 +340,11 @@ export default function MediaPage() {
                   <Button size="sm" variant="outline">
                     Download
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={handleBulkDelete}>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setBulkDeleteDialogOpen(true)}
+                  >
                     Delete
                   </Button>
                   <Button 
@@ -347,8 +369,8 @@ export default function MediaPage() {
             <MediaGrid
               files={filteredFiles}
               onFileSelect={handleFileSelect}
-              onFileDelete={handleFileDelete}
-              onFileEdit={handleFileEdit}
+              onFileDelete={canManageMedia ? handleFileDelete : undefined}
+              onFileEdit={canManageMedia ? handleFileEdit : undefined}
               selectedFiles={selectedFiles}
               selectable={canManageMedia}
             />
@@ -364,6 +386,18 @@ export default function MediaPage() {
           </TabsContent>
         )}
       </Tabs>
+      <ConfirmationDialog
+        open={bulkDeleteDialogOpen}
+        onOpenChange={setBulkDeleteDialogOpen}
+        title="Delete Selected Files?"
+        description={`Delete ${selectedFiles.length} selected file${selectedFiles.length !== 1 ? 's' : ''}? This action cannot be undone.`}
+        confirmText="Delete Files"
+        cancelText="Cancel"
+        variant="destructive"
+        onConfirm={() => {
+          void handleBulkDelete();
+        }}
+      />
       </div>
     </PermissionGuard>
   );

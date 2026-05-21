@@ -230,6 +230,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth();
   }, []);
 
+  useEffect(() => {
+    const handleTenantChanged = () => {
+      const storedToken = getStoredToken();
+      if (storedToken) {
+        void refreshUser(storedToken);
+      }
+    };
+
+    window.addEventListener("pulse-news:tenant-changed", handleTenantChanged);
+
+    return () => {
+      window.removeEventListener("pulse-news:tenant-changed", handleTenantChanged);
+    };
+  }, []);
+
   // Refresh user data from server
   const refreshUser = async (authToken?: string): Promise<void> => {
     try {
@@ -264,7 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.warn("Could not refresh role permissions:", error);
       setRolePermissions({});
-      setDynamicRolePermissions({});
+      setDynamicRolePermissions(null);
     } finally {
       setPermissionsReady(true);
     }
@@ -272,14 +287,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const completeLogin = async (authResponse: AuthResponse) => {
     if (authResponse.success && authResponse.token && authResponse.user) {
-      if (authResponse.user.role === "SUPER_ADMIN") {
-        setSelectedTenantId(null);
-      }
-
       setStoredToken(authResponse.token);
       setToken(authResponse.token);
-      setUser(authResponse.user);
-      await refreshRolePermissions();
+      await refreshUser(authResponse.token);
     }
   };
 

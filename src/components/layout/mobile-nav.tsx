@@ -101,6 +101,22 @@ const getNavigation = (
       });
     }
 
+    if (permissions.canViewMedia) {
+      platformItems.push({
+        name: "Media",
+        href: "/media",
+        icon: Image,
+      });
+    }
+
+    if (permissions.canViewCarousel) {
+      platformItems.push({
+        name: "Carousel",
+        href: "/carousel",
+        icon: Image,
+      });
+    }
+
     if (permissions.canViewAuditLogs) {
       platformItems.push({
         name: "Logs",

@@ -5,10 +5,9 @@ import { useMemo } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import {
   Permission,
-  hasPermission,
-  hasAnyPermission,
-  hasAllPermissions,
-  canAccessResource,
+  hasPermission as hasStaticPermission,
+  hasAnyPermission as hasAnyStaticPermission,
+  hasAllPermissions as hasAllStaticPermissions,
 } from "../components/permissions/PermissionGuard";
 
 /**
@@ -36,24 +35,28 @@ export const usePermissions = () => {
 
     const userRole = user.role?.toString().toUpperCase() || "";
     const userId = user.id;
+    const permissionsForRole = rolePermissions[userRole];
+    const hasRuntimePermission = (permission: Permission) =>
+      permissionsForRole
+        ? permissionsForRole.includes(permission)
+        : hasStaticPermission(userRole, permission);
+    const hasAnyRuntimePermission = (permissions: Permission[]) =>
+      permissionsForRole
+        ? permissions.some((permission) => permissionsForRole.includes(permission))
+        : hasAnyStaticPermission(userRole, permissions);
+    const hasAllRuntimePermissions = (permissions: Permission[]) =>
+      permissionsForRole
+        ? permissions.every((permission) => permissionsForRole.includes(permission))
+        : hasAllStaticPermissions(userRole, permissions);
 
     return {
-      hasPermission: (permission: Permission) =>
-        hasPermission(userRole, permission),
-      hasAnyPermission: (permissions: Permission[]) =>
-        hasAnyPermission(userRole, permissions),
-      hasAllPermissions: (permissions: Permission[]) =>
-        hasAllPermissions(userRole, permissions),
+      hasPermission: hasRuntimePermission,
+      hasAnyPermission: hasAnyRuntimePermission,
+      hasAllPermissions: hasAllRuntimePermissions,
       canAccessResource: (
         resourceUserId: string,
         requiredPermissions: Permission[],
-      ) =>
-        canAccessResource(
-          userRole,
-          userId,
-          resourceUserId,
-          requiredPermissions,
-        ),
+      ) => userId === resourceUserId || hasAnyRuntimePermission(requiredPermissions),
       isSuperAdmin: userRole === "SUPER_ADMIN",
       isAdmin: userRole === "ADMIN" || userRole === "SUPER_ADMIN",
       isEditor: userRole === "EDITOR",

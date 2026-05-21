@@ -30,6 +30,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToastHelpers } from "@/components/ui/toast";
 import { Q_CATEGORIES, type Category } from "@/services/category.gql";
 import { Q_TOPICS, type Topic } from "@/services/topic.gql";
+import { useAuth } from "@/contexts/AuthContext";
+import { Tenant, TenantService } from "@/services/tenant.gql";
 
 export type SlideForm = {
   placement: "HOME" | "CATEGORY" | "TOPIC";
@@ -109,14 +111,20 @@ type CarouselSlideFormProps = {
 
 export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
   const router = useRouter();
+  const { user } = useAuth();
   const { showSuccess, showError } = useToastHelpers();
   const showErrorRef = useRef(showError);
   const [form, setForm] = useState<SlideForm>(() => toForm(slide));
+  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [selectedTenantId, setSelectedTenantId] = useState(slide?.tenantId ?? "");
   const [categories, setCategories] = useState<Category[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
+  const [loadingOptions, setLoadingOptions] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const isEditing = !!slide;
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const selectedTenant = tenants.find((tenant) => tenant.id === selectedTenantId) ?? null;
   const previewTitle = form.title.trim() || "Pulse News";
   const previewSubtitle =
     form.subtitle.trim() ||
@@ -136,9 +144,44 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
   }, [showError]);
 
   useEffect(() => {
+    if (!isSuperAdmin) return;
+
+    let isMounted = true;
+
+    const loadTenants = async () => {
+      try {
+        const items = await TenantService.listTenants();
+        if (!isMounted) return;
+
+        const activeItems = items.filter((tenant) => tenant.status === "ACTIVE");
+        setTenants(activeItems);
+        setSelectedTenantId((current) => current || activeItems[0]?.id || "");
+      } catch {
+        showErrorRef.current("Error", "Failed to load tenant options.");
+      }
+    };
+
+    void loadTenants();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isSuperAdmin]);
+
+  useEffect(() => {
     const loadPlacementOptions = async () => {
+      if (isSuperAdmin && !selectedTenantId) {
+        setCategories([]);
+        setTopics([]);
+        return;
+      }
+
+      setLoadingOptions(true);
       try {
         const client = getAuthenticatedGqlClient();
+        if (isSuperAdmin && selectedTenantId) {
+          client.setHeader("x-tenant-id", selectedTenantId);
+        }
         const [categoryResult, topicResult] = await Promise.all([
           client.request<{ categories: Category[] }>(Q_CATEGORIES),
           client.request<{ topics: Topic[] }>(Q_TOPICS),
@@ -147,11 +190,13 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
         setTopics(topicResult.topics ?? []);
       } catch {
         showErrorRef.current("Error", "Failed to load category options.");
+      } finally {
+        setLoadingOptions(false);
       }
     };
 
     void loadPlacementOptions();
-  }, []);
+  }, [isSuperAdmin, selectedTenantId]);
 
   const handleImageUpload = async (file: File) => {
     if (!file.type.startsWith("image/")) {
@@ -175,7 +220,12 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
 
       const response = await fetch("/api/media/upload", {
         method: "POST",
-        headers: getAuthFetchHeaders(),
+        headers: {
+          ...getAuthFetchHeaders(),
+          ...(isSuperAdmin && selectedTenantId
+            ? { "x-tenant-id": selectedTenantId }
+            : {}),
+        },
         body: payload,
       });
       const data = await response.json();
@@ -217,9 +267,17 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
       return;
     }
 
+    if (isSuperAdmin && !selectedTenantId) {
+      showError("Validation Error", "Please select the tenant for this slide.");
+      return;
+    }
+
     setSaving(true);
     try {
       const client = getAuthenticatedGqlClient();
+      if (isSuperAdmin && selectedTenantId) {
+        client.setHeader("x-tenant-id", selectedTenantId);
+      }
       const input = toInput(form);
 
       if (slide) {
@@ -258,6 +316,37 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
         </CardHeader>
         <CardContent>
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {isSuperAdmin && (
+              <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <Label htmlFor="tenant">Tenant Website</Label>
+                <select
+                  id="tenant"
+                  value={selectedTenantId}
+                  onChange={(event) => {
+                    setSelectedTenantId(event.target.value);
+                    setForm((current) => ({
+                      ...current,
+                      categorySlug: "",
+                      topicSlug: "",
+                    }));
+                  }}
+                  disabled={isEditing}
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="">Select tenant</option>
+                  {tenants.map((tenant) => (
+                    <option key={tenant.id} value={tenant.id}>
+                      {tenant.name} /{tenant.slug}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-slate-500">
+                  This slide will be managed inside the selected tenant public website.
+                  {selectedTenant ? ` Current tenant: ${selectedTenant.name}.` : ""}
+                </p>
+              </div>
+            )}
+
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="placement">Show On</Label>
@@ -289,7 +378,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 <select
                   id="category"
                   value={form.categorySlug}
-                  disabled={form.placement === "HOME"}
+                  disabled={form.placement === "HOME" || loadingOptions}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,

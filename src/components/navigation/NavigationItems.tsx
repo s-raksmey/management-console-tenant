@@ -75,14 +75,34 @@ export const getNavigationItems = (
         description: "Manage role permissions",
         permissions: [Permission.MANAGE_USER_ROLES],
       },
-    {
-      name: "Analytics",
-      href: "/analytics",
-      icon: BarChart3,
-      badge: null,
-      description: "Platform analytics",
-      permissions: [Permission.VIEW_ANALYTICS],
-    },
+      {
+        name: "Analytics",
+        href: "/analytics",
+        icon: BarChart3,
+        badge: null,
+        description: "Platform analytics",
+        permissions: [Permission.VIEW_ANALYTICS],
+      },
+      {
+        name: "Media",
+        href: "/media",
+        icon: Image,
+        badge: counts.media > 0 ? counts.media.toString() : null,
+        description: "Files & images",
+        permissions: [Permission.VIEW_MEDIA, Permission.MANAGE_MEDIA],
+      },
+      {
+        name: "Carousel",
+        href: "/carousel",
+        icon: Image,
+        badge: null,
+        description: "Public hero slides",
+        permissions: [
+          Permission.CREATE_CAROUSEL,
+          Permission.UPDATE_CAROUSEL,
+          Permission.DELETE_CAROUSEL,
+        ],
+      },
       {
         name: "Logs",
         href: "/audit",
@@ -121,6 +141,7 @@ export const getNavigationItems = (
       description: "Manage content",
       permissions: [
         Permission.CREATE_ARTICLE,
+        Permission.VIEW_ALL_ARTICLES,
         Permission.UPDATE_OWN_ARTICLE,
         Permission.UPDATE_ANY_ARTICLE,
         Permission.DELETE_OWN_ARTICLE,
@@ -134,11 +155,7 @@ export const getNavigationItems = (
           href: "/articles",
           icon: FileText,
           description: "View all articles",
-          permissions: [
-            Permission.UPDATE_ANY_ARTICLE,
-            Permission.PUBLISH_ARTICLE,
-            Permission.REVIEW_ARTICLES,
-          ],
+          permissions: [Permission.VIEW_ALL_ARTICLES],
         },
         {
           name: "My Articles",
@@ -177,6 +194,7 @@ export const getNavigationItems = (
       badge: counts.categories > 0 ? counts.categories.toString() : null,
       description: "Organize content",
       permissions: [
+        Permission.LIST_CATEGORIES,
         Permission.CREATE_CATEGORY,
         Permission.UPDATE_CATEGORY,
         Permission.DELETE_CATEGORY,

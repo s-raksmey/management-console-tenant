@@ -4,6 +4,8 @@
 import { useState } from 'react';
 import { X, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Permission } from '@/components/permissions/PermissionGuard';
 import { UserService } from '../../services/user.gql';
 import type { AssignableUserRole, CreateUserInput } from '../../types/user';
 
@@ -15,9 +17,23 @@ interface UserCreateModalProps {
 
 export default function UserCreateModal({ isOpen, onClose, onUserCreated }: UserCreateModalProps) {
   const { user } = useAuth();
+  const { hasPermission } = usePermissions();
   const canAssignSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const canManageRoles = hasPermission(Permission.MANAGE_USER_ROLES);
   const roleLabel = canAssignSuperAdmin ? 'Platform Role' : 'Tenant Role';
   const defaultRole: AssignableUserRole = canAssignSuperAdmin ? 'ADMIN' : 'AUTHOR';
+  const roleOptions: Array<{ value: AssignableUserRole; label: string }> = canAssignSuperAdmin
+    ? [
+        { value: 'SUPER_ADMIN', label: 'Super Admin' },
+        { value: 'ADMIN', label: 'Tenant Admin' },
+      ]
+    : canManageRoles
+      ? [
+          { value: 'ADMIN', label: 'Admin' },
+          { value: 'EDITOR', label: 'Editor' },
+          { value: 'AUTHOR', label: 'Author' },
+        ]
+      : [{ value: defaultRole, label: defaultRole === 'ADMIN' ? 'Admin' : 'Author' }];
   const [formData, setFormData] = useState<CreateUserInput>({
     name: '',
     email: '',
@@ -171,18 +187,13 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value as AssignableUserRole })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={loading}
+              disabled={loading || !canManageRoles}
             >
-              {canAssignSuperAdmin && (
-                <option value="SUPER_ADMIN">Super Admin</option>
-              )}
-              <option value="ADMIN">Tenant Admin</option>
-              {!canAssignSuperAdmin && (
-                <>
-                  <option value="EDITOR">Editor</option>
-                  <option value="AUTHOR">Author</option>
-                </>
-              )}
+              {roleOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
           </div>
 

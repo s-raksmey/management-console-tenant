@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useArticles, useArticleMutations, useRevisions } from '@/hooks/useGraphQL';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Permission, PermissionGuard } from '@/components/permissions/PermissionGuard';
@@ -33,6 +34,20 @@ export default function ReviewQueuePage() {
   const { showSuccess, showError } = useToastHelpers();
   const [revisionRequestStatusById, setRevisionRequestStatusById] = useState<Record<string, string>>({});
   const [revisionRequestNoteById, setRevisionRequestNoteById] = useState<Record<string, string>>({});
+  const [confirmation, setConfirmation] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: 'default' | 'destructive';
+    onConfirm: () => void | Promise<void>;
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    confirmText: 'Confirm',
+    onConfirm: () => {},
+  });
 
   const getRevisionBadge = (status?: string | null) => {
     if (!status) return null;
@@ -177,6 +192,23 @@ export default function ReviewQueuePage() {
     }
   };
 
+  const requestReviewAction = (input: {
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: 'default' | 'destructive';
+    onConfirm: () => void | Promise<void>;
+  }) => {
+    setConfirmation({
+      open: true,
+      title: input.title,
+      description: input.description,
+      confirmText: input.confirmText,
+      variant: input.variant,
+      onConfirm: input.onConfirm,
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -285,7 +317,14 @@ export default function ReviewQueuePage() {
 
                   {hasPermission(Permission.APPROVE_ARTICLES) && (
                     <Button
-                      onClick={() => handleApprove(article.id)}
+                      onClick={() =>
+                        requestReviewAction({
+                          title: 'Approve Article?',
+                          description: `Approve "${article.title}" and publish it?`,
+                          confirmText: 'Approve',
+                          onConfirm: () => handleApprove(article.id),
+                        })
+                      }
                       disabled={processingIds.has(article.id)}
                       className="bg-green-600 hover:bg-green-700 text-white"
                       size="sm"
@@ -301,7 +340,15 @@ export default function ReviewQueuePage() {
 
                   {hasPermission(Permission.REJECT_ARTICLES) && (
                     <Button
-                      onClick={() => handleReject(article.id)}
+                      onClick={() =>
+                        requestReviewAction({
+                          title: 'Reject Article?',
+                          description: `Reject "${article.title}" and return it from review?`,
+                          confirmText: 'Reject',
+                          variant: 'destructive',
+                          onConfirm: () => handleReject(article.id),
+                        })
+                      }
                       disabled={processingIds.has(article.id)}
                       variant="outline"
                       className="border-red-300 text-red-700 hover:bg-red-50"
@@ -320,6 +367,20 @@ export default function ReviewQueuePage() {
             </div>
           ))}
         </div>
+        <ConfirmationDialog
+          open={confirmation.open}
+          onOpenChange={(open) =>
+            setConfirmation((current) => ({ ...current, open }))
+          }
+          title={confirmation.title}
+          description={confirmation.description}
+          confirmText={confirmation.confirmText}
+          cancelText="Cancel"
+          variant={confirmation.variant}
+          onConfirm={() => {
+            void confirmation.onConfirm();
+          }}
+        />
       </div>
     </PermissionGuard>
   );

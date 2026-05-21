@@ -1,5 +1,6 @@
 export type CarouselSlide = {
   id: string;
+  tenantId?: string | null;
   placement: "HOME" | "CATEGORY" | "TOPIC";
   categorySlug?: string | null;
   topicSlug?: string | null;

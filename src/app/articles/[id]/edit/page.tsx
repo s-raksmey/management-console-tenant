@@ -16,6 +16,7 @@ import { useRevisions } from "@/hooks/useGraphQL";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 
 import { useCategories } from "@/hooks/useCategories";
 import { useTopics } from "@/hooks/useTopics";
@@ -114,6 +115,7 @@ export default function EditArticlePage() {
   const [currentRevisionRequest, setCurrentRevisionRequest] = useState<any | undefined>();
   const [revisionNote, setRevisionNote] = useState<string>("");
   const [showRevisionForm, setShowRevisionForm] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   
   // Track original values for change detection
   const [originalTitle, setOriginalTitle] = useState("");
@@ -274,7 +276,10 @@ export default function EditArticlePage() {
         setOriginalIsBreaking(isBreaking);
         setInitialContent(contentJson);
 
-        if (userRole === 'AUTHOR' && (currentRevisionRequest?.status === 'APPROVED' || currentRevisionRequest?.status === 'REJECTED')) {
+        if (
+          !hasPermission(Permission.UPDATE_ANY_ARTICLE) &&
+          (currentRevisionRequest?.status === 'APPROVED' || currentRevisionRequest?.status === 'REJECTED')
+        ) {
           if (currentRevisionRequest?.id && !currentRevisionRequest?.consumedAt) {
             await consumeRevisionRequest(currentRevisionRequest.id);
           }
@@ -376,7 +381,6 @@ export default function EditArticlePage() {
   }
 
   async function remove() {
-    if (!confirm("Delete this article?")) return;
     setSaving(true);
     try {
       await client.request(M_DELETE_ARTICLE, { id });
@@ -635,7 +639,7 @@ export default function EditArticlePage() {
             Save
           </Button>
           {canDelete && (
-            <Button variant="ghost" onClick={remove} disabled={saving}>
+            <Button variant="ghost" onClick={() => setDeleteDialogOpen(true)} disabled={saving}>
               Delete
             </Button>
           )}
@@ -1055,6 +1059,15 @@ export default function EditArticlePage() {
 
       {/* ---------- Editor ---------- */}
       <NewsEditor ref={editorRef} initialData={initialContent} />
+      <ConfirmationDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete Article?"
+        description={`This will permanently delete "${title || 'this article'}". This action cannot be undone.`}
+        confirmText="Delete Article"
+        variant="destructive"
+        onConfirm={() => void remove()}
+      />
     </main>
   );
 }

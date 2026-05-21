@@ -8,6 +8,7 @@ import { UserService } from '../../services/user.gql';
 import type { AssignableUserRole } from '../../types/user';
 import { Permission } from '../permissions/PermissionGuard';
 import { usePermissions } from '@/hooks/usePermissions';
+import { ConfirmationDialog } from '../ui/confirmation-dialog';
 
 interface BulkActionBarProps {
   selectedUserIds: string[];
@@ -24,20 +25,30 @@ export default function BulkActionBar({
   const { hasPermission } = usePermissions();
   const [isProcessing, setIsProcessing] = useState(false);
   const [showRoleMenu, setShowRoleMenu] = useState(false);
+  const [confirmation, setConfirmation] = useState<{
+    open: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: 'default' | 'destructive';
+    onConfirm: () => void | Promise<void>;
+  }>({
+    open: false,
+    title: '',
+    description: '',
+    confirmText: 'Confirm',
+    onConfirm: () => {},
+  });
   const canManageRoles = hasPermission(Permission.MANAGE_USER_ROLES);
   const canUpdateUser = hasPermission(Permission.UPDATE_USER);
   const roleOptions: AssignableUserRole[] =
     user?.role === 'SUPER_ADMIN'
-      ? ['SUPER_ADMIN', 'ADMIN', 'EDITOR', 'AUTHOR']
+      ? ['SUPER_ADMIN', 'ADMIN']
       : ['ADMIN', 'EDITOR', 'AUTHOR'];
 
   if (selectedUserIds.length === 0) return null;
 
   const handleBulkRoleUpdate = async (role: AssignableUserRole) => {
-    if (!confirm(`Are you sure you want to change the role of ${selectedUserIds.length} users to ${UserService.getRoleDisplayName(role)}?`)) {
-      return;
-    }
-
     try {
       setIsProcessing(true);
       const result = await UserService.bulkUpdateUserRoles(selectedUserIds, role);
@@ -55,11 +66,6 @@ export default function BulkActionBar({
   };
 
   const handleBulkStatusUpdate = async (isActive: boolean) => {
-    const action = isActive ? 'activate' : 'deactivate';
-    if (!confirm(`Are you sure you want to ${action} ${selectedUserIds.length} users?`)) {
-      return;
-    }
-
     try {
       setIsProcessing(true);
       const result = await UserService.bulkUpdateUserStatus(selectedUserIds, isActive);
@@ -73,6 +79,24 @@ export default function BulkActionBar({
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const requestConfirmation = (input: {
+    title: string;
+    description: string;
+    confirmText: string;
+    variant?: 'default' | 'destructive';
+    onConfirm: () => void | Promise<void>;
+  }) => {
+    setConfirmation({
+      open: true,
+      title: input.title,
+      description: input.description,
+      confirmText: input.confirmText,
+      variant: input.variant,
+      onConfirm: input.onConfirm,
+    });
+    setShowRoleMenu(false);
   };
 
   return (
@@ -107,7 +131,14 @@ export default function BulkActionBar({
                   {roleOptions.map((role) => (
                     <button
                       key={role}
-                      onClick={() => handleBulkRoleUpdate(role)}
+                      onClick={() =>
+                        requestConfirmation({
+                          title: 'Change Selected Roles?',
+                          description: `Change ${selectedUserIds.length} selected user${selectedUserIds.length !== 1 ? 's' : ''} to ${UserService.getRoleDisplayName(role)}?`,
+                          confirmText: 'Change Role',
+                          onConfirm: () => handleBulkRoleUpdate(role),
+                        })
+                      }
                       className="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center space-x-2"
                     >
                       <Shield className="h-4 w-4" />
@@ -124,7 +155,14 @@ export default function BulkActionBar({
           {canUpdateUser && (
             <>
               <button
-                onClick={() => handleBulkStatusUpdate(true)}
+                onClick={() =>
+                  requestConfirmation({
+                    title: 'Activate Selected Users?',
+                    description: `Activate ${selectedUserIds.length} selected user${selectedUserIds.length !== 1 ? 's' : ''}?`,
+                    confirmText: 'Activate',
+                    onConfirm: () => handleBulkStatusUpdate(true),
+                  })
+                }
                 disabled={isProcessing}
                 className="inline-flex items-center px-3 py-2 border border-green-300 rounded-md text-sm font-medium text-green-700 bg-white hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
               >
@@ -133,7 +171,15 @@ export default function BulkActionBar({
               </button>
 
               <button
-                onClick={() => handleBulkStatusUpdate(false)}
+                onClick={() =>
+                  requestConfirmation({
+                    title: 'Deactivate Selected Users?',
+                    description: `Deactivate ${selectedUserIds.length} selected user${selectedUserIds.length !== 1 ? 's' : ''}?`,
+                    confirmText: 'Deactivate',
+                    variant: 'destructive',
+                    onConfirm: () => handleBulkStatusUpdate(false),
+                  })
+                }
                 disabled={isProcessing}
                 className="inline-flex items-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
               >
@@ -161,6 +207,20 @@ export default function BulkActionBar({
           <span className="text-sm text-blue-700">Processing bulk action...</span>
         </div>
       )}
+      <ConfirmationDialog
+        open={confirmation.open}
+        onOpenChange={(open) =>
+          setConfirmation((current) => ({ ...current, open }))
+        }
+        title={confirmation.title}
+        description={confirmation.description}
+        confirmText={confirmation.confirmText}
+        cancelText="Cancel"
+        variant={confirmation.variant}
+        onConfirm={() => {
+          void confirmation.onConfirm();
+        }}
+      />
     </div>
   );
 }

@@ -18,6 +18,7 @@ export enum Permission {
 
   // Article Management
   CREATE_ARTICLE = "CREATE_ARTICLE",
+  VIEW_ALL_ARTICLES = "VIEW_ALL_ARTICLES",
   UPDATE_OWN_ARTICLE = "UPDATE_OWN_ARTICLE",
   UPDATE_ANY_ARTICLE = "UPDATE_ANY_ARTICLE",
   DELETE_OWN_ARTICLE = "DELETE_OWN_ARTICLE",
@@ -37,6 +38,7 @@ export enum Permission {
   REJECT_ARTICLES = "REJECT_ARTICLES",
 
   // Category Management
+  LIST_CATEGORIES = "LIST_CATEGORIES",
   CREATE_CATEGORY = "CREATE_CATEGORY",
   UPDATE_CATEGORY = "UPDATE_CATEGORY",
   DELETE_CATEGORY = "DELETE_CATEGORY",
@@ -76,26 +78,6 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.VIEW_ALL_USERS,
     Permission.MANAGE_USER_ROLES,
     Permission.MANAGE_USERS,
-    Permission.CREATE_ARTICLE,
-    Permission.UPDATE_OWN_ARTICLE,
-    Permission.UPDATE_ANY_ARTICLE,
-    Permission.DELETE_OWN_ARTICLE,
-    Permission.DELETE_ANY_ARTICLE,
-    Permission.PUBLISH_ARTICLE,
-    Permission.UNPUBLISH_ARTICLE,
-    Permission.PREVIEW_ARTICLE,
-    Permission.SET_FEATURED,
-    Permission.SET_BREAKING_NEWS,
-    Permission.SET_EDITORS_PICK,
-    Permission.REVIEW_ARTICLES,
-    Permission.APPROVE_ARTICLES,
-    Permission.REJECT_ARTICLES,
-    Permission.CREATE_CATEGORY,
-    Permission.UPDATE_CATEGORY,
-    Permission.DELETE_CATEGORY,
-    Permission.CREATE_TOPIC,
-    Permission.UPDATE_TOPIC,
-    Permission.DELETE_TOPIC,
     Permission.VIEW_SETTINGS,
     Permission.UPDATE_SETTINGS,
     Permission.VIEW_ANALYTICS,
@@ -116,6 +98,7 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.MANAGE_USER_ROLES,
     Permission.MANAGE_USERS,
     Permission.CREATE_ARTICLE,
+    Permission.VIEW_ALL_ARTICLES,
     Permission.UPDATE_OWN_ARTICLE,
     Permission.UPDATE_ANY_ARTICLE,
     Permission.DELETE_OWN_ARTICLE,
@@ -129,6 +112,7 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.REVIEW_ARTICLES,
     Permission.APPROVE_ARTICLES,
     Permission.REJECT_ARTICLES,
+    Permission.LIST_CATEGORIES,
     Permission.CREATE_CATEGORY,
     Permission.UPDATE_CATEGORY,
     Permission.DELETE_CATEGORY,
@@ -149,6 +133,7 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
   EDITOR: [
     // Content management and editorial control
     Permission.CREATE_ARTICLE,
+    Permission.VIEW_ALL_ARTICLES,
     Permission.UPDATE_OWN_ARTICLE,
     Permission.UPDATE_ANY_ARTICLE,
     Permission.DELETE_OWN_ARTICLE,
@@ -228,6 +213,39 @@ export const canAccessResource = (
   return hasAnyPermission(userRole, requiredPermissions);
 };
 
+const roleHasPermission = (
+  rolePermissions: Record<string, Permission[]>,
+  userRole: string,
+  permission: Permission,
+): boolean => {
+  const normalizedRole = userRole?.toUpperCase();
+  const permissions =
+    rolePermissions[normalizedRole] ||
+    (dynamicRolePermissions !== null
+      ? dynamicRolePermissions[normalizedRole] || []
+      : ROLE_PERMISSIONS[normalizedRole] || []);
+
+  return permissions.includes(permission);
+};
+
+const roleHasAnyPermission = (
+  rolePermissions: Record<string, Permission[]>,
+  userRole: string,
+  permissions: Permission[],
+): boolean =>
+  permissions.some((permission) =>
+    roleHasPermission(rolePermissions, userRole, permission),
+  );
+
+const roleHasAllPermissions = (
+  rolePermissions: Record<string, Permission[]>,
+  userRole: string,
+  permissions: Permission[],
+): boolean =>
+  permissions.every((permission) =>
+    roleHasPermission(rolePermissions, userRole, permission),
+  );
+
 /**
  * Permission Guard Component Props
  */
@@ -254,7 +272,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   resourceUserId,
   showError = false,
 }) => {
-  const { user, isLoading, permissionsReady } = useAuth();
+  const { user, isLoading, permissionsReady, rolePermissions } = useAuth();
 
   // Show loading state
   if (isLoading || (user && !permissionsReady)) {
@@ -294,17 +312,14 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
 
     if (resourceUserId) {
       // Resource-based permission check
-      hasAccess = canAccessResource(
-        userRole,
-        user.id,
-        resourceUserId,
-        permissions,
-      );
+      hasAccess =
+        user.id === resourceUserId ||
+        roleHasAnyPermission(rolePermissions, userRole, permissions);
     } else {
       // General permission check
       hasAccess = requireAll
-        ? hasAllPermissions(userRole, permissions)
-        : hasAnyPermission(userRole, permissions);
+        ? roleHasAllPermissions(rolePermissions, userRole, permissions)
+        : roleHasAnyPermission(rolePermissions, userRole, permissions);
     }
 
     if (!hasAccess) {

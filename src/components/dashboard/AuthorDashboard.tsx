@@ -2,41 +2,72 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { 
-  FileText, 
-  Clock, 
-  CheckCircle, 
-  XCircle,
-  TrendingUp, 
-  Eye,
-  Edit,
-  Calendar,
-  Target,
-  Award,
-  BookOpen,
-  PlusCircle,
-  RefreshCw,
-  BarChart3,
-  Zap,
-  TrendingDown
-} from 'lucide-react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
-import { useAuthorStats } from '@/hooks/useAuthorStats';
+import {
+  BarChart3,
+  CheckCircle,
+  Clock,
+  Edit,
+  Eye,
+  FileText,
+  Plus,
+  RefreshCw,
+} from 'lucide-react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Permission } from '@/components/permissions/PermissionGuard';
 import { usePermissions } from '@/hooks/usePermissions';
-import { 
-  StatCard, 
-  MetricCard, 
-  ActivityFeed, 
-  StatCardSkeleton, 
-  MetricCardSkeleton,
-  ActivityFeedSkeleton,
-  type ActivityItem 
-} from './shared';
+import { useAuthorStats } from '@/hooks/useAuthorStats';
+
+type ArticleStatus = 'DRAFT' | 'REVIEW' | 'PUBLISHED' | 'ARCHIVED';
+
+const statusStyles: Record<ArticleStatus, string> = {
+  DRAFT: 'bg-slate-100 text-slate-700 border-slate-200',
+  REVIEW: 'bg-amber-100 text-amber-800 border-amber-200',
+  PUBLISHED: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  ARCHIVED: 'bg-rose-100 text-rose-800 border-rose-200',
+};
+
+function formatTimeAgo(timestamp?: string): string {
+  if (!timestamp) return 'Unknown';
+
+  const diffInMinutes = Math.floor((Date.now() - new Date(timestamp).getTime()) / 60000);
+  if (diffInMinutes < 1) return 'Just now';
+  if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+  if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+  return `${Math.floor(diffInMinutes / 1440)}d ago`;
+}
+
+function KpiCard({
+  label,
+  value,
+  helper,
+  icon: Icon,
+}: {
+  label: string;
+  value: React.ReactNode;
+  helper: string;
+  icon: React.ElementType;
+}) {
+  return (
+    <Card className="border-slate-200 shadow-sm">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
+            <p className="mt-2 text-3xl font-bold text-slate-950">{value}</p>
+            <p className="mt-1 text-sm text-slate-600">{helper}</p>
+          </div>
+          <div className="rounded-md bg-blue-50 p-2 text-blue-600">
+            <Icon className="h-5 w-5" />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export const AuthorDashboard: React.FC = () => {
   const { hasPermission } = usePermissions();
@@ -46,36 +77,31 @@ export const AuthorDashboard: React.FC = () => {
     getAuthorStats,
     getAuthorArticles,
     getAuthorInsights,
-    getWritingGoals
   } = useAuthorStats();
 
   const [stats, setStats] = useState<any>(null);
   const [articles, setArticles] = useState<any[]>([]);
   const [insights, setInsights] = useState<any>(null);
-  const [goals, setGoals] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Load dashboard data
   const loadDashboardData = async () => {
     try {
-      const [statsData, articlesData, insightsData, goalsData] = await Promise.all([
+      const [statsData, articlesData, insightsData] = await Promise.all([
         getAuthorStats(),
-        getAuthorArticles(10),
+        getAuthorArticles(6),
         getAuthorInsights(),
-        getWritingGoals()
       ]);
 
       setStats(statsData);
-      setArticles(articlesData);
+      setArticles(articlesData || []);
       setInsights(insightsData);
-      setGoals(goalsData);
     } catch (err) {
-      console.error('Failed to load dashboard data:', err);
+      console.error('Failed to load author dashboard data:', err);
     }
   };
 
   useEffect(() => {
-    loadDashboardData();
+    void loadDashboardData();
   }, []);
 
   const handleRefresh = async () => {
@@ -84,409 +110,167 @@ export const AuthorDashboard: React.FC = () => {
     setRefreshing(false);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PUBLISHED': return 'bg-green-100 text-green-800 border-green-200';
-      case 'REVIEW': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'DRAFT': return 'bg-gray-100 text-gray-800 border-gray-200';
-      case 'ARCHIVED': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'PUBLISHED': return <CheckCircle className="h-4 w-4" />;
-      case 'REVIEW': return <Clock className="h-4 w-4" />;
-      case 'DRAFT': return <Edit className="h-4 w-4" />;
-      case 'ARCHIVED': return <XCircle className="h-4 w-4" />;
-      default: return <FileText className="h-4 w-4" />;
-    }
-  };
-
-  const formatTimeAgo = (timestamp: string): string => {
-    const now = new Date();
-    const time = new Date(timestamp);
-    const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60));
-    
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-    return `${Math.floor(diffInMinutes / 1440)}d ago`;
-  };
-
-  // Transform recent articles to activity items
-  const recentActivity: ActivityItem[] = articles.slice(0, 5).map(article => ({
-    id: article.id,
-    type: article.status === 'PUBLISHED' ? 'publish' : 
-          article.status === 'REVIEW' ? 'update' : 'create',
-    title: article.title,
-    description: `${article.status.toLowerCase()} • ${article.category.name}`,
-    timestamp: article.updatedAt,
-    metadata: {
-      category: article.category.name,
-      status: article.status
-    }
-  }));
+  const monthlyProgress = stats?.monthlyProgress ?? 0;
+  const monthlyGoal = stats?.monthlyGoal ?? 0;
+  const goalPercent = monthlyGoal > 0 ? Math.min((monthlyProgress / monthlyGoal) * 100, 100) : 0;
 
   return (
-    <div className="space-y-6 p-6 bg-gradient-to-br from-slate-50 to-gray-50 min-h-screen">
-      {/* Welcome Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Author Dashboard
-          </h1>
-          <p className="text-gray-600 mt-1">Your writing journey and content analytics</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <Button 
-            onClick={handleRefresh} 
-            disabled={refreshing}
-            variant="outline"
-            className="border-gray-300"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
-          </Button>
-          {hasPermission(Permission.CREATE_ARTICLE) && (
-            <Link href="/articles/new">
-              <Button className="bg-blue-600 hover:bg-blue-700">
-                <PlusCircle className="h-4 w-4 mr-2" />
-                New Article
+    <div className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-7xl space-y-6 p-6">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Author Workspace</p>
+              <h1 className="mt-1 text-3xl font-bold text-slate-950">Dashboard</h1>
+              <p className="mt-1 text-slate-600">Track your drafts, submissions, and published articles.</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
               </Button>
-            </Link>
-          )}
+              {hasPermission(Permission.CREATE_ARTICLE) && (
+                <Button asChild>
+                  <Link href="/articles/new">
+                    <Plus className="mr-2 h-4 w-4" />
+                    New Article
+                  </Link>
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {loading || !stats ? (
-          <>
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-            <StatCardSkeleton />
-          </>
-        ) : (
-          <>
-            <StatCard
-              title="Total Articles"
-              value={stats.totalArticles}
-              icon={FileText}
-              gradient="from-blue-500 to-blue-600"
-              change={{
-                value: 15,
-                type: 'increase',
-                period: 'vs last month'
-              }}
-            />
-            <StatCard
-              title="Published"
-              value={stats.publishedArticles}
-              icon={CheckCircle}
-              gradient="from-green-500 to-emerald-500"
-              change={{
-                value: stats.approvalRate,
-                type: 'increase',
-                period: 'approval rate'
-              }}
-            />
-            <StatCard
-              title="Total Views"
-              value={stats.totalViews.toLocaleString()}
-              icon={Eye}
-              gradient="from-purple-500 to-pink-500"
-              change={{
-                value: 23,
-                type: 'increase',
-                period: 'vs last month'
-              }}
-            />
-            <StatCard
-              title="In Review"
-              value={stats.inReviewArticles}
-              icon={Clock}
-              gradient="from-yellow-500 to-orange-500"
-              change={{
-                value: stats.inReviewArticles > 0 ? 100 : 0,
-                type: stats.inReviewArticles > 0 ? 'neutral' : 'decrease',
-                period: 'pending'
-              }}
-            />
-          </>
+        {error && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-4 text-sm text-red-700">Error loading dashboard data: {error}</CardContent>
+          </Card>
         )}
-      </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Recent Articles */}
-        <div className="lg:col-span-2">
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <KpiCard label="Articles" value={loading || !stats ? '-' : stats.totalArticles} helper="Total content created" icon={FileText} />
+          <KpiCard label="Published" value={loading || !stats ? '-' : stats.publishedArticles} helper={`${stats?.approvalRate ?? 0}% approval rate`} icon={CheckCircle} />
+          <KpiCard label="In Review" value={loading || !stats ? '-' : stats.inReviewArticles} helper="Waiting for editorial review" icon={Clock} />
+          <KpiCard label="Views" value={loading || !stats ? '-' : (stats.totalViews ?? 0).toLocaleString()} helper="Total public reads" icon={Eye} />
+        </div>
+
+        <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
+          <Card className="border-slate-200 shadow-sm">
+            <CardHeader className="border-b border-slate-200">
+              <div className="flex items-center justify-between gap-4">
                 <div>
-                  <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
-                    <BookOpen className="h-5 w-5 mr-2 text-purple-600" />
-                    Recent Articles
-                  </CardTitle>
-                  <CardDescription>Your latest content and submissions</CardDescription>
+                  <CardTitle>Recent Articles</CardTitle>
+                  <CardDescription>Your latest drafts and submissions.</CardDescription>
                 </div>
-                <Link href="/articles">
-                  <Button variant="outline" size="sm">
-                    View All
-                  </Button>
-                </Link>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/articles/my">View All</Link>
+                </Button>
               </div>
             </CardHeader>
-            
-            <CardContent>
+            <CardContent className="p-0">
               {loading ? (
-                <div className="space-y-4">
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="animate-pulse">
-                      <div className="h-20 bg-gray-200 rounded-lg"></div>
-                    </div>
+                <div className="space-y-3 p-5">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="h-16 animate-pulse rounded-md bg-slate-100" />
                   ))}
                 </div>
               ) : articles.length === 0 ? (
-                <div className="text-center py-12 text-gray-500">
-                  <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                  <p className="text-lg font-medium">No articles yet</p>
-                  <p className="text-sm mb-4">Start writing your first article!</p>
-                  <Link href="/articles/new">
-                    <Button className="bg-gradient-to-r from-purple-500 to-blue-500">
-                      <PlusCircle className="h-4 w-4 mr-2" />
-                      Create Article
-                    </Button>
-                  </Link>
+                <div className="p-10 text-center">
+                  <FileText className="mx-auto h-10 w-10 text-slate-300" />
+                  <p className="mt-3 font-semibold text-slate-950">No articles yet</p>
+                  <p className="mt-1 text-sm text-slate-600">Create your first draft to get started.</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="divide-y divide-slate-200">
                   {articles.map((article) => (
-                    <div key={article.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="font-semibold text-gray-900 text-lg">{article.title}</h3>
-                            <Badge className={getStatusColor(article.status)}>
-                              <div className="flex items-center space-x-1">
-                                {getStatusIcon(article.status)}
-                                <span>{article.status}</span>
-                              </div>
-                            </Badge>
-                            <Badge variant="outline" className="text-xs">
-                              {article.category.name}
-                            </Badge>
-                          </div>
-                          
-                          <div className="flex items-center space-x-4 text-sm text-gray-600 mb-3">
-                            <span className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              {formatTimeAgo(article.updatedAt)}
-                            </span>
-                            {article.views && (
-                              <span className="flex items-center">
-                                <Eye className="h-4 w-4 mr-1" />
-                                {article.views.toLocaleString()} views
-                              </span>
-                            )}
-                          </div>
-                          
-                          {article.excerpt && (
-                            <p className="text-gray-600 text-sm line-clamp-2">
-                              {article.excerpt}
-                            </p>
-                          )}
+                    <div key={article.id} className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="font-semibold text-slate-950">{article.title}</h3>
+                          <Badge className={statusStyles[(article.status as ArticleStatus) || 'DRAFT']}>
+                            {article.status}
+                          </Badge>
                         </div>
-                        
-                        <div className="flex items-center space-x-2 ml-4">
-                          <Link href={`/articles/${article.id}/edit`}>
-                            <Button size="sm" variant="outline">
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                          </Link>
-                        </div>
+                        <p className="mt-1 text-sm text-slate-600">
+                          {article.category?.name || 'Uncategorized'} · Updated {formatTimeAgo(article.updatedAt)}
+                        </p>
                       </div>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/articles/${article.id}/edit`}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </Link>
+                      </Button>
                     </div>
                   ))}
                 </div>
               )}
             </CardContent>
           </Card>
-        </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Writing Goals */}
-          {loading || !stats ? (
-            <MetricCardSkeleton />
-          ) : (
-            <MetricCard
-              title="Monthly Goal"
-              description="Articles this month"
-              value={stats.monthlyProgress}
-              target={stats.monthlyGoal}
-              icon={Target}
-              color="purple"
-              showProgress={true}
-            >
-              <div className="mt-3 text-xs text-gray-500">
-                {stats.monthlyGoal - stats.monthlyProgress} more to reach your goal
-              </div>
-            </MetricCard>
-          )}
+          <div className="space-y-6">
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader>
+                <CardTitle>Monthly Goal</CardTitle>
+                <CardDescription>Articles created this month.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-3xl font-bold text-slate-950">{monthlyProgress}</p>
+                    <p className="text-sm text-slate-600">of {monthlyGoal || 0} articles</p>
+                  </div>
+                  <p className="text-sm font-medium text-slate-700">{Math.round(goalPercent)}%</p>
+                </div>
+                <div className="mt-4 h-2 rounded-full bg-slate-100">
+                  <div className="h-2 rounded-full bg-blue-600" style={{ width: `${goalPercent}%` }} />
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Performance Metrics */}
-          {loading || !stats ? (
-            <MetricCardSkeleton />
-          ) : (
-            <MetricCard
-              title="Approval Rate"
-              description="Articles approved vs submitted"
-              value={stats.approvalRate}
-              maxValue={100}
-              unit="%"
-              icon={Award}
-              color="green"
-              showProgress={true}
-            />
-          )}
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader>
+                <CardTitle>Performance</CardTitle>
+                <CardDescription>Simple writing metrics.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Average views</span>
+                  <span className="font-semibold text-slate-950">{stats?.avgViewsPerArticle ?? 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Articles this week</span>
+                  <span className="font-semibold text-slate-950">{insights?.recentActivity?.articlesThisWeek ?? 0}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600">Writing streak</span>
+                  <span className="font-semibold text-slate-950">{insights?.writingStreak?.current ?? 0} days</span>
+                </div>
+              </CardContent>
+            </Card>
 
-          {/* Average Views */}
-          {loading || !stats ? (
-            <MetricCardSkeleton />
-          ) : (
-            <MetricCard
-              title="Avg Views"
-              description="Per published article"
-              value={stats.avgViewsPerArticle}
-              icon={TrendingUp}
-              color="blue"
-              showProgress={false}
-            />
-          )}
-
-          {/* Recent Activity */}
-          {loading ? (
-            <ActivityFeedSkeleton />
-          ) : (
-            <ActivityFeed
-              title="Recent Activity"
-              activities={recentActivity}
-              maxItems={5}
-              showViewAll={true}
-              onViewAll={() => {}}
-            />
-          )}
+            <Card className="border-slate-200 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-600" />
+                  Top Categories
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {(insights?.categoryDistribution || []).slice(0, 4).map((category: any) => (
+                  <div key={category.category} className="flex items-center justify-between text-sm">
+                    <span className="text-slate-600">{category.category}</span>
+                    <span className="font-semibold text-slate-950">{category.count}</span>
+                  </div>
+                ))}
+                {(!insights?.categoryDistribution || insights.categoryDistribution.length === 0) && (
+                  <p className="text-sm text-slate-500">No category data yet.</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
-
-      {/* Insights and Analytics */}
-      {insights && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Top Performing Articles */}
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
-                <TrendingUp className="h-5 w-5 mr-2 text-green-600" />
-                Top Performing Articles
-              </CardTitle>
-              <CardDescription>Your most viewed published content</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {insights.topPerformingArticles.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <BarChart3 className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                  <p>No published articles yet</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {insights.topPerformingArticles.map((article: any, index: number) => (
-                    <div key={article.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center text-white text-xs font-bold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900 text-sm">{article.title}</p>
-                          <p className="text-xs text-gray-500">{article.category.name}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gray-900">{article.views?.toLocaleString()}</p>
-                        <p className="text-xs text-gray-500">views</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Writing Statistics */}
-          <Card className="shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold text-gray-900 flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
-                Writing Statistics
-              </CardTitle>
-              <CardDescription>Your content creation insights</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* This Week Stats */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-blue-50 rounded-lg">
-                    <p className="text-2xl font-bold text-blue-600">{insights.recentActivity.articlesThisWeek}</p>
-                    <p className="text-xs text-gray-600">Articles This Week</p>
-                  </div>
-                  <div className="text-center p-3 bg-green-50 rounded-lg">
-                    <p className="text-2xl font-bold text-green-600">{insights.recentActivity.viewsThisWeek.toLocaleString()}</p>
-                    <p className="text-xs text-gray-600">Views This Week</p>
-                  </div>
-                </div>
-
-                {/* Category Distribution */}
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">Content by Category</h4>
-                  <div className="space-y-2">
-                    {insights.categoryDistribution.slice(0, 3).map((cat: any) => (
-                      <div key={cat.category} className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">{cat.category}</span>
-                        <div className="flex items-center space-x-2">
-                          <div className="w-16 bg-gray-200 rounded-full h-2">
-                            <div 
-                              className="bg-gradient-to-r from-purple-500 to-blue-500 h-2 rounded-full"
-                              style={{ width: `${cat.percentage}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-sm font-medium text-gray-900">{cat.count}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Writing Streak */}
-                <div className="p-3 bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Writing Streak</p>
-                      <p className="text-lg font-bold text-purple-600">{insights.writingStreak.current} days</p>
-                    </div>
-                    <Zap className="h-8 w-8 text-purple-500" />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Best: {insights.writingStreak.longest} days
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 };

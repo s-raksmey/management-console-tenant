@@ -4,6 +4,7 @@ export type UserRole = 'ADMIN' | 'EDITOR' | 'AUTHOR';
 export type Permission = 
   // Article permissions
   | 'CREATE_ARTICLE'
+  | 'VIEW_ALL_ARTICLES'
   | 'UPDATE_OWN_ARTICLE'
   | 'UPDATE_ANY_ARTICLE'
   | 'DELETE_OWN_ARTICLE'
@@ -34,6 +35,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   ADMIN: [
     // Full access to everything
     'CREATE_ARTICLE',
+    'VIEW_ALL_ARTICLES',
     'UPDATE_OWN_ARTICLE',
     'UPDATE_ANY_ARTICLE',
     'DELETE_OWN_ARTICLE',
@@ -54,6 +56,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   
   EDITOR: [
     // Editorial workflow permissions
+    'VIEW_ALL_ARTICLES',
     'UPDATE_ANY_ARTICLE',
     'PUBLISH_ARTICLE',
     'REVIEW_ARTICLES',
@@ -112,7 +115,7 @@ export function getAccessibleFeatures(userRole: UserRole) {
   return {
     // Dashboard sections
     canViewDashboard: true, // All roles can view their respective dashboards
-    canViewArticles: hasAnyPermission(userRole, ['CREATE_ARTICLE', 'UPDATE_ANY_ARTICLE', 'REVIEW_ARTICLES']),
+    canViewArticles: hasAnyPermission(userRole, ['CREATE_ARTICLE', 'VIEW_ALL_ARTICLES', 'REVIEW_ARTICLES']),
     canViewReviewQueue: hasPermission(userRole, 'REVIEW_ARTICLES'),
     canViewCategories: hasPermission(userRole, 'VIEW_CATEGORIES'),
     canViewMedia: hasPermission(userRole, 'VIEW_MEDIA'),
