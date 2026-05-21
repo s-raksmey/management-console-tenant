@@ -12,6 +12,7 @@ export type CarouselSlide = {
   linkUrl?: string | null;
   ctaLabel?: string | null;
   ctaLabelKhmer?: string | null;
+  size: "WIDE" | "STANDARD";
   sortOrder: number;
   isActive: boolean;
   createdAt: string;
@@ -35,6 +36,7 @@ export type CarouselSlideInput = {
   linkUrl?: string | null;
   ctaLabel?: string | null;
   ctaLabelKhmer?: string | null;
+  size?: "WIDE" | "STANDARD";
   sortOrder?: number;
   isActive?: boolean;
 };
@@ -52,6 +54,7 @@ export const CAROUSEL_SLIDE_FIELDS = /* GraphQL */ `
   linkUrl
   ctaLabel
   ctaLabelKhmer
+  size
   sortOrder
   isActive
   createdAt

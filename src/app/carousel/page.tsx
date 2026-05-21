@@ -251,6 +251,9 @@ export default function CarouselListPage() {
                       </Badge>
                       <Badge variant="outline">Order {slide.sortOrder}</Badge>
                       <Badge variant="outline">
+                        {slide.size === "STANDARD" ? "Standard" : "Wide"}
+                      </Badge>
+                      <Badge variant="outline">
                         {slide.placement === "HOME"
                           ? "Homepage"
                           : slide.placement === "CATEGORY"

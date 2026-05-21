@@ -45,6 +45,7 @@ export type SlideForm = {
   linkUrl: string;
   ctaLabel: string;
   ctaLabelKhmer: string;
+  size: "WIDE" | "STANDARD";
   sortOrder: string;
   isActive: boolean;
 };
@@ -61,6 +62,7 @@ const emptyForm: SlideForm = {
   linkUrl: "",
   ctaLabel: "",
   ctaLabelKhmer: "",
+  size: "WIDE",
   sortOrder: "0",
   isActive: true,
 };
@@ -80,6 +82,7 @@ function toForm(slide?: CarouselSlide | null): SlideForm {
     linkUrl: slide.linkUrl ?? "",
     ctaLabel: slide.ctaLabel ?? "",
     ctaLabelKhmer: slide.ctaLabelKhmer ?? "",
+    size: slide.size ?? "WIDE",
     sortOrder: String(slide.sortOrder),
     isActive: slide.isActive,
   };
@@ -100,6 +103,7 @@ function toInput(form: SlideForm): CarouselSlideInput {
     linkUrl: form.linkUrl.trim() || null,
     ctaLabel: form.ctaLabel.trim() || null,
     ctaLabelKhmer: form.ctaLabelKhmer.trim() || null,
+    size: form.size,
     sortOrder: Number.parseInt(form.sortOrder, 10) || 0,
     isActive: form.isActive,
   };
@@ -491,6 +495,27 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
+                <Label htmlFor="size">Display Size</Label>
+                <select
+                  id="size"
+                  value={form.size}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      size: event.target.value as SlideForm["size"],
+                    }))
+                  }
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                >
+                  <option value="WIDE">Wide hero</option>
+                  <option value="STANDARD">Standard banner</option>
+                </select>
+                <p className="text-xs text-slate-500">
+                  Wide spans the page. Standard keeps the carousel inside a contained banner.
+                </p>
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="link-url">Link URL</Label>
                 <Input
                   id="link-url"
@@ -594,7 +619,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 </Button>
               </div>
               <p className="text-xs text-slate-500">
-                Recommended size: 1920x720 or wider. Uploaded files are stored
+                Recommended image: 1920x720 for wide, 1200x520 for standard. Uploaded files are stored
                 in /uploads/carousel.
               </p>
             </div>
@@ -645,16 +670,26 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="relative overflow-hidden rounded-lg bg-slate-950">
+            <div
+              className={`relative overflow-hidden bg-slate-950 ${
+                form.size === "STANDARD" ? "rounded-xl" : "rounded-lg"
+              }`}
+            >
               {hasImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={form.imageUrl}
                   alt={previewTitle}
-                  className="h-64 w-full object-cover"
+                  className={`w-full object-cover ${
+                    form.size === "STANDARD" ? "h-48" : "h-64"
+                  }`}
                 />
               ) : (
-                <div className="flex h-64 items-center justify-center bg-slate-100">
+                <div
+                  className={`flex items-center justify-center bg-slate-100 ${
+                    form.size === "STANDARD" ? "h-48" : "h-64"
+                  }`}
+                >
                   <ImageIcon className="h-10 w-10 text-slate-400" />
                 </div>
               )}
@@ -663,7 +698,11 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-red-200">
                   Pulse News
                 </p>
-                <h2 className="line-clamp-2 text-2xl font-black">
+                <h2
+                  className={`line-clamp-2 font-black ${
+                    form.size === "STANDARD" ? "text-xl" : "text-2xl"
+                  }`}
+                >
                   {previewTitle}
                 </h2>
                 <p className="mt-2 line-clamp-2 text-sm text-white/80">

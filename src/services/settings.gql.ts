@@ -265,7 +265,7 @@ export function getSettingInputType(key: string, value: any): 'text' | 'number' 
     return 'color';
   }
   
-  if (key.includes('description') || key.includes('message') || key.includes('css')) {
+  if (key.includes('description') || key.includes('message') || key.includes('css') || key.includes('tweakcn')) {
     return 'textarea';
   }
   

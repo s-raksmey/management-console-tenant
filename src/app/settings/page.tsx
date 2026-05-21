@@ -35,6 +35,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { Permission } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
+import {
+  applyTweakCnTheme,
+  getThemeSettingKeyForRole,
+  notifyThemeSettingsChanged,
+} from "@/lib/tweakcn-theme";
 
 const CATEGORY_ICONS = {
   [SettingType.SITE]: Globe2,
@@ -48,6 +53,12 @@ const CATEGORY_ICONS = {
 };
 
 const HIDDEN_SETTING_KEYS = new Set(["site.name"]);
+const ROLE_THEME_SETTING_KEYS = new Set([
+  "theme.super_admin_tweakcn",
+  "theme.admin_tweakcn",
+  "theme.editor_tweakcn",
+  "theme.author_tweakcn",
+]);
 
 function getCategoryShortLabel(type: SettingType) {
   if (type === SettingType.USER_MANAGEMENT) return "Users";
@@ -117,6 +128,13 @@ export default function SettingsPage() {
       ),
     );
 
+    if (ROLE_THEME_SETTING_KEYS.has(input.key)) {
+      if (input.key === getThemeSettingKeyForRole(userRole)) {
+        applyTweakCnTheme(input.value);
+      }
+      notifyThemeSettingsChanged();
+    }
+
     if (
       [
         "site.description",
@@ -140,6 +158,14 @@ export default function SettingsPage() {
           : setting,
       ),
     );
+
+    if (ROLE_THEME_SETTING_KEYS.has(key)) {
+      const resetValue = (response as any).resetSetting?.value;
+      if (key === getThemeSettingKeyForRole(userRole)) {
+        applyTweakCnTheme(resetValue);
+      }
+      notifyThemeSettingsChanged();
+    }
 
     if (
       [
@@ -166,6 +192,7 @@ export default function SettingsPage() {
           SettingType.SITE,
           SettingType.EMAIL,
           SettingType.API,
+          SettingType.THEME,
           SettingType.MAINTENANCE,
         ].includes(key as SettingType);
       }),

@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext"
 import { TenantProvider } from "@/contexts/TenantContext"
 import { ToastProvider } from "@/contexts/ToastContext"
 import { ClientLayoutWrapper } from "@/components/layout/client-layout-wrapper"
+import { ThemeRuntime } from "@/components/theme/theme-runtime"
 
 export const metadata: Metadata = {
   title: "Management Console",
@@ -28,6 +29,7 @@ export default async function RootLayout({
         <AuthProvider>
           <TenantProvider>
             <ToastProvider>
+              <ThemeRuntime />
               <ClientLayoutWrapper>
                 {children}
               </ClientLayoutWrapper>
