@@ -117,16 +117,16 @@ export default function SuperAdminDashboard() {
   ];
 
   return (
-    <main className="space-y-6 p-6">
+    <main className="min-h-screen space-y-6 bg-slate-50 p-6 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase text-blue-600">
             Management Console
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-slate-950">
+          <h1 className="mt-2 text-3xl font-bold text-slate-950 dark:text-slate-100">
             System Dashboard
           </h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             Monitor tenant websites, platform users, system logs, and settings.
           </p>
         </div>
@@ -174,7 +174,7 @@ export default function SuperAdminDashboard() {
             <CardTitle className="text-3xl">{recentAuditCount}</CardTitle>
           </CardHeader>
           <CardContent>
-            <Activity className="h-5 w-5 text-slate-600" />
+          <Activity className="h-5 w-5 text-slate-600 dark:text-slate-300" />
           </CardContent>
         </Card>
       </div>
@@ -187,13 +187,13 @@ export default function SuperAdminDashboard() {
             <Link
               key={action.href}
               href={action.href}
-              className="rounded-lg border bg-white p-4 transition-colors hover:border-blue-300 hover:bg-blue-50"
+              className="rounded-lg border border-slate-200 bg-white p-4 transition-colors hover:border-blue-300 hover:bg-blue-50 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500/60 dark:hover:bg-slate-800"
             >
               <Icon className="h-5 w-5 text-blue-600" />
-              <h2 className="mt-3 font-semibold text-slate-950">
+              <h2 className="mt-3 font-semibold text-slate-950 dark:text-slate-100">
                 {action.title}
               </h2>
-              <p className="mt-1 text-sm text-slate-600">
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                 {action.description}
               </p>
             </Link>
@@ -211,12 +211,12 @@ export default function SuperAdminDashboard() {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center py-8 text-slate-500">
+            <div className="flex items-center py-8 text-slate-500 dark:text-slate-400">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Loading tenants...
             </div>
           ) : (
-            <div className="divide-y rounded-md border">
+            <div className="divide-y divide-slate-200 rounded-md border border-slate-200 dark:divide-slate-700 dark:border-slate-700">
               {tenants.slice(0, 5).map((tenant) => (
                 <div
                   key={tenant.id}
@@ -224,12 +224,12 @@ export default function SuperAdminDashboard() {
                 >
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="font-semibold text-slate-950">
+                      <h2 className="font-semibold text-slate-950 dark:text-slate-100">
                         {tenant.name}
                       </h2>
                       <Badge variant="outline">{tenant.status}</Badge>
                     </div>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                       /{tenant.slug}
                     </p>
                   </div>
@@ -239,7 +239,7 @@ export default function SuperAdminDashboard() {
                 </div>
               ))}
               {tenants.length === 0 && (
-                <div className="p-6 text-center text-sm text-slate-500">
+                <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
                   No tenants have been created yet.
                 </div>
               )}
@@ -257,31 +257,31 @@ export default function SuperAdminDashboard() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center py-8 text-slate-500">
+              <div className="flex items-center py-8 text-slate-500 dark:text-slate-400">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Loading logs...
               </div>
             ) : auditLogs.length === 0 ? (
-              <div className="rounded-md border border-dashed p-6 text-center text-sm text-slate-500">
+              <div className="rounded-md border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
                 No audit logs found.
               </div>
             ) : (
               <div className="space-y-3">
                 {auditLogs.map((log) => (
-                  <div key={log.id} className="rounded-md border p-3">
+                  <div key={log.id} className="rounded-md border border-slate-200 p-3 dark:border-slate-700 dark:bg-slate-900/60">
                     <div className="flex items-center justify-between gap-3">
                       <Badge variant={log.success ? "outline" : "destructive"}>
                         {log.action.replace(/_/g, " ")}
                       </Badge>
-                      <span className="flex items-center text-xs text-slate-500">
+                      <span className="flex items-center text-xs text-slate-500 dark:text-slate-400">
                         <Clock className="mr-1 h-3 w-3" />
                         {new Date(log.createdAt).toLocaleDateString()}
                       </span>
                     </div>
-                    <p className="mt-2 text-sm font-medium text-slate-900">
+                    <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
                       {log.resourceName || log.resourceType || "System Event"}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                       {log.userEmail || "System"}
                     </p>
                   </div>

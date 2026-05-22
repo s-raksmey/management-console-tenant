@@ -52,15 +52,15 @@ function KpiCard({
   icon: React.ElementType;
 }) {
   return (
-    <Card className="border-slate-200 shadow-sm">
+    <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-            <p className="mt-2 text-3xl font-bold text-slate-950">{value}</p>
-            <p className="mt-1 text-sm text-slate-600">{helper}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+            <p className="mt-2 text-3xl font-bold text-slate-950 dark:text-slate-100">{value}</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{helper}</p>
           </div>
-          <div className="rounded-md bg-blue-50 p-2 text-blue-600">
+          <div className="rounded-md bg-blue-50 p-2 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
             <Icon className="h-5 w-5" />
           </div>
         </div>
@@ -115,14 +115,14 @@ export const AuthorDashboard: React.FC = () => {
   const goalPercent = monthlyGoal > 0 ? Math.min((monthlyProgress / monthlyGoal) * 100, 100) : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <div className="mx-auto max-w-7xl space-y-6 p-6">
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Author Workspace</p>
-              <h1 className="mt-1 text-3xl font-bold text-slate-950">Dashboard</h1>
-              <p className="mt-1 text-slate-600">Track your drafts, submissions, and published articles.</p>
+              <h1 className="mt-1 text-3xl font-bold text-slate-950 dark:text-slate-100">Dashboard</h1>
+              <p className="mt-1 text-slate-600 dark:text-slate-400">Track your drafts, submissions, and published articles.</p>
             </div>
             <div className="flex flex-wrap gap-3">
               <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
@@ -155,8 +155,8 @@ export const AuthorDashboard: React.FC = () => {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="border-b border-slate-200">
+          <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <CardHeader className="border-b border-slate-200 dark:border-slate-700">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <CardTitle>Recent Articles</CardTitle>
@@ -177,8 +177,8 @@ export const AuthorDashboard: React.FC = () => {
               ) : articles.length === 0 ? (
                 <div className="p-10 text-center">
                   <FileText className="mx-auto h-10 w-10 text-slate-300" />
-                  <p className="mt-3 font-semibold text-slate-950">No articles yet</p>
-                  <p className="mt-1 text-sm text-slate-600">Create your first draft to get started.</p>
+                  <p className="mt-3 font-semibold text-slate-950 dark:text-slate-100">No articles yet</p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">Create your first draft to get started.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-200">
@@ -209,7 +209,7 @@ export const AuthorDashboard: React.FC = () => {
           </Card>
 
           <div className="space-y-6">
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <CardHeader>
                 <CardTitle>Monthly Goal</CardTitle>
                 <CardDescription>Articles created this month.</CardDescription>
@@ -228,7 +228,7 @@ export const AuthorDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <CardHeader>
                 <CardTitle>Performance</CardTitle>
                 <CardDescription>Simple writing metrics.</CardDescription>
@@ -249,7 +249,7 @@ export const AuthorDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-blue-600" />

@@ -54,10 +54,10 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
             {Array.from({ length: 3 }).map((_, i) => (
               <div key={i} className="animate-pulse">
                 <div className="flex items-start space-x-3">
-                  <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+                  <div className="h-8 w-8 bg-gray-200 rounded-full dark:bg-slate-700"></div>
                   <div className="flex-1 space-y-2">
-                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4 dark:bg-slate-700"></div>
+                    <div className="h-3 bg-gray-200 rounded w-1/2 dark:bg-slate-700"></div>
                   </div>
                 </div>
               </div>
@@ -83,23 +83,23 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
 
   const getActivityColor = (type: string): string => {
     switch (type) {
-      case 'create': return 'bg-green-100 text-green-800';
-      case 'update': return 'bg-blue-100 text-blue-800';
-      case 'delete': return 'bg-red-100 text-red-800';
-      case 'approve': return 'bg-green-100 text-green-800';
-      case 'reject': return 'bg-red-100 text-red-800';
-      case 'publish': return 'bg-purple-100 text-purple-800';
-      case 'feature': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'create': return 'bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300';
+      case 'update': return 'bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-300';
+      case 'delete': return 'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300';
+      case 'approve': return 'bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300';
+      case 'reject': return 'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300';
+      case 'publish': return 'bg-purple-100 text-purple-800 dark:bg-purple-500/15 dark:text-purple-300';
+      case 'feature': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/15 dark:text-yellow-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200';
     }
   };
 
   const getPriorityColor = (priority?: string): string => {
     switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'high': return 'bg-red-100 text-red-800 dark:bg-red-500/15 dark:text-red-300';
+      case 'medium': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-500/15 dark:text-yellow-300';
+      case 'low': return 'bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-200';
     }
   };
 
@@ -120,13 +120,13 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
     <Card className={cn("", className)}>
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-semibold text-gray-900">
+          <CardTitle className="text-lg font-semibold text-gray-900 dark:text-slate-100">
             {title}
           </CardTitle>
           {showViewAll && activities.length > maxItems && (
             <button
               onClick={onViewAll}
-              className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium dark:text-blue-300 dark:hover:text-blue-200"
             >
               View all
             </button>
@@ -136,7 +136,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
       
       <CardContent className="pt-0">
         {displayActivities.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center py-8 text-gray-500 dark:text-slate-400">
             <p>No recent activity</p>
           </div>
         ) : (
@@ -145,7 +145,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
               <div key={activity.id} className="relative">
                 {/* Timeline line */}
                 {index < displayActivities.length - 1 && (
-                  <div className="absolute left-4 top-8 w-px h-6 bg-gray-200"></div>
+                  <div className="absolute left-4 top-8 w-px h-6 bg-gray-200 dark:bg-slate-700"></div>
                 )}
                 
                 <div className="flex items-start space-x-3">
@@ -161,11 +161,11 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-gray-900 truncate dark:text-slate-100">
                           {activity.title}
                         </p>
                         {activity.description && (
-                          <p className="text-sm text-gray-600 mt-1">
+                          <p className="text-sm text-gray-600 mt-1 dark:text-slate-300">
                             {activity.description}
                           </p>
                         )}
@@ -173,7 +173,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                         {/* Metadata */}
                         <div className="flex items-center space-x-2 mt-2">
                           {activity.user && (
-                            <span className="text-xs text-gray-500">
+                            <span className="text-xs text-gray-500 dark:text-slate-400">
                               by {activity.user.name}
                             </span>
                           )}
@@ -192,7 +192,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                         </div>
                       </div>
                       
-                      <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                      <span className="text-xs text-gray-500 flex-shrink-0 ml-2 dark:text-slate-400">
                         {formatTimeAgo(activity.timestamp)}
                       </span>
                     </div>
@@ -206,4 +206,3 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
     </Card>
   );
 };
-

@@ -22,6 +22,7 @@ export interface Setting {
   description?: string | null;
   isPublic: boolean;
   isRequired: boolean;
+  validation?: SettingValidationRule | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -76,11 +77,11 @@ export interface SettingFormProps {
 
 // Validation schema types
 export interface SettingValidationRule {
-  type: 'string' | 'number' | 'boolean' | 'email' | 'url' | 'array' | 'object';
+  type: 'string' | 'number' | 'boolean' | 'email' | 'url' | 'json' | 'array' | 'object';
   required?: boolean;
   min?: number;
   max?: number;
-  pattern?: RegExp;
+  pattern?: string | RegExp;
   options?: string[];
   message?: string;
 }

@@ -36,8 +36,6 @@ import { useTenant } from "@/contexts/TenantContext";
 import { Permission } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import {
-  applyTweakCnTheme,
-  getThemeSettingKeyForRole,
   notifyThemeSettingsChanged,
 } from "@/lib/tweakcn-theme";
 
@@ -58,6 +56,10 @@ const ROLE_THEME_SETTING_KEYS = new Set([
   "theme.admin_tweakcn",
   "theme.editor_tweakcn",
   "theme.author_tweakcn",
+  "theme.public_tweakcn",
+  "theme.primary_color",
+  "theme.secondary_color",
+  "theme.custom_css",
 ]);
 
 function getCategoryShortLabel(type: SettingType) {
@@ -129,9 +131,6 @@ export default function SettingsPage() {
     );
 
     if (ROLE_THEME_SETTING_KEYS.has(input.key)) {
-      if (input.key === getThemeSettingKeyForRole(userRole)) {
-        applyTweakCnTheme(input.value);
-      }
       notifyThemeSettingsChanged();
     }
 
@@ -160,10 +159,6 @@ export default function SettingsPage() {
     );
 
     if (ROLE_THEME_SETTING_KEYS.has(key)) {
-      const resetValue = (response as any).resetSetting?.value;
-      if (key === getThemeSettingKeyForRole(userRole)) {
-        applyTweakCnTheme(resetValue);
-      }
       notifyThemeSettingsChanged();
     }
 

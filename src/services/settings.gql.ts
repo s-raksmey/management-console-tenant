@@ -15,6 +15,7 @@ export const Q_SETTINGS = gql`
       description
       isPublic
       isRequired
+      validation
       createdAt
       updatedAt
     }
@@ -32,6 +33,7 @@ export const Q_SETTING = gql`
       description
       isPublic
       isRequired
+      validation
       createdAt
       updatedAt
     }
@@ -49,6 +51,7 @@ export const Q_PUBLIC_SETTINGS = gql`
       description
       isPublic
       isRequired
+      validation
       createdAt
       updatedAt
     }
@@ -70,6 +73,7 @@ export const M_UPDATE_SETTING = gql`
       description
       isPublic
       isRequired
+      validation
       createdAt
       updatedAt
     }
@@ -87,6 +91,7 @@ export const M_UPDATE_SETTINGS = gql`
       description
       isPublic
       isRequired
+      validation
       createdAt
       updatedAt
     }
@@ -104,6 +109,7 @@ export const M_RESET_SETTING = gql`
       description
       isPublic
       isRequired
+      validation
       createdAt
       updatedAt
     }
@@ -134,6 +140,14 @@ export interface Setting {
   description?: string | null;
   isPublic: boolean;
   isRequired: boolean;
+  validation?: {
+    type: 'string' | 'number' | 'boolean' | 'email' | 'url' | 'json' | 'array';
+    required?: boolean;
+    min?: number;
+    max?: number;
+    pattern?: string;
+    options?: string[];
+  } | null;
   createdAt: string;
   updatedAt: string;
 }

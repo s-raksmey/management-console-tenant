@@ -317,10 +317,10 @@ export const AdminDashboard: React.FC = () => {
   // Show loading state while permissions are being determined
   if (permissionsLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center dark:bg-slate-950">
         <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-600" />
-          <p className="text-gray-600">Loading dashboard...</p>
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-600 dark:text-slate-300" />
+          <p className="text-gray-600 dark:text-slate-400">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -341,16 +341,16 @@ export const AdminDashboard: React.FC = () => {
 
   // Admin Dashboard Layout
   const renderAdminDashboard = () => (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         {/* Admin Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
               <Shield className="h-6 w-6 text-red-600" />
               {tenantName} Dashboard
             </h1>
-            <p className="text-gray-600 text-sm">
+            <p className="text-gray-600 dark:text-slate-400 text-sm">
               Manage content, users, settings, and public website configuration
             </p>
           </div>
@@ -403,70 +403,70 @@ export const AdminDashboard: React.FC = () => {
           ) : (
             <>
               {/* System Health */}
-              <Card className="hover:shadow-md transition-shadow border-green-200">
+              <Card className="border-green-200/70 hover:border-green-300 hover:shadow-md transition-shadow dark:border-slate-700 dark:bg-slate-900 dark:hover:border-green-500/50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-2 bg-green-100 rounded-lg">
+                    <div className="p-2 bg-green-100 rounded-lg dark:bg-green-500/15">
                       <Server className="h-5 w-5 text-green-600" />
                     </div>
-                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                    <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 dark:bg-green-500/15 dark:text-green-300">
                       {systemHealth?.uptime.toFixed(1) || 99.9}%
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                       {systemHealth?.responseTime || 45}ms
                     </p>
-                    <p className="text-sm text-gray-600">Response Time</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">Response Time</p>
                   </div>
                 </CardContent>
               </Card>
 
               {/* User Management */}
-              <Card className="hover:shadow-md transition-shadow border-blue-200">
+              <Card className="border-blue-200/70 hover:border-blue-300 hover:shadow-md transition-shadow dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500/50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-2 bg-blue-100 rounded-lg">
+                    <div className="p-2 bg-blue-100 rounded-lg dark:bg-blue-500/15">
                       <Users className="h-5 w-5 text-blue-600" />
                     </div>
-                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
+                    <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800 dark:bg-blue-500/15 dark:text-blue-300">
                       +{dashboardStats?.userGrowth || 0}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                       {dashboardStats?.totalUsers?.toLocaleString() || 0}
                     </p>
-                    <p className="text-sm text-gray-600">Total Users</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">Total Users</p>
                   </div>
                 </CardContent>
               </Card>
 
               {/* Platform Analytics */}
-              <Card className="hover:shadow-md transition-shadow border-purple-200">
+              <Card className="border-purple-200/70 hover:border-purple-300 hover:shadow-md transition-shadow dark:border-slate-700 dark:bg-slate-900 dark:hover:border-purple-500/50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-2 bg-purple-100 rounded-lg">
+                    <div className="p-2 bg-purple-100 rounded-lg dark:bg-purple-500/15">
                       <BarChart3 className="h-5 w-5 text-purple-600" />
                     </div>
-                    <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
+                    <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800 dark:bg-purple-500/15 dark:text-purple-300">
                       {dashboardStats?.approvalRate || 0}%
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                       {dashboardStats?.totalArticles?.toLocaleString() || 0}
                     </p>
-                    <p className="text-sm text-gray-600">Published Articles</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">Published Articles</p>
                   </div>
                 </CardContent>
               </Card>
 
               {/* System Activity */}
-              <Card className="hover:shadow-md transition-shadow border-orange-200">
+              <Card className="border-orange-200/70 hover:border-orange-300 hover:shadow-md transition-shadow dark:border-slate-700 dark:bg-slate-900 dark:hover:border-orange-500/50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="p-2 bg-orange-100 rounded-lg">
+                    <div className="p-2 bg-orange-100 rounded-lg dark:bg-orange-500/15">
                       <Activity className="h-5 w-5 text-orange-600" />
                     </div>
                     <Badge 
@@ -477,10 +477,10 @@ export const AdminDashboard: React.FC = () => {
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900">
+                    <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                       {systemHealth?.activeConnections?.toLocaleString() || 0}
                     </p>
-                    <p className="text-sm text-gray-600">Active Connections</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">Active Connections</p>
                   </div>
                 </CardContent>
               </Card>
@@ -524,10 +524,10 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-red-50 rounded-lg border border-red-100">
+                    <div className="text-center p-4 bg-red-50 rounded-lg border border-red-100 dark:border-red-500/20 dark:bg-red-500/10">
                       <Shield className="h-8 w-8 mx-auto mb-2 text-red-600" />
-                      <p className="text-xl font-bold text-red-900">{userStats.usersByRole.admin}</p>
-                      <p className="text-xs text-red-700">Admins</p>
+                      <p className="text-xl font-bold text-red-900 dark:text-red-300">{userStats.usersByRole.admin}</p>
+                      <p className="text-xs text-red-700 dark:text-red-300">Admins</p>
                       {hasPermission(Permission.MANAGE_USER_ROLES) && (
                         <Button size="sm" variant="ghost" className="mt-2 text-xs">
                           <Lock className="h-3 w-3 mr-1" />
@@ -535,10 +535,10 @@ export const AdminDashboard: React.FC = () => {
                         </Button>
                       )}
                     </div>
-                    <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-100">
+                    <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-100 dark:border-blue-500/20 dark:bg-blue-500/10">
                       <CheckCircle className="h-8 w-8 mx-auto mb-2 text-blue-600" />
-                      <p className="text-xl font-bold text-blue-900">{userStats.usersByRole.editor}</p>
-                      <p className="text-xs text-blue-700">Editors</p>
+                      <p className="text-xl font-bold text-blue-900 dark:text-blue-300">{userStats.usersByRole.editor}</p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">Editors</p>
                       {hasPermission(Permission.MANAGE_USER_ROLES) && (
                         <Button size="sm" variant="ghost" className="mt-2 text-xs">
                           <FileEdit className="h-3 w-3 mr-1" />
@@ -546,10 +546,10 @@ export const AdminDashboard: React.FC = () => {
                         </Button>
                       )}
                     </div>
-                    <div className="text-center p-4 bg-green-50 rounded-lg border border-green-100">
+                    <div className="text-center p-4 bg-green-50 rounded-lg border border-green-100 dark:border-green-500/20 dark:bg-green-500/10">
                       <FileText className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                      <p className="text-xl font-bold text-green-900">{userStats.usersByRole.author}</p>
-                      <p className="text-xs text-green-700">Authors</p>
+                      <p className="text-xl font-bold text-green-900 dark:text-green-300">{userStats.usersByRole.author}</p>
+                      <p className="text-xs text-green-700 dark:text-green-300">Authors</p>
                       {hasPermission(Permission.MANAGE_USER_ROLES) && (
                         <Button size="sm" variant="ghost" className="mt-2 text-xs">
                           <Newspaper className="h-3 w-3 mr-1" />
@@ -573,12 +573,12 @@ export const AdminDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <div className="text-center p-4 bg-green-50 rounded-lg border border-green-100 dark:border-green-500/20 dark:bg-green-500/10">
                     <Globe className="h-6 w-6 mx-auto mb-2 text-green-600" />
-                    <p className="text-lg font-bold text-green-900">
+                    <p className="text-lg font-bold text-green-900 dark:text-green-300">
                       {dashboardStats?.publishedArticles || 0}
                     </p>
-                    <p className="text-xs text-green-700">Published</p>
+                    <p className="text-xs text-green-700 dark:text-green-300">Published</p>
                     {hasPermission(Permission.PUBLISH_ARTICLE) && (
                       <Button size="sm" variant="ghost" className="mt-1 text-xs">
                         <Eye className="h-3 w-3 mr-1" />
@@ -586,12 +586,12 @@ export const AdminDashboard: React.FC = () => {
                       </Button>
                     )}
                   </div>
-                  <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                  <div className="text-center p-4 bg-yellow-50 rounded-lg border border-yellow-100 dark:border-amber-500/20 dark:bg-amber-500/10">
                     <Clock className="h-6 w-6 mx-auto mb-2 text-yellow-600" />
-                    <p className="text-lg font-bold text-yellow-900">
+                    <p className="text-lg font-bold text-yellow-900 dark:text-amber-300">
                       {dashboardStats?.pendingReviews || 0}
                     </p>
-                    <p className="text-xs text-yellow-700">Pending Review</p>
+                    <p className="text-xs text-yellow-700 dark:text-amber-300">Pending Review</p>
                     {hasPermission(Permission.REVIEW_ARTICLES) && (
                       <Button size="sm" variant="ghost" className="mt-1 text-xs">
                         <CheckCircle className="h-3 w-3 mr-1" />
@@ -599,12 +599,12 @@ export const AdminDashboard: React.FC = () => {
                       </Button>
                     )}
                   </div>
-                  <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-center p-4 bg-gray-50 rounded-lg border border-gray-100 dark:border-slate-700 dark:bg-slate-800/70">
                     <FileText className="h-6 w-6 mx-auto mb-2 text-gray-600" />
-                    <p className="text-lg font-bold text-gray-900">
+                    <p className="text-lg font-bold text-gray-900 dark:text-slate-100">
                       {dashboardStats?.draftArticles || 0}
                     </p>
-                    <p className="text-xs text-gray-700">Drafts</p>
+                    <p className="text-xs text-gray-700 dark:text-slate-300">Drafts</p>
                     {hasPermission(Permission.UPDATE_ANY_ARTICLE) && (
                       <Button size="sm" variant="ghost" className="mt-1 text-xs">
                         <FileEdit className="h-3 w-3 mr-1" />
@@ -612,12 +612,12 @@ export const AdminDashboard: React.FC = () => {
                       </Button>
                     )}
                   </div>
-                  <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-100 dark:border-blue-500/20 dark:bg-blue-500/10">
                     <Award className="h-6 w-6 mx-auto mb-2 text-blue-600" />
-                    <p className="text-lg font-bold text-blue-900">
+                    <p className="text-lg font-bold text-blue-900 dark:text-blue-300">
                       {dashboardStats?.approvalRate || 0}%
                     </p>
-                    <p className="text-xs text-blue-700">Approval Rate</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">Approval Rate</p>
                     {hasPermission(Permission.VIEW_AUDIT_LOGS) && (
                       <Button size="sm" variant="ghost" className="mt-1 text-xs">
                         <BarChart3 className="h-3 w-3 mr-1" />
@@ -646,9 +646,9 @@ export const AdminDashboard: React.FC = () => {
               <CardContent className="space-y-4">
                 {!systemHealth ? (
                   <div className="animate-pulse space-y-3">
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded"></div>
+                        <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded"></div>
                   </div>
                 ) : (
                   <>
@@ -679,7 +679,7 @@ export const AdminDashboard: React.FC = () => {
                         className="h-2"
                       />
                     </div>
-                    <div className="pt-2 border-t text-xs text-gray-500 space-y-1">
+                    <div className="pt-2 border-t text-xs text-gray-500 dark:text-slate-400 space-y-1">
                       <div className="flex justify-between">
                         <span>Response Time:</span>
                         <span>{systemHealth.responseTime}ms</span>
@@ -713,10 +713,10 @@ export const AdminDashboard: React.FC = () => {
                   <div className="space-y-3">
                     {Array.from({ length: 3 }).map((_, i) => (
                       <div key={i} className="animate-pulse flex items-center gap-3">
-                        <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
+                        <div className="h-8 w-8 bg-gray-200 dark:bg-slate-700 rounded-full"></div>
                         <div className="flex-1">
-                          <div className="h-3 bg-gray-200 rounded mb-1"></div>
-                          <div className="h-2 bg-gray-200 rounded w-2/3"></div>
+                          <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded mb-1"></div>
+                          <div className="h-2 bg-gray-200 dark:bg-slate-700 rounded w-2/3"></div>
                         </div>
                       </div>
                     ))}
@@ -725,17 +725,17 @@ export const AdminDashboard: React.FC = () => {
                   <div className="space-y-3">
                     {systemActivity.slice(0, 5).map((activity) => (
                       <div key={activity.id} className="flex items-start gap-3 text-sm">
-                        <div className="p-1 bg-red-100 rounded-full mt-0.5">
+                        <div className="p-1 bg-red-100 rounded-full mt-0.5 dark:bg-red-500/15">
                           <Activity className="h-3 w-3 text-red-600" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900 truncate">
+                          <p className="font-medium text-gray-900 dark:text-slate-100 truncate">
                             {activity.title}
                           </p>
-                          <p className="text-gray-600 text-xs">
+                          <p className="text-gray-600 dark:text-slate-400 text-xs">
                             {activity.description}
                           </p>
-                          <p className="text-gray-400 text-xs">
+                          <p className="text-gray-400 dark:text-slate-500 text-xs">
                             {new Date(activity.timestamp).toLocaleDateString()}
                           </p>
                         </div>
@@ -743,7 +743,7 @@ export const AdminDashboard: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500 text-center py-4">
+                  <p className="text-sm text-gray-500 dark:text-slate-400 text-center py-4">
                     No recent activity
                   </p>
                 )}
@@ -1303,13 +1303,13 @@ export const AdminDashboard: React.FC = () => {
 
   // Unauthorized Dashboard Layout
   const renderUnauthorizedDashboard = () => (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         <div className="text-center py-20">
-          <Lock className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You don't have permission to access this dashboard.</p>
-          <p className="text-gray-500 text-sm mt-2">Current role: {userRole || 'Unknown'}</p>
+          <Lock className="h-16 w-16 mx-auto mb-4 text-gray-400 dark:text-slate-500" />
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100 mb-2">Access Denied</h2>
+          <p className="text-gray-600 dark:text-slate-400">You don't have permission to access this dashboard.</p>
+          <p className="text-gray-500 dark:text-slate-500 text-sm mt-2">Current role: {userRole || 'Unknown'}</p>
         </div>
       </div>
     </div>

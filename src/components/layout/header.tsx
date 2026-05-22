@@ -49,6 +49,7 @@ import {
 } from "@/hooks/useNotifications";
 import { useVisibilityPolling } from "@/hooks/usePolling";
 import { formatDistanceToNow } from "date-fns";
+import { COLOR_SCHEME_CHANGED_EVENT } from "@/lib/tweakcn-theme";
 
 interface HeaderProps {
   onMobileNavOpen: (open: boolean) => void;
@@ -90,8 +91,11 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   } = useNotifications();
 
   const toggleDarkMode = () => {
-    setIsDarkMode(!isDarkMode);
-    // Here you would implement actual dark mode toggle logic
+    const nextIsDark = !isDarkMode;
+    document.documentElement.classList.toggle("dark", nextIsDark);
+    localStorage.setItem("pulse-news-color-scheme", nextIsDark ? "dark" : "light");
+    setIsDarkMode(nextIsDark);
+    window.dispatchEvent(new Event(COLOR_SCHEME_CHANGED_EVENT));
   };
 
   const handleLogout = () => {
@@ -345,6 +349,25 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   };
 
   useEffect(() => {
+    const savedScheme = localStorage.getItem("pulse-news-color-scheme");
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const applyScheme = () => {
+      const scheme = localStorage.getItem("pulse-news-color-scheme") || savedScheme || "system";
+      const nextIsDark =
+        scheme === "dark" || (scheme === "system" && systemPrefersDark.matches);
+
+      document.documentElement.classList.toggle("dark", nextIsDark);
+      setIsDarkMode(nextIsDark);
+      window.dispatchEvent(new Event(COLOR_SCHEME_CHANGED_EVENT));
+    };
+
+    applyScheme();
+    systemPrefersDark.addEventListener("change", applyScheme);
+    return () => systemPrefersDark.removeEventListener("change", applyScheme);
+  }, []);
+
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       const isCmdOrCtrl = event.metaKey || event.ctrlKey;
       if (isCmdOrCtrl && event.key.toLowerCase() === "k") {
@@ -587,22 +610,22 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-96 p-0 overflow-hidden"
+              className="w-96 overflow-hidden border-slate-200 bg-white p-0 text-slate-950 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
             >
-              <DropdownMenuLabel className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-800">
+              <DropdownMenuLabel className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Notifications
                 {unreadCount > 0 && (
-                  <Badge variant="secondary" className="text-xs">
+                  <Badge className="border border-blue-200 bg-blue-50 text-xs text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-200">
                     {unreadCount} new
                   </Badge>
                 )}
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
               <div className="max-h-72 overflow-y-auto">
                 {isNotificationsLoading && notifications.length === 0 ? (
-                  <div className="px-4 py-3 text-sm text-slate-500">
+                  <div className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
                     <div className="flex items-center gap-2">
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-500"></div>
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-500 dark:border-slate-700 dark:border-t-blue-300"></div>
                       <span>Loading notifications...</span>
                     </div>
                   </div>
@@ -610,10 +633,10 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                   notifications.map((notification) => (
                     <DropdownMenuItem
                       key={notification.id}
-                      className={`group flex items-start gap-3 px-4 py-3.5 cursor-pointer transition-colors ${
+                      className={`group flex cursor-pointer items-start gap-3 px-4 py-3.5 transition-colors focus:bg-transparent ${
                         notification.isRead
-                          ? "bg-white hover:bg-slate-50"
-                          : "bg-blue-50/60 hover:bg-blue-50"
+                          ? "bg-white hover:bg-slate-50 dark:bg-slate-900 dark:hover:bg-slate-800/80"
+                          : "bg-blue-50/70 hover:bg-blue-50 dark:bg-blue-500/10 dark:hover:bg-blue-500/15"
                       }`}
                       onClick={() =>
                         handleNotificationClick(
@@ -639,30 +662,30 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
 
                         return (
                           <>
-                            <div className="relative mt-0.5 flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm">
-                              <Icon className="h-4 w-4 text-slate-700" />
+                            <div className="relative mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800">
+                              <Icon className="h-4 w-4 text-slate-700 dark:text-slate-200" />
                               {!notification.isRead && (
-                                <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-white"></span>
+                                <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-blue-500 ring-2 ring-white dark:bg-blue-300 dark:ring-slate-900"></span>
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <div className="text-sm font-semibold text-slate-900 truncate">
+                                <div className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                                   {notification.title}
                                 </div>
-                                <span className="text-xs text-slate-500 ml-auto whitespace-nowrap">
+                                <span className="ml-auto whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
                                   {formatNotificationTime(
                                     notification.createdAt,
                                   )}
                                 </span>
                               </div>
                               {notification.message && (
-                                <p className="mt-1 text-xs text-slate-600 line-clamp-2">
+                                <p className="mt-1 line-clamp-2 text-xs text-slate-600 dark:text-slate-300">
                                   {notification.message}
                                 </p>
                               )}
-                              <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-500">
-                                <span className="text-blue-600 group-hover:text-blue-700">
+                              <div className="mt-2 flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                                <span className="text-blue-600 group-hover:text-blue-700 dark:text-sky-300 dark:group-hover:text-sky-200">
                                   {actionLabel}
                                 </span>
                                 {fromLabel && (
@@ -679,21 +702,21 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                   ))
                 ) : (
                   <div className="px-4 py-6 text-center">
-                    <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-2">
-                      <Bell className="h-5 w-5 text-slate-400" />
+                    <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
+                      <Bell className="h-5 w-5 text-slate-400 dark:text-slate-500" />
                     </div>
-                    <p className="text-sm font-medium text-slate-700 mb-1">
+                    <p className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">
                       No notifications
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
                       You are all caught up
                     </p>
                   </div>
                 )}
               </div>
-              <DropdownMenuSeparator />
+              <DropdownMenuSeparator className="bg-slate-100 dark:bg-slate-800" />
               <DropdownMenuItem
-                className="justify-center text-sm text-blue-600 cursor-pointer py-2.5"
+                className="cursor-pointer justify-center py-2.5 text-sm text-blue-600 hover:bg-blue-50 hover:text-blue-700 focus:bg-blue-50 focus:text-blue-700 disabled:text-slate-400 dark:text-sky-300 dark:hover:bg-sky-500/10 dark:hover:text-sky-200 dark:focus:bg-sky-500/10 dark:focus:text-sky-200 dark:disabled:text-slate-600"
                 onClick={handleMarkAllRead}
                 disabled={unreadCount === 0}
               >

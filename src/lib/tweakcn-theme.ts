@@ -7,6 +7,8 @@ const THEME_SETTING_BY_ROLE: Record<string, string> = {
 
 export const PUBLIC_THEME_SETTING_KEY = "theme.public_tweakcn";
 export const THEME_SETTINGS_CHANGED_EVENT = "pulse-news-theme-settings-changed";
+export const COLOR_SCHEME_CHANGED_EVENT = "pulse-news-color-scheme-changed";
+const THEME_CUSTOM_STYLE_ID = "pulse-news-runtime-theme";
 
 export const getThemeSettingKeyForRole = (role?: string | null) =>
   THEME_SETTING_BY_ROLE[role?.toUpperCase() || ""] || "theme.admin_tweakcn";
@@ -36,13 +38,47 @@ const ALLOWED_THEME_VARIABLES = new Set([
   "chart-3",
   "chart-4",
   "chart-5",
+  "sidebar",
+  "sidebar-foreground",
+  "sidebar-primary",
+  "sidebar-primary-foreground",
+  "sidebar-accent",
+  "sidebar-accent-foreground",
+  "sidebar-border",
+  "sidebar-ring",
+  "font-sans",
+  "font-serif",
+  "font-mono",
   "radius",
+  "shadow-x",
+  "shadow-y",
+  "shadow-blur",
+  "shadow-spread",
+  "shadow-opacity",
+  "shadow-color",
+  "shadow-2xs",
+  "shadow-xs",
+  "shadow-sm",
+  "shadow",
+  "shadow-md",
+  "shadow-lg",
+  "shadow-xl",
+  "shadow-2xl",
+  "tracking-normal",
+  "spacing",
 ]);
 
 export type ParsedTheme = {
   light: Record<string, string>;
   dark: Record<string, string>;
 };
+
+type ThemeSetting = {
+  key: string;
+  value: unknown;
+};
+
+let appliedVariables = new Set<string>();
 
 function normalizeThemeText(value: unknown): string {
   if (typeof value === "string") return value;
@@ -123,18 +159,125 @@ export function parseTweakCnTheme(value: unknown): ParsedTheme {
   }
 }
 
-export function applyTweakCnTheme(value: unknown, mode: "light" | "dark" = "light") {
+function hexToHslColor(value: unknown) {
+  if (typeof value !== "string") return null;
+  const hex = value.trim();
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex);
+  if (!match) return null;
+
+  const raw = match[1];
+  const r = parseInt(raw.slice(0, 2), 16) / 255;
+  const g = parseInt(raw.slice(2, 4), 16) / 255;
+  const b = parseInt(raw.slice(4, 6), 16) / 255;
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (max !== min) {
+    const delta = max - min;
+    s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+    switch (max) {
+      case r:
+        h = (g - b) / delta + (g < b ? 6 : 0);
+        break;
+      case g:
+        h = (b - r) / delta + 2;
+        break;
+      default:
+        h = (r - g) / delta + 4;
+        break;
+    }
+    h /= 6;
+  }
+
+  return `hsl(${Math.round(h * 360)} ${(s * 100).toFixed(1)}% ${(l * 100).toFixed(1)}%)`;
+}
+
+function getSettingValue(settings: ThemeSetting[], key: string) {
+  return settings.find((setting) => setting.key === key)?.value;
+}
+
+function valueToString(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function injectCustomCss(css: string) {
+  if (typeof document === "undefined") return;
+
+  let style = document.getElementById(THEME_CUSTOM_STYLE_ID);
+  if (!css) {
+    style?.remove();
+    return;
+  }
+
+  if (!style) {
+    style = document.createElement("style");
+    style.id = THEME_CUSTOM_STYLE_ID;
+    document.head.appendChild(style);
+  }
+
+  style.textContent = css;
+}
+
+export function applyTweakCnTheme(
+  value: unknown,
+  mode?: "light" | "dark",
+  overrides: Record<string, string> = {},
+) {
   if (typeof document === "undefined") return;
 
   const parsed = parseTweakCnTheme(value);
+  const resolvedMode =
+    mode || (document.documentElement.classList.contains("dark") ? "dark" : "light");
   const tokens = {
     ...parsed.light,
-    ...(mode === "dark" ? parsed.dark : {}),
+    ...(resolvedMode === "dark" ? parsed.dark : {}),
+    ...overrides,
   };
+
+  appliedVariables.forEach((key) => {
+    if (!(key in tokens)) {
+      document.documentElement.style.removeProperty(`--${key}`);
+    }
+  });
+  appliedVariables = new Set(Object.keys(tokens));
 
   Object.entries(tokens).forEach(([key, tokenValue]) => {
     document.documentElement.style.setProperty(`--${key}`, tokenValue);
   });
+
+  if (Object.keys(tokens).length > 0) {
+    document.documentElement.dataset.themeActive = "true";
+  } else {
+    delete document.documentElement.dataset.themeActive;
+  }
+}
+
+export function applyThemeSettings(
+  settings: ThemeSetting[],
+  role?: string | null,
+  mode?: "light" | "dark",
+) {
+  const themeKey = getThemeSettingKeyForRole(role);
+  const themeValue =
+    getSettingValue(settings, themeKey) ||
+    getSettingValue(settings, "theme.admin_tweakcn");
+  const parsedTheme = parseTweakCnTheme(themeValue);
+  const primary = hexToHslColor(getSettingValue(settings, "theme.primary_color"));
+  const secondary = hexToHslColor(getSettingValue(settings, "theme.secondary_color"));
+  const overrides: Record<string, string> = {};
+
+  if (primary && !parsedTheme.light.primary) {
+    overrides.primary = primary;
+  }
+  if (secondary && !parsedTheme.light.secondary) {
+    overrides.secondary = secondary;
+  }
+
+  applyTweakCnTheme(themeValue, mode, overrides);
+  injectCustomCss(valueToString(getSettingValue(settings, "theme.custom_css")));
 }
 
 export function notifyThemeSettingsChanged() {

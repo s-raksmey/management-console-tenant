@@ -60,15 +60,15 @@ function KpiCard({
   icon: React.ElementType;
 }) {
   return (
-    <Card className="border-slate-200 shadow-sm">
+    <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
-            <p className="mt-2 text-3xl font-bold text-slate-950">{value}</p>
-            <p className="mt-1 text-sm text-slate-600">{helper}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">{label}</p>
+            <p className="mt-2 text-3xl font-bold text-slate-950 dark:text-slate-100">{value}</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">{helper}</p>
           </div>
-          <div className="rounded-md bg-blue-50 p-2 text-blue-600">
+          <div className="rounded-md bg-blue-50 p-2 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300">
             <Icon className="h-5 w-5" />
           </div>
         </div>
@@ -208,14 +208,14 @@ export const EditorDashboard: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <div className="mx-auto max-w-7xl space-y-6 p-6">
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Editorial Workspace</p>
-              <h1 className="mt-1 text-3xl font-bold text-slate-950">Dashboard</h1>
-              <p className="mt-1 text-slate-600">Review submissions, publish approved content, and monitor editorial flow.</p>
+              <h1 className="mt-1 text-3xl font-bold text-slate-950 dark:text-slate-100">Dashboard</h1>
+              <p className="mt-1 text-slate-600 dark:text-slate-400">Review submissions, publish approved content, and monitor editorial flow.</p>
             </div>
             <div className="flex flex-wrap gap-3">
               <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
@@ -249,8 +249,8 @@ export const EditorDashboard: React.FC = () => {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-          <Card className="border-slate-200 shadow-sm">
-            <CardHeader className="border-b border-slate-200">
+          <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <CardHeader className="border-b border-slate-200 dark:border-slate-700">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <CardTitle>Review Queue</CardTitle>
@@ -277,8 +277,8 @@ export const EditorDashboard: React.FC = () => {
               ) : filteredArticles.length === 0 ? (
                 <div className="p-10 text-center">
                   <FileText className="mx-auto h-10 w-10 text-slate-300" />
-                  <p className="mt-3 font-semibold text-slate-950">No articles pending review</p>
-                  <p className="mt-1 text-sm text-slate-600">The queue is clear.</p>
+                  <p className="mt-3 font-semibold text-slate-950 dark:text-slate-100">No articles pending review</p>
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">The queue is clear.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-200">
@@ -324,7 +324,7 @@ export const EditorDashboard: React.FC = () => {
           </Card>
 
           <div className="space-y-6">
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <CardHeader>
                 <CardTitle>Editorial Metrics</CardTitle>
                 <CardDescription>Current workflow performance.</CardDescription>
@@ -345,7 +345,7 @@ export const EditorDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <CardHeader>
                 <CardTitle>Recent Decisions</CardTitle>
                 <CardDescription>Latest editorial activity.</CardDescription>
@@ -357,7 +357,7 @@ export const EditorDashboard: React.FC = () => {
                   <div className="space-y-4">
                     {recentActions.slice(0, 5).map((action) => (
                       <div key={action.id} className="flex gap-3">
-                        <div className="mt-1 rounded-md bg-slate-100 p-2 text-slate-600">
+                        <div className="mt-1 rounded-md bg-slate-100 p-2 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                           {action.type === 'approve' ? <CheckCircle className="h-4 w-4" /> : action.type === 'reject' ? <XCircle className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                         </div>
                         <div className="min-w-0">
@@ -371,7 +371,7 @@ export const EditorDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 shadow-sm">
+            <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-blue-600" />

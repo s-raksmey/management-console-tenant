@@ -3,11 +3,16 @@
 @tailwind utilities;
 
 :root {
-  --muted: 210 40% 96.1%;
-  --muted-foreground: 215.4 16.3% 46.9%;
-  --border: 214.3 31.8% 91.4%;
-  --primary: 221.2 83.2% 53.3%;
-  --primary-foreground: 210 40% 98%;
+  --muted: hsl(210 40% 96.1%);
+  --muted-foreground: hsl(215.4 16.3% 46.9%);
+  --border: hsl(214.3 31.8% 91.4%);
+  --primary: hsl(221.2 83.2% 53.3%);
+  --primary-foreground: hsl(210 40% 98%);
+  color-scheme: light;
+}
+
+.dark {
+  color-scheme: dark;
 }
 
 html,
@@ -16,7 +21,7 @@ body {
 }
 
 body {
-  font-family: var(--font-khmer-digital), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-khmer-digital), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   @apply bg-white text-slate-900 antialiased;
 }
 
@@ -80,57 +85,57 @@ html {
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --background: hsl(0 0% 100%);
+    --foreground: hsl(0 0% 3.9%);
+    --card: hsl(0 0% 100%);
+    --card-foreground: hsl(0 0% 3.9%);
+    --popover: hsl(0 0% 100%);
+    --popover-foreground: hsl(0 0% 3.9%);
+    --primary: hsl(0 0% 9%);
+    --primary-foreground: hsl(0 0% 98%);
+    --secondary: hsl(0 0% 96.1%);
+    --secondary-foreground: hsl(0 0% 9%);
+    --muted: hsl(0 0% 96.1%);
+    --muted-foreground: hsl(0 0% 45.1%);
+    --accent: hsl(0 0% 96.1%);
+    --accent-foreground: hsl(0 0% 9%);
+    --destructive: hsl(0 84.2% 60.2%);
+    --destructive-foreground: hsl(0 0% 98%);
+    --border: hsl(0 0% 89.8%);
+    --input: hsl(0 0% 89.8%);
+    --ring: hsl(0 0% 3.9%);
+    --chart-1: hsl(12 76% 61%);
+    --chart-2: hsl(173 58% 39%);
+    --chart-3: hsl(197 37% 24%);
+    --chart-4: hsl(43 74% 66%);
+    --chart-5: hsl(27 87% 67%);
     --radius: 0.5rem;
   }
   .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --background: hsl(0 0% 3.9%);
+    --foreground: hsl(0 0% 98%);
+    --card: hsl(0 0% 3.9%);
+    --card-foreground: hsl(0 0% 98%);
+    --popover: hsl(0 0% 3.9%);
+    --popover-foreground: hsl(0 0% 98%);
+    --primary: hsl(0 0% 98%);
+    --primary-foreground: hsl(0 0% 9%);
+    --secondary: hsl(0 0% 14.9%);
+    --secondary-foreground: hsl(0 0% 98%);
+    --muted: hsl(0 0% 14.9%);
+    --muted-foreground: hsl(0 0% 63.9%);
+    --accent: hsl(0 0% 14.9%);
+    --accent-foreground: hsl(0 0% 98%);
+    --destructive: hsl(0 62.8% 30.6%);
+    --destructive-foreground: hsl(0 0% 98%);
+    --border: hsl(0 0% 14.9%);
+    --input: hsl(0 0% 14.9%);
+    --ring: hsl(0 0% 83.1%);
+    --chart-1: hsl(220 70% 50%);
+    --chart-2: hsl(160 60% 45%);
+    --chart-3: hsl(30 80% 55%);
+    --chart-4: hsl(280 65% 60%);
+    --chart-5: hsl(340 75% 55%);
   }
 }
 
@@ -143,6 +148,165 @@ html {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Runtime theme bridge for older hard-coded Tailwind utility colors. */
+html:is([data-theme-active="true"], .dark) body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+html:is([data-theme-active="true"], .dark) :where(.bg-white) {
+  background-color: var(--card) !important;
+}
+
+html:is([data-theme-active="true"], .dark) :where(.bg-slate-50, .bg-slate-100, .bg-gray-50, .bg-gray-100, .bg-blue-50, .bg-indigo-50) {
+  background-color: var(--muted) !important;
+}
+
+html:is([data-theme-active="true"], .dark) :where(.bg-blue-600, .bg-indigo-600, .bg-blue-500, .bg-indigo-500) {
+  background-color: var(--primary) !important;
+  color: var(--primary-foreground) !important;
+}
+
+html:is([data-theme-active="true"], .dark) :where(.hover\:bg-blue-700:hover, .hover\:bg-indigo-700:hover, .hover\:bg-blue-600:hover, .hover\:bg-indigo-600:hover) {
+  background-color: var(--primary) !important;
+}
+
+html:is([data-theme-active="true"], .dark) :where(.text-blue-600, .text-blue-700, .text-indigo-600, .text-indigo-700) {
+  color: var(--primary) !important;
+}
+
+html:is([data-theme-active="true"], .dark) :where(.hover\:text-blue-700:hover, .hover\:text-indigo-700:hover, .hover\:text-blue-600:hover, .hover\:text-indigo-600:hover) {
+  color: var(--primary) !important;
+}
+
+html:is([data-theme-active="true"], .dark) :where(.text-slate-950, .text-slate-900, .text-gray-900) {
+  color: var(--foreground) !important;
+}
+
+html:is([data-theme-active="true"], .dark) :where(.text-slate-700, .text-slate-600, .text-slate-500, .text-gray-700, .text-gray-600, .text-gray-500) {
+  color: var(--muted-foreground) !important;
+}
+
+html:is([data-theme-active="true"], .dark) :where(.border-slate-100, .border-slate-200, .border-gray-100, .border-gray-200, .border-blue-200, .border-indigo-200) {
+  border-color: var(--border) !important;
+}
+
+html:is([data-theme-active="true"], .dark) :where(.ring-blue-100, .ring-indigo-100, .focus\:ring-blue-500:focus, .focus\:ring-indigo-500:focus) {
+  --tw-ring-color: var(--ring) !important;
+}
+
+html:is([data-theme-active="true"], .dark) :where(input, textarea, select) {
+  background-color: var(--card);
+  color: var(--foreground);
+  border-color: var(--border);
+}
+
+html:is([data-theme-active="true"], .dark) input::placeholder,
+html:is([data-theme-active="true"], .dark) textarea::placeholder {
+  color: var(--muted-foreground);
+}
+
+/* Dark mode safety layer for legacy light utility classes. */
+html.dark body {
+  background-color: #111827 !important;
+  color: #e5e7eb !important;
+}
+
+html.dark :where(.bg-white, .bg-white\/70, .bg-white\/80, .bg-white\/95, .bg-card, .bg-popover) {
+  background-color: #172033 !important;
+}
+
+html.dark :where(.bg-background, .bg-slate-50, .bg-slate-50\/70, .bg-slate-50\/80, .bg-slate-100, .bg-gray-50, .bg-gray-100, .bg-blue-50, .bg-indigo-50) {
+  background-color: #202b40 !important;
+}
+
+html.dark :where(.text-foreground, .text-card-foreground, .text-popover-foreground, .text-slate-950, .text-slate-900, .text-gray-950, .text-gray-900, .text-black) {
+  color: #f8fafc !important;
+}
+
+html.dark :where(.text-muted-foreground, .text-slate-800, .text-slate-700, .text-slate-600, .text-gray-800, .text-gray-700, .text-gray-600) {
+  color: #cbd5e1 !important;
+}
+
+html.dark :where(.text-slate-500, .text-slate-400, .text-gray-500, .text-gray-400) {
+  color: #94a3b8 !important;
+}
+
+html.dark :where(.text-slate-300, .text-gray-300) {
+  color: #cbd5e1 !important;
+}
+
+html.dark :where(.text-blue-600, .text-blue-700, .text-indigo-600, .text-indigo-700) {
+  color: #7dd3fc !important;
+}
+
+html.dark :where(.border, .border-border, .border-slate-100, .border-slate-200, .border-slate-300, .border-gray-100, .border-gray-200, .border-gray-300, .border-input) {
+  border-color: #2f3b52 !important;
+}
+
+html.dark :where(.divide-slate-200 > :not([hidden]) ~ :not([hidden]), .divide-gray-200 > :not([hidden]) ~ :not([hidden])) {
+  border-color: #334155 !important;
+}
+
+html.dark :where(input, textarea, select) {
+  background-color: #111827 !important;
+  color: #f8fafc !important;
+  border-color: #3f4c63 !important;
+}
+
+html.dark :where(input:focus, textarea:focus, select:focus) {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 1px #60a5fa !important;
+}
+
+html.dark :where(.hover\:bg-white:hover, .hover\:bg-slate-50:hover, .hover\:bg-slate-100:hover, .hover\:bg-slate-200:hover, .hover\:bg-gray-50:hover, .hover\:bg-gray-100:hover, .hover\:bg-blue-50:hover, .hover\:bg-indigo-50:hover) {
+  background-color: #243148 !important;
+}
+
+html.dark :where(.hover\:text-slate-900:hover, .hover\:text-slate-800:hover, .hover\:text-gray-900:hover, .hover\:text-gray-800:hover) {
+  color: #f8fafc !important;
+}
+
+html.dark :where(.data-\[state\=active\]\:bg-white[data-state="active"], .data-\[state\=active\]\:bg-slate-950[data-state="active"]) {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+html.dark :where(.data-\[state\=active\]\:text-white[data-state="active"]) {
+  color: #f8fafc !important;
+}
+
+html.dark :where(.rounded-lg.border, .rounded-xl.border, .rounded-md.border) {
+  background-color: #172033 !important;
+}
+
+html.dark :where([data-radix-popper-content-wrapper] *) {
+  border-color: #2f3b52 !important;
+}
+
+html.dark :where(.bg-red-100) {
+  background-color: #3f1d24 !important;
+  color: #fca5a5 !important;
+}
+
+html.dark :where(.bg-green-100) {
+  background-color: #143226 !important;
+  color: #86efac !important;
+}
+
+html.dark :where(.bg-blue-100, .bg-indigo-100) {
+  background-color: #1e3a5f !important;
+  color: #bfdbfe !important;
+}
+
+html.dark :where(button[disabled], [aria-disabled="true"]) {
+  opacity: 0.65;
+}
+
+html.dark :where(.shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl) {
+  box-shadow: 0 14px 35px rgb(0 0 0 / 0.35) !important;
 }
 
 /* Dashboard specific styles */
@@ -263,4 +427,177 @@ html {
   body {
     @apply text-black bg-white;
   }
+}
+
+/* Final dark-mode guardrails for legacy dashboard utilities and hover states. */
+html.dark :where(
+  main,
+  section,
+  article,
+  aside,
+  header,
+  nav,
+  table,
+  thead,
+  tbody,
+  tr,
+  td,
+  th,
+  [role="table"],
+  [role="row"],
+  [role="tabpanel"],
+  [data-radix-popper-content-wrapper] *
+) {
+  border-color: #334155 !important;
+}
+
+html.dark :where(
+  .bg-white,
+  .bg-white\/70,
+  .bg-white\/80,
+  .bg-white\/90,
+  .bg-white\/95,
+  .bg-card,
+  .bg-popover,
+  .bg-slate-50,
+  .bg-slate-50\/70,
+  .bg-slate-50\/80,
+  .bg-slate-100,
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-blue-50,
+  .bg-green-50,
+  .bg-yellow-50,
+  .bg-red-50,
+  .bg-purple-50,
+  .bg-orange-50,
+  .bg-indigo-50,
+  .bg-muted,
+  .rounded-lg.border,
+  .rounded-xl.border,
+  .rounded-md.border
+) {
+  background-color: #172033 !important;
+  color: #e5e7eb !important;
+}
+
+html.dark :where(
+  .bg-slate-200,
+  .bg-slate-300,
+  .bg-gray-200,
+  .bg-gray-300,
+  .skeleton
+) {
+  background-color: #334155 !important;
+}
+
+html.dark :where(
+  .hover\:bg-white:hover,
+  .hover\:bg-slate-50:hover,
+  .hover\:bg-slate-100:hover,
+  .hover\:bg-slate-200:hover,
+  .hover\:bg-gray-50:hover,
+  .hover\:bg-gray-100:hover,
+  .hover\:bg-gray-200:hover,
+  .hover\:bg-blue-50:hover,
+  .hover\:bg-blue-100:hover,
+  .hover\:bg-green-50:hover,
+  .hover\:bg-green-100:hover,
+  .hover\:bg-yellow-50:hover,
+  .hover\:bg-yellow-100:hover,
+  .hover\:bg-red-50:hover,
+  .hover\:bg-red-100:hover,
+  .hover\:bg-purple-50:hover,
+  .hover\:bg-purple-100:hover,
+  .hover\:bg-orange-50:hover,
+  .hover\:bg-orange-100:hover,
+  .hover\:bg-indigo-50:hover,
+  .hover\:bg-indigo-100:hover,
+  tr:hover,
+  [role="row"]:hover
+) {
+  background-color: #243148 !important;
+  color: #f8fafc !important;
+}
+
+html.dark :where(
+  .data-\[state\=active\]\:bg-white[data-state="active"],
+  .data-\[state\=active\]\:bg-background[data-state="active"],
+  .data-\[state\=active\]\:bg-slate-950[data-state="active"],
+  [data-state="active"]
+) {
+  background-color: #0f172a !important;
+  color: #f8fafc !important;
+}
+
+html.dark :where(
+  .text-black,
+  .text-foreground,
+  .text-card-foreground,
+  .text-popover-foreground,
+  .text-white,
+  .text-slate-950,
+  .text-slate-900,
+  .text-slate-800,
+  .text-gray-950,
+  .text-gray-900,
+  .text-gray-800
+) {
+  color: #f8fafc !important;
+}
+
+html.dark :where(
+  .text-muted-foreground,
+  .text-slate-700,
+  .text-slate-600,
+  .text-slate-500,
+  .text-gray-700,
+  .text-gray-600,
+  .text-gray-500
+) {
+  color: #cbd5e1 !important;
+}
+
+html.dark :where(
+  .text-slate-400,
+  .text-slate-300,
+  .text-gray-400,
+  .text-gray-300
+) {
+  color: #94a3b8 !important;
+}
+
+html.dark :where(
+  .hover\:text-slate-900:hover,
+  .hover\:text-slate-800:hover,
+  .hover\:text-gray-900:hover,
+  .hover\:text-gray-800:hover,
+  .group:hover .group-hover\:text-slate-900
+) {
+  color: #f8fafc !important;
+}
+
+html.dark :where(
+  .text-blue-600,
+  .text-blue-700,
+  .text-indigo-600,
+  .text-indigo-700,
+  .hover\:text-blue-600:hover,
+  .hover\:text-blue-700:hover,
+  .hover\:text-indigo-600:hover,
+  .hover\:text-indigo-700:hover,
+  .group:hover .group-hover\:text-blue-600,
+  .group:hover .group-hover\:text-indigo-600
+) {
+  color: #7dd3fc !important;
+}
+
+html.dark :where(input, textarea, select, button[role="combobox"]) {
+  background-color: #111827 !important;
+  color: #f8fafc !important;
+  border-color: #3f4c63 !important;
+}
+
+html.dark :where(input::placeholder, textarea::placeholder) {
+  color: #94a3b8 !important;
 }

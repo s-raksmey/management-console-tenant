@@ -12,13 +12,15 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
   const [showPassword, setShowPassword] = React.useState(false);
   const inputType = getSettingInputType(setting.key, setting.value);
   const isPassword = setting.key.includes('password') || setting.key.includes('secret');
+  const validationType = setting.validation?.type;
+  const validationOptions = setting.validation?.options || [];
 
   const handleInputChange = (newValue: any) => {
     // Convert string values to appropriate types
-    if (inputType === 'number') {
+    if (inputType === 'number' || validationType === 'number') {
       const numValue = parseFloat(newValue);
       onChange(isNaN(numValue) ? 0 : numValue);
-    } else if (inputType === 'boolean') {
+    } else if (inputType === 'boolean' || validationType === 'boolean') {
       onChange(newValue === 'true' || newValue === true);
     } else {
       onChange(newValue);
@@ -56,8 +58,17 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
         );
 
       case 'select':
-        // Handle specific select options based on setting key
         const getSelectOptions = () => {
+          if (validationOptions.length > 0) {
+            return validationOptions.map((option: string) => ({
+              value: option,
+              label: option
+                .split('_')
+                .map((part: string) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+                .join(' '),
+            }));
+          }
+
           if (setting.key.includes('role')) {
             return [
               { value: 'AUTHOR', label: 'Author' },
@@ -69,13 +80,10 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
             return [
               { value: 'UTC', label: 'UTC' },
               { value: 'America/New_York', label: 'Eastern Time' },
-              { value: 'America/Chicago', label: 'Central Time' },
-              { value: 'America/Denver', label: 'Mountain Time' },
               { value: 'America/Los_Angeles', label: 'Pacific Time' },
               { value: 'Europe/London', label: 'London' },
-              { value: 'Europe/Paris', label: 'Paris' },
               { value: 'Asia/Tokyo', label: 'Tokyo' },
-              { value: 'Asia/Shanghai', label: 'Shanghai' }
+              { value: 'Australia/Sydney', label: 'Sydney' },
             ];
           }
           if (setting.key.includes('frequency')) {
@@ -101,7 +109,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
               <SelectValue placeholder={`Select ${setting.label.toLowerCase()}`} />
             </SelectTrigger>
             <SelectContent>
-              {options.map((option) => (
+              {options.map((option: { value: string; label: string }) => (
                 <SelectItem key={option.value} value={option.value}>
                   {option.label}
                 </SelectItem>
