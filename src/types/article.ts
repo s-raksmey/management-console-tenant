@@ -1,4 +1,5 @@
 // @/types/article.ts
+import type { JsonObject } from './json';
 
 export type ArticleStatus = 'DRAFT' | 'REVIEW' | 'PUBLISHED' | 'ARCHIVED';
 export type BreakingNewsRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
@@ -45,7 +46,7 @@ export interface ArticleContentJson {
   blocks: Array<{
     id: string;
     type: string;
-    data: Record<string, any>;
+    data: JsonObject;
     tunes?: {
       highlight?: {
         highlighted: boolean;
@@ -205,4 +206,3 @@ export interface RejectRevisionInput {
   requestId: string;
   reviewComment?: string;
 }
-

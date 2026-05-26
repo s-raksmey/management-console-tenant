@@ -1,10 +1,12 @@
+import type { JsonObject, JsonValue } from './json';
+
 export interface EditorBlockBase {
   id?: string;
   tunes?: {
     highlight?: {
       highlighted?: boolean;
     };
-    [key: string]: any;
+    [key: string]: JsonValue | undefined;
   };
 }
 
@@ -39,7 +41,7 @@ export type EditorBlock =
     })
   | (EditorBlockBase & {
       type: string;
-      data: any;
+      data: JsonObject;
     });
 
 export interface EditorOutputData {

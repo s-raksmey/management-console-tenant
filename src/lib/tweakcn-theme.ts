@@ -116,9 +116,18 @@ function readBlock(text: string, selector: string) {
   return match?.[1] || "";
 }
 
-function readObjectVariables(value: any): ParsedTheme {
-  const source = value?.light || value?.root || value?.theme || value || {};
-  const darkSource = value?.dark || {};
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function readObjectVariables(value: unknown): ParsedTheme {
+  const objectValue = asRecord(value);
+  const source = asRecord(
+    objectValue.light ?? objectValue.root ?? objectValue.theme ?? objectValue,
+  );
+  const darkSource = asRecord(objectValue.dark);
   const light: Record<string, string> = {};
   const dark: Record<string, string> = {};
 
