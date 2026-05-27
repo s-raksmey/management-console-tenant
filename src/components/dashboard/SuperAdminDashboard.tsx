@@ -27,12 +27,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useStableLoading } from "@/hooks/useStableLoading";
 
 export default function SuperAdminDashboard() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const showLoading = useStableLoading(loading);
 
   useEffect(() => {
     let mounted = true;
@@ -210,7 +212,7 @@ export default function SuperAdminDashboard() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
+          {showLoading ? (
             <div className="flex items-center py-8 text-slate-500 dark:text-slate-400">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Loading tenants...
@@ -256,7 +258,7 @@ export default function SuperAdminDashboard() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading ? (
+            {showLoading ? (
               <div className="flex items-center py-8 text-slate-500 dark:text-slate-400">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Loading logs...

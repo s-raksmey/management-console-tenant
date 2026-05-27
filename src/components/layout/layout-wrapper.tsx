@@ -14,7 +14,7 @@ interface LayoutWrapperProps {
 
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const isWidePage = pathname === "/settings" || pathname === "/tenants";
@@ -36,7 +36,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
       <div className="hidden md:block">
         <PermissionSidebar
           collapsed={sidebarCollapsed}
-          onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+          onToggle={() => setSidebarCollapsed((collapsed) => !collapsed)}
         />
       </div>
 

@@ -23,6 +23,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { Input } from '@/components/ui/input';
 import { useEditorial } from '@/hooks/useEditorial';
+import { useStableLoading } from '@/hooks/useStableLoading';
 import type { ActivityItem } from './shared';
 
 function formatTimeAgo(timestamp?: string): string {
@@ -79,7 +80,7 @@ function KpiCard({
 
 export const EditorDashboard: React.FC = () => {
   const {
-    loading,
+    loading: requestLoading,
     error,
     getEditorialStats,
     getPendingArticles,
@@ -94,6 +95,7 @@ export const EditorDashboard: React.FC = () => {
   const [pendingArticles, setPendingArticles] = useState<any[]>([]);
   const [recentActions, setRecentActions] = useState<ActivityItem[]>([]);
   const [authorPerformance, setAuthorPerformance] = useState<any[]>([]);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [confirmation, setConfirmation] = useState<{
@@ -110,6 +112,7 @@ export const EditorDashboard: React.FC = () => {
     confirmText: 'Confirm',
     onConfirm: () => {},
   });
+  const loading = useStableLoading(initialLoading || requestLoading);
 
   const loadDashboardData = async () => {
     try {
@@ -147,6 +150,8 @@ export const EditorDashboard: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to load editor dashboard data:', err);
+    } finally {
+      setInitialLoading(false);
     }
   };
 

@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Permission } from '@/components/permissions/PermissionGuard';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuthorStats } from '@/hooks/useAuthorStats';
+import { useStableLoading } from '@/hooks/useStableLoading';
 
 type ArticleStatus = 'DRAFT' | 'REVIEW' | 'PUBLISHED' | 'ARCHIVED';
 
@@ -72,7 +73,7 @@ function KpiCard({
 export const AuthorDashboard: React.FC = () => {
   const { hasPermission } = usePermissions();
   const {
-    loading,
+    loading: requestLoading,
     error,
     getAuthorStats,
     getAuthorArticles,
@@ -82,7 +83,9 @@ export const AuthorDashboard: React.FC = () => {
   const [stats, setStats] = useState<any>(null);
   const [articles, setArticles] = useState<any[]>([]);
   const [insights, setInsights] = useState<any>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const loading = useStableLoading(initialLoading || requestLoading);
 
   const loadDashboardData = async () => {
     try {
@@ -97,6 +100,8 @@ export const AuthorDashboard: React.FC = () => {
       setInsights(insightsData);
     } catch (err) {
       console.error('Failed to load author dashboard data:', err);
+    } finally {
+      setInitialLoading(false);
     }
   };
 

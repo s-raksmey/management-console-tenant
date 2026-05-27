@@ -57,6 +57,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@radix-ui/react-progress';
 import AccountRequestsPanel from './AccountRequestsPanel';
 import { useTenant } from '@/contexts/TenantContext';
+import { useStableLoading } from '@/hooks/useStableLoading';
 
 interface SystemHealth {
   uptime: number;
@@ -146,6 +147,7 @@ export const AdminDashboard: React.FC = () => {
   const [dashboardStats, setDashboardStats] = useState<DashboardStats | null>(null);
   const [systemActivity, setSystemActivity] = useState<ActivityItem[]>([]);
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const tenantName = activeTenant?.name || 'Tenant';
 
@@ -296,6 +298,8 @@ export const AdminDashboard: React.FC = () => {
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+    } finally {
+      setInitialLoading(false);
     }
   };
 
@@ -311,18 +315,17 @@ export const AdminDashboard: React.FC = () => {
     setRefreshing(false);
   };
 
-  const loading = userLoading || articlesLoading || editorialLoading || permissionsLoading;
+  const loading = useStableLoading(initialLoading || userLoading || articlesLoading || editorialLoading || permissionsLoading);
   const error = userError || articlesError;
 
-  // Show loading state while permissions are being determined
+  // RoleDashboard handles the initial permission transition; keep re-checks unobtrusive.
   if (permissionsLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center dark:bg-slate-950">
-        <div className="text-center">
-          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-600 dark:text-slate-300" />
-          <p className="text-gray-600 dark:text-slate-400">Loading dashboard...</p>
-        </div>
-      </div>
+      <div
+        className="min-h-screen bg-slate-50 dark:bg-slate-950"
+        aria-busy="true"
+        aria-label="Loading dashboard"
+      />
     );
   }
 

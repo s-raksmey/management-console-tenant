@@ -273,6 +273,8 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
           variant="ghost"
           size="sm"
           onClick={onToggle}
+          aria-label={collapsed ? "Expand navigation sidebar" : "Collapse navigation sidebar"}
+          title={collapsed ? "Expand navigation sidebar" : "Collapse navigation sidebar"}
           className="h-8 w-8 p-0 hover:bg-slate-100"
         >
           {collapsed ? (
