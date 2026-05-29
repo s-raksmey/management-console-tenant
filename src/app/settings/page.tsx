@@ -51,6 +51,48 @@ const CATEGORY_ICONS = {
 };
 
 const HIDDEN_SETTING_KEYS = new Set(["site.name"]);
+const SUPER_ADMIN_HIDDEN_SETTING_KEYS = new Set([
+  "site.description",
+  "site.logo_url",
+  "site.dashboard_favicon_url",
+  "site.favicon_url",
+  "site.contact_email",
+  "site.contact_phone",
+  "site.contact_address",
+  "site.contact_hours",
+  "site.facebook_url",
+  "site.twitter_url",
+  "site.instagram_url",
+  "site.timezone",
+  "site.public_base_url",
+  "seo.meta_title",
+  "seo.meta_description",
+  "seo.meta_keywords",
+  "seo.google_analytics_id",
+  "seo.google_search_console_verification",
+  "seo.sitemap_enabled",
+  "content.require_approval",
+  "content.auto_save_interval",
+  "content.max_article_length",
+  "content.featured_articles_limit",
+  "content.breaking_news_duration",
+  "content.comments_enabled",
+  "content.privacy_policy",
+  "content.terms_of_service",
+  "content.cookies_policy",
+  "content.legal_updated_date",
+  "theme.admin_tweakcn",
+  "theme.editor_tweakcn",
+  "theme.author_tweakcn",
+  "theme.public_tweakcn",
+  "theme.primary_color",
+  "theme.secondary_color",
+  "theme.dark_mode_enabled",
+  "theme.custom_css",
+  "maintenance.mode_enabled",
+  "maintenance.message",
+]);
+const TENANT_HIDDEN_SETTING_KEYS = new Set(["site.management_favicon_url"]);
 const ROLE_THEME_SETTING_KEYS = new Set([
   "theme.super_admin_tweakcn",
   "theme.admin_tweakcn",
@@ -97,8 +139,14 @@ export default function SettingsPage() {
       const response = await getAuthenticatedGqlClient().request(Q_SETTINGS);
 
       if (response && typeof response === "object" && "settings" in response) {
+        const roleHiddenSettings =
+          userRole === "SUPER_ADMIN"
+            ? SUPER_ADMIN_HIDDEN_SETTING_KEYS
+            : TENANT_HIDDEN_SETTING_KEYS;
         const visibleSettings = ((response.settings as Setting[]) || []).filter(
-          (setting) => !HIDDEN_SETTING_KEYS.has(setting.key),
+          (setting) =>
+            !HIDDEN_SETTING_KEYS.has(setting.key) &&
+            !roleHiddenSettings.has(setting.key),
         );
         setSettings(visibleSettings);
       } else {
@@ -111,21 +159,38 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [canAccessSettings]);
+  }, [canAccessSettings, userRole]);
 
   React.useEffect(() => {
     void loadSettings();
   }, [loadSettings]);
 
+  function getMutationSetting(
+    response: unknown,
+    field: "updateSetting" | "resetSetting",
+  ): Setting {
+    if (!response || typeof response !== "object") {
+      throw new Error("The setting could not be saved. Please check the value and try again.");
+    }
+
+    const value = (response as Record<string, unknown>)[field];
+    if (!value || typeof value !== "object") {
+      throw new Error("The setting could not be saved. Please check the value and try again.");
+    }
+
+    return value as Setting;
+  }
+
   const handleUpdateSetting = async (input: UpdateSettingInput) => {
     const response = await getAuthenticatedGqlClient().request(M_UPDATE_SETTING, {
       input,
     });
+    const updatedSetting = getMutationSetting(response, "updateSetting");
 
     setSettings((prev) =>
       prev.map((setting) =>
         setting.key === input.key
-          ? { ...setting, ...(response as any).updateSetting }
+          ? { ...setting, ...updatedSetting }
           : setting,
       ),
     );
@@ -138,6 +203,9 @@ export default function SettingsPage() {
       [
         "site.description",
         "site.logo_url",
+        "site.dashboard_favicon_url",
+        "site.management_favicon_url",
+        "site.favicon_url",
         "site.public_base_url",
       ].includes(input.key)
     ) {
@@ -149,11 +217,12 @@ export default function SettingsPage() {
     const response = await getAuthenticatedGqlClient().request(M_RESET_SETTING, {
       key,
     });
+    const resetSetting = getMutationSetting(response, "resetSetting");
 
     setSettings((prev) =>
       prev.map((setting) =>
         setting.key === key
-          ? { ...setting, ...(response as any).resetSetting }
+          ? { ...setting, ...resetSetting }
           : setting,
       ),
     );
@@ -166,6 +235,9 @@ export default function SettingsPage() {
       [
         "site.description",
         "site.logo_url",
+        "site.dashboard_favicon_url",
+        "site.management_favicon_url",
+        "site.favicon_url",
         "site.public_base_url",
       ].includes(key)
     ) {

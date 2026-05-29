@@ -14,7 +14,6 @@ export type NotificationTypeValue =
   | "REVISION_APPROVED"
   | "REVISION_REJECTED"
   | "REVISION_CONSUMED"
-  | "USER_REGISTRATION_REQUEST"
   | "ACCOUNT_REQUEST";
 
 export type NotificationRecord = {
@@ -187,7 +186,7 @@ export function useNotifications() {
       }
     `;
 
-    return mutate<{ markAllNotificationsRead: boolean }>(MARK_ALL_MUTATION);
+    return mutate<{ markAllNotificationsRead: number }>(MARK_ALL_MUTATION);
   }, [mutate]);
 
   return {

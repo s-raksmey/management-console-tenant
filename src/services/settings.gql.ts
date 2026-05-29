@@ -279,7 +279,16 @@ export function getSettingInputType(key: string, value: any): 'text' | 'number' 
     return 'color';
   }
   
-  if (key.includes('description') || key.includes('message') || key.includes('css') || key.includes('tweakcn')) {
+  if (
+    key.includes('description') ||
+    key.includes('message') ||
+    key.includes('css') ||
+    key.includes('tweakcn') ||
+    key.includes('policy') ||
+    key.includes('terms_of_service') ||
+    key.includes('address') ||
+    key.includes('hours')
+  ) {
     return 'textarea';
   }
   

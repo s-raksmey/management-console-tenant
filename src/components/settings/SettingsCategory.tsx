@@ -17,6 +17,17 @@ interface SettingsCategoryProps {
   loading?: boolean;
 }
 
+function getSaveErrorMessage(error: unknown): string {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const response = (error as { response?: { errors?: Array<{ message?: string }> } }).response;
+    const message = response?.errors?.[0]?.message;
+
+    if (message) return message;
+  }
+
+  return error instanceof Error ? error.message : 'Failed to save setting';
+}
+
 export function SettingsCategory({
   category,
   settings,
@@ -73,7 +84,7 @@ export function SettingsCategory({
       setHasChanges(prev => ({ ...prev, [key]: false }));
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to save setting';
+      const errorMessage = getSaveErrorMessage(error);
       setErrors(prev => ({ ...prev, [key]: errorMessage }));
     }
   };
@@ -88,7 +99,7 @@ export function SettingsCategory({
       setHasChanges(prev => ({ ...prev, [key]: false }));
       
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Failed to reset setting';
+      const errorMessage = getSaveErrorMessage(error);
       setErrors(prev => ({ ...prev, [key]: errorMessage }));
     }
   };

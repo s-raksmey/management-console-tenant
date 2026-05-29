@@ -4,16 +4,32 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2, UploadCloud } from 'lucide-react';
 import { Setting, getSettingInputType } from '@/services/settings.gql';
 import { SettingInputProps } from '@/types/settings';
+import { getAuthFetchHeaders } from '@/services/graphql-client';
+
+const BRAND_IMAGE_SETTING_KEYS = new Set([
+  'site.logo_url',
+  'site.favicon_url',
+  'site.dashboard_favicon_url',
+  'site.management_favicon_url',
+]);
 
 export function SettingInput({ setting, value, onChange, error, disabled = false }: SettingInputProps) {
   const [showPassword, setShowPassword] = React.useState(false);
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [uploadError, setUploadError] = React.useState<string | null>(null);
   const inputType = getSettingInputType(setting.key, setting.value);
   const isPassword = setting.key.includes('password') || setting.key.includes('secret');
+  const isBrandImageSetting = BRAND_IMAGE_SETTING_KEYS.has(setting.key);
+  const isFaviconSetting = setting.key.includes('favicon_url');
   const validationType = setting.validation?.type;
   const validationOptions = setting.validation?.options || [];
+  const inputPlaceholder =
+    inputType === 'url'
+      ? 'https://example.com'
+      : `Enter ${setting.label.toLowerCase()}`;
 
   const handleInputChange = (newValue: any) => {
     // Convert string values to appropriate types
@@ -24,6 +40,49 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
       onChange(newValue === 'true' || newValue === true);
     } else {
       onChange(newValue);
+    }
+  };
+
+  const handleBrandImageUpload = async (file: File) => {
+    if (!file.type.startsWith('image/') && !file.name.toLowerCase().endsWith('.ico')) {
+      setUploadError('Please upload an image file.');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      const payload = new FormData();
+      payload.append('file', file);
+      payload.append(
+        'options',
+        JSON.stringify({
+          folder: 'branding',
+          maxWidth: isFaviconSetting ? 256 : 1200,
+          maxHeight: isFaviconSetting ? 256 : 600,
+          quality: 90,
+          tags: ['branding', isFaviconSetting ? 'favicon' : 'logo'],
+        }),
+      );
+
+      const response = await fetch('/api/media/upload', {
+        method: 'POST',
+        headers: getAuthFetchHeaders(),
+        body: payload,
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.success || !result.file?.url) {
+        throw new Error(result.message || 'Upload failed');
+      }
+
+      const absoluteUrl = new URL(result.file.url, window.location.origin).toString();
+      onChange(absoluteUrl);
+    } catch (uploadFailure) {
+      setUploadError(uploadFailure instanceof Error ? uploadFailure.message : 'Upload failed');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -141,15 +200,16 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
 
       default:
         return (
-          <div className="relative">
-            <Input
-              type={isPassword && !showPassword ? 'password' : inputType}
-              value={value || ''}
-              onChange={(e) => handleInputChange(e.target.value)}
-              disabled={disabled}
-              placeholder={`Enter ${setting.label.toLowerCase()}`}
-              className={error ? 'border-red-500' : ''}
-            />
+          <div className="space-y-3">
+            <div className="relative">
+              <Input
+                type={isPassword && !showPassword ? 'password' : inputType}
+                value={value || ''}
+                onChange={(e) => handleInputChange(e.target.value)}
+                disabled={disabled || isUploading}
+                placeholder={inputPlaceholder}
+                className={error || uploadError ? 'border-red-500' : ''}
+              />
             {isPassword && (
               <Button
                 type="button"
@@ -166,6 +226,53 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
                 )}
               </Button>
             )}
+            </div>
+            {isBrandImageSetting && (
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-3">
+                    {value ? (
+                      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-white">
+                        <img src={String(value)} alt={setting.label} className="max-h-full max-w-full object-contain" />
+                      </div>
+                    ) : (
+                      <div className="flex h-12 w-12 items-center justify-center rounded-md border border-dashed border-slate-300 bg-white text-slate-400">
+                        <UploadCloud className="h-5 w-5" />
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">
+                        Upload {isFaviconSetting ? 'favicon' : 'logo'} file
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        Upload sets the URL above. Click Save to publish it.
+                      </p>
+                    </div>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" disabled={disabled || isUploading} asChild>
+                    <label className="cursor-pointer">
+                      {isUploading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <UploadCloud className="mr-2 h-4 w-4" />
+                      )}
+                      {isUploading ? 'Uploading' : 'Choose File'}
+                      <input
+                        type="file"
+                        accept="image/*,.ico"
+                        className="sr-only"
+                        disabled={disabled || isUploading}
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          event.target.value = '';
+                          if (file) void handleBrandImageUpload(file);
+                        }}
+                      />
+                    </label>
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         );
     }
@@ -178,6 +285,14 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
 
       {error && (
         <p className="text-sm text-red-600">{error}</p>
+      )}
+      {uploadError && (
+        <p className="text-sm text-red-600">{uploadError}</p>
+      )}
+      {!error && inputType === 'url' && (
+        <p className="text-xs text-slate-500">
+          Use a complete URL beginning with https:// or http://
+        </p>
       )}
     </div>
   );

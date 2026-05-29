@@ -13,7 +13,6 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { Permission, PermissionGuard } from "../permissions/PermissionGuard";
@@ -63,17 +62,19 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
   const itemContent = (
     <div
       className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 group relative",
-        level > 0 && "ml-4 pl-6 border-l border-slate-200",
+        "group relative flex items-center gap-3 rounded-lg px-3 py-2 transition-all duration-200",
+        level > 0 && "ml-4 border-l border-slate-200 pl-6 dark:border-slate-700",
         isActive
-          ? "bg-blue-50 text-blue-700 shadow-sm"
-          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          ? "bg-blue-50 text-blue-700 shadow-sm dark:bg-blue-500/15 dark:text-blue-200"
+          : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
       )}
     >
       <item.icon
         className={cn(
           "h-5 w-5 transition-colors",
-          isActive ? "text-blue-600" : "text-slate-500 group-hover:text-slate-700"
+          isActive
+            ? "text-blue-600 dark:text-blue-300"
+            : "text-slate-500 group-hover:text-slate-700 dark:text-slate-400 dark:group-hover:text-slate-100"
         )}
       />
       
@@ -93,7 +94,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
                     e.preventDefault();
                     setIsExpanded(!isExpanded);
                   }}
-                  className="ml-2 p-1 rounded hover:bg-slate-200 transition-colors"
+                  className="ml-2 rounded p-1 transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
                 >
                   {isExpanded ? (
                     <ChevronUp className="h-3 w-3" />
@@ -104,7 +105,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
               )}
             </div>
             {!collapsed && level === 0 && (
-              <p className="text-xs text-slate-500 truncate mt-0.5">
+              <p className="mt-0.5 truncate text-xs text-slate-500 dark:text-slate-400">
                 {item.description}
               </p>
             )}
@@ -217,20 +218,21 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
     userRole
   );
 
-  // Don't render navigation until user data is loaded
-  if (isLoading) {
+  // Keep the current sidebar mounted during background auth/permission refreshes.
+  // Swapping to the loading shell after a user is already present causes a white flash on navigation.
+  if (isLoading && !user) {
     return (
       <motion.aside
         initial={false}
         animate={{ width: collapsed ? 80 : 280 }}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className={cn(
-          "fixed left-0 top-0 z-40 h-screen bg-white border-r border-slate-200 flex flex-col",
+          "fixed left-0 top-0 z-40 flex h-screen flex-col overflow-hidden border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900",
           className
         )}
       >
-        <div className="flex items-center justify-center h-16">
-          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+        <div className="flex h-12 items-center justify-center border-b border-slate-100 dark:border-slate-800">
+          <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-600 dark:border-blue-300"></div>
         </div>
       </motion.aside>
     );
@@ -242,29 +244,29 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
       animate={{ width: collapsed ? 80 : 280 }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className={cn(
-        "fixed left-0 top-0 z-40 h-screen bg-white border-r border-slate-200 flex flex-col",
+        "fixed left-0 top-0 z-40 flex h-screen flex-col overflow-hidden border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900",
         className
       )}
     >
       {/* Header */}
-      <div className="flex items-center justify-between h-14 px-4 border-b border-slate-100 bg-white">
+      <div className="flex h-12 items-center justify-between border-b border-slate-100 bg-white px-4 dark:border-slate-800 dark:bg-slate-900">
         {!collapsed ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="flex items-center gap-3"
+            className="flex min-w-0 items-center gap-3 rounded-md"
           >
-            <div className="w-8 h-8 bg-slate-900 rounded-md flex items-center justify-center">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-900 ring-1 ring-slate-800 dark:bg-slate-800 dark:ring-slate-700">
               <span className="text-white font-semibold text-sm">
                 {brandInitials || "PN"}
               </span>
             </div>
-            <div className="leading-tight">
-              <p className="text-sm font-semibold text-slate-900 truncate max-w-[170px]">
+            <div className="min-w-0 leading-tight">
+              <p className="max-w-[170px] truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {brandName}
               </p>
-              <p className="text-xs text-slate-500 capitalize">{userRole?.toLowerCase()} Panel</p>
+              <p className="text-xs capitalize text-slate-500 dark:text-slate-400">{userRole?.toLowerCase()} Panel</p>
             </div>
           </motion.div>
         ) : null}
@@ -275,7 +277,7 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
           onClick={onToggle}
           aria-label={collapsed ? "Expand navigation sidebar" : "Collapse navigation sidebar"}
           title={collapsed ? "Expand navigation sidebar" : "Collapse navigation sidebar"}
-          className="h-8 w-8 p-0 hover:bg-slate-100"
+          className="h-8 w-8 p-0 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus-visible:bg-slate-800"
         >
           {collapsed ? (
             <ChevronRight className="h-4 w-4" />
@@ -286,7 +288,7 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4">
+      <nav className="sidebar-scrollbar flex-1 overflow-y-auto overflow-x-hidden p-4 [scrollbar-color:#334155_transparent] [scrollbar-width:thin]">
         <div className="space-y-2">
           {navigationItems.map((item) => {
             const isActive = pathname === item.href || 
@@ -306,18 +308,18 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
 
       {/* User Info */}
       {!collapsed && user && (
-        <div className="p-4 border-t border-slate-200 bg-slate-50">
+        <div className="border-t border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/80">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-slate-400 to-slate-500">
               <span className="text-white font-medium text-sm">
                 {user.name?.charAt(0) || user.email?.charAt(0) || 'U'}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-slate-900 truncate">
+              <p className="truncate text-sm font-medium text-slate-900 dark:text-slate-100">
                 {user.name || user.email}
               </p>
-              <p className="text-xs text-slate-500 capitalize">
+              <p className="text-xs capitalize text-slate-500 dark:text-slate-400">
                 {userRole?.toLowerCase()}
               </p>
             </div>

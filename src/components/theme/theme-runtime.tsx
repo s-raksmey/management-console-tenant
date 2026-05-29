@@ -17,6 +17,34 @@ type PublicSetting = {
   value: unknown;
 };
 
+function getSettingValue(settings: PublicSetting[], key: string) {
+  return settings.find((setting) => setting.key === key)?.value;
+}
+
+function valueToString(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function updateFavicon(settings: PublicSetting[], role?: string | null) {
+  const faviconUrl =
+    role === "SUPER_ADMIN"
+      ? valueToString(getSettingValue(settings, "site.management_favicon_url")) ||
+        valueToString(getSettingValue(settings, "site.favicon_url"))
+      : valueToString(getSettingValue(settings, "site.dashboard_favicon_url")) ||
+        valueToString(getSettingValue(settings, "site.favicon_url"));
+
+  if (!faviconUrl) return;
+
+  let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "icon";
+    document.head.appendChild(link);
+  }
+
+  link.href = faviconUrl;
+}
+
 export function ThemeRuntime() {
   const { user } = useAuth();
   const { activeTenant } = useTenant();
@@ -33,6 +61,7 @@ export function ThemeRuntime() {
         if (cancelled) return;
 
         applyThemeSettings(response.publicSettings || [], user?.role);
+        updateFavicon(response.publicSettings || [], user?.role);
       } catch (error) {
         console.warn("Failed to load theme settings", error);
       }

@@ -330,6 +330,20 @@ html.dark :where(.shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shado
   .sidebar-nav-item-inactive {
     @apply text-slate-600 hover:text-slate-900 hover:bg-slate-50;
   }
+
+  .sidebar-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 0;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .sidebar-scrollbar::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 9999px;
+  }
 }
 
 /* Responsive utilities */

@@ -117,7 +117,6 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
           accent: "bg-blue-100 text-blue-700",
           icon: Send,
         };
-      case "USER_REGISTRATION_REQUEST":
       case "ACCOUNT_REQUEST":
         return {
           label: "New Account Request",
@@ -188,7 +187,6 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
       return "/review";
     }
     if (
-      notification.type === "USER_REGISTRATION_REQUEST" ||
       notification.type === "ACCOUNT_REQUEST"
     ) {
       return "/users/requests";
@@ -423,25 +421,25 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
 
   return (
     <TooltipProvider>
-      <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b border-slate-100 bg-white px-4 md:px-6">
+      <header className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-slate-100 bg-white px-3 md:gap-3 md:px-4">
         {/* Mobile nav trigger */}
         <MobileNavTrigger onOpenChange={onMobileNavOpen} />
 
         {showBrand && (
-          <div className="hidden lg:flex items-center gap-2 mr-4">
-            <div className="w-8 h-8 bg-slate-900 rounded-md flex items-center justify-center">
+          <div className="hidden min-w-0 shrink-0 items-center gap-2 lg:flex">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-900">
               <span className="text-white font-semibold text-sm">
                 {brandInitials || "PN"}
               </span>
             </div>
-            <span className="font-semibold tracking-tight text-slate-900">
+            <span className="max-w-[160px] truncate font-semibold tracking-tight text-slate-900">
               {brandName}
             </span>
           </div>
         )}
 
         {/* Enhanced Search */}
-        <div className="flex-1 max-w-lg">
+        <div className="min-w-0 flex-1 md:max-w-sm xl:max-w-md 2xl:max-w-lg">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -461,7 +459,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                 name="search"
                 type="search"
                 placeholder="Search articles, categories, users... (Ctrl+K)"
-                className={`w-full rounded-full border pl-10 pr-12 py-2 text-sm placeholder:text-slate-500 transition-colors duration-200 ${
+                className={`h-9 w-full rounded-full border py-1.5 pl-9 pr-10 text-sm placeholder:text-slate-500 transition-colors duration-200 ${
                   searchFocused
                     ? "border-slate-300 bg-white"
                     : "border-slate-200 bg-slate-50/80 hover:bg-white"
@@ -536,11 +534,11 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
         </div>
 
         {/* Right side actions */}
-        <div className="flex items-center gap-1.5">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           {activeTenant && user?.role !== "SUPER_ADMIN" && (
-            <div className="hidden h-8 max-w-[220px] items-center gap-2 px-2 md:flex">
+            <div className="hidden h-8 max-w-[180px] items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2 lg:flex xl:max-w-[220px]">
               <Building2 className="h-4 w-4 text-slate-500" />
-              <span className="truncate text-sm font-medium text-slate-700">
+              <span className="truncate text-xs font-semibold text-slate-700">
                 {activeTenant.name}
               </span>
             </div>
@@ -730,7 +728,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
-                className="flex items-center gap-2 h-8 px-2"
+                className="flex h-9 items-center gap-2 px-1.5 md:px-2"
               >
                 <Avatar className="h-7 w-7">
                   <AvatarImage src="/avatar.png" />
@@ -738,9 +736,9 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                     {user ? getUserInitials(user.name) : "U"}
                   </AvatarFallback>
                 </Avatar>
-                <div className="hidden md:block text-left">
+                <div className="hidden text-left lg:block">
                   <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-slate-900">
+                    <p className="max-w-[180px] truncate text-sm font-semibold leading-4 text-slate-900 xl:max-w-[220px]">
                       {user?.name || "User"}
                     </p>
                     <Badge
@@ -750,46 +748,50 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                       {user?.role || "USER"}
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="max-w-[220px] truncate text-xs leading-4 text-slate-500">
                     {user?.email || "user@example.com"}
                   </p>
                 </div>
-                <ChevronDown className="h-3 w-3 text-slate-500 hidden md:block" />
+                <ChevronDown className="hidden h-3 w-3 text-slate-500 lg:block" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col space-y-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium">
+            <DropdownMenuContent
+              align="end"
+              sideOffset={8}
+              className="w-64 overflow-hidden p-1"
+            >
+              <DropdownMenuLabel className="px-3 py-2.5">
+                <div className="min-w-0">
+                  <div className="flex min-w-0 items-start gap-2">
+                    <p className="min-w-0 flex-1 text-sm font-semibold leading-5 text-slate-900">
                       {user?.name || "User"}
                     </p>
                     <Badge
                       variant="secondary"
-                      className={`text-xs px-1.5 py-0.5 ${getRoleBadgeColor(user?.role || "")}`}
+                      className={`shrink-0 px-1.5 py-0.5 text-[10px] leading-4 ${getRoleBadgeColor(user?.role || "")}`}
                     >
                       {user?.role || "USER"}
                     </Badge>
                   </div>
-                  <p className="text-xs text-slate-500">
+                  <p className="mt-0.5 break-all text-xs leading-4 text-slate-500">
                     {user?.email || "user@example.com"}
                   </p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/profile" className="cursor-pointer">
+                <Link href="/profile" className="h-9 cursor-pointer rounded-md px-3">
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem className="h-9 cursor-pointer rounded-md px-3">
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
-                className="cursor-pointer text-red-600 focus:text-red-600"
+                className="h-9 cursor-pointer rounded-md px-3 text-red-600 focus:text-red-600"
                 onClick={handleLogout}
               >
                 <LogOut className="mr-2 h-4 w-4" />
