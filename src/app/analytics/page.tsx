@@ -114,14 +114,14 @@ export default function AnalyticsPage() {
   return (
     <PermissionGuard permissions={[Permission.VIEW_ANALYTICS]} showError>
       <div className="space-y-6">
-      <section className="rounded-lg border bg-white p-6">
+      <section className="rounded-lg border bg-white p-4 sm:p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
               {isPlatform ? "Platform Analytics" : "Tenant Analytics"}
             </p>
-            <h1 className="mt-2 flex items-center gap-2 text-3xl font-bold text-slate-950">
-              <BarChart3 className="h-7 w-7 text-blue-600" />
+            <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold text-slate-950 sm:text-3xl">
+              <BarChart3 className="h-6 w-6 shrink-0 text-blue-600 sm:h-7 sm:w-7" />
               Analytics
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
@@ -133,14 +133,14 @@ export default function AnalyticsPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:justify-end">
             {isSuperAdmin ? (
               <Select
                 value={selectedAnalyticsTenantId}
                 onValueChange={handleTenantChange}
                 disabled={loadingTenants || tenantOptions.length === 0}
               >
-                <SelectTrigger className="w-[240px] bg-white">
+                <SelectTrigger className="w-full bg-white sm:w-[240px]">
                   <SelectValue
                     placeholder={
                       loadingTenants ? "Loading tenants..." : "Select tenant"
@@ -161,7 +161,7 @@ export default function AnalyticsPage() {
               </Badge>
             ) : null}
             {isSuperAdmin && selectedTenant && (
-              <Badge variant="outline" className="bg-white">
+              <Badge variant="outline" className="max-w-full truncate bg-white">
                 /{selectedTenant.slug}
               </Badge>
             )}

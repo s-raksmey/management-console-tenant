@@ -50,8 +50,8 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       return;
     }
 
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+    if (formData.password.length < 8) {
+      setError('Password must be at least 8 characters long');
       return;
     }
 
@@ -111,7 +111,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         {success ? (
           <div className="bg-green-50 border border-green-200 rounded-md p-4 text-center">
             <h2 className="text-lg font-semibold text-green-700 mb-2">Request Submitted</h2>
-            <p className="text-green-700">Registration request submitted successfully! Please check your email to verify your address, then wait for admin approval.</p>
+            <p className="text-green-700">Registration request submitted successfully. Please wait for admin approval; once approved, you will receive an email verification link.</p>
             {onSwitchToLogin && (
               <button
                 type="button"
@@ -197,6 +197,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Enter your password"
+                minLength={8}
                 required
                 disabled={isLoading}
               />
@@ -229,6 +230,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Confirm your password"
+                minLength={8}
                 required
                 disabled={isLoading}
               />

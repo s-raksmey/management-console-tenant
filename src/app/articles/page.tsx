@@ -12,6 +12,7 @@ import { Q_REVISION_REQUESTS } from "@/services/article.gql";
 import { Button } from "@/components/ui/button";
 import { Article, ArticleStatus } from "@/types/article";
 import { Badge } from "@/components/ui/badge";
+import { ArticleShareDialog } from "@/components/articles/article-share-dialog";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import {
   DropdownMenu,
@@ -19,10 +20,11 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Trash2, Plus } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Plus, Share2 } from "lucide-react";
 import { format } from "date-fns";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
+import { useTenant } from "@/contexts/TenantContext";
 
 const statusColors = {
   DRAFT: "bg-gray-100 text-gray-800",
@@ -31,9 +33,12 @@ const statusColors = {
   ARCHIVED: "bg-red-100 text-red-800",
 };
 
+const PAGE_SIZE = 10;
+
 export default function AdminArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | undefined>();
+  const [currentPage, setCurrentPage] = useState(1);
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     articleId: string | null;
@@ -57,6 +62,7 @@ export default function AdminArticlesPage() {
     confirmText: "Confirm",
     onConfirm: () => {},
   });
+  const [shareArticle, setShareArticle] = useState<Article | null>(null);
   const [revisionRequestStatusById, setRevisionRequestStatusById] = useState<
     Record<string, string>
   >({});
@@ -75,6 +81,14 @@ export default function AdminArticlesPage() {
     loading: mutationLoading,
   } = useArticleMutations();
   const { hasPermission } = usePermissions();
+  const { activeTenant } = useTenant();
+  const publicBaseUrl = useMemo(() => {
+    const primarySite =
+      activeTenant?.sites.find((site) => site.isPrimary) ||
+      activeTenant?.sites[0];
+
+    return primarySite?.publicBaseUrl ?? null;
+  }, [activeTenant]);
 
   const loadRevisionStatuses = useCallback(
     async (list: Article[]) => {
@@ -118,7 +132,7 @@ export default function AdminArticlesPage() {
   const loadArticles = useCallback(async () => {
     const response = await getArticles({
       status: statusFilter,
-      take: 50,
+      take: 1000,
       skip: 0,
     });
 
@@ -127,6 +141,10 @@ export default function AdminArticlesPage() {
       await loadRevisionStatuses(response.articles);
     }
   }, [getArticles, loadRevisionStatuses, statusFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -248,10 +266,25 @@ export default function AdminArticlesPage() {
       hasPermission(Permission.APPROVE_ARTICLES)) ||
     hasPermission(Permission.DELETE_ANY_ARTICLE);
 
+  const totalPages = Math.max(1, Math.ceil(articles.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedArticles = articles.slice(
+    (safeCurrentPage - 1) * PAGE_SIZE,
+    safeCurrentPage * PAGE_SIZE,
+  );
+  const startItem = articles.length === 0 ? 0 : (safeCurrentPage - 1) * PAGE_SIZE + 1;
+  const endItem = Math.min(safeCurrentPage * PAGE_SIZE, articles.length);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   return (
     <PermissionGuard permissions={[Permission.VIEW_ALL_ARTICLES]} showError>
     <main className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-slate-900">Articles</h1>
           <p className="text-sm text-slate-600">
@@ -269,7 +302,7 @@ export default function AdminArticlesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <Button
           variant={statusFilter === undefined ? "default" : "outline"}
           size="sm"
@@ -291,14 +324,183 @@ export default function AdminArticlesPage() {
         )}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <div className="grid grid-cols-12 border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600">
-          <div className="col-span-4">Title</div>
-          <div className="col-span-2">Status</div>
-          <div className="col-span-2">Category</div>
-          <div className="col-span-1">Topic</div>
-          <div className="col-span-2">Updated</div>
-          <div className="col-span-1 text-right">Actions</div>
+      <div className="space-y-3 md:hidden">
+        {articles.length === 0 ? (
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-slate-500">
+            No articles found.{" "}
+            {hasPermission(Permission.CREATE_ARTICLE) && (
+              <Link href="/articles/new" className="text-blue-600 hover:underline">
+                Create your first article
+              </Link>
+            )}
+          </div>
+        ) : (
+          paginatedArticles.map((article) => (
+            <article
+              key={article.id}
+              className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+            >
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-4 py-3">
+                <Badge className={`text-[11px] font-bold tracking-wide ${statusColors[article.status]}`}>
+                  {article.status}
+                </Badge>
+                {hasRowActions(article) ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {hasPermission(Permission.UPDATE_ANY_ARTICLE) && (
+                        <DropdownMenuItem asChild>
+                          <Link href={`/articles/${article.id}/edit`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
+                      {article.status === "DRAFT" &&
+                        hasPermission(Permission.PUBLISH_ARTICLE) && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              requestArticleAction({
+                                title: "Publish Article?",
+                                description: `Publish "${article.title}" now?`,
+                                confirmText: "Publish",
+                                onConfirm: () => handleStatusChange(article.id, "PUBLISHED"),
+                              })
+                            }
+                            disabled={mutationLoading}
+                          >
+                            Publish
+                          </DropdownMenuItem>
+                        )}
+                      {article.status === "REVIEW" &&
+                        hasPermission(Permission.APPROVE_ARTICLES) && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              requestArticleAction({
+                                title: "Approve and Publish?",
+                                description: `Approve "${article.title}" and publish it?`,
+                                confirmText: "Approve & Publish",
+                                onConfirm: () => handleStatusChange(article.id, "PUBLISHED"),
+                              })
+                            }
+                            disabled={mutationLoading}
+                          >
+                            Approve & Publish
+                          </DropdownMenuItem>
+                        )}
+                      {article.status === "REVIEW" &&
+                        hasPermission(Permission.REJECT_ARTICLES) && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              requestArticleAction({
+                                title: "Reject Article?",
+                                description: `Reject "${article.title}" and archive it?`,
+                                confirmText: "Reject",
+                                variant: "destructive",
+                                onConfirm: () => handleStatusChange(article.id, "ARCHIVED"),
+                              })
+                            }
+                            disabled={mutationLoading}
+                          >
+                            Reject
+                          </DropdownMenuItem>
+                        )}
+                      {article.status === "PUBLISHED" &&
+                        hasPermission(Permission.UNPUBLISH_ARTICLE) && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              requestArticleAction({
+                                title: "Unpublish Article?",
+                                description: `Move "${article.title}" back to draft?`,
+                                confirmText: "Unpublish",
+                                onConfirm: () => handleStatusChange(article.id, "DRAFT"),
+                              })
+                            }
+                            disabled={mutationLoading}
+                          >
+                            Unpublish
+                          </DropdownMenuItem>
+                        )}
+                      {article.status === "PUBLISHED" && (
+                        <DropdownMenuItem onClick={() => setShareArticle(article)}>
+                          <Share2 className="mr-2 h-4 w-4" />
+                          Share
+                        </DropdownMenuItem>
+                      )}
+                      {hasPermission(Permission.DELETE_ANY_ARTICLE) && (
+                        <DropdownMenuItem
+                          onClick={() => requestDelete(article)}
+                          disabled={mutationLoading}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
+              </div>
+
+              <div className="space-y-3 px-4 py-4">
+                <div className="min-w-0">
+                  <h2 className="truncate text-base font-semibold text-slate-950" title={article.title}>
+                    {article.title}
+                  </h2>
+                  <p className="mt-1 truncate text-xs text-slate-500" title={`/${article.slug}`}>
+                    /{article.slug}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <span
+                    className="max-w-full truncate rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
+                    title={article.category?.name ?? "Uncategorized"}
+                  >
+                    {article.category?.name ?? "Uncategorized"}
+                  </span>
+                  {article.topic && (
+                    <span
+                      className="max-w-full truncate rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700"
+                      title={article.topic}
+                    >
+                      {article.topic}
+                    </span>
+                  )}
+                  {article.isFeatured && <Badge variant="secondary" className="text-xs">Featured</Badge>}
+                  {article.isEditorsPick && <Badge variant="secondary" className="text-xs">Editor&apos;s Pick</Badge>}
+                  {article.isBreaking && <Badge variant="destructive" className="text-xs">Breaking</Badge>}
+                  {revisionRequestStatusById[article.id] && (
+                    <Badge variant="outline" className="text-xs">
+                      Revision {revisionRequestStatusById[article.id].toLowerCase()}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
+                  <span>Updated</span>
+                  <span className="font-semibold text-slate-700">
+                    {format(new Date(article.updatedAt), "MMM d, yyyy")}
+                  </span>
+                </div>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white md:block">
+        <div className="grid grid-cols-[minmax(0,1fr)_120px_120px_108px_48px] items-center gap-4 border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600 xl:grid-cols-[minmax(0,1fr)_120px_140px_140px_112px_48px]">
+          <div>Title</div>
+          <div>Status</div>
+          <div>Category</div>
+          <div className="hidden xl:block">Topic</div>
+          <div>Updated</div>
+          <div className="text-right">Actions</div>
         </div>
 
         {articles.length === 0 ? (
@@ -314,27 +516,29 @@ export default function AdminArticlesPage() {
             )}
           </div>
         ) : (
-          articles.map((article) => (
+          paginatedArticles.map((article) => (
             <div
               key={article.id}
-              className="grid grid-cols-12 items-center px-4 py-3 text-sm border-b last:border-b-0 hover:bg-slate-50"
+              className="grid grid-cols-[minmax(0,1fr)_120px_120px_108px_48px] items-center gap-4 border-b px-4 py-3 text-sm last:border-b-0 hover:bg-slate-50 xl:grid-cols-[minmax(0,1fr)_120px_140px_140px_112px_48px]"
             >
-              <div className="col-span-4">
-                <div className="font-medium">{article.title}</div>
-                <div className="text-xs text-slate-500 flex items-center gap-2 flex-wrap">
-                  /{article.slug}
+              <div className="min-w-0">
+                <div className="truncate font-medium" title={article.title}>
+                  {article.title}
+                </div>
+                <div className="mt-0.5 flex min-w-0 items-center gap-2 text-xs text-slate-500">
+                  <span className="truncate" title={`/${article.slug}`}>/{article.slug}</span>
                   {article.isFeatured && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="hidden shrink-0 text-xs lg:inline-flex">
                       Featured
                     </Badge>
                   )}
                   {article.isEditorsPick && (
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge variant="secondary" className="hidden shrink-0 text-xs 2xl:inline-flex">
                       Editor&apos;s Pick
                     </Badge>
                   )}
                   {article.isBreaking && (
-                    <Badge variant="destructive" className="text-xs">
+                    <Badge variant="destructive" className="hidden shrink-0 text-xs lg:inline-flex">
                       Breaking
                     </Badge>
                   )}
@@ -399,26 +603,26 @@ export default function AdminArticlesPage() {
                 </div>
                 {revisionRequestStatusById[article.id] === "PENDING" &&
                   revisionRequestNoteById[article.id] && (
-                    <div className="text-xs text-slate-500 mt-1">
+                    <div className="mt-1 truncate text-xs text-slate-500" title={revisionRequestNoteById[article.id]}>
                       Revision note: {revisionRequestNoteById[article.id]}
                     </div>
                   )}
               </div>
-              <div className="col-span-2">
+              <div>
                 <Badge className={`text-xs ${statusColors[article.status]}`}>
                   {article.status}
                 </Badge>
               </div>
-              <div className="col-span-2 text-slate-600 text-xs">
+              <div className="truncate text-xs text-slate-600" title={article.category?.name ?? "—"}>
                 {article.category?.name ?? "—"}
               </div>
-              <div className="col-span-1 text-slate-600 text-xs">
+              <div className="hidden truncate text-xs text-slate-600 xl:block" title={article.topic ?? "—"}>
                 {article.topic ?? "—"}
               </div>
-              <div className="col-span-2 text-slate-600 text-xs">
+              <div className="whitespace-nowrap text-xs text-slate-600">
                 {format(new Date(article.updatedAt), "MMM d, yyyy")}
               </div>
-              <div className="col-span-1 text-right">
+              <div className="text-right">
                 {hasRowActions(article) ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -500,6 +704,12 @@ export default function AdminArticlesPage() {
                             Unpublish
                           </DropdownMenuItem>
                         )}
+                      {article.status === "PUBLISHED" && (
+                        <DropdownMenuItem onClick={() => setShareArticle(article)}>
+                          <Share2 className="mr-2 h-4 w-4" />
+                          Share
+                        </DropdownMenuItem>
+                      )}
                       {article.revisionStatus === "REQUESTED" &&
                         hasPermission(Permission.APPROVE_ARTICLES) && (
                           <>
@@ -553,6 +763,37 @@ export default function AdminArticlesPage() {
         )}
       </div>
 
+      {articles.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            Showing {startItem}-{endItem} of {articles.length} articles
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={safeCurrentPage === 1 || loading}
+            >
+              Previous
+            </Button>
+            <span className="min-w-20 text-center text-xs font-medium text-slate-500">
+              Page {safeCurrentPage} of {totalPages}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={safeCurrentPage === totalPages || loading}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
       <ConfirmationDialog
         open={deleteDialog.open}
         onOpenChange={(open) =>
@@ -566,6 +807,14 @@ export default function AdminArticlesPage() {
         onConfirm={() => {
           void confirmDelete();
         }}
+      />
+      <ArticleShareDialog
+        article={shareArticle}
+        open={!!shareArticle}
+        onOpenChange={(open) => {
+          if (!open) setShareArticle(null);
+        }}
+        publicBaseUrl={publicBaseUrl}
       />
       <ConfirmationDialog
         open={actionDialog.open}

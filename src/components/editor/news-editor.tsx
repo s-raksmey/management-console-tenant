@@ -37,12 +37,18 @@ export interface NewsEditorRef {
 interface NewsEditorProps {
   initialData?: OutputData;
   readOnly?: boolean;
+  onChange?: (data: OutputData) => void;
 }
 
 const NewsEditor = forwardRef<NewsEditorRef, NewsEditorProps>(
-  ({ initialData, readOnly = false }, ref) => {
+  ({ initialData, readOnly = false, onChange }, ref) => {
     const holderRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<any>(null);
+    const onChangeRef = useRef(onChange);
+
+    useEffect(() => {
+      onChangeRef.current = onChange;
+    }, [onChange]);
 
     /* ---------- Expose API ---------- */
     useImperativeHandle(ref, () => ({
@@ -77,6 +83,16 @@ const NewsEditor = forwardRef<NewsEditorRef, NewsEditorProps>(
           minHeight: 120,
           placeholder: "Write news content here…",
           data: initialData ?? { blocks: [] },
+          onChange: async (api) => {
+            if (!onChangeRef.current) return;
+
+            try {
+              const data = await api.saver.save();
+              onChangeRef.current(data);
+            } catch (error) {
+              console.warn("Unable to read editor content", error);
+            }
+          },
 
           tools: {
             /* ---------- Tune ---------- */

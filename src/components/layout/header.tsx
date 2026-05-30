@@ -421,7 +421,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
 
   return (
     <TooltipProvider>
-      <header className="sticky top-0 z-30 flex h-12 items-center gap-2 border-b border-slate-100 bg-white px-3 md:gap-3 md:px-4">
+      <header className="sticky top-0 z-30 flex h-12 min-w-0 items-center gap-2 overflow-hidden border-b border-slate-100 bg-white px-3 dark:border-slate-800 dark:bg-slate-900 md:gap-3 md:px-4">
         {/* Mobile nav trigger */}
         <MobileNavTrigger onOpenChange={onMobileNavOpen} />
 
@@ -439,7 +439,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
         )}
 
         {/* Enhanced Search */}
-        <div className="min-w-0 flex-1 md:max-w-sm xl:max-w-md 2xl:max-w-lg">
+        <div className="hidden min-w-0 flex-1 sm:block md:max-w-sm xl:max-w-md 2xl:max-w-lg">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -608,7 +608,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-96 overflow-hidden border-slate-200 bg-white p-0 text-slate-950 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+              className="max-w-[calc(100vw-1rem)] w-[calc(100vw-1rem)] overflow-hidden border-slate-200 bg-white p-0 text-slate-950 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 sm:w-96"
             >
               <DropdownMenuLabel className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
                 Notifications
@@ -758,7 +758,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
             <DropdownMenuContent
               align="end"
               sideOffset={8}
-              className="w-64 overflow-hidden p-1"
+              className="max-w-[calc(100vw-1rem)] w-[calc(100vw-1rem)] overflow-hidden p-1 sm:w-64"
             >
               <DropdownMenuLabel className="px-3 py-2.5">
                 <div className="min-w-0">

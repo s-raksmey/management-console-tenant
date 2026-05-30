@@ -110,8 +110,68 @@ const SIZE_LIMITS = {
   other: 10 * 1024 * 1024, // 10MB
 };
 
+const UPLOAD_DIR = path.join(process.cwd(), "public/uploads");
+const MEDIA_MANIFEST_PATH = path.join(UPLOAD_DIR, ".media-library.json");
+
+type MediaManifest = {
+  files: Record<string, MediaFile>;
+};
+
 function getMediaType(mimeType: string): MediaType {
   return MIME_TYPE_MAP[mimeType] || 'other';
+}
+
+function normalizeFolder(folder?: string): string {
+  if (!folder) return "";
+
+  return folder
+    .split(/[\\/]+/)
+    .map((segment) => sanitizeFilename(segment))
+    .filter(Boolean)
+    .join("/");
+}
+
+function ensureUploadDir() {
+  if (!fs.existsSync(UPLOAD_DIR)) {
+    fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  }
+}
+
+function readManifest(): MediaManifest {
+  ensureUploadDir();
+
+  if (!fs.existsSync(MEDIA_MANIFEST_PATH)) {
+    return { files: {} };
+  }
+
+  try {
+    const parsed = JSON.parse(fs.readFileSync(MEDIA_MANIFEST_PATH, "utf8")) as MediaManifest;
+    return {
+      files: parsed.files && typeof parsed.files === "object" ? parsed.files : {},
+    };
+  } catch {
+    return { files: {} };
+  }
+}
+
+function writeManifest(manifest: MediaManifest) {
+  ensureUploadDir();
+  fs.writeFileSync(MEDIA_MANIFEST_PATH, JSON.stringify(manifest, null, 2));
+}
+
+function getRelativePath(file: Pick<MediaFile, "filename" | "folder">): string {
+  return file.folder ? `${file.folder}/${file.filename}` : file.filename;
+}
+
+function getDiskPath(file: Pick<MediaFile, "filename" | "folder">): string {
+  const diskPath = path.resolve(UPLOAD_DIR, getRelativePath(file));
+  const uploadRoot = path.resolve(UPLOAD_DIR);
+
+  if (diskPath !== uploadRoot && !diskPath.startsWith(`${uploadRoot}${path.sep}`)) {
+    throw new Error("Invalid media path");
+  }
+
+  return diskPath;
 }
 
 function sanitizeFilename(filename: string): string {
@@ -178,6 +238,7 @@ export async function POST(req: Request) {
     }
     
     const options: MediaUploadOptions = optionsStr ? JSON.parse(optionsStr) : {};
+    const folder = normalizeFolder(options.folder);
     const mediaType = getMediaType(file.type);
     
     // Check file size
@@ -198,8 +259,7 @@ export async function POST(req: Request) {
     const filename = `${timestamp}-${fileId}-${sanitizedName}`;
     
     // Create folder structure
-    const baseUploadDir = path.join(process.cwd(), "public/uploads");
-    const folderPath = options.folder ? path.join(baseUploadDir, options.folder) : baseUploadDir;
+    const folderPath = folder ? path.join(UPLOAD_DIR, folder) : UPLOAD_DIR;
     
     if (!fs.existsSync(folderPath)) {
       fs.mkdirSync(folderPath, { recursive: true });
@@ -231,8 +291,8 @@ export async function POST(req: Request) {
     fs.writeFileSync(outputPath, processedBuffer);
     
     // Create media file object
-    const relativePath = options.folder ? `${options.folder}/${filename}` : filename;
-    const mediaFile: Partial<MediaFile> = {
+    const relativePath = folder ? `${folder}/${filename}` : filename;
+    const mediaFile: MediaFile = {
       id: fileId,
       filename,
       originalName: file.name,
@@ -244,15 +304,16 @@ export async function POST(req: Request) {
       height,
       alt: options.alt,
       caption: options.caption,
-      folder: options.folder,
+      folder: folder || undefined,
       tags: options.tags || [],
       uploadedAt: new Date().toISOString(),
       uploadedBy: 'current-user', // TODO: Get from auth context
       lastModified: new Date().toISOString(),
     };
-    
-    // TODO: Save to database
-    // await saveMediaFile(mediaFile);
+
+    const manifest = readManifest();
+    manifest.files[mediaFile.id] = mediaFile;
+    writeManifest(manifest);
     
     return NextResponse.json({
       success: true,
@@ -275,10 +336,10 @@ export async function GET(req: Request) {
     if (permissionError) return permissionError;
 
     const { searchParams } = new URL(req.url);
-    const folder = searchParams.get('folder') || '';
+    const folder = normalizeFolder(searchParams.get('folder') || '');
     
     // Get files from upload directory
-    const uploadDir = path.join(process.cwd(), "public/uploads", folder);
+    const uploadDir = path.join(UPLOAD_DIR, folder);
     
     if (!fs.existsSync(uploadDir)) {
       return NextResponse.json({
@@ -289,13 +350,14 @@ export async function GET(req: Request) {
     }
     
     const items = fs.readdirSync(uploadDir, { withFileTypes: true });
-    const files: Partial<MediaFile>[] = [];
+    const files: MediaFile[] = [];
     const folders: string[] = [];
+    const manifest = readManifest();
     
     for (const item of items) {
       if (item.isDirectory()) {
         folders.push(item.name);
-      } else if (item.isFile()) {
+      } else if (item.isFile() && !item.name.startsWith(".")) {
         const filePath = path.join(uploadDir, item.name);
         const stats = fs.statSync(filePath);
         const relativePath = folder ? `${folder}/${item.name}` : item.name;
@@ -305,15 +367,27 @@ export async function GET(req: Request) {
         const mimeType = getMimeTypeFromExtension(ext);
         const mediaType = getMediaType(mimeType);
         
+        const manifestFile = Object.values(manifest.files).find(
+          (file) => getRelativePath(file) === relativePath
+        );
+
         files.push({
-          id: item.name, // Use filename as ID for now
+          id: manifestFile?.id || item.name,
           filename: item.name,
-          originalName: item.name,
+          originalName: manifestFile?.originalName || item.name,
           url: `/uploads/${relativePath}`,
-          type: mediaType,
-          mimeType,
+          type: manifestFile?.type || mediaType,
+          mimeType: manifestFile?.mimeType || mimeType,
           size: stats.size,
-          uploadedAt: stats.birthtime.toISOString(),
+          width: manifestFile?.width,
+          height: manifestFile?.height,
+          duration: manifestFile?.duration,
+          alt: manifestFile?.alt,
+          caption: manifestFile?.caption,
+          folder: folder || undefined,
+          tags: manifestFile?.tags || [],
+          uploadedAt: manifestFile?.uploadedAt || stats.birthtime.toISOString(),
+          uploadedBy: manifestFile?.uploadedBy || 'unknown',
           lastModified: stats.mtime.toISOString(),
         });
       }
@@ -350,32 +424,15 @@ export async function DELETE(req: Request) {
       );
     }
     
-    // Find and delete the file
-    const uploadDir = path.join(process.cwd(), "public/uploads");
-    
-    // Search for the file in the upload directory and subdirectories
-    const findAndDeleteFile = (dir: string): boolean => {
-      if (!fs.existsSync(dir)) return false;
-      
-      const items = fs.readdirSync(dir, { withFileTypes: true });
-      
-      for (const item of items) {
-        const itemPath = path.join(dir, item.name);
-        
-        if (item.isDirectory()) {
-          // Recursively search in subdirectories
-          if (findAndDeleteFile(itemPath)) return true;
-        } else if (item.isFile() && item.name === filename) {
-          // Found the file, delete it
-          fs.unlinkSync(itemPath);
-          return true;
-        }
-      }
-      
-      return false;
-    };
-    
-    const fileDeleted = findAndDeleteFile(uploadDir);
+    const manifest = readManifest();
+    const manifestFile = manifest.files[fileId];
+    const fileToDelete = manifestFile || { filename, folder: undefined };
+    const targetPath = getDiskPath(fileToDelete);
+    const fileDeleted = fs.existsSync(targetPath);
+
+    if (fileDeleted) {
+      fs.unlinkSync(targetPath);
+    }
     
     if (!fileDeleted) {
       return NextResponse.json(
@@ -384,8 +441,16 @@ export async function DELETE(req: Request) {
       );
     }
     
-    // TODO: Remove from database
-    // await deleteMediaFile(fileId);
+    if (manifest.files[fileId]) {
+      delete manifest.files[fileId];
+    } else {
+      for (const [id, file] of Object.entries(manifest.files)) {
+        if (file.filename === filename) {
+          delete manifest.files[id];
+        }
+      }
+    }
+    writeManifest(manifest);
     
     return NextResponse.json({
       success: true,

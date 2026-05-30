@@ -2,6 +2,7 @@
 import { useState, useCallback } from "react";
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
 import { useAuth } from "@/contexts/AuthContext";
+import type { ArticleSharePlatform } from "@/types/article";
 
 export interface GraphQLError {
   message: string;
@@ -16,9 +17,6 @@ export interface GraphQLResponse<T = any> {
   data?: T;
   errors?: GraphQLError[];
 }
-
-let supportsCurrentRevisionRequestField: boolean | null = null;
-let hasRetriedCurrentRevisionRequestField = false;
 
 export function useGraphQL() {
   const [loading, setLoading] = useState(false);
@@ -126,57 +124,6 @@ export function useArticles() {
           isBreaking
           revisionStatus
           revisionRequestedAt
-          currentRevisionRequest {
-            id
-            status
-            note
-            reviewComment
-            reviewedAt
-            reviewedBy {
-              id
-              name
-            }
-          }
-          breakingNewsRequestStatus
-          breakingNewsRequestedAt
-          breakingNewsRequestedBy {
-            id
-            name
-            email
-          }
-          publishedAt
-          createdAt
-          updatedAt
-          contentJson
-          viewCount
-          category {
-            id
-            name
-            slug
-          }
-          author {
-            id
-          }
-        }
-      }
-    `;
-
-      const LEGACY_ARTICLES_QUERY = `
-      query GetArticles($status: ArticleStatus, $categorySlug: String, $topic: String, $authorId: ID, $take: Int, $skip: Int) {
-        articles(status: $status, categorySlug: $categorySlug, topic: $topic, authorId: $authorId, take: $take, skip: $skip) {
-          id
-          title
-          slug
-          excerpt
-          status
-          topic
-          coverImageUrl
-          authorName
-          isFeatured
-          isEditorsPick
-          isBreaking
-          revisionStatus
-          revisionRequestedAt
           breakingNewsRequestStatus
           breakingNewsRequestedAt
           breakingNewsRequestedBy {
@@ -203,41 +150,8 @@ export function useArticles() {
 
       const client = getAuthenticatedGqlClient(token ?? undefined);
 
-      if (supportsCurrentRevisionRequestField !== false) {
-        try {
-          const response = await client.request(ARTICLES_QUERY, filters);
-          supportsCurrentRevisionRequestField = true;
-          return response;
-        } catch (err: any) {
-          const message =
-            err?.response?.errors?.[0]?.message || err?.message || "";
-          if (message.includes("currentRevisionRequest")) {
-            supportsCurrentRevisionRequestField = false;
-          } else {
-            return null;
-          }
-        }
-      }
-
-      if (!hasRetriedCurrentRevisionRequestField) {
-        hasRetriedCurrentRevisionRequestField = true;
-        try {
-          const response = await client.request(ARTICLES_QUERY, filters);
-          supportsCurrentRevisionRequestField = true;
-          return response;
-        } catch (err: any) {
-          const message =
-            err?.response?.errors?.[0]?.message || err?.message || "";
-          if (message.includes("currentRevisionRequest")) {
-            supportsCurrentRevisionRequestField = false;
-          } else {
-            return null;
-          }
-        }
-      }
-
       try {
-        return await client.request(LEGACY_ARTICLES_QUERY, filters);
+        return await client.request(ARTICLES_QUERY, filters);
       } catch {
         return null;
       }
@@ -468,6 +382,31 @@ export function useArticleMutations() {
     [mutate],
   );
 
+  const prepareArticleShare = useCallback(
+    async (input: {
+      articleId: string;
+      platforms: ArticleSharePlatform[];
+      message?: string;
+    }) => {
+      const PREPARE_ARTICLE_SHARE_MUTATION = `
+      mutation PrepareArticleShare($input: PrepareArticleShareInput!) {
+        prepareArticleShare(input: $input) {
+          platform
+          label
+          method
+          url
+          articleUrl
+          message
+          note
+        }
+      }
+    `;
+
+      return await mutate(PREPARE_ARTICLE_SHARE_MUTATION, { input });
+    },
+    [mutate],
+  );
+
   const requestBreakingNews = useCallback(
     async (articleId: string, reason?: string) => {
       const REQUEST_BREAKING_NEWS_MUTATION = `
@@ -626,6 +565,7 @@ export function useArticleMutations() {
     performWorkflowAction,
     submitForReview,
     deleteArticle,
+    prepareArticleShare,
     requestBreakingNews,
     approveBreakingNewsRequest,
     rejectBreakingNewsRequest,

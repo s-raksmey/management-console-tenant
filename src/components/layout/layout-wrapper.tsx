@@ -31,7 +31,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen overflow-x-hidden bg-slate-50">
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <PermissionSidebar
@@ -53,14 +53,14 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
           duration: 0.3,
           ease: [0.4, 0, 0.2, 1],
         }}
-        className="min-h-screen"
+        className="min-h-screen min-w-0"
       >
         {/* Header */}
         <Header onMobileNavOpen={setMobileNavOpen} showBrand={sidebarCollapsed} />
 
         {/* Page Content */}
-        <main className="flex-1 p-4 md:p-6 lg:p-8">
-          <div className={isWidePage ? "w-full space-y-6" : "mx-auto max-w-7xl space-y-6"}>
+        <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
+          <div className={isWidePage ? "min-w-0 w-full space-y-5 sm:space-y-6" : "mx-auto min-w-0 max-w-7xl space-y-5 sm:space-y-6"}>
             {children}
           </div>
         </main>

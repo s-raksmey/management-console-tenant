@@ -18,11 +18,13 @@
 html,
 body {
   height: 100%;
+  max-width: 100%;
 }
 
 body {
   font-family: var(--font-khmer-digital), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   @apply bg-white text-slate-900 antialiased;
+  overflow-x: hidden;
 }
 
 .editor-highlight {

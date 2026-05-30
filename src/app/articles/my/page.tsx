@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useArticles, useArticleMutations, useRevisions } from "@/hooks/useGraphQL";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ArticleShareDialog } from "@/components/articles/article-share-dialog";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import type { Article, ArticleStatus } from "@/types/article";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -18,15 +19,19 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Trash2, Plus, RefreshCw } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Plus, RefreshCw, Share2 } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { usePermissions } from "@/hooks/usePermissions";
+
+const PAGE_SIZE = 10;
 
 export default function MyArticlesPage() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [previousArticles, setPreviousArticles] = useState<Article[]>([]);
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | undefined>();
+  const [currentPage, setCurrentPage] = useState(1);
   const [isPolling, setIsPolling] = useState(true);
   const [revisionRequestStatusById, setRevisionRequestStatusById] = useState<Record<string, string>>({});
   const [confirmation, setConfirmation] = useState<{
@@ -43,17 +48,26 @@ export default function MyArticlesPage() {
     confirmText: "Confirm",
     onConfirm: () => {},
   });
+  const [shareArticle, setShareArticle] = useState<Article | null>(null);
   
   const { getArticles, loading, error } = useArticles();
   const { getLatestRevisionRequest } = useRevisions();
   const { setArticleStatus, performWorkflowAction, deleteArticle, loading: mutationLoading } = useArticleMutations();
   const { user } = useAuth();
+  const { activeTenant } = useTenant();
   const { userRole, hasPermission } = usePermissions();
   const { showSuccess, showError, showInfo } = useToastHelpers();
+  const publicBaseUrl = activeTenant?.sites.find((site) => site.isPrimary)?.publicBaseUrl
+    ?? activeTenant?.sites[0]?.publicBaseUrl
+    ?? null;
 
   useEffect(() => {
     loadMyArticles();
   }, [statusFilter, user]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [statusFilter]);
 
   const loadRevisionStatuses = useCallback(async (list: Article[]) => {
     if (!list.length) {
@@ -92,7 +106,9 @@ export default function MyArticlesPage() {
     try {
       const response = await getArticles({ 
         status: statusFilter,
-        authorId: user.id 
+        authorId: user.id,
+        take: 1000,
+        skip: 0,
       });
       
       if (response?.articles) {
@@ -145,7 +161,9 @@ export default function MyArticlesPage() {
     }
     const response = await getArticles({ 
       status: statusFilter,
-      authorId: user.id // Filter to only current user's articles
+      authorId: user.id, // Filter to only current user's articles
+      take: 1000,
+      skip: 0,
     });
     
     if (response?.articles) {
@@ -224,6 +242,21 @@ export default function MyArticlesPage() {
     }
   };
 
+  const totalPages = Math.max(1, Math.ceil(articles.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedArticles = articles.slice(
+    (safeCurrentPage - 1) * PAGE_SIZE,
+    safeCurrentPage * PAGE_SIZE,
+  );
+  const startItem = articles.length === 0 ? 0 : (safeCurrentPage - 1) * PAGE_SIZE + 1;
+  const endItem = Math.min(safeCurrentPage * PAGE_SIZE, articles.length);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -243,10 +276,10 @@ export default function MyArticlesPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold tracking-tight">My Articles</h1>
-          <div className="flex items-center space-x-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
             <p className="text-muted-foreground">
               Manage your personal articles
             </p>
@@ -258,7 +291,7 @@ export default function MyArticlesPage() {
             )}
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             size="sm"
@@ -278,7 +311,7 @@ export default function MyArticlesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4">
+      <div className="flex flex-wrap gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
@@ -305,16 +338,180 @@ export default function MyArticlesPage() {
         </DropdownMenu>
       </div>
 
-      {/* Articles Table */}
-      <div className="border rounded-lg">
+      {/* Mobile Article Cards */}
+      <div className="space-y-3 md:hidden">
+        {articles.length === 0 ? (
+          <div className="rounded-lg border bg-white p-8 text-center text-muted-foreground">
+            {user?.id ? 'No articles found. Create your first article!' : 'Please log in to view your articles.'}
+          </div>
+        ) : (
+          paginatedArticles.map((article) => (
+            <article key={article.id} className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+              <div className="flex items-center justify-between gap-3 border-b bg-muted/40 px-4 py-3">
+                <StatusBadge status={article.status} />
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    {hasPermission(Permission.UPDATE_OWN_ARTICLE) && (
+                      <DropdownMenuItem asChild>
+                        <Link href={`/articles/${article.id}/edit`}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </Link>
+                      </DropdownMenuItem>
+                    )}
+                    {article.status === 'DRAFT' && hasPermission(Permission.CREATE_ARTICLE) && (
+                      <DropdownMenuItem
+                        onClick={() =>
+                          requestAction({
+                            title: "Submit for Review?",
+                            description: `Submit "${article.title}" to the review queue?`,
+                            confirmText: "Submit",
+                            onConfirm: () => handleStatusChange(article.id, 'REVIEW'),
+                          })
+                        }
+                        disabled={mutationLoading}
+                      >
+                        Submit for Review
+                      </DropdownMenuItem>
+                    )}
+                    {article.status === 'REVIEW' && hasPermission(Permission.REVIEW_ARTICLES) && (
+                      <>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            requestAction({
+                              title: "Publish Article?",
+                              description: `Publish "${article.title}" now?`,
+                              confirmText: "Publish",
+                              onConfirm: () => handleStatusChange(article.id, 'PUBLISHED'),
+                            })
+                          }
+                          disabled={mutationLoading}
+                        >
+                          Publish
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() =>
+                            requestAction({
+                              title: "Send Back to Draft?",
+                              description: `Move "${article.title}" back to draft?`,
+                              confirmText: "Send Back",
+                              onConfirm: () => handleStatusChange(article.id, 'DRAFT'),
+                            })
+                          }
+                          disabled={mutationLoading}
+                        >
+                          Send Back to Draft
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    {article.status === 'PUBLISHED' && hasPermission(Permission.UNPUBLISH_ARTICLE) && (
+                      <DropdownMenuItem
+                        onClick={() =>
+                          requestAction({
+                            title: "Archive Article?",
+                            description: `Archive "${article.title}"?`,
+                            confirmText: "Archive",
+                            variant: "destructive",
+                            onConfirm: () => handleStatusChange(article.id, 'ARCHIVED'),
+                          })
+                        }
+                        disabled={mutationLoading}
+                      >
+                        Archive
+                      </DropdownMenuItem>
+                    )}
+                    {article.status === 'PUBLISHED' && (
+                      <DropdownMenuItem onClick={() => setShareArticle(article)}>
+                        <Share2 className="mr-2 h-4 w-4" />
+                        Share
+                      </DropdownMenuItem>
+                    )}
+                    {hasPermission(Permission.DELETE_OWN_ARTICLE) && (
+                      <DropdownMenuItem
+                        onClick={() =>
+                          requestAction({
+                            title: "Delete Article?",
+                            description: `Delete "${article.title}"? This action cannot be undone.`,
+                            confirmText: "Delete Article",
+                            variant: "destructive",
+                            onConfirm: () => handleDelete(article.id),
+                          })
+                        }
+                        disabled={mutationLoading}
+                        className="text-red-600"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+
+              <div className="space-y-3 px-4 py-4">
+                <div className="min-w-0">
+                  <Link
+                    href={`/articles/${article.id}`}
+                    className="block truncate text-base font-semibold hover:underline"
+                    title={article.title}
+                  >
+                    {article.title}
+                  </Link>
+                  {article.excerpt && (
+                    <p className="mt-1 truncate text-xs text-muted-foreground" title={article.excerpt}>
+                      {article.excerpt}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <span
+                    className="max-w-full truncate rounded-full bg-muted px-2.5 py-1 text-xs font-medium"
+                    title={article.category?.name || 'Uncategorized'}
+                  >
+                    {article.category?.name || 'Uncategorized'}
+                  </span>
+                  {article.isBreaking && <Badge variant="destructive" className="text-xs">Breaking</Badge>}
+                  {revisionRequestStatusById[article.id] && (
+                    <Badge variant="outline" className="text-xs">
+                      Revision {revisionRequestStatusById[article.id].toLowerCase()}
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between border-t pt-3 text-xs text-muted-foreground">
+                  <span>Updated</span>
+                  <span className="font-semibold text-foreground">
+                    {format(new Date(article.updatedAt), 'MMM d, yyyy')}
+                  </span>
+                </div>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+
+      {/* Desktop Articles Table */}
+      <div className="hidden overflow-hidden rounded-xl border bg-white md:block">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[760px] table-fixed">
+            <colgroup>
+              <col className="w-[42%]" />
+              <col className="w-[18%]" />
+              <col className="w-[18%]" />
+              <col className="w-[14%]" />
+              <col className="w-[8%]" />
+            </colgroup>
             <thead className="border-b bg-muted/50">
               <tr>
                 <th className="text-left p-4 font-medium">Title</th>
                 <th className="text-left p-4 font-medium">Status</th>
                 <th className="text-left p-4 font-medium">Category</th>
-                <th className="text-left p-4 font-medium">Created</th>
                 <th className="text-left p-4 font-medium">Updated</th>
                 <th className="text-right p-4 font-medium">Actions</th>
               </tr>
@@ -322,29 +519,30 @@ export default function MyArticlesPage() {
             <tbody>
               {articles.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center p-8 text-muted-foreground">
+                  <td colSpan={5} className="text-center p-8 text-muted-foreground">
                     {user?.id ? 'No articles found. Create your first article!' : 'Please log in to view your articles.'}
                   </td>
                 </tr>
               ) : (
-                articles.map((article) => (
+                paginatedArticles.map((article) => (
                   <tr key={article.id} className="border-b hover:bg-muted/50">
                     <td className="p-4">
-                      <div>
+                      <div className="min-w-0">
                         <Link 
                           href={`/articles/${article.id}`}
-                          className="font-medium hover:underline"
+                          className="block truncate font-medium hover:underline"
+                          title={article.title}
                         >
                           {article.title}
                         </Link>
                         {article.excerpt && (
-                          <p className="text-sm text-muted-foreground mt-1">
+                          <p className="mt-1 truncate text-sm text-muted-foreground" title={article.excerpt}>
                             {article.excerpt.substring(0, 100)}...
                           </p>
                         )}
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 align-middle">
                       <div className="flex gap-2 flex-wrap">
                         <StatusBadge status={article.status} />
                         {article.isBreaking && (
@@ -364,16 +562,13 @@ export default function MyArticlesPage() {
                         )}
                       </div>
                     </td>
-                    <td className="p-4">
+                    <td className="truncate p-4 align-middle" title={article.category?.name || 'Uncategorized'}>
                       {article.category?.name || 'Uncategorized'}
                     </td>
-                    <td className="p-4 text-sm text-muted-foreground">
-                      {format(new Date(article.createdAt), 'MMM d, yyyy')}
-                    </td>
-                    <td className="p-4 text-sm text-muted-foreground">
+                    <td className="whitespace-nowrap p-4 text-sm text-muted-foreground align-middle">
                       {format(new Date(article.updatedAt), 'MMM d, yyyy')}
                     </td>
-                    <td className="p-4">
+                    <td className="p-4 text-right align-middle">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm">
@@ -450,6 +645,12 @@ export default function MyArticlesPage() {
                               Archive
                             </DropdownMenuItem>
                           )}
+                          {article.status === 'PUBLISHED' && (
+                            <DropdownMenuItem onClick={() => setShareArticle(article)}>
+                              <Share2 className="mr-2 h-4 w-4" />
+                              Share
+                            </DropdownMenuItem>
+                          )}
                           {hasPermission(Permission.DELETE_OWN_ARTICLE) && (
                             <DropdownMenuItem 
                               onClick={() =>
@@ -478,6 +679,36 @@ export default function MyArticlesPage() {
           </table>
         </div>
       </div>
+      {articles.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-lg border bg-white px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            Showing {startItem}-{endItem} of {articles.length} articles
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              disabled={safeCurrentPage === 1 || loading}
+            >
+              Previous
+            </Button>
+            <span className="min-w-20 text-center text-xs font-medium">
+              Page {safeCurrentPage} of {totalPages}
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              disabled={safeCurrentPage === totalPages || loading}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
       <ConfirmationDialog
         open={confirmation.open}
         onOpenChange={(open) =>
@@ -491,6 +722,14 @@ export default function MyArticlesPage() {
         onConfirm={() => {
           void confirmation.onConfirm();
         }}
+      />
+      <ArticleShareDialog
+        article={shareArticle}
+        open={!!shareArticle}
+        onOpenChange={(open) => {
+          if (!open) setShareArticle(null);
+        }}
+        publicBaseUrl={publicBaseUrl}
       />
     </div>
   );

@@ -247,24 +247,28 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
     .toUpperCase();
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[280px] sm:w-[300px]">
+    <Sheet
+      open={open}
+      onOpenChange={onOpenChange}
+      className="w-[min(86vw,320px)] max-w-none bg-white p-0 dark:bg-slate-900"
+    >
+      <SheetContent className="flex w-full flex-col overflow-hidden p-0">
         <SheetClose />
-        <SheetHeader className="text-left">
-          <SheetTitle className="flex items-center space-x-2">
-            <div className="h-8 w-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+        <SheetHeader className="border-b px-4 py-4 text-left">
+          <SheetTitle className="flex min-w-0 items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
               <span className="text-white font-bold text-sm">
                 {brandInitials || "PN"}
               </span>
             </div>
-            <div>
-              <div className="font-semibold text-slate-900">{brandName}</div>
+            <div className="min-w-0">
+              <div className="truncate font-semibold text-slate-900">{brandName}</div>
               <div className="text-xs text-slate-500">Admin Dashboard</div>
             </div>
           </SheetTitle>
         </SheetHeader>
 
-        <nav className="mt-8 space-y-2">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -275,20 +279,20 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
                 href={item.href}
                 onClick={() => onOpenChange(false)}
                 className={cn(
-                  "flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+                  "flex min-w-0 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   isActive
                     ? "bg-blue-50 text-blue-700 border border-blue-200"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
                 )}
               >
                 <Icon className="h-5 w-5" />
-                <span>{item.name}</span>
+                <span className="truncate">{item.name}</span>
               </Link>
             );
           })}
         </nav>
 
-        <div className="absolute bottom-4 left-4 right-4">
+        <div className="border-t px-4 py-3">
           <div className="text-xs text-slate-500 text-center">
             © 2024 {brandName}
           </div>

@@ -12,9 +12,16 @@ import { Button } from "@/components/ui/button";
 import { useCategories } from "@/hooks/useCategories";
 import { useTopics } from "@/hooks/useTopics";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useTenant } from "@/contexts/TenantContext";
 import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
 import { ArticleStatus } from "@/utils/articlePermissions";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
+import { SeoPreviewCard } from "@/components/articles/seo-preview-card";
+import {
+  ArticleReadinessCard,
+  getArticleReadinessIssues,
+  hasMeaningfulArticleContent,
+} from "@/components/articles/article-readiness-card";
 
 import type { OutputData } from "@editorjs/editorjs";
 import type { NewsEditorRef } from "@/components/editor/news-editor";
@@ -43,10 +50,6 @@ function normalizeTopic(value: string) {
   return slugify(value);
 }
 
-function titleCase(slug: string) {
-  return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 /* =========================
    Page
 ========================= */
@@ -60,7 +63,15 @@ export default function NewArticlePage() {
   const { topics, loading: topicsLoading, error: topicsError, loadTopicsForCategory, clearTopics } = useTopics();
   
   // Permission hooks
-  const { hasPermission, userRole } = usePermissions();
+  const { hasPermission } = usePermissions();
+  const { activeTenant } = useTenant();
+  const publicBaseUrl = useMemo(() => {
+    const primarySite =
+      activeTenant?.sites.find((site) => site.isPrimary) ||
+      activeTenant?.sites[0];
+
+    return primarySite?.publicBaseUrl ?? null;
+  }, [activeTenant]);
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -76,6 +87,7 @@ export default function NewArticlePage() {
   const [isBreaking, setIsBreaking] = useState(false);
   const [shouldRequestBreakingNews, setShouldRequestBreakingNews] = useState(false);
   const [breakingNewsReason, setBreakingNewsReason] = useState("");
+  const [hasBodyContent, setHasBodyContent] = useState(false);
   const [saving, setSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -119,6 +131,23 @@ export default function NewArticlePage() {
         (await editorRef.current?.save()) ?? { blocks: [] };
 
       const shouldSubmitForReview = status === 'REVIEW';
+      if (shouldSubmitForReview) {
+        const readinessIssues = getArticleReadinessIssues({
+          title,
+          slug: slug || slugify(title),
+          excerpt,
+          categorySlug,
+          hasBodyContent: hasMeaningfulArticleContent(contentJson),
+        });
+
+        if (readinessIssues.length > 0) {
+          setValidationError(
+            `Before submitting for review: ${readinessIssues.join(", ")}.`,
+          );
+          return;
+        }
+      }
+
       const statusForSave = shouldSubmitForReview ? 'DRAFT' : status;
 
       const response = await client.request(M_UPSERT_ARTICLE, {
@@ -190,6 +219,20 @@ export default function NewArticlePage() {
     try {
       const contentJson: OutputData =
         (await editorRef.current?.save()) ?? { blocks: [] };
+      const readinessIssues = getArticleReadinessIssues({
+        title,
+        slug: slug || slugify(title),
+        excerpt,
+        categorySlug,
+        hasBodyContent: hasMeaningfulArticleContent(contentJson),
+      });
+
+      if (readinessIssues.length > 0) {
+        setValidationError(
+          `Before publishing: ${readinessIssues.join(", ")}.`,
+        );
+        return;
+      }
 
       const response = await client.request(M_UPSERT_ARTICLE, {
         input: {
@@ -294,6 +337,24 @@ export default function NewArticlePage() {
             placeholder="Short description for cards and SEO."
           />
         </div>
+
+        <SeoPreviewCard
+          title={title}
+          excerpt={excerpt}
+          slug={slug || slugify(title)}
+          categorySlug={categorySlug}
+          topicSlug={topic}
+          siteName={activeTenant?.name}
+          publicBaseUrl={publicBaseUrl}
+        />
+
+        <ArticleReadinessCard
+          title={title}
+          excerpt={excerpt}
+          slug={slug || slugify(title)}
+          categorySlug={categorySlug}
+          hasBodyContent={hasBodyContent}
+        />
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-2">
@@ -455,7 +516,12 @@ export default function NewArticlePage() {
       </div>
 
       {/* ---------- Editor ---------- */}
-      <NewsEditor ref={editorRef} />
+      <NewsEditor
+        ref={editorRef}
+        onChange={(content) =>
+          setHasBodyContent(hasMeaningfulArticleContent(content))
+        }
+      />
     </main>
     </PermissionGuard>
   );

@@ -6,6 +6,25 @@ export type BreakingNewsRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export type ArticleBreakingNewsRequestStatus = 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED';
 export type RevisionRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export type RevisionStatus = 'NONE' | 'REQUESTED';
+export type ArticleSharePlatform =
+  | 'FACEBOOK'
+  | 'X'
+  | 'LINKEDIN'
+  | 'TELEGRAM'
+  | 'WHATSAPP'
+  | 'EMAIL'
+  | 'YOUTUBE';
+export type ArticleShareMethod = 'SHARE_URL' | 'COPY_AND_OPEN';
+
+export interface ArticleShareTarget {
+  platform: ArticleSharePlatform;
+  label: string;
+  method: ArticleShareMethod;
+  url: string;
+  articleUrl: string;
+  message: string;
+  note?: string | null;
+}
 
 export interface User {
   id: string;

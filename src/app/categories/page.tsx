@@ -580,7 +580,7 @@ export default function CategoriesPage() {
 
   return (
     <PermissionGuard permissions={[Permission.LIST_CATEGORIES]} showError>
-      <div className="mx-auto min-h-screen max-w-7xl space-y-5 px-4 py-6 sm:px-6">
+      <div className="mx-auto min-h-screen max-w-7xl space-y-5 px-3 py-5 pb-24 sm:px-6 sm:py-6">
       <div>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
@@ -595,7 +595,7 @@ export default function CategoriesPage() {
       {/* Category Form - visible only when the role can create or edit categories */}
       {canShowCategoryForm && (
         <Card className="overflow-hidden border-slate-200 shadow-sm">
-          <CardHeader className="border-b bg-white px-6 py-5">
+          <CardHeader className="border-b bg-white px-4 py-5 sm:px-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2 text-lg">
@@ -615,7 +615,7 @@ export default function CategoriesPage() {
               )}
             </div>
           </CardHeader>
-          <CardContent className="space-y-5 px-6 py-5">
+          <CardContent className="space-y-5 px-4 py-5 sm:px-6">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_260px]">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-slate-700">
@@ -660,7 +660,7 @@ export default function CategoriesPage() {
             {/* Topic Management for New Categories */}
             {!editingCategory && (
               <div className="rounded-md border border-slate-200 bg-slate-50/70 p-4">
-                <div className="mb-4 flex items-center justify-between gap-3">
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h4 className="font-medium text-slate-950">
                       Sub-Categories
@@ -674,7 +674,7 @@ export default function CategoriesPage() {
                       onClick={() => setShowTopicForm(true)}
                       size="sm"
                       variant="outline"
-                      className="flex items-center gap-2"
+                      className="w-full items-center gap-2 sm:w-auto"
                     >
                       <Plus className="h-4 w-4" />
                       Add Topic
@@ -801,11 +801,11 @@ export default function CategoriesPage() {
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-2 border-t pt-5">
+            <div className="flex flex-col gap-2 border-t pt-5 sm:flex-row sm:flex-wrap sm:items-center">
               <Button
                 onClick={requestSaveCategory}
                 disabled={isLoading}
-                className="flex items-center gap-2"
+                className="w-full items-center gap-2 sm:w-auto"
               >
                 <Save className="h-4 w-4" />
                 {editingCategory ? "Update Category" : "Create Category"}
@@ -817,7 +817,7 @@ export default function CategoriesPage() {
                 <Button
                   variant="outline"
                   onClick={resetForm}
-                  className="flex items-center gap-2"
+                  className="w-full items-center gap-2 sm:w-auto"
                 >
                   <X className="h-4 w-4" />
                   Cancel

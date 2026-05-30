@@ -110,6 +110,7 @@ export const Q_ARTICLE_BY_ID = /* GraphQL */ `
       slug
       excerpt
       topic
+      coverImageUrl
       status
       isBreaking
       authorName

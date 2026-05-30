@@ -166,13 +166,13 @@ export default function SearchPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-slate-900">Search Articles</h1>
+        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Search Articles</h1>
         <p className="text-slate-600">Find articles, categories, and content across your site</p>
       </div>
 
       {/* Search Input */}
-      <div className="flex gap-4">
-        <div className="flex-1 relative">
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+        <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <Input
             type="search"
@@ -206,7 +206,7 @@ export default function SearchPage() {
         <Button
           variant="outline"
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-2"
+          className="w-full items-center gap-2 sm:w-auto"
         >
           <Filter className="h-4 w-4" />
           Filters
@@ -220,8 +220,8 @@ export default function SearchPage() {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-slate-50 rounded-lg p-4 space-y-4">
-          <div className="flex items-center justify-between">
+        <div className="space-y-4 rounded-lg bg-slate-50 p-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h3 className="font-medium text-slate-900">Filters</h3>
             {hasActiveFilters && (
               <Button variant="ghost" size="sm" onClick={clearFilters}>
@@ -344,11 +344,11 @@ export default function SearchPage() {
         {results.length > 0 ? (
           <div className="space-y-4">
             {results.map((article) => (
-              <div key={article.id} className="bg-white border border-slate-200 rounded-lg p-6 hover:shadow-sm transition-shadow">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-lg font-semibold text-slate-900 hover:text-blue-600">
+              <div key={article.id} className="rounded-lg border border-slate-200 bg-white p-4 transition-shadow hover:shadow-sm sm:p-6">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <h3 className="min-w-0 break-words text-base font-semibold text-slate-900 hover:text-blue-600 sm:text-lg">
                         <Link href={`/articles/${article.id}/edit`}>
                           {article.title}
                         </Link>
@@ -365,7 +365,7 @@ export default function SearchPage() {
                       <p className="text-slate-600 mb-3 line-clamp-2">{article.excerpt}</p>
                     )}
                     
-                    <div className="flex items-center gap-4 text-sm text-slate-500">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-500">
                       <span>/{article.slug}</span>
                       {article.category && <span>{article.category.name}</span>}
                       {article.authorName && <span>by {article.authorName}</span>}
@@ -374,7 +374,7 @@ export default function SearchPage() {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex shrink-0 items-center gap-2 sm:ml-4">
                     <Button variant="ghost" size="sm" asChild>
                       <Link href={`/${article.category?.slug || 'news'}/${article.topic || 'latest'}/${article.slug}`} target="_blank">
                         <Eye className="h-4 w-4" />

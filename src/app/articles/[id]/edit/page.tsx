@@ -21,10 +21,17 @@ import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useCategories } from "@/hooks/useCategories";
 import { useTopics } from "@/hooks/useTopics";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useTenant } from "@/contexts/TenantContext";
 import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
 import { ArticleStatus, canDeleteArticle, canEditArticle, canViewArticleForEdit } from "@/utils/articlePermissions";
 import { ArticleBreakingNewsRequestStatus } from "@/types/article";
 import { Permission } from "@/components/permissions/PermissionGuard";
+import { SeoPreviewCard } from "@/components/articles/seo-preview-card";
+import {
+  ArticleReadinessCard,
+  getArticleReadinessIssues,
+  hasMeaningfulArticleContent,
+} from "@/components/articles/article-readiness-card";
 import { format } from "date-fns";
 
 import type { OutputData } from "@editorjs/editorjs";
@@ -51,10 +58,6 @@ function slugify(s: string) {
 
 function normalizeTopic(value: string) {
   return slugify(value);
-}
-
-function titleCase(slug: string) {
-  return slug.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 /* =========================
@@ -85,6 +88,14 @@ export default function EditArticlePage() {
   
   // Permission hooks
   const { hasPermission, userRole, userId } = usePermissions();
+  const { activeTenant } = useTenant();
+  const publicBaseUrl = useMemo(() => {
+    const primarySite =
+      activeTenant?.sites.find((site) => site.isPrimary) ||
+      activeTenant?.sites[0];
+
+    return primarySite?.publicBaseUrl ?? null;
+  }, [activeTenant]);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -93,6 +104,7 @@ export default function EditArticlePage() {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [excerpt, setExcerpt] = useState("");
+  const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null);
 
   /* ✅ ADDED */
   const [authorName, setAuthorName] = useState("");
@@ -114,6 +126,7 @@ export default function EditArticlePage() {
   const [revisionStatus, setRevisionStatus] = useState<string | undefined>();
   const [currentRevisionRequest, setCurrentRevisionRequest] = useState<any | undefined>();
   const [revisionNote, setRevisionNote] = useState<string>("");
+  const [hasBodyContent, setHasBodyContent] = useState(false);
   const [showRevisionForm, setShowRevisionForm] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   
@@ -153,6 +166,7 @@ export default function EditArticlePage() {
       setTitle(article.title);
       setSlug(article.slug);
       setExcerpt(article.excerpt ?? "");
+      setCoverImageUrl(article.coverImageUrl ?? null);
       setAuthorName(article.authorName ?? ""); // ✅ ADDED
       setCategorySlug(article.category?.slug ?? "");
       setTopic(article.topic ? normalizeTopic(article.topic) : "");
@@ -167,6 +181,7 @@ export default function EditArticlePage() {
       setBreakingNewsRequestStatus(article.breakingNewsRequestStatus ?? undefined);
       setBreakingNewsRequestedAt(article.breakingNewsRequestedAt);
       setBreakingNewsRequestedBy(article.breakingNewsRequestedBy?.name);
+      setHasBodyContent(hasMeaningfulArticleContent(article.contentJson));
       
       // Load latest revision request (any status) for edit permissions
       const latestRevision = await getLatestRevisionRequest(id);
@@ -213,6 +228,25 @@ export default function EditArticlePage() {
       const shouldSubmitForReview = nextStatus === 'REVIEW' && originalStatus !== 'REVIEW';
       const statusForSave = shouldSubmitForReview ? 'DRAFT' : nextStatus;
       const contentJson = (await editorRef.current?.save()) ?? { blocks: [] };
+      const shouldRequireReadiness =
+        shouldSubmitForReview || nextStatus === "PUBLISHED";
+
+      if (shouldRequireReadiness) {
+        const readinessIssues = getArticleReadinessIssues({
+          title,
+          slug: slug || slugify(title),
+          excerpt,
+          categorySlug,
+          hasBodyContent: hasMeaningfulArticleContent(contentJson),
+        });
+
+        if (readinessIssues.length > 0) {
+          setValidationError(
+            `Before ${nextStatus === "PUBLISHED" ? "publishing" : "submitting for review"}: ${readinessIssues.join(", ")}.`,
+          );
+          return;
+        }
+      }
 
       const response = await client.request(M_UPSERT_ARTICLE, {
         id,
@@ -683,6 +717,25 @@ export default function EditArticlePage() {
           <Input value={excerpt} disabled={isReadOnly} onChange={(e) => setExcerpt(e.target.value)} />
         </div>
 
+        <SeoPreviewCard
+          title={title}
+          excerpt={excerpt}
+          slug={slug || slugify(title)}
+          categorySlug={categorySlug}
+          topicSlug={topic}
+          siteName={activeTenant?.name}
+          publicBaseUrl={publicBaseUrl}
+          coverImageUrl={coverImageUrl}
+        />
+
+        <ArticleReadinessCard
+          title={title}
+          excerpt={excerpt}
+          slug={slug || slugify(title)}
+          categorySlug={categorySlug}
+          hasBodyContent={hasBodyContent}
+        />
+
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-2">
             <label className="text-xs font-semibold text-slate-600">
@@ -1058,7 +1111,13 @@ export default function EditArticlePage() {
       </div>
 
       {/* ---------- Editor ---------- */}
-      <NewsEditor ref={editorRef} initialData={initialContent} />
+      <NewsEditor
+        ref={editorRef}
+        initialData={initialContent}
+        onChange={(content) =>
+          setHasBodyContent(hasMeaningfulArticleContent(content))
+        }
+      />
       <ConfirmationDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}

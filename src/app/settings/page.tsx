@@ -10,21 +10,28 @@ import {
   AlertCircle,
   BarChart3,
   Brush,
+  CheckCircle2,
+  Circle,
   Code2,
+  ExternalLink,
   FileText,
   Globe2,
   HardDrive,
+  Loader2,
   Mail,
   RefreshCw,
   Search,
+  Send,
   Settings as SettingsIcon,
   Users,
 } from "lucide-react";
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
 import {
   M_RESET_SETTING,
+  M_TEST_EMAIL_SETTINGS,
   M_UPDATE_SETTING,
   Q_SETTINGS,
+  EmailTestResult,
   Setting,
   SETTING_CATEGORIES,
   SettingType,
@@ -111,6 +118,17 @@ function getCategoryShortLabel(type: SettingType) {
   return SETTING_CATEGORIES[type].label.split(" ")[0];
 }
 
+function hasSettingValue(settings: Setting[], key: string): boolean {
+  const value = settings.find((setting) => setting.key === key)?.value;
+
+  if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string") return value.trim().length > 0;
+
+  return Boolean(value);
+}
+
 export default function SettingsPage() {
   const { user } = useAuth();
   const { activeTenant, refreshTenants } = useTenant();
@@ -124,6 +142,9 @@ export default function SettingsPage() {
   const [selectedCategory, setSelectedCategory] = React.useState<SettingType>(
     SettingType.SITE,
   );
+  const [testEmail, setTestEmail] = React.useState(user?.email || "");
+  const [testingEmail, setTestingEmail] = React.useState(false);
+  const [emailTestResult, setEmailTestResult] = React.useState<EmailTestResult | null>(null);
 
   const loadSettings = React.useCallback(async () => {
     if (!canAccessSettings) {
@@ -164,6 +185,12 @@ export default function SettingsPage() {
   React.useEffect(() => {
     void loadSettings();
   }, [loadSettings]);
+
+  React.useEffect(() => {
+    if (!testEmail && user?.email) {
+      setTestEmail(user.email);
+    }
+  }, [testEmail, user?.email]);
 
   function getMutationSetting(
     response: unknown,
@@ -245,6 +272,28 @@ export default function SettingsPage() {
     }
   };
 
+  const handleTestEmailSettings = async () => {
+    try {
+      setTestingEmail(true);
+      setEmailTestResult(null);
+
+      const response = await getAuthenticatedGqlClient().request<{
+        testEmailSettings: EmailTestResult;
+      }>(M_TEST_EMAIL_SETTINGS, {
+        input: { recipientEmail: testEmail },
+      });
+
+      setEmailTestResult(response.testEmailSettings);
+    } catch (err) {
+      setEmailTestResult({
+        success: false,
+        message: err instanceof Error ? err.message : "Failed to send test email.",
+      });
+    } finally {
+      setTestingEmail(false);
+    }
+  };
+
   const isSuperAdmin = userRole === "SUPER_ADMIN";
   const pageTitle = isSuperAdmin ? "Management Console Settings" : "Settings";
   const pageDescription = isSuperAdmin
@@ -284,6 +333,84 @@ export default function SettingsPage() {
   const publicCount = settings.filter((setting) => setting.isPublic).length;
   const selectedCategoryInfo = SETTING_CATEGORIES[selectedCategory];
   const SelectedCategoryIcon = CATEGORY_ICONS[selectedCategory] || SettingsIcon;
+  const setupChecklist = React.useMemo(() => {
+    const primarySite = activeTenant?.sites?.find((site) => site.isPrimary) || activeTenant?.sites?.[0];
+    const hasPublicUrl = Boolean(primarySite?.publicBaseUrl) || hasSettingValue(settings, "site.public_base_url");
+    const hasAdminUrl = Boolean(primarySite?.adminBaseUrl);
+    const hasBranding =
+      hasSettingValue(settings, "site.logo_url") || hasSettingValue(settings, "site.favicon_url");
+    const hasContact =
+      hasSettingValue(settings, "site.contact_email") &&
+      (hasSettingValue(settings, "site.contact_phone") ||
+        hasSettingValue(settings, "site.contact_address"));
+    const hasSeo =
+      hasSettingValue(settings, "seo.meta_title") &&
+      hasSettingValue(settings, "seo.meta_description");
+    const hasEmail =
+      hasSettingValue(settings, "email.notifications_enabled") &&
+      hasSettingValue(settings, "email.smtp_host") &&
+      hasSettingValue(settings, "email.from_address");
+    const hasUserPolicy =
+      hasSettingValue(settings, "users.default_role") &&
+      hasSettingValue(settings, "users.password_min_length");
+    const hasLegal =
+      hasSettingValue(settings, "content.privacy_policy") &&
+      hasSettingValue(settings, "content.terms_of_service") &&
+      hasSettingValue(settings, "content.cookies_policy");
+
+    return [
+      {
+        label: "Public website URL",
+        description: "Set the public URL used for links, SEO, and article sharing.",
+        complete: hasPublicUrl,
+        category: SettingType.SITE,
+      },
+      {
+        label: "Admin dashboard URL",
+        description: "Add the tenant admin URL so emails point users to the right console.",
+        complete: hasAdminUrl,
+        category: SettingType.SITE,
+      },
+      {
+        label: "Branding",
+        description: "Add a logo or public favicon for a finished site identity.",
+        complete: hasBranding,
+        category: SettingType.SITE,
+      },
+      {
+        label: "Contact details",
+        description: "Publish an email plus phone or address for the public contact page.",
+        complete: hasContact,
+        category: SettingType.SITE,
+      },
+      {
+        label: "SEO basics",
+        description: "Add meta title and description for search and social previews.",
+        complete: hasSeo,
+        category: SettingType.SEO,
+      },
+      {
+        label: "Email delivery",
+        description: "Configure SMTP and use the Email Health Check to verify delivery.",
+        complete: hasEmail,
+        category: SettingType.EMAIL,
+      },
+      {
+        label: "User registration policy",
+        description: "Confirm the default role and password minimum for new users.",
+        complete: hasUserPolicy,
+        category: SettingType.USER_MANAGEMENT,
+      },
+      {
+        label: "Legal pages",
+        description: "Publish privacy, terms, and cookie policy content.",
+        complete: hasLegal,
+        category: SettingType.CONTENT,
+      },
+    ];
+  }, [activeTenant?.sites, settings]);
+  const completedSetupItems = setupChecklist.filter((item) => item.complete).length;
+  const setupProgress = Math.round((completedSetupItems / setupChecklist.length) * 100);
 
   if (!canAccessSettings) {
     return (
@@ -347,18 +474,18 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border bg-white p-6">
+      <section className="rounded-lg border bg-white p-4 sm:p-6">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="max-w-3xl">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white sm:h-11 sm:w-11">
                 <SettingsIcon className="h-5 w-5" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
                   {isSuperAdmin ? "Management Console" : "Tenant Website"}
                 </p>
-                <h1 className="text-3xl font-bold text-slate-950">
+                <h1 className="break-words text-2xl font-bold text-slate-950 sm:text-3xl">
                   {pageTitle}
                 </h1>
               </div>
@@ -368,7 +495,7 @@ export default function SettingsPage() {
             </p>
           </div>
 
-          <div className="grid gap-2 sm:grid-cols-3 xl:min-w-[420px]">
+          <div className="grid w-full gap-2 sm:grid-cols-3 xl:w-auto xl:min-w-[420px]">
             {[
               ["Settings", settings.length],
               ["Public", publicCount],
@@ -397,9 +524,9 @@ export default function SettingsPage() {
             />
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             {!isSuperAdmin && activeTenant ? (
-              <Badge variant="outline" className="bg-white">
+              <Badge variant="outline" className="max-w-full truncate bg-white">
                 {activeTenant.name} / {activeTenant.slug}
               </Badge>
             ) : null}
@@ -418,6 +545,87 @@ export default function SettingsPage() {
               Refresh
             </Button>
           </div>
+        </div>
+      </section>
+
+      <section className="rounded-lg border bg-white p-4 sm:p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-2xl">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-5 w-5 text-blue-600" />
+              <h2 className="text-xl font-semibold text-slate-950">
+                Setup Checklist
+              </h2>
+            </div>
+            <p className="mt-1 text-sm leading-6 text-slate-600">
+              Track the essentials that make this site ready for public launch and daily operations.
+            </p>
+          </div>
+
+          <div className="min-w-[180px] rounded-md border bg-slate-50 p-3">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-xs font-medium uppercase text-slate-500">
+                Readiness
+              </span>
+              <span className="text-sm font-semibold text-slate-950">
+                {completedSetupItems}/{setupChecklist.length}
+              </span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+              <div
+                className="h-full rounded-full bg-blue-600 transition-all"
+                style={{ width: `${setupProgress}%` }}
+              />
+            </div>
+            <p className="mt-2 text-2xl font-bold text-slate-950">
+              {setupProgress}%
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 lg:grid-cols-2">
+          {setupChecklist.map((item) => {
+            const Icon = item.complete ? CheckCircle2 : Circle;
+
+            return (
+              <button
+                key={item.label}
+                type="button"
+                onClick={() => setSelectedCategory(item.category)}
+                className="flex min-h-24 gap-3 rounded-md border border-slate-200 bg-white p-4 text-left transition-colors hover:border-blue-200 hover:bg-blue-50/40"
+              >
+                <Icon
+                  className={`mt-0.5 h-5 w-5 shrink-0 ${
+                    item.complete ? "text-green-600" : "text-slate-300"
+                  }`}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-3">
+                    <span className="font-semibold text-slate-950">
+                      {item.label}
+                    </span>
+                    <Badge
+                      variant={item.complete ? "secondary" : "outline"}
+                      className={
+                        item.complete
+                          ? "bg-green-50 text-green-700"
+                          : "bg-white text-slate-600"
+                      }
+                    >
+                      {item.complete ? "Done" : "Needs setup"}
+                    </Badge>
+                  </span>
+                  <span className="mt-1 block text-sm leading-6 text-slate-600">
+                    {item.description}
+                  </span>
+                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600">
+                    Open {SETTING_CATEGORIES[item.category].label}
+                    <ExternalLink className="h-3 w-3" />
+                  </span>
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -449,7 +657,7 @@ export default function SettingsPage() {
           })}
         </TabsList>
 
-        <section className="rounded-lg border bg-white p-6">
+        <section className="rounded-lg border bg-white p-4 sm:p-6">
           <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex items-center gap-2">
@@ -463,6 +671,65 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
+
+          {selectedCategory === SettingType.EMAIL ? (
+            <Card className="mb-6 border-blue-100 bg-blue-50/50">
+              <CardContent className="p-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-4 w-4 text-blue-600" />
+                      <h3 className="font-semibold text-slate-950">Email Health Check</h3>
+                    </div>
+                    <p className="mt-1 text-sm text-slate-600">
+                      Send a real test message using the current SMTP settings for this scope.
+                    </p>
+                    {emailTestResult ? (
+                      <div
+                        className={`mt-3 rounded-md border px-3 py-2 text-sm ${
+                          emailTestResult.success
+                            ? "border-green-200 bg-green-50 text-green-700"
+                            : "border-red-200 bg-red-50 text-red-700"
+                        }`}
+                      >
+                        <p>{emailTestResult.message}</p>
+                        {emailTestResult.host ? (
+                          <p className="mt-1 text-xs opacity-80">
+                            SMTP: {emailTestResult.host}
+                            {emailTestResult.port ? `:${emailTestResult.port}` : ""} · From:{" "}
+                            {emailTestResult.fromAddress || "not configured"}
+                          </p>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+                    <Input
+                      type="email"
+                      value={testEmail}
+                      onChange={(event) => setTestEmail(event.target.value)}
+                      placeholder="recipient@example.com"
+                      className="bg-white sm:w-72"
+                      disabled={testingEmail}
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => void handleTestEmailSettings()}
+                      disabled={testingEmail || !testEmail.trim()}
+                    >
+                      {testingEmail ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="mr-2 h-4 w-4" />
+                      )}
+                      Send Test
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
 
           {visibleCategories.map(([category]) => (
             <TabsContent key={category} value={category} className="mt-0">

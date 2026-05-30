@@ -16,7 +16,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
   const pathname = usePathname();
 
   // Public routes that don't require authentication
-  const publicRoutes = ['/login', '/register', '/verify-email'];
+  const publicRoutes = ['/login', '/register', '/verify-email', '/forgot-password', '/reset-password'];
   const isPublicRoute = publicRoutes.includes(pathname);
   const superAdminAllowedRoutes = [
     '/',

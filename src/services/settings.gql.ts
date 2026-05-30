@@ -116,6 +116,18 @@ export const M_RESET_SETTING = gql`
   }
 `;
 
+export const M_TEST_EMAIL_SETTINGS = gql`
+  mutation TestEmailSettings($input: EmailTestInput!) {
+    testEmailSettings(input: $input) {
+      success
+      message
+      host
+      port
+      fromAddress
+    }
+  }
+`;
+
 // ============================================================================
 // TYPES
 // ============================================================================
@@ -155,6 +167,14 @@ export interface Setting {
 export interface UpdateSettingInput {
   key: string;
   value: any; // JSON value can be any type
+}
+
+export interface EmailTestResult {
+  success: boolean;
+  message: string;
+  host?: string | null;
+  port?: number | null;
+  fromAddress?: string | null;
 }
 
 // ============================================================================

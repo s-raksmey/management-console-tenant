@@ -260,9 +260,9 @@ export const UserList: React.FC<UserListProps> = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">User Management</h1>
           <p className="text-gray-600 mt-1">
             {isSuperAdmin
               ? 'Manage platform super admins only.'
@@ -288,8 +288,8 @@ export const UserList: React.FC<UserListProps> = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-[200px]">
+          <div className="grid gap-3 sm:grid-cols-2 lg:flex lg:flex-wrap">
+            <div className="min-w-0 lg:flex-1 lg:min-w-[220px]">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
@@ -306,7 +306,7 @@ export const UserList: React.FC<UserListProps> = () => {
               </div>
             ) : (
               <Select value={roleFilter} onValueChange={handleRoleFilter}>
-                <SelectTrigger className="w-[150px]">
+                <SelectTrigger className="w-full lg:w-[150px]">
                   <SelectValue placeholder="All Roles" />
                 </SelectTrigger>
                 <SelectContent>
@@ -318,7 +318,7 @@ export const UserList: React.FC<UserListProps> = () => {
               </Select>
             )}
             <Select value={statusFilter} onValueChange={handleStatusFilter}>
-              <SelectTrigger className="w-[150px]">
+              <SelectTrigger className="w-full lg:w-[150px]">
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
@@ -343,7 +343,7 @@ export const UserList: React.FC<UserListProps> = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
+          <Table className="min-w-[760px]">
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
@@ -500,7 +500,7 @@ export const UserList: React.FC<UserListProps> = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4">
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-sm text-gray-600">
                 Page {currentPage} of {totalPages}
               </div>
