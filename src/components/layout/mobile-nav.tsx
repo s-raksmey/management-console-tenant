@@ -14,6 +14,7 @@ import {
   Building2,
   Archive,
   Shield,
+  Megaphone,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -42,6 +43,7 @@ const getNavigation = (
     canViewMedia: boolean;
     canViewAnalytics: boolean;
     canViewCarousel: boolean;
+    canViewAds: boolean;
     canViewAuditLogs: boolean;
     canSystemAdmin: boolean;
     canManageRoles: boolean;
@@ -53,6 +55,7 @@ const getNavigation = (
     canViewMedia: false,
     canViewAnalytics: false,
     canViewCarousel: false,
+    canViewAds: false,
     canViewAuditLogs: false,
     canSystemAdmin: false,
     canManageRoles: false,
@@ -114,6 +117,14 @@ const getNavigation = (
         name: "Carousel",
         href: "/carousel",
         icon: Image,
+      });
+    }
+
+    if (permissions.canViewAds) {
+      platformItems.push({
+        name: "Ads",
+        href: "/ads",
+        icon: Megaphone,
       });
     }
 
@@ -181,6 +192,14 @@ const getNavigation = (
     });
   }
 
+  if (permissions.canViewAds) {
+    baseItems.push({
+      name: "Ads",
+      href: "/ads",
+      icon: Megaphone,
+    });
+  }
+
   if (permissions.canViewAnalytics) {
     baseItems.push({
       name: "Analytics",
@@ -224,6 +243,7 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
       hasPermission(Permission.CREATE_CAROUSEL) ||
       hasPermission(Permission.UPDATE_CAROUSEL) ||
       hasPermission(Permission.DELETE_CAROUSEL),
+    canViewAds: hasPermission(Permission.VIEW_ADS),
     canViewAuditLogs: hasPermission(Permission.VIEW_AUDIT_LOGS),
     canSystemAdmin: hasPermission(Permission.SYSTEM_ADMINISTRATION),
     canManageRoles: hasPermission(Permission.MANAGE_USER_ROLES),

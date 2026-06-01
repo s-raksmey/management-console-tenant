@@ -14,6 +14,7 @@ import {
   Archive,
   UserPlus,
   Building2,
+  Megaphone,
 } from "lucide-react";
 import { Permission } from "../permissions/PermissionGuard";
 
@@ -102,6 +103,14 @@ export const getNavigationItems = (
           Permission.UPDATE_CAROUSEL,
           Permission.DELETE_CAROUSEL,
         ],
+      },
+      {
+        name: "Ads",
+        href: "/ads",
+        icon: Megaphone,
+        badge: null,
+        description: "Sponsored placements",
+        permissions: [Permission.VIEW_ADS],
       },
       {
         name: "Logs",
@@ -225,6 +234,15 @@ export const getNavigationItems = (
         Permission.UPDATE_CAROUSEL,
         Permission.DELETE_CAROUSEL,
       ],
+    },
+
+    {
+      name: "Ads",
+      href: "/ads",
+      icon: Megaphone,
+      badge: null,
+      description: "Sponsored placements",
+      permissions: [Permission.VIEW_ADS],
     },
 
     // Analytics - Available to all users

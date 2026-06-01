@@ -3,6 +3,8 @@
 import { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { Permission } from '@/components/permissions/PermissionGuard';
+import { usePermissions } from '@/hooks/usePermissions';
 import { LayoutWrapper } from './layout-wrapper';
 import { ApolloClientProvider } from '@/components/providers/ApolloClientProvider';
 
@@ -12,6 +14,7 @@ interface ClientLayoutWrapperProps {
 
 export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
   const { user, isAuthenticated, isInitializing } = useAuth();
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -31,11 +34,14 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
   ];
   const isSuperAdminRouteAllowed = superAdminAllowedRoutes.some((route) =>
     route === '/' ? pathname === route : pathname === route || pathname.startsWith(`${route}/`)
+  ) || (
+    (pathname === '/ads' || pathname.startsWith('/ads/')) &&
+    hasPermission(Permission.VIEW_ADS)
   );
 
   useEffect(() => {
     // Don't redirect while loading
-    if (isInitializing) return;
+    if (isInitializing || permissionsLoading) return;
 
     // If not authenticated and trying to access protected route
     if (!isAuthenticated && !isPublicRoute) {
@@ -64,6 +70,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     isPublicRoute,
     isSuperAdminRouteAllowed,
     pathname,
+    permissionsLoading,
     router,
     user?.role,
   ]);
@@ -99,6 +106,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
 
   if (
     user?.role === 'SUPER_ADMIN' &&
+    !permissionsLoading &&
     !isPublicRoute &&
     !isSuperAdminRouteAllowed
   ) {

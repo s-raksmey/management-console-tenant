@@ -62,6 +62,12 @@ export enum Permission {
   UPDATE_CAROUSEL = "UPDATE_CAROUSEL",
   DELETE_CAROUSEL = "DELETE_CAROUSEL",
 
+  // Advertisement Management
+  VIEW_ADS = "VIEW_ADS",
+  CREATE_ADS = "CREATE_ADS",
+  UPDATE_ADS = "UPDATE_ADS",
+  DELETE_ADS = "DELETE_ADS",
+
   // Media Management
   VIEW_MEDIA = "VIEW_MEDIA",
   MANAGE_MEDIA = "MANAGE_MEDIA",
@@ -86,6 +92,10 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.CREATE_CAROUSEL,
     Permission.UPDATE_CAROUSEL,
     Permission.DELETE_CAROUSEL,
+    Permission.VIEW_ADS,
+    Permission.CREATE_ADS,
+    Permission.UPDATE_ADS,
+    Permission.DELETE_ADS,
     Permission.VIEW_MEDIA,
     Permission.MANAGE_MEDIA,
   ],
@@ -127,6 +137,10 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.CREATE_CAROUSEL,
     Permission.UPDATE_CAROUSEL,
     Permission.DELETE_CAROUSEL,
+    Permission.VIEW_ADS,
+    Permission.CREATE_ADS,
+    Permission.UPDATE_ADS,
+    Permission.DELETE_ADS,
     Permission.VIEW_MEDIA,
     Permission.MANAGE_MEDIA,
   ],
@@ -150,6 +164,7 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.CREATE_CAROUSEL,
     Permission.UPDATE_CAROUSEL,
     Permission.DELETE_CAROUSEL,
+    Permission.VIEW_ADS,
     Permission.VIEW_MEDIA,
     Permission.MANAGE_MEDIA,
   ],

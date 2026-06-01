@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -110,13 +109,6 @@ const ROLE_THEME_SETTING_KEYS = new Set([
   "theme.secondary_color",
   "theme.custom_css",
 ]);
-
-function getCategoryShortLabel(type: SettingType) {
-  if (type === SettingType.USER_MANAGEMENT) return "Users";
-  if (type === SettingType.MAINTENANCE) return "Maintenance";
-
-  return SETTING_CATEGORIES[type].label.split(" ")[0];
-}
 
 function hasSettingValue(settings: Setting[], key: string): boolean {
   const value = settings.find((setting) => setting.key === key)?.value;
@@ -473,277 +465,253 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rounded-lg border bg-white p-4 sm:p-6">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div className="max-w-3xl">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-950 text-white sm:h-11 sm:w-11">
-                <SettingsIcon className="h-5 w-5" />
+    <div className="min-h-screen bg-slate-50/80">
+      <div className="mx-auto max-w-[1600px] space-y-5 px-3 py-4 sm:px-5 lg:px-6">
+        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="min-w-0">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-slate-950 text-white">
+                  <SettingsIcon className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+                    {isSuperAdmin ? "Management Console" : activeTenant?.name || "Tenant Website"}
+                  </p>
+                  <h1 className="truncate text-2xl font-bold text-slate-950">
+                    {pageTitle}
+                  </h1>
+                </div>
               </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-                  {isSuperAdmin ? "Management Console" : "Tenant Website"}
-                </p>
-                <h1 className="break-words text-2xl font-bold text-slate-950 sm:text-3xl">
-                  {pageTitle}
-                </h1>
-              </div>
-            </div>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              {pageDescription}
-            </p>
-          </div>
-
-          <div className="grid w-full gap-2 sm:grid-cols-3 xl:w-auto xl:min-w-[420px]">
-            {[
-              ["Settings", settings.length],
-              ["Public", publicCount],
-              ["Required", requiredCount],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-md border bg-slate-50 p-3">
-                <p className="text-xs font-medium uppercase text-slate-500">
-                  {label}
-                </p>
-                <p className="mt-1 text-2xl font-bold text-slate-950">
-                  {value}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <div className="relative w-full lg:max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <Input
-              placeholder="Search settings..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="h-10 bg-white pl-9"
-            />
-          </div>
-
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            {!isSuperAdmin && activeTenant ? (
-              <Badge variant="outline" className="max-w-full truncate bg-white">
-                {activeTenant.name} / {activeTenant.slug}
-              </Badge>
-            ) : null}
-            <Badge variant="outline" className="bg-white">
-              {searchQuery
-                ? `${filteredSettings.length} matching`
-                : `${getCategoryCount(selectedCategory)} settings`}
-            </Badge>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void loadSettings()}
-            >
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      <section className="rounded-lg border bg-white p-4 sm:p-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div className="max-w-2xl">
-            <div className="flex items-center gap-2">
-              <CheckCircle2 className="h-5 w-5 text-blue-600" />
-              <h2 className="text-xl font-semibold text-slate-950">
-                Setup Checklist
-              </h2>
-            </div>
-            <p className="mt-1 text-sm leading-6 text-slate-600">
-              Track the essentials that make this site ready for public launch and daily operations.
-            </p>
-          </div>
-
-          <div className="min-w-[180px] rounded-md border bg-slate-50 p-3">
-            <div className="flex items-center justify-between gap-3">
-              <span className="text-xs font-medium uppercase text-slate-500">
-                Readiness
-              </span>
-              <span className="text-sm font-semibold text-slate-950">
-                {completedSetupItems}/{setupChecklist.length}
-              </span>
-            </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
-              <div
-                className="h-full rounded-full bg-blue-600 transition-all"
-                style={{ width: `${setupProgress}%` }}
-              />
-            </div>
-            <p className="mt-2 text-2xl font-bold text-slate-950">
-              {setupProgress}%
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-5 grid gap-3 lg:grid-cols-2">
-          {setupChecklist.map((item) => {
-            const Icon = item.complete ? CheckCircle2 : Circle;
-
-            return (
-              <button
-                key={item.label}
-                type="button"
-                onClick={() => setSelectedCategory(item.category)}
-                className="flex min-h-24 gap-3 rounded-md border border-slate-200 bg-white p-4 text-left transition-colors hover:border-blue-200 hover:bg-blue-50/40"
-              >
-                <Icon
-                  className={`mt-0.5 h-5 w-5 shrink-0 ${
-                    item.complete ? "text-green-600" : "text-slate-300"
-                  }`}
-                />
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="font-semibold text-slate-950">
-                      {item.label}
-                    </span>
-                    <Badge
-                      variant={item.complete ? "secondary" : "outline"}
-                      className={
-                        item.complete
-                          ? "bg-green-50 text-green-700"
-                          : "bg-white text-slate-600"
-                      }
-                    >
-                      {item.complete ? "Done" : "Needs setup"}
-                    </Badge>
-                  </span>
-                  <span className="mt-1 block text-sm leading-6 text-slate-600">
-                    {item.description}
-                  </span>
-                  <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-blue-600">
-                    Open {SETTING_CATEGORIES[item.category].label}
-                    <ExternalLink className="h-3 w-3" />
-                  </span>
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <Tabs
-        value={selectedCategory}
-        onValueChange={(value) => setSelectedCategory(value as SettingType)}
-        className="space-y-6"
-      >
-        <TabsList className="flex h-auto w-full justify-start gap-2 overflow-x-auto rounded-lg border bg-white p-2">
-          {visibleCategories.map(([key]) => {
-            const categoryKey = key as SettingType;
-            const count = getCategoryCount(categoryKey);
-            const Icon = CATEGORY_ICONS[categoryKey] || SettingsIcon;
-
-            return (
-              <TabsTrigger
-                key={key}
-                value={key}
-                disabled={count === 0}
-                className="min-w-max gap-2 rounded-md px-4 py-2.5 data-[state=active]:bg-slate-950 data-[state=active]:text-white"
-              >
-                <Icon className="h-4 w-4" />
-                <span>{getCategoryShortLabel(categoryKey)}</span>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-700 data-[state=active]:bg-white/15 data-[state=active]:text-white">
-                  {count}
-                </span>
-              </TabsTrigger>
-            );
-          })}
-        </TabsList>
-
-        <section className="rounded-lg border bg-white p-4 sm:p-6">
-          <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <SelectedCategoryIcon className="h-5 w-5 text-blue-600" />
-                <h2 className="text-xl font-semibold text-slate-950">
-                  {selectedCategoryInfo.label}
-                </h2>
-              </div>
-              <p className="mt-1 text-sm text-slate-600">
-                {selectedCategoryInfo.description}
+              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+                {pageDescription}
               </p>
             </div>
-          </div>
 
-          {selectedCategory === SettingType.EMAIL ? (
-            <Card className="mb-6 border-blue-100 bg-blue-50/50">
-              <CardContent className="p-4">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-blue-600" />
-                      <h3 className="font-semibold text-slate-950">Email Health Check</h3>
-                    </div>
-                    <p className="mt-1 text-sm text-slate-600">
-                      Send a real test message using the current SMTP settings for this scope.
+            <div className="flex flex-col gap-3 lg:min-w-[520px]">
+              <div className="grid gap-2 sm:grid-cols-3">
+                {[
+                  ["Settings", settings.length],
+                  ["Public", publicCount],
+                  ["Required", requiredCount],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                      {label}
                     </p>
-                    {emailTestResult ? (
-                      <div
-                        className={`mt-3 rounded-md border px-3 py-2 text-sm ${
-                          emailTestResult.success
-                            ? "border-green-200 bg-green-50 text-green-700"
-                            : "border-red-200 bg-red-50 text-red-700"
+                    <p className="mt-1 text-xl font-bold text-slate-950">{value}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    placeholder="Search settings..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="h-10 bg-white pl-9"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => void loadSettings()}
+                  className="h-10 shrink-0 bg-white"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh
+                </Button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+          <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+            <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
+              <div className="mb-2 flex items-center justify-between px-1">
+                <h2 className="text-sm font-semibold text-slate-950">Categories</h2>
+                <Badge variant="outline" className="bg-white">
+                  {searchQuery ? `${filteredSettings.length} matching` : `${getCategoryCount(selectedCategory)} shown`}
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                {visibleCategories.map(([key]) => {
+                  const categoryKey = key as SettingType;
+                  const count = getCategoryCount(categoryKey);
+                  const Icon = CATEGORY_ICONS[categoryKey] || SettingsIcon;
+                  const selected = selectedCategory === categoryKey;
+
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      disabled={count === 0}
+                      onClick={() => setSelectedCategory(categoryKey)}
+                      className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm transition-colors ${
+                        selected
+                          ? "bg-slate-950 text-white shadow-sm"
+                          : "text-slate-700 hover:bg-slate-100"
+                      } disabled:cursor-not-allowed disabled:opacity-45`}
+                    >
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="min-w-0 flex-1 truncate">
+                        {SETTING_CATEGORIES[categoryKey].label}
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs ${
+                          selected ? "bg-white/15 text-white" : "bg-white text-slate-600"
                         }`}
                       >
-                        <p>{emailTestResult.message}</p>
-                        {emailTestResult.host ? (
-                          <p className="mt-1 text-xs opacity-80">
-                            SMTP: {emailTestResult.host}
-                            {emailTestResult.port ? `:${emailTestResult.port}` : ""} · From:{" "}
-                            {emailTestResult.fromAddress || "not configured"}
-                          </p>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
 
-                  <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
-                    <Input
-                      type="email"
-                      value={testEmail}
-                      onChange={(event) => setTestEmail(event.target.value)}
-                      placeholder="recipient@example.com"
-                      className="bg-white sm:w-72"
-                      disabled={testingEmail}
-                    />
-                    <Button
-                      type="button"
-                      onClick={() => void handleTestEmailSettings()}
-                      disabled={testingEmail || !testEmail.trim()}
-                    >
-                      {testingEmail ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="mr-2 h-4 w-4" />
-                      )}
-                      Send Test
-                    </Button>
-                  </div>
+            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-semibold text-slate-950">Launch Readiness</h2>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {completedSetupItems}/{setupChecklist.length} essentials complete
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-          ) : null}
+                <span className="text-2xl font-bold text-slate-950">{setupProgress}%</span>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+                <div
+                  className="h-full rounded-full bg-blue-600 transition-all"
+                  style={{ width: `${setupProgress}%` }}
+                />
+              </div>
+              <div className="mt-4 space-y-1.5">
+                {setupChecklist.map((item) => {
+                  const Icon = item.complete ? CheckCircle2 : Circle;
 
-          {visibleCategories.map(([category]) => (
-            <TabsContent key={category} value={category} className="mt-0">
-              <SettingsCategory
-                category={category as SettingType}
-                settings={filteredSettings}
-                onUpdateSetting={handleUpdateSetting}
-                onResetSetting={handleResetSetting}
-                loading={loading}
-              />
-            </TabsContent>
-          ))}
-        </section>
-      </Tabs>
+                  return (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={() => setSelectedCategory(item.category)}
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-slate-50"
+                    >
+                      <Icon
+                        className={`h-4 w-4 shrink-0 ${
+                          item.complete ? "text-green-600" : "text-slate-300"
+                        }`}
+                      />
+                      <span className="min-w-0 flex-1 truncate text-slate-700">
+                        {item.label}
+                      </span>
+                      {!item.complete ? (
+                        <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
+                      ) : null}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          </aside>
+
+          <main className="min-w-0 space-y-4">
+            <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 p-4 sm:p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <SelectedCategoryIcon className="h-5 w-5 text-blue-600" />
+                      <h2 className="text-xl font-semibold text-slate-950">
+                        {selectedCategoryInfo.label}
+                      </h2>
+                    </div>
+                    <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
+                      {selectedCategoryInfo.description}
+                    </p>
+                  </div>
+                  {!isSuperAdmin && activeTenant ? (
+                    <Badge variant="outline" className="max-w-full truncate bg-white">
+                      {activeTenant.slug}
+                    </Badge>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="p-4 sm:p-5">
+                {selectedCategory === SettingType.EMAIL ? (
+                  <Card className="mb-5 border-blue-100 bg-blue-50/60 shadow-none">
+                    <CardContent className="p-4">
+                      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <Mail className="h-4 w-4 text-blue-600" />
+                            <h3 className="font-semibold text-slate-950">Email Health Check</h3>
+                          </div>
+                          <p className="mt-1 text-sm text-slate-600">
+                            Send a real test message using the current SMTP settings.
+                          </p>
+                          {emailTestResult ? (
+                            <div
+                              className={`mt-3 rounded-md border px-3 py-2 text-sm ${
+                                emailTestResult.success
+                                  ? "border-green-200 bg-green-50 text-green-700"
+                                  : "border-red-200 bg-red-50 text-red-700"
+                              }`}
+                            >
+                              <p>{emailTestResult.message}</p>
+                              {emailTestResult.host ? (
+                                <p className="mt-1 text-xs opacity-80">
+                                  SMTP: {emailTestResult.host}
+                                  {emailTestResult.port ? `:${emailTestResult.port}` : ""} · From:{" "}
+                                  {emailTestResult.fromAddress || "not configured"}
+                                </p>
+                              ) : null}
+                            </div>
+                          ) : null}
+                        </div>
+
+                        <div className="flex w-full flex-col gap-2 sm:flex-row xl:w-auto">
+                          <Input
+                            type="email"
+                            value={testEmail}
+                            onChange={(event) => setTestEmail(event.target.value)}
+                            placeholder="recipient@example.com"
+                            className="bg-white sm:w-72"
+                            disabled={testingEmail}
+                          />
+                          <Button
+                            type="button"
+                            onClick={() => void handleTestEmailSettings()}
+                            disabled={testingEmail || !testEmail.trim()}
+                          >
+                            {testingEmail ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Send className="mr-2 h-4 w-4" />
+                            )}
+                            Send Test
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : null}
+
+                <SettingsCategory
+                  category={selectedCategory}
+                  settings={filteredSettings}
+                  onUpdateSetting={handleUpdateSetting}
+                  onResetSetting={handleResetSetting}
+                  loading={loading}
+                />
+              </div>
+            </section>
+          </main>
+        </div>
+      </div>
     </div>
   );
 }

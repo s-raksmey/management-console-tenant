@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { X, CheckCircle, XCircle, Info, AlertTriangle } from 'lucide-react';
 import { useToast, Toast } from '@/contexts/ToastContext';
 
@@ -101,21 +101,21 @@ export function ToastContainer() {
 export function useToastHelpers() {
   const { addToast } = useToast();
 
-  const showSuccess = (title: string, message?: string) => {
-    addToast({ type: 'success', title, message });
-  };
-
-  const showError = (title: string, message?: string) => {
-    addToast({ type: 'error', title, message });
-  };
-
-  const showInfo = (title: string, message?: string) => {
-    addToast({ type: 'info', title, message });
-  };
-
-  const showWarning = (title: string, message?: string) => {
-    addToast({ type: 'warning', title, message });
-  };
-
-  return { showSuccess, showError, showInfo, showWarning };
+  return useMemo(
+    () => ({
+      showSuccess: (title: string, message?: string) => {
+        addToast({ type: 'success', title, message });
+      },
+      showError: (title: string, message?: string) => {
+        addToast({ type: 'error', title, message });
+      },
+      showInfo: (title: string, message?: string) => {
+        addToast({ type: 'info', title, message });
+      },
+      showWarning: (title: string, message?: string) => {
+        addToast({ type: 'warning', title, message });
+      },
+    }),
+    [addToast],
+  );
 }

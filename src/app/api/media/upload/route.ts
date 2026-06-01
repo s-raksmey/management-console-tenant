@@ -223,9 +223,6 @@ async function processImage(
 
 export async function POST(req: Request) {
   try {
-    const permissionError = await requireMediaPermission(req, ["MANAGE_MEDIA"]);
-    if (permissionError) return permissionError;
-
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const optionsStr = formData.get("options") as string | null;
@@ -239,6 +236,14 @@ export async function POST(req: Request) {
     
     const options: MediaUploadOptions = optionsStr ? JSON.parse(optionsStr) : {};
     const folder = normalizeFolder(options.folder);
+    const permissionError = await requireMediaPermission(
+      req,
+      folder === "ads"
+        ? ["MANAGE_MEDIA", "CREATE_ADS", "UPDATE_ADS"]
+        : ["MANAGE_MEDIA"],
+    );
+    if (permissionError) return permissionError;
+
     const mediaType = getMediaType(file.type);
     
     // Check file size
