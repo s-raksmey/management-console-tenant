@@ -18,6 +18,18 @@ export interface GraphQLResponse<T = any> {
   errors?: GraphQLError[];
 }
 
+const AUTH_REQUIRED_MESSAGE = "Authentication required";
+
+function isAuthenticationRequiredError(error: any): boolean {
+  if (typeof error?.message === "string" && error.message.includes(AUTH_REQUIRED_MESSAGE)) {
+    return true;
+  }
+
+  return error?.response?.errors?.some(
+    (item: GraphQLError) => item.message === AUTH_REQUIRED_MESSAGE,
+  ) ?? false;
+}
+
 export function useGraphQL() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,19 +48,25 @@ export function useGraphQL() {
         const response = await client.request<T>(query, variables);
         return response;
       } catch (err: any) {
-        console.error("🔴 GraphQL Error:", err);
-        console.error("🔴 Error Response:", err.response);
-        console.error("🔴 Error Message:", err.message);
+        const isAuthRequired = isAuthenticationRequiredError(err);
+
+        if (!isAuthRequired) {
+          console.error("GraphQL Error:", err);
+          console.error("Error Response:", err.response);
+          console.error("Error Message:", err.message);
+        }
 
         // Handle GraphQL errors
         if (err.response?.errors) {
           const errorMessages = err.response.errors
             .map((e: GraphQLError) => {
-              console.error("🔴 GraphQL Error Detail:", {
-                message: e.message,
-                locations: e.locations,
-                path: e.path,
-              });
+              if (!isAuthRequired) {
+                console.error("GraphQL Error Detail:", {
+                  message: e.message,
+                  locations: e.locations,
+                  path: e.path,
+                });
+              }
               return e.message;
             })
             .join(", ");

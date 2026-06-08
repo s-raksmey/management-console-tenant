@@ -55,7 +55,6 @@ import { Permission } from '@/components/permissions/PermissionGuard';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@radix-ui/react-progress';
-import AccountRequestsPanel from './AccountRequestsPanel';
 import { useTenant } from '@/contexts/TenantContext';
 import { useStableLoading } from '@/hooks/useStableLoading';
 
@@ -635,8 +634,6 @@ export const AdminDashboard: React.FC = () => {
 
           {/* Admin System Sidebar */}
           <div className="space-y-6">
-            {/* Account Requests Workflow */}
-            <AccountRequestsPanel />
             {/* System Health */}
             <Card>
               <CardHeader className="pb-3">

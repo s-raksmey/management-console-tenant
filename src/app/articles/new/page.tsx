@@ -50,6 +50,10 @@ function normalizeTopic(value: string) {
   return slugify(value);
 }
 
+function parseTagSlugs(value: string) {
+  return value.split(",").map(slugify).filter(Boolean);
+}
+
 /* =========================
    Page
 ========================= */
@@ -82,6 +86,8 @@ export default function NewArticlePage() {
 
   const [categorySlug, setCategorySlug] = useState<string>("");
   const [topic, setTopic] = useState<string>("");
+  const [tags, setTags] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
 
   const [status, setStatus] = useState<ArticleStatus>("DRAFT");
   const [isBreaking, setIsBreaking] = useState(false);
@@ -158,6 +164,8 @@ export default function NewArticlePage() {
           authorName,
           categorySlug,
           topic: topic ? normalizeTopic(topic) : null,
+          tagSlugs: parseTagSlugs(tags),
+          scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null,
           status: statusForSave,
           isBreaking,
           contentJson,
@@ -242,6 +250,8 @@ export default function NewArticlePage() {
           authorName,
           categorySlug,
           topic: topic ? normalizeTopic(topic) : null,
+          tagSlugs: parseTagSlugs(tags),
+          scheduledAt: null,
           status: "PUBLISHED", // Directly publish
           isBreaking,
           contentJson,
@@ -338,24 +348,6 @@ export default function NewArticlePage() {
           />
         </div>
 
-        <SeoPreviewCard
-          title={title}
-          excerpt={excerpt}
-          slug={slug || slugify(title)}
-          categorySlug={categorySlug}
-          topicSlug={topic}
-          siteName={activeTenant?.name}
-          publicBaseUrl={publicBaseUrl}
-        />
-
-        <ArticleReadinessCard
-          title={title}
-          excerpt={excerpt}
-          slug={slug || slugify(title)}
-          categorySlug={categorySlug}
-          hasBodyContent={hasBodyContent}
-        />
-
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-2">
             <label className="text-xs font-semibold text-slate-600">
@@ -407,6 +399,29 @@ export default function NewArticlePage() {
             )}
           </div>
         </div>
+
+        <div className="grid gap-2">
+          <label className="text-xs font-semibold text-slate-600">Tags</label>
+          <Input
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="politics, election, cambodia"
+          />
+          <p className="text-xs text-slate-500">Separate tags with commas.</p>
+        </div>
+
+        {hasPermission(Permission.PUBLISH_ARTICLE) && (
+          <div className="grid gap-2 sm:max-w-sm">
+            <label className="text-xs font-semibold text-slate-600">Schedule publishing</label>
+            <Input
+              type="datetime-local"
+              value={scheduledAt}
+              onChange={(e) => setScheduledAt(e.target.value)}
+              disabled={saving}
+            />
+            <p className="text-xs text-slate-500">Saving with a future time keeps the article as a draft until publication.</p>
+          </div>
+        )}
 
         {/* Error Display */}
         {categoriesError && (
@@ -522,6 +537,26 @@ export default function NewArticlePage() {
           setHasBodyContent(hasMeaningfulArticleContent(content))
         }
       />
+
+      <div className="grid gap-4">
+        <ArticleReadinessCard
+          title={title}
+          excerpt={excerpt}
+          slug={slug || slugify(title)}
+          categorySlug={categorySlug}
+          hasBodyContent={hasBodyContent}
+        />
+
+        <SeoPreviewCard
+          title={title}
+          excerpt={excerpt}
+          slug={slug || slugify(title)}
+          categorySlug={categorySlug}
+          topicSlug={topic}
+          siteName={activeTenant?.name}
+          publicBaseUrl={publicBaseUrl}
+        />
+      </div>
     </main>
     </PermissionGuard>
   );

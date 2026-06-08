@@ -127,6 +127,23 @@ export interface ResetPasswordInput {
   newPassword: string;
 }
 
+const AUTH_REQUIRED_MESSAGE = 'Authentication required';
+
+function isAuthenticationRequiredError(error: any): boolean {
+  if (
+    typeof error?.message === 'string' &&
+    error.message.includes(AUTH_REQUIRED_MESSAGE)
+  ) {
+    return true;
+  }
+
+  return (
+    error?.response?.errors?.some(
+      (item: { message?: string }) => item.message === AUTH_REQUIRED_MESSAGE,
+    ) ?? false
+  );
+}
+
 // ============================================================================
 // GRAPHQL QUERIES
 // ============================================================================
@@ -367,7 +384,16 @@ export function useUserManagement() {
       const response = await client.request<T>(query, variables);
       return response;
     } catch (err: any) {
-      console.error('User Management GraphQL Error:', err);
+      const isAuthRequired = isAuthenticationRequiredError(err);
+
+      if (!isAuthRequired) {
+        console.error('User Management GraphQL Error:', err);
+      }
+
+      if (isAuthRequired) {
+        setError(null);
+        return null;
+      }
       
       // Handle GraphQL errors
       if (err.response?.errors) {

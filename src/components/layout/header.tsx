@@ -186,10 +186,8 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
     if (notification.type === "SUBMISSION") {
       return "/review";
     }
-    if (
-      notification.type === "ACCOUNT_REQUEST"
-    ) {
-      return "/users/requests";
+    if (notification.type === "ACCOUNT_REQUEST") {
+      return "/users";
     }
     if (
       notification.type === "REVISION_REQUESTED" ||
@@ -236,7 +234,13 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   };
 
   const loadNotifications = useCallback(async () => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setNotifications([]);
+      setUnreadCount(0);
+      setIsNotificationsLoading(false);
+      return;
+    }
+
     setIsNotificationsLoading(true);
 
     try {
@@ -587,7 +591,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
           </Tooltip>
 
           {/* Notifications */}
-          <DropdownMenu onOpenChange={(open) => open && loadNotifications()}>
+          <DropdownMenu onOpenChange={(open) => open && user?.id && loadNotifications()}>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
@@ -650,7 +654,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                         const actionLabel =
                           target === "/review"
                             ? "Review queue"
-                            : target === "/users/requests"
+                            : target === "/users"
                               ? "Review request"
                               : target
                                 ? "Open article"

@@ -73,7 +73,7 @@ export class AuditService {
       const response = await client.request(LIST_AUDIT_LOGS_QUERY, {
         filters: {
           userId: filters?.userId,
-          action: filters?.action,
+          eventType: filters?.action,
           resourceType: filters?.resourceType,
           resourceId: filters?.resourceId,
           startDate: filters?.startDate,

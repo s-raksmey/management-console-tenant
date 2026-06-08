@@ -12,9 +12,10 @@ import {
   ClipboardList,
   Shield,
   Archive,
-  UserPlus,
   Building2,
   Megaphone,
+  Mail,
+  MessageSquare,
 } from "lucide-react";
 import { Permission } from "../permissions/PermissionGuard";
 
@@ -195,6 +196,15 @@ export const getNavigationItems = (
       permissions: [Permission.REVIEW_ARTICLES],
     },
 
+    {
+      name: "Comments",
+      href: "/comments",
+      icon: MessageSquare,
+      badge: null,
+      description: "Reader comment activity",
+      permissions: [Permission.REVIEW_ARTICLES],
+    },
+
     // Categories and topics - visible to roles with structure management access
     {
       name: "Categories",
@@ -272,13 +282,6 @@ export const getNavigationItems = (
           permissions: [Permission.VIEW_ALL_USERS],
         },
         {
-          name: "Registration Requests",
-          href: "/users/requests",
-          icon: UserPlus,
-          description: "Review new user requests",
-          permissions: [Permission.MANAGE_USERS],
-        },
-        {
           name: "Role Management",
           href: "/users/roles",
           icon: Shield,
@@ -306,6 +309,24 @@ export const getNavigationItems = (
     icon: Settings,
     badge: null,
     description: "Website configuration",
+    permissions: [Permission.VIEW_SETTINGS],
+  });
+
+  navigationItems.push({
+    name: "Public Readers",
+    href: "/readers",
+    icon: Users,
+    badge: null,
+    description: "Passwordless website readers",
+    permissions: [Permission.VIEW_SETTINGS],
+  });
+
+  navigationItems.push({
+    name: "Newsletter",
+    href: "/newsletter",
+    icon: Mail,
+    badge: null,
+    description: "Subscriber exports",
     permissions: [Permission.VIEW_SETTINGS],
   });
 

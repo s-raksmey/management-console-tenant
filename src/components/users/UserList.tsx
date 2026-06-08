@@ -56,7 +56,11 @@ interface UserListProps {}
 
 export const UserList: React.FC<UserListProps> = () => {
   const { showSuccess, showError } = useToastHelpers();
-  const { user: currentUser } = useAuth();
+  const {
+    user: currentUser,
+    isAuthenticated,
+    isInitializing,
+  } = useAuth();
   const { hasPermission } = usePermissions();
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
   const canUpdateUser = hasPermission(Permission.UPDATE_USER);
@@ -99,6 +103,8 @@ export const UserList: React.FC<UserListProps> = () => {
   });
 
   const fetchUsers = useCallback(async (page = 1) => {
+    if (!isAuthenticated || isInitializing) return;
+
     const input: ListUsersInput = {
       take: pageSize,
       skip: (page - 1) * pageSize,
@@ -115,12 +121,21 @@ export const UserList: React.FC<UserListProps> = () => {
       setTotalCount(result.totalCount);
       setHasMore(result.hasMore);
     }
-  }, [isSuperAdmin, listUsers, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
+  }, [isAuthenticated, isInitializing, isSuperAdmin, listUsers, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
 
   useEffect(() => {
     let isCurrent = true;
 
     const loadUsers = async () => {
+      if (!isAuthenticated || isInitializing) {
+        if (isCurrent) {
+          setUsers([]);
+          setTotalCount(0);
+          setHasMore(false);
+        }
+        return;
+      }
+
       const input: ListUsersInput = {
         take: pageSize,
         skip: (currentPage - 1) * pageSize,
@@ -144,7 +159,7 @@ export const UserList: React.FC<UserListProps> = () => {
     return () => {
       isCurrent = false;
     };
-  }, [currentPage, isSuperAdmin, listUsers, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
+  }, [currentPage, isAuthenticated, isInitializing, isSuperAdmin, listUsers, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);

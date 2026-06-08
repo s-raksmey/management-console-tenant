@@ -155,6 +155,7 @@ export interface Article {
   createdAt: string;
   updatedAt: string;
   publishedAt?: string;
+  scheduledAt?: string;
   
   // Relations
   category?: ArticleCategory;
@@ -188,6 +189,7 @@ export interface ArticleInput {
   isEditorsPick?: boolean;
   isBreaking?: boolean;
   pinnedAt?: string;
+  scheduledAt?: string;
   
   // Tags
   tagSlugs?: string[];

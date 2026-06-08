@@ -325,6 +325,10 @@ export default function SettingsPage() {
   const publicCount = settings.filter((setting) => setting.isPublic).length;
   const selectedCategoryInfo = SETTING_CATEGORIES[selectedCategory];
   const SelectedCategoryIcon = CATEGORY_ICONS[selectedCategory] || SettingsIcon;
+  const visibleCategoryKeys = React.useMemo(
+    () => new Set(visibleCategories.map(([key]) => key as SettingType)),
+    [visibleCategories],
+  );
   const setupChecklist = React.useMemo(() => {
     const primarySite = activeTenant?.sites?.find((site) => site.isPrimary) || activeTenant?.sites?.[0];
     const hasPublicUrl = Boolean(primarySite?.publicBaseUrl) || hasSettingValue(settings, "site.public_base_url");
@@ -401,8 +405,21 @@ export default function SettingsPage() {
       },
     ];
   }, [activeTenant?.sites, settings]);
-  const completedSetupItems = setupChecklist.filter((item) => item.complete).length;
-  const setupProgress = Math.round((completedSetupItems / setupChecklist.length) * 100);
+  const visibleSetupChecklist = React.useMemo(
+    () =>
+      setupChecklist.filter(
+        (item) =>
+          visibleCategoryKeys.has(item.category) &&
+          settings.some((setting) => setting.type === item.category),
+      ),
+    [settings, setupChecklist, visibleCategoryKeys],
+  );
+  const completedSetupItems = visibleSetupChecklist.filter((item) => item.complete).length;
+  const setupProgress =
+    visibleSetupChecklist.length > 0
+      ? Math.round((completedSetupItems / visibleSetupChecklist.length) * 100)
+      : 100;
+  const incompleteSetupItems = visibleSetupChecklist.filter((item) => !item.complete);
 
   if (!canAccessSettings) {
     return (
@@ -465,41 +482,39 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50/80">
-      <div className="mx-auto max-w-[1600px] space-y-5 px-3 py-4 sm:px-5 lg:px-6">
-        <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+    <div className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-[1480px] space-y-6 px-4 py-5 sm:px-6 lg:px-8">
+        <header className="rounded-md border border-slate-200 bg-white p-4 sm:p-5">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,520px)] xl:items-end">
             <div className="min-w-0">
-              <div className="flex min-w-0 items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-slate-950 text-white">
-                  <SettingsIcon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-                    {isSuperAdmin ? "Management Console" : activeTenant?.name || "Tenant Website"}
-                  </p>
-                  <h1 className="truncate text-2xl font-bold text-slate-950">
-                    {pageTitle}
-                  </h1>
-                </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge variant="outline" className="bg-white">
+                  {isSuperAdmin ? "Management Console" : activeTenant?.name || "Tenant Website"}
+                </Badge>
+                {!isSuperAdmin && activeTenant?.slug ? (
+                  <span className="font-mono text-xs text-slate-400">{activeTenant.slug}</span>
+                ) : null}
               </div>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
+              <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+                {pageTitle}
+              </h1>
+              <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
                 {pageDescription}
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 lg:min-w-[520px]">
-              <div className="grid gap-2 sm:grid-cols-3">
+            <div className="space-y-3">
+              <div className="grid grid-cols-3 overflow-hidden rounded-md border border-slate-200 bg-slate-50">
                 {[
                   ["Settings", settings.length],
                   ["Public", publicCount],
                   ["Required", requiredCount],
                 ].map(([label, value]) => (
-                  <div key={label} className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                  <div key={label} className="border-r border-slate-200 px-3 py-2 last:border-r-0">
+                    <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
                       {label}
                     </p>
-                    <p className="mt-1 text-xl font-bold text-slate-950">{value}</p>
+                    <p className="mt-1 text-lg font-semibold text-slate-950">{value}</p>
                   </div>
                 ))}
               </div>
@@ -507,10 +522,10 @@ export default function SettingsPage() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <Input
-                    placeholder="Search settings..."
+                    placeholder="Search settings"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-10 bg-white pl-9"
+                    className="h-10 border-slate-200 bg-white pl-9"
                   />
                 </div>
                 <Button
@@ -525,18 +540,18 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
-        </section>
+        </header>
 
-        <div className="grid gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+        <div className="grid gap-5 lg:grid-cols-[292px_minmax(0,1fr)]">
           <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
-            <section className="rounded-lg border border-slate-200 bg-white p-3 shadow-sm">
-              <div className="mb-2 flex items-center justify-between px-1">
-                <h2 className="text-sm font-semibold text-slate-950">Categories</h2>
-                <Badge variant="outline" className="bg-white">
-                  {searchQuery ? `${filteredSettings.length} matching` : `${getCategoryCount(selectedCategory)} shown`}
+            <section className="rounded-md border border-slate-200 bg-white p-3">
+              <div className="flex items-center justify-between px-2 py-2">
+                <h2 className="text-sm font-semibold text-slate-950">Sections</h2>
+                <Badge variant="outline" className="bg-white text-xs">
+                  {searchQuery ? `${filteredSettings.length} found` : `${getCategoryCount(selectedCategory)} shown`}
                 </Badge>
               </div>
-              <div className="space-y-1">
+              <div className="flex gap-1 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0">
                 {visibleCategories.map(([key]) => {
                   const categoryKey = key as SettingType;
                   const count = getCategoryCount(categoryKey);
@@ -549,9 +564,9 @@ export default function SettingsPage() {
                       type="button"
                       disabled={count === 0}
                       onClick={() => setSelectedCategory(categoryKey)}
-                      className={`flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left text-sm transition-colors ${
+                      className={`flex min-w-max items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm transition-colors lg:w-full ${
                         selected
-                          ? "bg-slate-950 text-white shadow-sm"
+                          ? "bg-slate-950 text-white"
                           : "text-slate-700 hover:bg-slate-100"
                       } disabled:cursor-not-allowed disabled:opacity-45`}
                     >
@@ -561,7 +576,7 @@ export default function SettingsPage() {
                       </span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs ${
-                          selected ? "bg-white/15 text-white" : "bg-white text-slate-600"
+                          selected ? "bg-white/15 text-white" : "bg-slate-100 text-slate-600"
                         }`}
                       >
                         {count}
@@ -572,24 +587,24 @@ export default function SettingsPage() {
               </div>
             </section>
 
-            <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+            <section className="rounded-md border border-slate-200 bg-white p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-sm font-semibold text-slate-950">Launch Readiness</h2>
+                  <h2 className="text-sm font-semibold text-slate-950">Readiness</h2>
                   <p className="mt-1 text-xs text-slate-500">
-                    {completedSetupItems}/{setupChecklist.length} essentials complete
+                    {completedSetupItems} of {visibleSetupChecklist.length} essentials complete
                   </p>
                 </div>
-                <span className="text-2xl font-bold text-slate-950">{setupProgress}%</span>
+                <span className="text-lg font-semibold text-slate-950">{setupProgress}%</span>
               </div>
               <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
                 <div
-                  className="h-full rounded-full bg-blue-600 transition-all"
+                  className="h-full rounded-full bg-emerald-500 transition-all"
                   style={{ width: `${setupProgress}%` }}
                 />
               </div>
-              <div className="mt-4 space-y-1.5">
-                {setupChecklist.map((item) => {
+              <div className="mt-4 space-y-1">
+                {(incompleteSetupItems.length > 0 ? incompleteSetupItems : visibleSetupChecklist).slice(0, 5).map((item) => {
                   const Icon = item.complete ? CheckCircle2 : Circle;
 
                   return (
@@ -597,11 +612,11 @@ export default function SettingsPage() {
                       key={item.label}
                       type="button"
                       onClick={() => setSelectedCategory(item.category)}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm hover:bg-slate-50"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-slate-50"
                     >
                       <Icon
                         className={`h-4 w-4 shrink-0 ${
-                          item.complete ? "text-green-600" : "text-slate-300"
+                          item.complete ? "text-emerald-600" : "text-slate-300"
                         }`}
                       />
                       <span className="min-w-0 flex-1 truncate text-slate-700">
@@ -613,18 +628,23 @@ export default function SettingsPage() {
                     </button>
                   );
                 })}
+                {incompleteSetupItems.length === 0 ? (
+                  <p className="px-2 py-1.5 text-sm text-emerald-700">
+                    Core settings are complete.
+                  </p>
+                ) : null}
               </div>
             </section>
           </aside>
 
           <main className="min-w-0 space-y-4">
-            <section className="rounded-lg border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 p-4 sm:p-5">
+            <section className="rounded-md border border-slate-200 bg-white">
+              <div className="border-b border-slate-200 px-4 py-4 sm:px-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <SelectedCategoryIcon className="h-5 w-5 text-blue-600" />
-                      <h2 className="text-xl font-semibold text-slate-950">
+                      <SelectedCategoryIcon className="h-5 w-5 text-slate-600" />
+                      <h2 className="text-lg font-semibold text-slate-950">
                         {selectedCategoryInfo.label}
                       </h2>
                     </div>
@@ -642,62 +662,60 @@ export default function SettingsPage() {
 
               <div className="p-4 sm:p-5">
                 {selectedCategory === SettingType.EMAIL ? (
-                  <Card className="mb-5 border-blue-100 bg-blue-50/60 shadow-none">
-                    <CardContent className="p-4">
-                      <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-blue-600" />
-                            <h3 className="font-semibold text-slate-950">Email Health Check</h3>
-                          </div>
-                          <p className="mt-1 text-sm text-slate-600">
-                            Send a real test message using the current SMTP settings.
-                          </p>
-                          {emailTestResult ? (
-                            <div
-                              className={`mt-3 rounded-md border px-3 py-2 text-sm ${
-                                emailTestResult.success
-                                  ? "border-green-200 bg-green-50 text-green-700"
-                                  : "border-red-200 bg-red-50 text-red-700"
-                              }`}
-                            >
-                              <p>{emailTestResult.message}</p>
-                              {emailTestResult.host ? (
-                                <p className="mt-1 text-xs opacity-80">
-                                  SMTP: {emailTestResult.host}
-                                  {emailTestResult.port ? `:${emailTestResult.port}` : ""} · From:{" "}
-                                  {emailTestResult.fromAddress || "not configured"}
-                                </p>
-                              ) : null}
-                            </div>
-                          ) : null}
+                  <div className="mb-5 rounded-md border border-sky-200 bg-sky-50/70 p-4">
+                    <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-4 w-4 text-sky-700" />
+                          <h3 className="font-semibold text-slate-950">Email Health Check</h3>
                         </div>
-
-                        <div className="flex w-full flex-col gap-2 sm:flex-row xl:w-auto">
-                          <Input
-                            type="email"
-                            value={testEmail}
-                            onChange={(event) => setTestEmail(event.target.value)}
-                            placeholder="recipient@example.com"
-                            className="bg-white sm:w-72"
-                            disabled={testingEmail}
-                          />
-                          <Button
-                            type="button"
-                            onClick={() => void handleTestEmailSettings()}
-                            disabled={testingEmail || !testEmail.trim()}
+                        <p className="mt-1 text-sm text-slate-600">
+                          Send a real test message using the current SMTP settings.
+                        </p>
+                        {emailTestResult ? (
+                          <div
+                            className={`mt-3 rounded-md border px-3 py-2 text-sm ${
+                              emailTestResult.success
+                                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                : "border-red-200 bg-red-50 text-red-700"
+                            }`}
                           >
-                            {testingEmail ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <Send className="mr-2 h-4 w-4" />
-                            )}
-                            Send Test
-                          </Button>
-                        </div>
+                            <p>{emailTestResult.message}</p>
+                            {emailTestResult.host ? (
+                              <p className="mt-1 text-xs opacity-80">
+                                SMTP: {emailTestResult.host}
+                                {emailTestResult.port ? `:${emailTestResult.port}` : ""} · From:{" "}
+                                {emailTestResult.fromAddress || "not configured"}
+                              </p>
+                            ) : null}
+                          </div>
+                        ) : null}
                       </div>
-                    </CardContent>
-                  </Card>
+
+                      <div className="flex w-full flex-col gap-2 sm:flex-row xl:w-auto">
+                        <Input
+                          type="email"
+                          value={testEmail}
+                          onChange={(event) => setTestEmail(event.target.value)}
+                          placeholder="recipient@example.com"
+                          className="bg-white sm:w-72"
+                          disabled={testingEmail}
+                        />
+                        <Button
+                          type="button"
+                          onClick={() => void handleTestEmailSettings()}
+                          disabled={testingEmail || !testEmail.trim()}
+                        >
+                          {testingEmail ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="mr-2 h-4 w-4" />
+                          )}
+                          Send Test
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 ) : null}
 
                 <SettingsCategory

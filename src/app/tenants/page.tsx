@@ -152,7 +152,6 @@ export default function TenantsPage() {
     [
       `NEXT_PUBLIC_API_URL=${publicApiUrl}`,
       `NEXT_PUBLIC_TENANT_ID=${tenant.id}`,
-      `NEXT_PUBLIC_TENANT_SLUG=${tenant.slug}`,
     ].join("\n");
 
   const requestConfirmation = (input: {
@@ -699,6 +698,9 @@ export default function TenantsPage() {
                           <pre className="mt-2 overflow-x-auto rounded-md border bg-white p-3 text-xs leading-5 text-slate-700">
                             {buildPublicEnv(tenant)}
                           </pre>
+                          <p className="mt-2 text-xs leading-5 text-slate-500">
+                            Tenant ID is stable. The slug can change when the tenant name changes, so it is not required in the public website env.
+                          </p>
                           <div className="mt-3 grid gap-2 sm:grid-cols-2">
                             <button
                               type="button"
@@ -713,7 +715,7 @@ export default function TenantsPage() {
                               onClick={() => copyTenantValue("Tenant slug", tenant.slug)}
                               className="flex items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
                             >
-                              <span className="truncate">Slug: {tenant.slug}</span>
+                              <span className="truncate">Current slug: {tenant.slug}</span>
                               <Copy className="h-3.5 w-3.5 flex-shrink-0" />
                             </button>
                           </div>

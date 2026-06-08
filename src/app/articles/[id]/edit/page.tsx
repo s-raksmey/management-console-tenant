@@ -60,6 +60,16 @@ function normalizeTopic(value: string) {
   return slugify(value);
 }
 
+function parseTagSlugs(value: string) {
+  return value.split(",").map(slugify).filter(Boolean);
+}
+
+function toDateTimeLocal(value?: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 16);
+}
+
 /* =========================
    Page
 ========================= */
@@ -113,6 +123,8 @@ export default function EditArticlePage() {
     ""
   );
   const [topic, setTopic] = useState<string>("");
+  const [tags, setTags] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
 
   const [status, setStatus] = useState<ArticleStatus>("DRAFT");
   const [originalStatus, setOriginalStatus] = useState<ArticleStatus>("DRAFT");
@@ -170,6 +182,8 @@ export default function EditArticlePage() {
       setAuthorName(article.authorName ?? ""); // ✅ ADDED
       setCategorySlug(article.category?.slug ?? "");
       setTopic(article.topic ? normalizeTopic(article.topic) : "");
+      setTags(article.tags?.map((tag: { slug: string }) => tag.slug).join(", ") ?? "");
+      setScheduledAt(toDateTimeLocal(article.scheduledAt));
       setStatus(article.status);
       setOriginalStatus(article.status); // Track original status for permission checks
       setArticleAuthorId(article.author?.id ?? ""); // Track author for ownership checks
@@ -257,6 +271,8 @@ export default function EditArticlePage() {
           authorName, // ✅ ADDED
           categorySlug,
           topic: topic ? normalizeTopic(topic) : null,
+          tagSlugs: parseTagSlugs(tags),
+          scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null,
           status: statusForSave,
           isBreaking,
           contentJson,
@@ -717,25 +733,6 @@ export default function EditArticlePage() {
           <Input value={excerpt} disabled={isReadOnly} onChange={(e) => setExcerpt(e.target.value)} />
         </div>
 
-        <SeoPreviewCard
-          title={title}
-          excerpt={excerpt}
-          slug={slug || slugify(title)}
-          categorySlug={categorySlug}
-          topicSlug={topic}
-          siteName={activeTenant?.name}
-          publicBaseUrl={publicBaseUrl}
-          coverImageUrl={coverImageUrl}
-        />
-
-        <ArticleReadinessCard
-          title={title}
-          excerpt={excerpt}
-          slug={slug || slugify(title)}
-          categorySlug={categorySlug}
-          hasBodyContent={hasBodyContent}
-        />
-
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-2">
             <label className="text-xs font-semibold text-slate-600">
@@ -787,6 +784,30 @@ export default function EditArticlePage() {
             )}
           </div>
         </div>
+
+        <div className="grid gap-2">
+          <label className="text-xs font-semibold text-slate-600">Tags</label>
+          <Input
+            value={tags}
+            disabled={isReadOnly}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="politics, election, cambodia"
+          />
+          <p className="text-xs text-slate-500">Separate tags with commas.</p>
+        </div>
+
+        {hasPermission(Permission.PUBLISH_ARTICLE) && (
+          <div className="grid gap-2 sm:max-w-sm">
+            <label className="text-xs font-semibold text-slate-600">Schedule publishing</label>
+            <Input
+              type="datetime-local"
+              value={scheduledAt}
+              disabled={isReadOnly || saving}
+              onChange={(e) => setScheduledAt(e.target.value)}
+            />
+            <p className="text-xs text-slate-500">Leave blank to keep manual publishing.</p>
+          </div>
+        )}
 
         {/* Error Display */}
         {categoriesError && (
@@ -1118,6 +1139,28 @@ export default function EditArticlePage() {
           setHasBodyContent(hasMeaningfulArticleContent(content))
         }
       />
+
+      <div className="grid gap-4">
+        <ArticleReadinessCard
+          title={title}
+          excerpt={excerpt}
+          slug={slug || slugify(title)}
+          categorySlug={categorySlug}
+          hasBodyContent={hasBodyContent}
+        />
+
+        <SeoPreviewCard
+          title={title}
+          excerpt={excerpt}
+          slug={slug || slugify(title)}
+          categorySlug={categorySlug}
+          topicSlug={topic}
+          siteName={activeTenant?.name}
+          publicBaseUrl={publicBaseUrl}
+          coverImageUrl={coverImageUrl}
+        />
+      </div>
+
       <ConfirmationDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}

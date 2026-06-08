@@ -4,6 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { Upload, FolderPlus, Grid, List, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FileUpload } from '@/components/media/file-upload';
 import { MediaGrid } from '@/components/media/media-grid';
@@ -12,10 +23,12 @@ import type { MediaFile, MediaFilters as MediaFiltersType } from '@/types/media'
 import { Permission, PermissionGuard } from '@/components/permissions/PermissionGuard';
 import { usePermissions } from '@/hooks/usePermissions';
 import { getAuthFetchHeaders } from '@/services/graphql-client';
+import { useToast } from '@/hooks/use-toast';
 
 const MEDIA_ACCESS_PERMISSIONS = [Permission.VIEW_MEDIA, Permission.MANAGE_MEDIA];
 
 export default function MediaPage() {
+  const { toast } = useToast();
   const {
     hasPermission,
     hasAnyPermission,
@@ -35,6 +48,11 @@ export default function MediaPage() {
   });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [editingFile, setEditingFile] = useState<MediaFile | null>(null);
+  const [editAlt, setEditAlt] = useState('');
+  const [editCaption, setEditCaption] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [savingMetadata, setSavingMetadata] = useState(false);
 
   // Load media files
   const loadFiles = React.useCallback(async () => {
@@ -50,13 +68,16 @@ export default function MediaPage() {
       if (data.success) {
         setFiles(data.files || []);
         setFolders(data.folders || []);
+      } else {
+        toast({ title: 'Media load failed', description: data.message, variant: 'destructive' });
       }
     } catch (error) {
       console.error('Failed to load files:', error);
+      toast({ title: 'Media load failed', description: 'Unable to load media files.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [canAccessMedia, permissionsLoading]);
+  }, [canAccessMedia, permissionsLoading, toast]);
 
   useEffect(() => {
     if (permissionsLoading) return;
@@ -179,14 +200,17 @@ export default function MediaPage() {
       if (successfullyDeleted.length > 0) {
         setFiles(prev => prev.filter(f => !successfullyDeleted.includes(f.id)));
         setSelectedFiles([]);
+        toast({ title: 'Files deleted', description: `${successfullyDeleted.length} file(s) removed.`, variant: 'success' });
       }
       
       const failedCount = results.filter(result => !result.success).length;
       if (failedCount > 0) {
         console.error(`Failed to delete ${failedCount} files`);
+        toast({ title: 'Some files were not deleted', description: `${failedCount} file(s) could not be removed.`, variant: 'destructive' });
       }
     } catch (error) {
       console.error('Error during bulk delete:', error);
+      toast({ title: 'Delete failed', description: 'Unable to delete the selected files.', variant: 'destructive' });
     }
   };
 
@@ -203,19 +227,75 @@ export default function MediaPage() {
       
       if (data.success) {
         setFiles(prev => prev.filter(f => f.id !== file.id));
-        // Show success message (you can add toast notification here)
+        toast({ title: 'File deleted', description: `${file.originalName} was removed.`, variant: 'success' });
       } else {
         console.error('Failed to delete file:', data.message);
-        // Show error message (you can add toast notification here)
+        toast({ title: 'Delete failed', description: data.message, variant: 'destructive' });
       }
     } catch (error) {
       console.error('Error deleting file:', error);
-      // Show error message (you can add toast notification here)
+      toast({ title: 'Delete failed', description: 'Unable to delete the file.', variant: 'destructive' });
     }
   };
 
   const handleFileEdit = (file: MediaFile) => {
-    // TODO: Implement edit modal
+    setEditingFile(file);
+    setEditAlt(file.alt || '');
+    setEditCaption(file.caption || '');
+    setEditTags(file.tags.join(', '));
+  };
+
+  const handleMetadataSave = async () => {
+    if (!editingFile) return;
+
+    try {
+      setSavingMetadata(true);
+      const response = await fetch('/api/media/upload', {
+        method: 'PUT',
+        headers: {
+          ...getAuthFetchHeaders(),
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: editingFile.id,
+          alt: editAlt,
+          caption: editCaption,
+          tags: editTags.split(','),
+        }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || 'Unable to update file metadata.');
+      }
+
+      setFiles(prev => prev.map(file => file.id === data.file.id ? data.file : file));
+      setEditingFile(null);
+      toast({ title: 'Metadata saved', description: `${editingFile.originalName} was updated.`, variant: 'success' });
+    } catch (error) {
+      toast({
+        title: 'Metadata update failed',
+        description: error instanceof Error ? error.message : 'Unable to update file metadata.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingMetadata(false);
+    }
+  };
+
+  const handleBulkDownload = () => {
+    files
+      .filter(file => selectedFiles.includes(file.id))
+      .forEach((file, index) => {
+        window.setTimeout(() => {
+          const link = document.createElement('a');
+          link.href = file.url;
+          link.download = file.originalName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }, index * 150);
+      });
   };
 
   const stats = React.useMemo(() => {
@@ -337,7 +417,7 @@ export default function MediaPage() {
                   {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} selected
                 </span>
                 <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" onClick={handleBulkDownload}>
                     Download
                   </Button>
                   <Button
@@ -398,6 +478,36 @@ export default function MediaPage() {
           void handleBulkDelete();
         }}
       />
+      <Dialog open={!!editingFile} onOpenChange={(open) => !open && setEditingFile(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit media metadata</DialogTitle>
+            <DialogDescription>
+              Update accessibility text, caption, and comma-separated tags for this file.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="media-alt">Alt text</Label>
+              <Input id="media-alt" value={editAlt} onChange={(event) => setEditAlt(event.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="media-caption">Caption</Label>
+              <Textarea id="media-caption" value={editCaption} onChange={(event) => setEditCaption(event.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="media-tags">Tags</Label>
+              <Input id="media-tags" value={editTags} onChange={(event) => setEditTags(event.target.value)} placeholder="newsroom, homepage, politics" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setEditingFile(null)}>Cancel</Button>
+            <Button type="button" onClick={() => void handleMetadataSave()} disabled={savingMetadata}>
+              {savingMetadata ? 'Saving...' : 'Save metadata'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
       </div>
     </PermissionGuard>
   );

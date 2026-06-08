@@ -4,6 +4,12 @@ import fs from "fs";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import type { MediaFile, MediaType, MediaUploadOptions } from "@/types/media";
+import { getRateLimitRetryAfter } from "@/lib/rate-limit";
+
+type AuthenticatedMediaUser = {
+  id: string;
+  name: string;
+};
 
 type RolePermissionConfig = {
   role: string;
@@ -12,7 +18,8 @@ type RolePermissionConfig = {
 
 async function requireMediaPermission(req: Request, allowedPermissions: string[]) {
   const authorization = req.headers.get("authorization");
-  if (!authorization) {
+  const cookie = req.headers.get("cookie");
+  if (!authorization && !cookie) {
     return NextResponse.json(
       { success: false, message: "Authentication required" },
       { status: 401 }
@@ -23,7 +30,8 @@ async function requireMediaPermission(req: Request, allowedPermissions: string[]
     method: "POST",
     headers: {
       "content-type": "application/json",
-      authorization,
+      ...(authorization ? { authorization } : {}),
+      ...(cookie ? { cookie } : {}),
       ...(req.headers.get("x-tenant-id")
         ? { "x-tenant-id": req.headers.get("x-tenant-id") as string }
         : {}),
@@ -34,6 +42,9 @@ async function requireMediaPermission(req: Request, allowedPermissions: string[]
           me {
             success
             user {
+              id
+              email
+              name
               role
             }
           }
@@ -65,7 +76,10 @@ async function requireMediaPermission(req: Request, allowedPermissions: string[]
     );
   }
 
-  return null;
+  return {
+    id: result.data.me.user.id as string,
+    name: (result.data.me.user.name || result.data.me.user.email) as string,
+  } satisfies AuthenticatedMediaUser;
 }
 
 // File type mappings
@@ -76,7 +90,6 @@ const MIME_TYPE_MAP: Record<string, MediaType> = {
   'image/png': 'image',
   'image/gif': 'image',
   'image/webp': 'image',
-  'image/svg+xml': 'image',
   
   // Videos
   'video/mp4': 'video',
@@ -109,9 +122,11 @@ const SIZE_LIMITS = {
   document: 25 * 1024 * 1024, // 25MB
   other: 10 * 1024 * 1024, // 10MB
 };
+const MAX_UPLOAD_SIZE = Math.max(...Object.values(SIZE_LIMITS));
 
 const UPLOAD_DIR = path.join(process.cwd(), "public/uploads");
 const MEDIA_MANIFEST_PATH = path.join(UPLOAD_DIR, ".media-library.json");
+const ALLOWED_MIME_TYPES = new Set(Object.keys(MIME_TYPE_MAP));
 
 type MediaManifest = {
   files: Record<string, MediaFile>;
@@ -178,7 +193,7 @@ function sanitizeFilename(filename: string): string {
   return filename
     .replace(/[^a-zA-Z0-9.-]/g, '-')
     .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
+    .replace(/^-|-$/g, '') || 'upload';
 }
 
 async function processImage(
@@ -223,6 +238,26 @@ async function processImage(
 
 export async function POST(req: Request) {
   try {
+    const retryAfter = getRateLimitRetryAfter(req, {
+      key: "media-upload",
+      windowMs: 10 * 60 * 1000,
+      max: 30,
+    });
+    if (retryAfter) {
+      return NextResponse.json(
+        { success: false, message: `Too many uploads. Try again in ${retryAfter} seconds.` },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } }
+      );
+    }
+
+    const contentLength = Number(req.headers.get("content-length") || 0);
+    if (contentLength > MAX_UPLOAD_SIZE) {
+      return NextResponse.json(
+        { success: false, message: "Upload is too large" },
+        { status: 413 }
+      );
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
     const optionsStr = formData.get("options") as string | null;
@@ -236,13 +271,20 @@ export async function POST(req: Request) {
     
     const options: MediaUploadOptions = optionsStr ? JSON.parse(optionsStr) : {};
     const folder = normalizeFolder(options.folder);
-    const permissionError = await requireMediaPermission(
+    const authenticatedUser = await requireMediaPermission(
       req,
       folder === "ads"
         ? ["MANAGE_MEDIA", "CREATE_ADS", "UPDATE_ADS"]
         : ["MANAGE_MEDIA"],
     );
-    if (permissionError) return permissionError;
+    if (authenticatedUser instanceof NextResponse) return authenticatedUser;
+
+    if (!ALLOWED_MIME_TYPES.has(file.type)) {
+      return NextResponse.json(
+        { success: false, message: "Unsupported file type" },
+        { status: 415 }
+      );
+    }
 
     const mediaType = getMediaType(file.type);
     
@@ -276,13 +318,13 @@ export async function POST(req: Request) {
     let height: number | undefined;
     
     // Process images
-    if (mediaType === 'image' && file.type !== 'image/gif' && file.type !== 'image/svg+xml') {
+    if (mediaType === 'image' && file.type !== 'image/gif') {
       const processed = await processImage(buffer, options);
       processedBuffer = Buffer.from(processed.buffer);
       width = processed.width;
       height = processed.height;
     } else if (mediaType === 'image') {
-      // For GIF and SVG, just get dimensions without processing
+      // For GIF, just get dimensions without processing.
       try {
         const metadata = await sharp(buffer).metadata();
         width = metadata.width;
@@ -312,7 +354,7 @@ export async function POST(req: Request) {
       folder: folder || undefined,
       tags: options.tags || [],
       uploadedAt: new Date().toISOString(),
-      uploadedBy: 'current-user', // TODO: Get from auth context
+      uploadedBy: authenticatedUser.name,
       lastModified: new Date().toISOString(),
     };
 
@@ -338,7 +380,7 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const permissionError = await requireMediaPermission(req, ["VIEW_MEDIA", "MANAGE_MEDIA"]);
-    if (permissionError) return permissionError;
+    if (permissionError instanceof NextResponse) return permissionError;
 
     const { searchParams } = new URL(req.url);
     const folder = normalizeFolder(searchParams.get('folder') || '');
@@ -413,10 +455,66 @@ export async function GET(req: Request) {
   }
 }
 
+export async function PUT(req: Request) {
+  try {
+    const permissionError = await requireMediaPermission(req, ["MANAGE_MEDIA"]);
+    if (permissionError instanceof NextResponse) return permissionError;
+
+    const input = (await req.json()) as {
+      id?: string;
+      alt?: string;
+      caption?: string;
+      tags?: string[];
+    };
+
+    if (!input.id) {
+      return NextResponse.json(
+        { success: false, message: "File ID is required" },
+        { status: 400 }
+      );
+    }
+
+    const manifest = readManifest();
+    const existing = manifest.files[input.id];
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, message: "File not found" },
+        { status: 404 }
+      );
+    }
+
+    const tags = Array.from(
+      new Set((input.tags || []).map((tag) => tag.trim()).filter(Boolean))
+    );
+    const updatedFile: MediaFile = {
+      ...existing,
+      alt: input.alt?.trim() || undefined,
+      caption: input.caption?.trim() || undefined,
+      tags,
+      lastModified: new Date().toISOString(),
+    };
+
+    manifest.files[input.id] = updatedFile;
+    writeManifest(manifest);
+
+    return NextResponse.json({
+      success: true,
+      file: updatedFile,
+      message: "File metadata updated successfully",
+    });
+  } catch (error) {
+    console.error("Update media metadata error:", error);
+    return NextResponse.json(
+      { success: false, message: "Failed to update file metadata" },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(req: Request) {
   try {
     const permissionError = await requireMediaPermission(req, ["MANAGE_MEDIA"]);
-    if (permissionError) return permissionError;
+    if (permissionError instanceof NextResponse) return permissionError;
 
     const { searchParams } = new URL(req.url);
     const fileId = searchParams.get('id');

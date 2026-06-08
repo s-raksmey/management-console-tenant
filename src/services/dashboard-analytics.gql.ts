@@ -34,7 +34,6 @@ export type DashboardAnalytics = {
     totalViews: number;
     publicSites: number;
     auditEvents: number;
-    registrationRequests: number;
   };
   articleStatus: DashboardChartPoint[];
   userRoles: DashboardChartPoint[];
@@ -62,7 +61,6 @@ const Q_DASHBOARD_ANALYTICS = gql`
         totalViews
         publicSites
         auditEvents
-        registrationRequests
       }
       articleStatus {
         label

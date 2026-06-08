@@ -138,11 +138,12 @@ export function SettingsCategory({
   };
 
   const totalChanges = Object.values(hasChanges).filter(Boolean).length;
+  const errorCount = Object.values(errors).filter(Boolean).length;
   const hasAnyChanges = totalChanges > 0;
 
   if (categorySettings.length === 0) {
     return (
-      <Card>
+      <Card className="border-dashed shadow-none">
         <CardContent className="p-8 text-center">
           <AlertTriangle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-2">
@@ -157,30 +158,37 @@ export function SettingsCategory({
   }
 
   return (
-    <div className="space-y-5">
-      {hasAnyChanges && (
-        <div className="sticky top-4 z-10 rounded-md border border-blue-200 bg-blue-50/95 p-3 shadow-sm backdrop-blur">
+    <div className="space-y-4">
+      {(hasAnyChanges || errorCount > 0) && (
+        <div className="sticky top-3 z-10 rounded-md border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                {totalChanges} unsaved change{totalChanges !== 1 ? 's' : ''}
-              </Badge>
-              <p className="text-sm text-blue-900">
-                Save your changes before leaving this category.
+            <div className="flex flex-wrap items-center gap-2">
+              {hasAnyChanges ? (
+                <Badge variant="secondary">
+                  {totalChanges} unsaved change{totalChanges !== 1 ? 's' : ''}
+                </Badge>
+              ) : null}
+              {errorCount > 0 ? (
+                <Badge variant="destructive">
+                  {errorCount} error{errorCount !== 1 ? 's' : ''}
+                </Badge>
+              ) : null}
+              <p className="text-sm text-slate-700">
+                Review this section before moving on.
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 sm:justify-end">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={resetAllChanges}
-                disabled={loading}
+                disabled={loading || !hasAnyChanges}
                 className="bg-white"
               >
                 <RotateCcw className="mr-2 h-4 w-4" />
                 Discard
               </Button>
-              <Button size="sm" onClick={saveAllChanges} disabled={loading}>
+              <Button size="sm" onClick={saveAllChanges} disabled={loading || !hasAnyChanges}>
                 <Save className="mr-2 h-4 w-4" />
                 Save All
               </Button>
@@ -189,7 +197,7 @@ export function SettingsCategory({
         </div>
       )}
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-3">
         {categorySettings.map((setting) => (
           <SettingCard
             key={setting.key}

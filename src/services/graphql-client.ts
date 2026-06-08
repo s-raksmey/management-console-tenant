@@ -2,6 +2,11 @@
 import { GraphQLClient } from "graphql-request"
 
 export const SELECTED_TENANT_ID_KEY = "pulse_news_admin_selected_tenant_id";
+export const COOKIE_SESSION_TOKEN = "cookie-session";
+
+export function isBearerToken(token?: string | null) {
+  return Boolean(token && token !== COOKIE_SESSION_TOKEN);
+}
 
 export function getSelectedTenantId() {
   if (typeof window === "undefined") return null;
@@ -20,7 +25,10 @@ export function setSelectedTenantId(tenantId: string | null) {
 
 export function getGqlClient() {
   const client = new GraphQLClient(
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql"
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql",
+    {
+      credentials: "include",
+    },
   );
 
   const selectedTenantId = getSelectedTenantId();
@@ -35,6 +43,7 @@ export function getAuthenticatedGqlClient(token?: string) {
   const client = new GraphQLClient(
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql",
     {
+      credentials: "include",
       requestMiddleware: (request) => {
         // Add debug logging if enabled
         return request;
@@ -45,11 +54,8 @@ export function getAuthenticatedGqlClient(token?: string) {
     }
   );
   
-  // Get token from localStorage if not provided
-  const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('pulse_news_admin_token') : null);
-  
-  if (authToken) {
-    client.setHeader('Authorization', `Bearer ${authToken}`);
+  if (isBearerToken(token)) {
+    client.setHeader("Authorization", `Bearer ${token}`);
   }
 
   const selectedTenantId = getSelectedTenantId();
@@ -64,11 +70,6 @@ export function getAuthFetchHeaders(): Record<string, string> {
   const headers: Record<string, string> = {};
 
   if (typeof window === "undefined") return headers;
-
-  const authToken = localStorage.getItem("pulse_news_admin_token");
-  if (authToken) {
-    headers.Authorization = `Bearer ${authToken}`;
-  }
 
   const selectedTenantId = getSelectedTenantId();
   if (selectedTenantId) {

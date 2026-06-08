@@ -1,14 +1,5 @@
-// src/app/users/requests/page.tsx
-'use client';
-
-import React from 'react';
-import { RegistrationRequestsPage } from '@/components/users/RegistrationRequestsPage';
-import { PermissionGuard, Permission } from '@/components/permissions/PermissionGuard';
+import { redirect } from "next/navigation";
 
 export default function UserRequestsPage() {
-  return (
-    <PermissionGuard permissions={[Permission.MANAGE_USERS]} showError>
-      <RegistrationRequestsPage />
-    </PermissionGuard>
-  );
+  redirect("/users");
 }

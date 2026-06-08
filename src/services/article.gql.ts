@@ -54,6 +54,7 @@ export const Q_ARTICLES = /* GraphQL */ `
       }
 
       publishedAt
+      scheduledAt
       createdAt
       updatedAt
       category {
@@ -63,6 +64,11 @@ export const Q_ARTICLES = /* GraphQL */ `
       }
       author {
         id
+      }
+      tags {
+        id
+        name
+        slug
       }
     }
   }
@@ -84,6 +90,7 @@ export const Q_ARTICLES_BY_TOPIC = /* GraphQL */ `
       isBreaking
       authorName
       publishedAt
+      scheduledAt
       createdAt
       updatedAt
       contentJson
@@ -93,6 +100,11 @@ export const Q_ARTICLES_BY_TOPIC = /* GraphQL */ `
       }
       author {
         id
+      }
+      tags {
+        id
+        name
+        slug
       }
     }
   }
@@ -115,6 +127,7 @@ export const Q_ARTICLE_BY_ID = /* GraphQL */ `
       isBreaking
       authorName
       publishedAt
+      scheduledAt
       createdAt
       updatedAt
       revisionStatus
@@ -132,6 +145,11 @@ export const Q_ARTICLE_BY_ID = /* GraphQL */ `
       }
       author {
         id
+      }
+      tags {
+        id
+        name
+        slug
       }
       contentJson
     }
@@ -223,7 +241,13 @@ export const M_UPSERT_ARTICLE = /* GraphQL */ `
       topic
       status
       publishedAt
+      scheduledAt
       isBreaking
+      tags {
+        id
+        name
+        slug
+      }
       category {
         id
         name

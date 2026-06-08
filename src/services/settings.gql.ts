@@ -208,7 +208,7 @@ export const SETTING_CATEGORIES = {
   },
   [SettingType.USER_MANAGEMENT]: {
     label: 'User Management',
-    description: 'User registration and authentication settings',
+    description: 'User access and authentication settings',
     icon: '👥',
     color: 'indigo'
   },

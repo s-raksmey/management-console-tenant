@@ -6,12 +6,15 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
   ReactNode,
 } from "react";
 import {
+  COOKIE_SESSION_TOKEN,
   getGqlClient,
   getAuthenticatedGqlClient,
   getSelectedTenantId,
+  isBearerToken,
   setSelectedTenantId,
 } from "@/services/graphql-client";
 import { gql } from "graphql-request";
@@ -48,13 +51,6 @@ export interface LoginCredentials {
   password: string;
 }
 
-export interface RegisterData {
-  email: string;
-  password: string;
-  name: string;
-  role: "ADMIN" | "EDITOR" | "AUTHOR";
-}
-
 interface AuthContextType {
   user: User | null;
   token: string | null;
@@ -69,7 +65,6 @@ interface AuthContextType {
     twoFactorToken: string;
     code: string;
   }) => Promise<AuthResponse>;
-  register: (data: RegisterData) => Promise<AuthResponse>;
   logout: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -80,7 +75,6 @@ const LOGIN_MUTATION = gql`
     login(input: $input) {
       success
       message
-      token
       requiresTwoFactor
       twoFactorSetupRequired
       twoFactorToken
@@ -106,7 +100,6 @@ const VERIFY_TWO_FACTOR_LOGIN_MUTATION = gql`
     verifyTwoFactorLogin(input: $input) {
       success
       message
-      token
       user {
         id
         email
@@ -119,20 +112,11 @@ const VERIFY_TWO_FACTOR_LOGIN_MUTATION = gql`
   }
 `;
 
-const REGISTER_MUTATION = gql`
-  mutation Register($input: RegisterInput!) {
-    register(input: $input) {
+const LOGOUT_MUTATION = gql`
+  mutation Logout {
+    logout {
       success
       message
-      token
-      user {
-        id
-        email
-        name
-        role
-        isActive
-        primaryTenantId
-      }
     }
   }
 `;
@@ -154,34 +138,26 @@ const ME_QUERY = gql`
   }
 `;
 
+const AUTH_REQUIRED_MESSAGE = "Authentication required";
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === "string") return error;
+  return "";
+}
+
+function isAuthenticationRequired(error: unknown): boolean {
+  return getErrorMessage(error).includes(AUTH_REQUIRED_MESSAGE);
+}
+
 // Create Context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Token storage utilities
-const TOKEN_KEY = "pulse_news_admin_token";
-
-const getStoredToken = (): string | null => {
-  if (typeof window === "undefined") return null;
-  return localStorage.getItem(TOKEN_KEY);
-};
-
-const setStoredToken = (token: string): void => {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(TOKEN_KEY, token);
-};
-
-const removeStoredToken = (): void => {
-  if (typeof window === "undefined") return;
-  localStorage.removeItem(TOKEN_KEY);
-};
 
 // Create authenticated GraphQL client
 const getAuthenticatedClient = (token?: string) => {
   const client = getGqlClient();
-  const authToken = token || getStoredToken();
-
-  if (authToken) {
-    client.setHeader("Authorization", `Bearer ${authToken}`);
+  if (isBearerToken(token)) {
+    client.setHeader("Authorization", `Bearer ${token}`);
   }
 
   const selectedTenantId = getSelectedTenantId();
@@ -200,42 +176,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isInitializing, setIsInitializing] = useState(true);
   const [permissionsReady, setPermissionsReady] = useState(false);
   const [rolePermissions, setRolePermissions] = useState<Record<string, Permission[]>>({});
+  const hasLoadedRolePermissions = useRef(false);
 
-  // Initialize auth state from localStorage
+  const clearAuthState = useCallback(() => {
+    hasLoadedRolePermissions.current = false;
+    setDynamicRolePermissions(null);
+    setRolePermissions({});
+    setPermissionsReady(true);
+    setToken(null);
+    setUser(null);
+  }, []);
+
+  // Initialize auth state from the secure auth cookie.
   useEffect(() => {
     const initializeAuth = async () => {
-      const storedToken = getStoredToken();
-
-      if (storedToken) {
-        setToken(storedToken);
-        try {
-          await refreshUser(storedToken);
-        } catch (error) {
-          console.error("Failed to refresh user:", error);
-          // Token might be invalid, clear it
-          removeStoredToken();
-          setDynamicRolePermissions(null);
-          setRolePermissions({});
-          setToken(null);
-          setPermissionsReady(true);
+      try {
+        const refreshed = await refreshUser({ suppressAuthRequired: true });
+        if (!refreshed) {
+          clearAuthState();
+          return;
         }
-      } else {
-        setPermissionsReady(true);
+        setToken(COOKIE_SESSION_TOKEN);
+      } catch (error) {
+        console.error("Failed to refresh user:", error);
+        clearAuthState();
+      } finally {
+        setIsLoading(false);
+        setIsInitializing(false);
       }
-
-      setIsLoading(false);
-      setIsInitializing(false);
     };
 
     initializeAuth();
-  }, []);
+  }, [clearAuthState]);
 
   useEffect(() => {
     const handleTenantChanged = () => {
-      const storedToken = getStoredToken();
-      if (storedToken) {
-        void refreshUser(storedToken);
-      }
+      void refreshUser({ suppressAuthRequired: true }).then((refreshed) => {
+        if (!refreshed) {
+          clearAuthState();
+        }
+      });
     };
 
     window.addEventListener("pulse-news:tenant-changed", handleTenantChanged);
@@ -243,12 +223,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener("pulse-news:tenant-changed", handleTenantChanged);
     };
-  }, []);
+  }, [clearAuthState]);
 
   // Refresh user data from server
-  const refreshUser = async (authToken?: string): Promise<void> => {
+  const refreshUser = async (
+    options: { authToken?: string; suppressAuthRequired?: boolean } = {},
+  ): Promise<boolean> => {
     try {
-      const client = getAuthenticatedClient(authToken);
+      const client = getAuthenticatedClient(options.authToken);
       const response = await client.request<{ me: AuthResponse }>(ME_QUERY);
 
       if (response.me.success && response.me.user) {
@@ -257,18 +239,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
         setUser(response.me.user);
         await refreshRolePermissions();
+        return true;
+      }
+
+      if (
+        options.suppressAuthRequired &&
+        response.me.message === AUTH_REQUIRED_MESSAGE
+      ) {
+        return false;
       } else {
         throw new Error(response.me.message || "Failed to get user data");
       }
     } catch (error) {
+      if (options.suppressAuthRequired && isAuthenticationRequired(error)) {
+        return false;
+      }
       console.error("Error refreshing user:", error);
       throw error;
     }
   };
 
   const refreshRolePermissions = useCallback(async (): Promise<void> => {
+    const shouldShowInitialLoading = !hasLoadedRolePermissions.current;
+
     try {
-      setPermissionsReady(false);
+      if (shouldShowInitialLoading) {
+        setPermissionsReady(false);
+      }
+
       const matrix = await RolePermissionService.getMatrix();
       const next = Object.fromEntries(
         matrix.map((item) => [item.role, item.permissions]),
@@ -276,20 +274,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       setRolePermissions(next);
       setDynamicRolePermissions(next);
+      hasLoadedRolePermissions.current = true;
     } catch (error) {
       console.warn("Could not refresh role permissions:", error);
-      setRolePermissions({});
-      setDynamicRolePermissions(null);
+      if (shouldShowInitialLoading) {
+        setRolePermissions({});
+        setDynamicRolePermissions(null);
+      }
     } finally {
       setPermissionsReady(true);
     }
   }, []);
 
   const completeLogin = async (authResponse: AuthResponse) => {
-    if (authResponse.success && authResponse.token && authResponse.user) {
-      setStoredToken(authResponse.token);
-      setToken(authResponse.token);
-      await refreshUser(authResponse.token);
+    if (authResponse.success && authResponse.user) {
+      setToken(COOKIE_SESSION_TOKEN);
+      await refreshUser();
     }
   };
 
@@ -350,124 +350,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Register function
-  const register = async (data: RegisterData): Promise<AuthResponse> => {
-    try {
-      setIsLoading(true);
-      const client = getGqlClient();
-      const response = await client.request<{ register: AuthResponse }>(
-        REGISTER_MUTATION,
-        {
-          input: data,
-        },
-      );
-
-      const authResponse = response.register;
-
-      if (authResponse.success && authResponse.token) {
-        // Store token first
-        setStoredToken(authResponse.token);
-        setToken(authResponse.token);
-
-        // If user data is available, use it
-        if (authResponse.user) {
-          if (authResponse.user.role === "SUPER_ADMIN") {
-            setSelectedTenantId(null);
-          }
-          setUser(authResponse.user);
-          await refreshRolePermissions();
-        } else {
-          // If user is null (due to server error), try to fetch user data using the token
-          try {
-            const authenticatedClient = getAuthenticatedGqlClient(
-              authResponse.token,
-            );
-            const meResponse = await authenticatedClient.request<{
-              me: { success: boolean; user?: User };
-            }>(ME_QUERY);
-
-            if (meResponse.me.success && meResponse.me.user) {
-              if (meResponse.me.user.role === "SUPER_ADMIN") {
-                setSelectedTenantId(null);
-              }
-              setUser(meResponse.me.user);
-              await refreshRolePermissions();
-            }
-          } catch (meError) {
-            console.warn(
-              "Could not fetch user data after registration:",
-              meError,
-            );
-            // Registration was successful, but we couldn't get user data
-            // This is not a critical error - user can still proceed
-          }
-        }
-      }
-
-      return authResponse;
-    } catch (error: any) {
-      console.error("Register error:", error);
-
-      // Check if this is a GraphQL error with partial success
-      if (
-        error.response?.data?.register?.success &&
-        error.response?.data?.register?.token
-      ) {
-        // Registration was successful despite GraphQL errors
-        const partialResponse = error.response.data.register;
-        setStoredToken(partialResponse.token);
-        setToken(partialResponse.token);
-
-        // Try to fetch user data with the token
-        try {
-          const authenticatedClient = getAuthenticatedGqlClient(
-            partialResponse.token,
-          );
-          const meResponse = await authenticatedClient.request<{
-            me: { success: boolean; user?: User };
-          }>(ME_QUERY);
-
-          if (meResponse.me.success && meResponse.me.user) {
-            if (meResponse.me.user.role === "SUPER_ADMIN") {
-              setSelectedTenantId(null);
-            }
-            setUser(meResponse.me.user);
-            await refreshRolePermissions();
-          }
-        } catch (meError) {
-          console.warn(
-            "Could not fetch user data after registration:",
-            meError,
-          );
-        }
-
-        return {
-          success: true,
-          message: partialResponse.message || "Registration successful",
-          token: partialResponse.token,
-        };
-      }
-
-      return {
-        success: false,
-        message:
-          error.response?.errors?.[0]?.message ||
-          "Registration failed. Please try again.",
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Logout function
   const logout = (): void => {
-    removeStoredToken();
+    void getGqlClient().request(LOGOUT_MUTATION).catch((error) => {
+      console.warn("Logout cookie cleanup failed:", error);
+    });
     setSelectedTenantId(null);
-    setDynamicRolePermissions(null);
-    setRolePermissions({});
-    setPermissionsReady(true);
-    setToken(null);
-    setUser(null);
+    clearAuthState();
   };
 
   const value: AuthContextType = {
@@ -480,9 +369,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: !!user && !!token,
     login,
     verifyTwoFactorLogin,
-    register,
     logout,
-    refreshUser: () => refreshUser(),
+    refreshUser: async () => {
+      await refreshUser();
+    },
     refreshRolePermissions,
   };
 
