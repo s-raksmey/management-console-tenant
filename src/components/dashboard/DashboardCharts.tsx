@@ -14,10 +14,95 @@ import type {
   DashboardChartPoint,
   DashboardTenantMetric,
 } from "@/services/dashboard-analytics.gql";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 type DashboardChartsProps = {
   analytics: DashboardAnalytics | null;
   loading?: boolean;
+};
+
+const chartCopy = {
+  en: {
+    charts: "Charts",
+    loadingCharts: "Loading dashboard chart data...",
+    dataUnavailable: "Dashboard chart data is not available.",
+    noAnalytics: "No analytics data available.",
+    noChartData: "No chart data yet.",
+    noMonthlyActivity: "No monthly activity yet.",
+    noTenantActivity: "No tenant activity yet.",
+    created: "Created",
+    published: "Published",
+    createdTitle: (value: number) => `${value} created`,
+    publishedTitle: (value: number) => `${value} published`,
+    articles: "articles",
+    users: "users",
+    sites: "sites",
+    views: "views",
+    items: "items",
+    tenants: "Tenants",
+    platformUsers: "Platform Users",
+    auditEvents: "Audit Events",
+    drafts: "Drafts",
+    platformCharts: "Platform Charts",
+    tenantCharts: "Tenant Charts",
+    platformDescription:
+      "Super admin view across tenants, public sites, platform users, and activity.",
+    tenantDescription: (tenantName?: string | null) =>
+      `Tenant view for ${tenantName || "this website"} content, users, and public performance.`,
+    tenantActivity: "Tenant Activity",
+    tenantActivityDescription: "Article volume and active membership per tenant.",
+    platformRoles: "Platform Roles",
+    platformRolesDescription: "Super admins and tenant admins only.",
+    contentTimeline: "Content Timeline",
+    timelineDescription: "Created vs published articles over the last 6 months.",
+    articleStatus: "Article Status",
+    articleStatusDescription:
+      "Draft, review, published, and archived content for this tenant.",
+    tenantRoles: "Tenant Roles",
+    tenantRolesDescription: "Active team members by tenant role.",
+    viewsByCategory: "Views By Category",
+    viewsByCategoryDescription: "Public article views grouped by category.",
+  },
+  km: {
+    charts: "Charts",
+    loadingCharts: "កំពុងផ្ទុកទិន្នន័យ chart...",
+    dataUnavailable: "មិនមានទិន្នន័យ chart សម្រាប់ផ្ទាំងគ្រប់គ្រង។",
+    noAnalytics: "មិនមានទិន្នន័យ analytics។",
+    noChartData: "មិនទាន់មានទិន្នន័យ chart។",
+    noMonthlyActivity: "មិនទាន់មានសកម្មភាពប្រចាំខែ។",
+    noTenantActivity: "មិនទាន់មានសកម្មភាព tenant។",
+    created: "បានបង្កើត",
+    published: "បានផ្សព្វផ្សាយ",
+    createdTitle: (value: number) => `${value} បានបង្កើត`,
+    publishedTitle: (value: number) => `${value} បានផ្សព្វផ្សាយ`,
+    articles: "អត្ថបទ",
+    users: "អ្នកប្រើ",
+    sites: "គេហទំព័រ",
+    views: "views",
+    items: "ធាតុ",
+    tenants: "Tenants",
+    platformUsers: "អ្នកប្រើវេទិកា",
+    auditEvents: "Audit Events",
+    drafts: "Drafts",
+    platformCharts: "Charts វេទិកា",
+    tenantCharts: "Charts Tenant",
+    platformDescription:
+      "ទិដ្ឋភាព super admin សម្រាប់ tenants, public sites, អ្នកប្រើវេទិកា និងសកម្មភាព។",
+    tenantDescription: (tenantName?: string | null) =>
+      `ទិដ្ឋភាព tenant សម្រាប់ ${tenantName || "គេហទំព័រនេះ"} លើមាតិកា អ្នកប្រើ និង performance សាធារណៈ។`,
+    tenantActivity: "សកម្មភាព Tenant",
+    tenantActivityDescription: "បរិមាណអត្ថបទ និងសមាជិកសកម្មតាម tenant។",
+    platformRoles: "តួនាទីវេទិកា",
+    platformRolesDescription: "Super admins និង tenant admins ប៉ុណ្ណោះ។",
+    contentTimeline: "Timeline មាតិកា",
+    timelineDescription: "អត្ថបទបានបង្កើត និងបានផ្សព្វផ្សាយក្នុង 6 ខែចុងក្រោយ។",
+    articleStatus: "ស្ថានភាពអត្ថបទ",
+    articleStatusDescription: "Draft, review, published និង archived content សម្រាប់ tenant នេះ។",
+    tenantRoles: "តួនាទី Tenant",
+    tenantRolesDescription: "សមាជិកសកម្មតាមតួនាទី tenant។",
+    viewsByCategory: "Views តាម Category",
+    viewsByCategoryDescription: "Views អត្ថបទសាធារណៈតាម category។",
+  },
 };
 
 const statusColors: Record<string, string> = {
@@ -71,9 +156,11 @@ function LoadingChart() {
 function HorizontalBars({
   points,
   valueLabel = "items",
+  emptyLabel,
 }: {
   points: DashboardChartPoint[];
   valueLabel?: string;
+  emptyLabel: string;
 }) {
   const maxValue = maxPointValue(points);
   const visiblePoints = points.filter(
@@ -81,7 +168,7 @@ function HorizontalBars({
   );
 
   if (visiblePoints.length === 0) {
-    return <EmptyChart label="No chart data yet." />;
+    return <EmptyChart label={emptyLabel} />;
   }
 
   return (
@@ -114,11 +201,17 @@ function HorizontalBars({
   );
 }
 
-function MonthlyBars({ points }: { points: DashboardChartPoint[] }) {
+function MonthlyBars({
+  points,
+  copy,
+}: {
+  points: DashboardChartPoint[];
+  copy: typeof chartCopy.en;
+}) {
   const maxValue = maxPointValue(points);
 
   if (points.length === 0) {
-    return <EmptyChart label="No monthly activity yet." />;
+    return <EmptyChart label={copy.noMonthlyActivity} />;
   }
 
   return (
@@ -139,12 +232,12 @@ function MonthlyBars({ points }: { points: DashboardChartPoint[] }) {
               <div
                 className="w-4 rounded-t bg-blue-500"
                 style={{ height: `${createdHeight}px` }}
-                title={`${point.value} created`}
+                title={copy.createdTitle(point.value)}
               />
               <div
                 className="w-4 rounded-t bg-emerald-500"
                 style={{ height: `${publishedHeight}px` }}
-                title={`${point.secondaryValue || 0} published`}
+                title={copy.publishedTitle(point.secondaryValue || 0)}
               />
             </div>
             <span className="text-xs font-medium text-slate-500">
@@ -157,11 +250,17 @@ function MonthlyBars({ points }: { points: DashboardChartPoint[] }) {
   );
 }
 
-function TenantActivity({ tenants }: { tenants: DashboardTenantMetric[] }) {
+function TenantActivity({
+  tenants,
+  copy,
+}: {
+  tenants: DashboardTenantMetric[];
+  copy: typeof chartCopy.en;
+}) {
   const maxArticles = Math.max(1, ...tenants.map((tenant) => tenant.articles));
 
   if (tenants.length === 0) {
-    return <EmptyChart label="No tenant activity yet." />;
+    return <EmptyChart label={copy.noTenantActivity} />;
   }
 
   return (
@@ -190,9 +289,9 @@ function TenantActivity({ tenants }: { tenants: DashboardTenantMetric[] }) {
               />
             </div>
             <div className="mt-2 grid grid-cols-3 gap-2 text-xs text-slate-500">
-              <span>{tenant.articles} articles</span>
-              <span>{tenant.users} users</span>
-              <span>{tenant.publicSites} sites</span>
+              <span>{tenant.articles} {copy.articles}</span>
+              <span>{tenant.users} {copy.users}</span>
+              <span>{tenant.publicSites} {copy.sites}</span>
             </div>
           </div>
         );
@@ -201,49 +300,55 @@ function TenantActivity({ tenants }: { tenants: DashboardTenantMetric[] }) {
   );
 }
 
-function SummaryStrip({ analytics }: { analytics: DashboardAnalytics }) {
+function SummaryStrip({
+  analytics,
+  copy,
+}: {
+  analytics: DashboardAnalytics;
+  copy: typeof chartCopy.en;
+}) {
   const isPlatform = analytics.scope === "PLATFORM";
   const items = isPlatform
     ? [
         {
-          label: "Tenants",
+          label: copy.tenants,
           value: analytics.summary.activeTenants,
           icon: Building2,
         },
         {
-          label: "Platform Users",
+          label: copy.platformUsers,
           value: analytics.summary.totalUsers,
           icon: Users,
         },
         {
-          label: "Articles",
+          label: copy.articles,
           value: analytics.summary.totalArticles,
           icon: FileText,
         },
         {
-          label: "Audit Events",
+          label: copy.auditEvents,
           value: analytics.summary.auditEvents,
           icon: BarChart3,
         },
       ]
     : [
         {
-          label: "Published",
+          label: copy.published,
           value: analytics.summary.publishedArticles,
           icon: FileText,
         },
         {
-          label: "Drafts",
+          label: copy.drafts,
           value: analytics.summary.draftArticles,
           icon: FileText,
         },
         {
-          label: "Views",
+          label: copy.views,
           value: analytics.summary.totalViews,
           icon: Eye,
         },
         {
-          label: "Users",
+          label: copy.users,
           value: analytics.summary.activeUsers,
           icon: Users,
         },
@@ -269,12 +374,15 @@ function SummaryStrip({ analytics }: { analytics: DashboardAnalytics }) {
 }
 
 export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
+  const { locale } = useAdminLocale();
+  const copy = chartCopy[locale];
+
   if (loading && !analytics) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Charts</CardTitle>
-          <CardDescription>Loading dashboard chart data...</CardDescription>
+          <CardTitle>{copy.charts}</CardTitle>
+          <CardDescription>{copy.loadingCharts}</CardDescription>
         </CardHeader>
         <CardContent>
           <LoadingChart />
@@ -287,11 +395,11 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Charts</CardTitle>
-          <CardDescription>Dashboard chart data is not available.</CardDescription>
+          <CardTitle>{copy.charts}</CardTitle>
+          <CardDescription>{copy.dataUnavailable}</CardDescription>
         </CardHeader>
         <CardContent>
-          <EmptyChart label="No analytics data available." />
+          <EmptyChart label={copy.noAnalytics} />
         </CardContent>
       </Card>
     );
@@ -305,16 +413,16 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-blue-600" />
-            {isPlatform ? "Platform Charts" : "Tenant Charts"}
+            {isPlatform ? copy.platformCharts : copy.tenantCharts}
           </CardTitle>
           <CardDescription>
             {isPlatform
-              ? "Super admin view across tenants, public sites, platform users, and activity."
-              : `Tenant view for ${analytics.tenantName || "this website"} content, users, and public performance.`}
+              ? copy.platformDescription
+              : copy.tenantDescription(analytics.tenantName)}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <SummaryStrip analytics={analytics} />
+          <SummaryStrip analytics={analytics} copy={copy} />
         </CardContent>
       </Card>
 
@@ -322,44 +430,44 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
           <Card>
             <CardHeader>
-              <CardTitle>Tenant Activity</CardTitle>
+              <CardTitle>{copy.tenantActivity}</CardTitle>
               <CardDescription>
-                Article volume and active membership per tenant.
+                {copy.tenantActivityDescription}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <TenantActivity tenants={analytics.tenantActivity} />
+              <TenantActivity tenants={analytics.tenantActivity} copy={copy} />
             </CardContent>
           </Card>
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Platform Roles</CardTitle>
+                <CardTitle>{copy.platformRoles}</CardTitle>
                 <CardDescription>
-                  Super admins and tenant admins only.
+                  {copy.platformRolesDescription}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <HorizontalBars points={analytics.userRoles} valueLabel="users" />
+                <HorizontalBars points={analytics.userRoles} valueLabel={copy.users} emptyLabel={copy.noChartData} />
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Content Timeline</CardTitle>
+                <CardTitle>{copy.contentTimeline}</CardTitle>
                 <CardDescription>
-                  Created vs published articles over the last 6 months.
+                  {copy.timelineDescription}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <MonthlyBars points={analytics.monthlyContent} />
+                <MonthlyBars points={analytics.monthlyContent} copy={copy} />
                 <div className="mt-3 flex gap-4 text-xs text-slate-500">
                   <span className="flex items-center gap-1">
                     <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-                    Created
+                    {copy.created}
                   </span>
                   <span className="flex items-center gap-1">
                     <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                    Published
+                    {copy.published}
                   </span>
                 </div>
               </CardContent>
@@ -370,56 +478,56 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
         <div className="grid gap-6 xl:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Article Status</CardTitle>
+              <CardTitle>{copy.articleStatus}</CardTitle>
               <CardDescription>
-                Draft, review, published, and archived content for this tenant.
+                {copy.articleStatusDescription}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <HorizontalBars points={analytics.articleStatus} valueLabel="articles" />
+              <HorizontalBars points={analytics.articleStatus} valueLabel={copy.articles} emptyLabel={copy.noChartData} />
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Tenant Roles</CardTitle>
+              <CardTitle>{copy.tenantRoles}</CardTitle>
               <CardDescription>
-                Active team members by tenant role.
+                {copy.tenantRolesDescription}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <HorizontalBars points={analytics.userRoles} valueLabel="users" />
+              <HorizontalBars points={analytics.userRoles} valueLabel={copy.users} emptyLabel={copy.noChartData} />
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Content Timeline</CardTitle>
+              <CardTitle>{copy.contentTimeline}</CardTitle>
               <CardDescription>
-                Created vs published articles over the last 6 months.
+                {copy.timelineDescription}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <MonthlyBars points={analytics.monthlyContent} />
+              <MonthlyBars points={analytics.monthlyContent} copy={copy} />
               <div className="mt-3 flex gap-4 text-xs text-slate-500">
                 <span className="flex items-center gap-1">
                   <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
-                  Created
+                  {copy.created}
                 </span>
                 <span className="flex items-center gap-1">
                   <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                  Published
+                  {copy.published}
                 </span>
               </div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Views By Category</CardTitle>
+              <CardTitle>{copy.viewsByCategory}</CardTitle>
               <CardDescription>
-                Public article views grouped by category.
+                {copy.viewsByCategoryDescription}
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <HorizontalBars points={analytics.categoryViews} valueLabel="views" />
+              <HorizontalBars points={analytics.categoryViews} valueLabel={copy.views} emptyLabel={copy.noChartData} />
             </CardContent>
           </Card>
         </div>

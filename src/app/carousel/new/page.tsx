@@ -28,7 +28,7 @@ export default function NewCarouselSlidePage() {
       <div>
         <h1 className="text-3xl font-bold text-slate-950">Create Slide</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Add a new public hero carousel slide.
+          Add a new public hero carousel slide with image or video media.
         </p>
       </div>
 

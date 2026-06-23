@@ -13,6 +13,7 @@ import { Trash2, Edit, Plus, Save, X } from "lucide-react";
 import { useToastHelpers } from "@/components/ui/toast";
 import { PermissionGuard, Permission } from "@/components/permissions/PermissionGuard";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 interface Topic {
   id: string;
@@ -37,7 +38,122 @@ interface Category {
   slug: string;
 }
 
+const topicsCopy = {
+  en: {
+    error: "Error",
+    success: "Success",
+    loadCategoriesFailed: "Failed to load categories",
+    loadTopicsFailed: "Failed to load topics",
+    selectCategoryFirst: "Please select a category first",
+    validationError: "Validation Error",
+    titleRequired: "Title is required",
+    slugRequired: "Slug is required",
+    categoryRequired: "Category is required",
+    topicUpdated: "Topic updated successfully",
+    topicCreated: "Topic created successfully",
+    saveTopicFailed: "Failed to save topic",
+    topicDeleted: "Topic deleted successfully",
+    deleteTopicFailed: "Failed to delete topic",
+    pageTitle: "Topic Management",
+    pageDescription: "Create and manage topics (sub-categories) for your categories",
+    selectCategory: "Select Category",
+    selectCategoryDescription: "Choose a category to view and manage its topics",
+    selectCategoryPlaceholder: "Select a category...",
+    addTopic: "Add Topic",
+    accessRestricted: "Access Restricted",
+    permissionDescription: (isEditing: boolean) =>
+      `You don't have permission to ${isEditing ? "edit topics" : "create new topics"}. Contact your administrator for access.`,
+    editTopic: "Edit Topic",
+    createNewTopic: "Create New Topic",
+    editingInCategory: (name?: string) => `Editing topic in ${name} category`,
+    creatingInCategory: (name?: string) => `Creating new topic in ${name} category`,
+    title: "Title",
+    titlePlaceholder: "Enter topic title...",
+    slug: "Slug",
+    description: "Description",
+    descriptionPlaceholder: "Optional description for this topic...",
+    coverImageUrl: "Cover Image URL",
+    coverVideoUrl: "Cover Video URL",
+    updateTopic: "Update Topic",
+    createTopic: "Create Topic",
+    cancel: "Cancel",
+    topicsIn: (name?: string) => `Topics in ${name}`,
+    noTopicsFound: "No topics found for this category. Create your first topic above.",
+    topicCount: (count: number) => `${count} topic${count === 1 ? "" : "s"} found`,
+    noTopicsYet: "No topics yet for this category.",
+    addFirstTopic: 'Click "Add Topic" to create the first one!',
+    created: "Created",
+    hasCoverImage: "Has cover image",
+    hasCoverVideo: "Has cover video",
+    edit: "Edit",
+    delete: "Delete",
+    loading: "Loading...",
+    errorLabel: "Error",
+    deleteTopicTitle: "Delete Topic?",
+    deleteTopicDescription: (title?: string) =>
+      `This will permanently delete "${title || "this topic"}". This action cannot be undone.`,
+    deleteTopic: "Delete Topic",
+  },
+  km: {
+    error: "បញ្ហា",
+    success: "ជោគជ័យ",
+    loadCategoriesFailed: "មិនអាចផ្ទុក categories បានទេ",
+    loadTopicsFailed: "មិនអាចផ្ទុក topics បានទេ",
+    selectCategoryFirst: "សូមជ្រើស category ជាមុនសិន",
+    validationError: "ទិន្នន័យមិនត្រឹមត្រូវ",
+    titleRequired: "ត្រូវការ title",
+    slugRequired: "ត្រូវការ slug",
+    categoryRequired: "ត្រូវការ category",
+    topicUpdated: "បានកែ topic ដោយជោគជ័យ",
+    topicCreated: "បានបង្កើត topic ដោយជោគជ័យ",
+    saveTopicFailed: "មិនអាចរក្សាទុក topic បានទេ",
+    topicDeleted: "បានលុប topic ដោយជោគជ័យ",
+    deleteTopicFailed: "មិនអាចលុប topic បានទេ",
+    pageTitle: "គ្រប់គ្រង Topic",
+    pageDescription: "បង្កើត និងគ្រប់គ្រង topics សម្រាប់ categories",
+    selectCategory: "ជ្រើស Category",
+    selectCategoryDescription: "ជ្រើស category ដើម្បីមើល និងគ្រប់គ្រង topics",
+    selectCategoryPlaceholder: "ជ្រើស category...",
+    addTopic: "បន្ថែម Topic",
+    accessRestricted: "សិទ្ធិត្រូវបានកំណត់",
+    permissionDescription: (isEditing: boolean) =>
+      `អ្នកមិនមានសិទ្ធិ${isEditing ? "កែ topics" : "បង្កើត topics ថ្មី"}ទេ។ សូមទាក់ទងអ្នកគ្រប់គ្រង។`,
+    editTopic: "កែ Topic",
+    createNewTopic: "បង្កើត Topic ថ្មី",
+    editingInCategory: (name?: string) => `កំពុងកែ topic ក្នុង category ${name}`,
+    creatingInCategory: (name?: string) => `កំពុងបង្កើត topic ថ្មីក្នុង category ${name}`,
+    title: "Title",
+    titlePlaceholder: "បញ្ចូល title topic...",
+    slug: "Slug",
+    description: "ពណ៌នា",
+    descriptionPlaceholder: "ពណ៌នាបន្ថែមសម្រាប់ topic នេះ...",
+    coverImageUrl: "Cover Image URL",
+    coverVideoUrl: "Cover Video URL",
+    updateTopic: "កែ Topic",
+    createTopic: "បង្កើត Topic",
+    cancel: "បោះបង់",
+    topicsIn: (name?: string) => `Topics ក្នុង ${name}`,
+    noTopicsFound: "រកមិនឃើញ topics សម្រាប់ category នេះ។ បង្កើត topic ដំបូងខាងលើ។",
+    topicCount: (count: number) => `រកឃើញ ${count} topics`,
+    noTopicsYet: "មិនទាន់មាន topics សម្រាប់ category នេះ។",
+    addFirstTopic: 'ចុច "បន្ថែម Topic" ដើម្បីបង្កើតដំបូង!',
+    created: "បានបង្កើត",
+    hasCoverImage: "មាន cover image",
+    hasCoverVideo: "មាន cover video",
+    edit: "កែ",
+    delete: "លុប",
+    loading: "កំពុងផ្ទុក...",
+    errorLabel: "បញ្ហា",
+    deleteTopicTitle: "លុប Topic?",
+    deleteTopicDescription: (title?: string) =>
+      `វានឹងលុប "${title || "topic នេះ"}" ជាអចិន្ត្រៃយ៍។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`,
+    deleteTopic: "លុប Topic",
+  },
+};
+
 export default function TopicsPage() {
+  const { locale } = useAdminLocale();
+  const copy = topicsCopy[locale];
   const { query, loading, error } = useGraphQL();
   const { getCategories } = useCategories();
   const { showSuccess, showError } = useToastHelpers();
@@ -82,7 +198,7 @@ export default function TopicsPage() {
       setCategories(result.categories || []);
     } catch (err) {
       console.error("Failed to load categories:", err);
-      showError("Error", "Failed to load categories");
+      showError(copy.error, copy.loadCategoriesFailed);
     }
   };
 
@@ -113,24 +229,29 @@ export default function TopicsPage() {
       setTopics(result.topicsByCategory || []);
     } catch (err) {
       console.error("Failed to load topics:", err);
-      showError("Error", "Failed to load topics");
+      showError(copy.error, copy.loadTopicsFailed);
     }
   };
 
   const generateSlug = (title: string) => {
     return title
       .toLowerCase()
+      .trim()
       .replace(/[^a-z0-9\s-]/g, "")
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
-      .trim();
+      .replace(/^-|-$/g, "");
+  };
+
+  const shouldSyncSlugFromTitle = (currentSlug: string, previousTitle: string) => {
+    return !currentSlug || currentSlug === generateSlug(previousTitle);
   };
 
   const handleTitleChange = (title: string) => {
     setFormData(prev => ({
       ...prev,
       title,
-      slug: prev.slug || generateSlug(title)
+      slug: shouldSyncSlugFromTitle(prev.slug, prev.title) ? generateSlug(title) : prev.slug
     }));
   };
 
@@ -149,7 +270,7 @@ export default function TopicsPage() {
 
   const startCreating = () => {
     if (!selectedCategorySlug) {
-      showError("Error", "Please select a category first");
+      showError(copy.error, copy.selectCategoryFirst);
       return;
     }
     setFormData({
@@ -179,17 +300,17 @@ export default function TopicsPage() {
 
   const saveTopic = async () => {
     if (!formData.title.trim()) {
-      showError("Validation Error", "Title is required");
+      showError(copy.validationError, copy.titleRequired);
       return;
     }
 
     if (!formData.slug.trim()) {
-      showError("Validation Error", "Slug is required");
+      showError(copy.validationError, copy.slugRequired);
       return;
     }
 
     if (!formData.categorySlug) {
-      showError("Validation Error", "Category is required");
+      showError(copy.validationError, copy.categoryRequired);
       return;
     }
 
@@ -232,13 +353,13 @@ export default function TopicsPage() {
       const result = await query(UPSERT_TOPIC_MUTATION, variables);
       
       if (result.upsertTopic) {
-        showSuccess("Success", editingTopic ? "Topic updated successfully" : "Topic created successfully");
+        showSuccess(copy.success, editingTopic ? copy.topicUpdated : copy.topicCreated);
         resetForm();
         loadTopicsForCategory(selectedCategorySlug);
       }
     } catch (err: any) {
       console.error("Failed to save topic:", err);
-      showError("Error", err.message || "Failed to save topic");
+      showError(copy.error, locale === "en" ? err.message || copy.saveTopicFailed : copy.saveTopicFailed);
     }
   };
 
@@ -253,12 +374,12 @@ export default function TopicsPage() {
       const result = await query(DELETE_TOPIC_MUTATION, { id: topicId });
       
       if (result.deleteTopic) {
-        showSuccess("Success", "Topic deleted successfully");
+        showSuccess(copy.success, copy.topicDeleted);
         loadTopicsForCategory(selectedCategorySlug);
       }
     } catch (err: any) {
       console.error("Failed to delete topic:", err);
-      showError("Error", err.message || "Failed to delete topic");
+      showError(copy.error, locale === "en" ? err.message || copy.deleteTopicFailed : copy.deleteTopicFailed);
     }
   };
 
@@ -269,9 +390,9 @@ export default function TopicsPage() {
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Topic Management</h1>
+          <h1 className="text-3xl font-bold">{copy.pageTitle}</h1>
           <p className="text-muted-foreground">
-            Create and manage topics (sub-categories) for your categories
+            {copy.pageDescription}
           </p>
         </div>
       </div>
@@ -279,9 +400,9 @@ export default function TopicsPage() {
       {/* Category Selection */}
       <Card>
         <CardHeader>
-          <CardTitle>Select Category</CardTitle>
+          <CardTitle>{copy.selectCategory}</CardTitle>
           <CardDescription>
-            Choose a category to view and manage its topics
+            {copy.selectCategoryDescription}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -289,7 +410,7 @@ export default function TopicsPage() {
             <div className="flex-1">
               <Select value={selectedCategorySlug} onValueChange={setSelectedCategorySlug}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a category..." />
+                  <SelectValue placeholder={copy.selectCategoryPlaceholder} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
@@ -304,7 +425,7 @@ export default function TopicsPage() {
               <PermissionGuard permissions={[Permission.CREATE_TOPIC]}>
                 <Button onClick={startCreating} className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
-                  Add Topic
+                  {copy.addTopic}
                 </Button>
               </PermissionGuard>
             )}
@@ -319,9 +440,9 @@ export default function TopicsPage() {
           fallback={
             <Card>
               <CardHeader>
-                <CardTitle>Access Restricted</CardTitle>
+                <CardTitle>{copy.accessRestricted}</CardTitle>
                 <CardDescription>
-                  You don't have permission to {editingTopic ? "edit topics" : "create new topics"}. Contact your administrator for access.
+                  {copy.permissionDescription(Boolean(editingTopic))}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -330,12 +451,12 @@ export default function TopicsPage() {
           <Card>
           <CardHeader>
             <CardTitle>
-              {editingTopic ? "Edit Topic" : "Create New Topic"}
+              {editingTopic ? copy.editTopic : copy.createNewTopic}
             </CardTitle>
             <CardDescription>
               {editingTopic 
-                ? `Editing topic in ${selectedCategory?.name} category`
-                : `Creating new topic in ${selectedCategory?.name} category`
+                ? copy.editingInCategory(selectedCategory?.name)
+                : copy.creatingInCategory(selectedCategory?.name)
               }
             </CardDescription>
           </CardHeader>
@@ -343,17 +464,17 @@ export default function TopicsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium mb-2 block">
-                  Title <span className="text-red-500">*</span>
+                  {copy.title} <span className="text-red-500">*</span>
                 </label>
                 <Input
                   value={formData.title}
                   onChange={(e) => handleTitleChange(e.target.value)}
-                  placeholder="Enter topic title..."
+                  placeholder={copy.titlePlaceholder}
                 />
               </div>
               <div>
                 <label className="text-sm font-medium mb-2 block">
-                  Slug <span className="text-red-500">*</span>
+                  {copy.slug} <span className="text-red-500">*</span>
                 </label>
                 <Input
                   value={formData.slug}
@@ -364,18 +485,18 @@ export default function TopicsPage() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Description</label>
+              <label className="text-sm font-medium mb-2 block">{copy.description}</label>
               <Textarea
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Optional description for this topic..."
+                placeholder={copy.descriptionPlaceholder}
                 rows={3}
               />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">Cover Image URL</label>
+                <label className="text-sm font-medium mb-2 block">{copy.coverImageUrl}</label>
                 <Input
                   value={formData.coverImageUrl}
                   onChange={(e) => setFormData(prev => ({ ...prev, coverImageUrl: e.target.value }))}
@@ -383,7 +504,7 @@ export default function TopicsPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium mb-2 block">Cover Video URL</label>
+                <label className="text-sm font-medium mb-2 block">{copy.coverVideoUrl}</label>
                 <Input
                   value={formData.coverVideoUrl}
                   onChange={(e) => setFormData(prev => ({ ...prev, coverVideoUrl: e.target.value }))}
@@ -395,11 +516,11 @@ export default function TopicsPage() {
             <div className="flex items-center gap-2 pt-4">
               <Button onClick={saveTopic} className="flex items-center gap-2">
                 <Save className="h-4 w-4" />
-                {editingTopic ? "Update Topic" : "Create Topic"}
+                {editingTopic ? copy.updateTopic : copy.createTopic}
               </Button>
               <Button variant="outline" onClick={resetForm} className="flex items-center gap-2">
                 <X className="h-4 w-4" />
-                Cancel
+                {copy.cancel}
               </Button>
             </div>
           </CardContent>
@@ -412,20 +533,20 @@ export default function TopicsPage() {
         <Card>
           <CardHeader>
             <CardTitle>
-              Topics in {selectedCategory?.name}
+              {copy.topicsIn(selectedCategory?.name)}
             </CardTitle>
             <CardDescription>
               {topics.length === 0 
-                ? "No topics found for this category. Create your first topic above."
-                : `${topics.length} topic${topics.length === 1 ? '' : 's'} found`
+                ? copy.noTopicsFound
+                : copy.topicCount(topics.length)
               }
             </CardDescription>
           </CardHeader>
           <CardContent>
             {topics.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No topics yet for this category.</p>
-                <p>Click "Add Topic" to create the first one!</p>
+                <p>{copy.noTopicsYet}</p>
+                <p>{copy.addFirstTopic}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -445,9 +566,9 @@ export default function TopicsPage() {
                         </p>
                       )}
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>Created: {new Date(topic.createdAt).toLocaleDateString()}</span>
-                        {topic.coverImageUrl && <span>Has cover image</span>}
-                        {topic.coverVideoUrl && <span>Has cover video</span>}
+                        <span>{copy.created}: {new Date(topic.createdAt).toLocaleDateString()}</span>
+                        {topic.coverImageUrl && <span>{copy.hasCoverImage}</span>}
+                        {topic.coverVideoUrl && <span>{copy.hasCoverVideo}</span>}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -459,7 +580,7 @@ export default function TopicsPage() {
                           className="flex items-center gap-1"
                         >
                           <Edit className="h-3 w-3" />
-                          Edit
+                          {copy.edit}
                         </Button>
                       </PermissionGuard>
                       <PermissionGuard permissions={[Permission.DELETE_TOPIC]} fallback={null}>
@@ -470,7 +591,7 @@ export default function TopicsPage() {
                           className="flex items-center gap-1 text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-3 w-3" />
-                          Delete
+                          {copy.delete}
                         </Button>
                       </PermissionGuard>
                     </div>
@@ -484,21 +605,21 @@ export default function TopicsPage() {
 
       {loading && (
         <div className="text-center py-4">
-          <p>Loading...</p>
+          <p>{copy.loading}</p>
         </div>
       )}
 
       {error && (
         <div className="text-center py-4 text-red-600">
-          <p>Error: {error}</p>
+          <p>{copy.errorLabel}: {error}</p>
         </div>
       )}
       <ConfirmationDialog
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog((current) => ({ ...current, open }))}
-        title="Delete Topic?"
-        description={`This will permanently delete "${deleteDialog.topic?.title || 'this topic'}". This action cannot be undone.`}
-        confirmText="Delete Topic"
+        title={copy.deleteTopicTitle}
+        description={copy.deleteTopicDescription(deleteDialog.topic?.title)}
+        confirmText={copy.deleteTopic}
         variant="destructive"
         onConfirm={() => {
           if (deleteDialog.topic) {

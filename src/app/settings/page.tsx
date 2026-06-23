@@ -41,6 +41,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { Permission } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 import {
   notifyThemeSettingsChanged,
 } from "@/lib/tweakcn-theme";
@@ -98,7 +99,12 @@ const SUPER_ADMIN_HIDDEN_SETTING_KEYS = new Set([
   "maintenance.mode_enabled",
   "maintenance.message",
 ]);
-const TENANT_HIDDEN_SETTING_KEYS = new Set(["site.management_favicon_url"]);
+const TENANT_HIDDEN_SETTING_KEYS = new Set([
+  "site.management_favicon_url",
+  "theme.super_admin_tweakcn",
+  "theme.primary_color",
+  "theme.secondary_color",
+]);
 const ROLE_THEME_SETTING_KEYS = new Set([
   "theme.super_admin_tweakcn",
   "theme.admin_tweakcn",
@@ -109,6 +115,127 @@ const ROLE_THEME_SETTING_KEYS = new Set([
   "theme.secondary_color",
   "theme.custom_css",
 ]);
+
+const settingsCopy = {
+  en: {
+    loadSettingsFailed: "Failed to load settings",
+    saveSettingFailed: "The setting could not be saved. Please check the value and try again.",
+    tenantUpdateBlocked: "Tenant users cannot update super admin theme settings.",
+    tenantResetBlocked: "Tenant users cannot reset super admin theme settings.",
+    sendTestFailed: "Failed to send test email.",
+    pageTitleSuper: "Management Console Settings",
+    pageTitleTenant: "Settings",
+    pageDescriptionSuper: "Configure platform defaults used outside tenant-specific websites.",
+    pageDescriptionTenant: (name?: string | null) =>
+      `Configure ${name || "this tenant"} public website identity, SEO, content, users, and integrations.`,
+    publicWebsiteUrl: "Public website URL",
+    publicWebsiteUrlDescription: "Set the public URL used for links, SEO, and article sharing.",
+    adminDashboardUrl: "Admin dashboard URL",
+    adminDashboardUrlDescription: "Add the tenant admin URL so emails point users to the right console.",
+    branding: "Branding",
+    brandingDescription: "Add a logo or public favicon for a finished site identity.",
+    contactDetails: "Contact details",
+    contactDetailsDescription: "Publish an email plus phone or address for the public contact page.",
+    seoBasics: "SEO basics",
+    seoBasicsDescription: "Add meta title and description for search and social previews.",
+    emailDelivery: "Email delivery",
+    emailDeliveryDescription: "Configure SMTP and use the Email Health Check to verify delivery.",
+    userRegistrationPolicy: "User registration policy",
+    userRegistrationPolicyDescription: "Confirm the default role and password minimum for new users.",
+    legalPages: "Legal pages",
+    legalPagesDescription: "Publish privacy, terms, and cookie policy content.",
+    settingsUnavailable: "Settings Unavailable",
+    settingsUnavailableDescription: "Settings are available only for admin accounts.",
+    failedToLoadSettings: "Failed to Load Settings",
+    tryAgain: "Try Again",
+    managementConsole: "Management Console",
+    tenantWebsite: "Tenant Website",
+    settings: "Settings",
+    public: "Public",
+    required: "Required",
+    searchSettings: "Search settings",
+    refresh: "Refresh",
+    sections: "Sections",
+    found: (count: number) => `${count} found`,
+    shown: (count: number) => `${count} shown`,
+    readiness: "Readiness",
+    essentialsComplete: (done: number, total: number) => `${done} of ${total} essentials complete`,
+    coreComplete: "Core settings are complete.",
+    emailHealthCheck: "Email Health Check",
+    emailHealthDescription: "Send a real test message using the current SMTP settings.",
+    notConfigured: "not configured",
+    sendTest: "Send Test",
+    categoryLabels: {
+      [SettingType.SITE]: "Site",
+      [SettingType.EMAIL]: "Email",
+      [SettingType.SEO]: "SEO",
+      [SettingType.CONTENT]: "Content",
+      [SettingType.USER_MANAGEMENT]: "User Management",
+      [SettingType.API]: "API",
+      [SettingType.THEME]: "Theme",
+      [SettingType.MAINTENANCE]: "Maintenance",
+    },
+  },
+  km: {
+    loadSettingsFailed: "មិនអាចផ្ទុក settings បានទេ",
+    saveSettingFailed: "មិនអាចរក្សាទុក setting បានទេ។ សូមពិនិត្យតម្លៃ ហើយព្យាយាមម្តងទៀត។",
+    tenantUpdateBlocked: "អ្នកប្រើ tenant មិនអាចកែ super admin theme settings បានទេ។",
+    tenantResetBlocked: "អ្នកប្រើ tenant មិនអាច reset super admin theme settings បានទេ។",
+    sendTestFailed: "មិនអាចផ្ញើអ៊ីមែលសាកល្បងបានទេ។",
+    pageTitleSuper: "Settings ផ្ទាំងគ្រប់គ្រង",
+    pageTitleTenant: "Settings",
+    pageDescriptionSuper: "កំណត់ platform defaults សម្រាប់ផ្នែកក្រៅ tenant websites។",
+    pageDescriptionTenant: (name?: string | null) =>
+      `កំណត់ identity, SEO, content, users និង integrations សម្រាប់ ${name || "tenant នេះ"}។`,
+    publicWebsiteUrl: "Public website URL",
+    publicWebsiteUrlDescription: "កំណត់ public URL សម្រាប់ links, SEO និងការចែករំលែកអត្ថបទ។",
+    adminDashboardUrl: "Admin dashboard URL",
+    adminDashboardUrlDescription: "បន្ថែម tenant admin URL ដើម្បីឱ្យអ៊ីមែលនាំអ្នកប្រើទៅ console ត្រឹមត្រូវ។",
+    branding: "Branding",
+    brandingDescription: "បន្ថែម logo ឬ public favicon សម្រាប់ site identity។",
+    contactDetails: "ព័ត៌មានទំនាក់ទំនង",
+    contactDetailsDescription: "ផ្សព្វផ្សាយ email ជាមួយ phone ឬ address សម្រាប់ public contact page។",
+    seoBasics: "SEO basics",
+    seoBasicsDescription: "បន្ថែម meta title និង description សម្រាប់ search/social previews។",
+    emailDelivery: "Email delivery",
+    emailDeliveryDescription: "កំណត់ SMTP ហើយប្រើ Email Health Check ដើម្បីផ្ទៀងផ្ទាត់។",
+    userRegistrationPolicy: "គោលការណ៍ចុះឈ្មោះអ្នកប្រើ",
+    userRegistrationPolicyDescription: "ពិនិត្យ default role និង password minimum សម្រាប់អ្នកប្រើថ្មី។",
+    legalPages: "Legal pages",
+    legalPagesDescription: "ផ្សព្វផ្សាយ privacy, terms និង cookie policy content។",
+    settingsUnavailable: "Settings មិនអាចប្រើបាន",
+    settingsUnavailableDescription: "Settings មានសម្រាប់គណនី admin ប៉ុណ្ណោះ។",
+    failedToLoadSettings: "ផ្ទុក Settings មិនបាន",
+    tryAgain: "ព្យាយាមម្តងទៀត",
+    managementConsole: "ផ្ទាំងគ្រប់គ្រង",
+    tenantWebsite: "Tenant Website",
+    settings: "Settings",
+    public: "Public",
+    required: "Required",
+    searchSettings: "ស្វែងរក settings",
+    refresh: "ផ្ទុកឡើងវិញ",
+    sections: "ផ្នែក",
+    found: (count: number) => `រកឃើញ ${count}`,
+    shown: (count: number) => `បង្ហាញ ${count}`,
+    readiness: "ភាពរួចរាល់",
+    essentialsComplete: (done: number, total: number) => `${done} ក្នុងចំណោម ${total} បានបញ្ចប់`,
+    coreComplete: "Core settings បានបញ្ចប់ហើយ។",
+    emailHealthCheck: "ពិនិត្យ Email",
+    emailHealthDescription: "ផ្ញើសារសាកល្បងដោយប្រើ SMTP settings បច្ចុប្បន្ន។",
+    notConfigured: "មិនទាន់កំណត់",
+    sendTest: "ផ្ញើសាកល្បង",
+    categoryLabels: {
+      [SettingType.SITE]: "Site",
+      [SettingType.EMAIL]: "Email",
+      [SettingType.SEO]: "SEO",
+      [SettingType.CONTENT]: "Content",
+      [SettingType.USER_MANAGEMENT]: "User Management",
+      [SettingType.API]: "API",
+      [SettingType.THEME]: "Theme",
+      [SettingType.MAINTENANCE]: "Maintenance",
+    },
+  },
+};
 
 function hasSettingValue(settings: Setting[], key: string): boolean {
   const value = settings.find((setting) => setting.key === key)?.value;
@@ -122,6 +249,8 @@ function hasSettingValue(settings: Setting[], key: string): boolean {
 }
 
 export default function SettingsPage() {
+  const { locale } = useAdminLocale();
+  const copy = settingsCopy[locale];
   const { user } = useAuth();
   const { activeTenant, refreshTenants } = useTenant();
   const userRole = user?.role?.toString().toUpperCase();
@@ -167,12 +296,12 @@ export default function SettingsPage() {
       }
     } catch (err) {
       console.error("Failed to load settings:", err);
-      setError(err instanceof Error ? err.message : "Failed to load settings");
+      setError(locale === "en" && err instanceof Error ? err.message : copy.loadSettingsFailed);
       setSettings([]);
     } finally {
       setLoading(false);
     }
-  }, [canAccessSettings, userRole]);
+  }, [canAccessSettings, copy.loadSettingsFailed, locale, userRole]);
 
   React.useEffect(() => {
     void loadSettings();
@@ -189,18 +318,22 @@ export default function SettingsPage() {
     field: "updateSetting" | "resetSetting",
   ): Setting {
     if (!response || typeof response !== "object") {
-      throw new Error("The setting could not be saved. Please check the value and try again.");
+      throw new Error(copy.saveSettingFailed);
     }
 
     const value = (response as Record<string, unknown>)[field];
     if (!value || typeof value !== "object") {
-      throw new Error("The setting could not be saved. Please check the value and try again.");
+      throw new Error(copy.saveSettingFailed);
     }
 
     return value as Setting;
   }
 
   const handleUpdateSetting = async (input: UpdateSettingInput) => {
+    if (userRole !== "SUPER_ADMIN" && TENANT_HIDDEN_SETTING_KEYS.has(input.key)) {
+      throw new Error(copy.tenantUpdateBlocked);
+    }
+
     const response = await getAuthenticatedGqlClient().request(M_UPDATE_SETTING, {
       input,
     });
@@ -233,6 +366,10 @@ export default function SettingsPage() {
   };
 
   const handleResetSetting = async (key: string) => {
+    if (userRole !== "SUPER_ADMIN" && TENANT_HIDDEN_SETTING_KEYS.has(key)) {
+      throw new Error(copy.tenantResetBlocked);
+    }
+
     const response = await getAuthenticatedGqlClient().request(M_RESET_SETTING, {
       key,
     });
@@ -279,7 +416,7 @@ export default function SettingsPage() {
     } catch (err) {
       setEmailTestResult({
         success: false,
-        message: err instanceof Error ? err.message : "Failed to send test email.",
+        message: locale === "en" && err instanceof Error ? err.message : copy.sendTestFailed,
       });
     } finally {
       setTestingEmail(false);
@@ -287,10 +424,10 @@ export default function SettingsPage() {
   };
 
   const isSuperAdmin = userRole === "SUPER_ADMIN";
-  const pageTitle = isSuperAdmin ? "Management Console Settings" : "Settings";
+  const pageTitle = isSuperAdmin ? copy.pageTitleSuper : copy.pageTitleTenant;
   const pageDescription = isSuperAdmin
-    ? "Configure platform defaults used outside tenant-specific websites."
-    : `Configure ${activeTenant?.name || "this tenant"} public website identity, SEO, content, users, and integrations.`;
+    ? copy.pageDescriptionSuper
+    : copy.pageDescriptionTenant(activeTenant?.name);
   const visibleCategories = React.useMemo(
     () =>
       Object.entries(SETTING_CATEGORIES).filter(([key]) => {
@@ -356,55 +493,55 @@ export default function SettingsPage() {
 
     return [
       {
-        label: "Public website URL",
-        description: "Set the public URL used for links, SEO, and article sharing.",
+        label: copy.publicWebsiteUrl,
+        description: copy.publicWebsiteUrlDescription,
         complete: hasPublicUrl,
         category: SettingType.SITE,
       },
       {
-        label: "Admin dashboard URL",
-        description: "Add the tenant admin URL so emails point users to the right console.",
+        label: copy.adminDashboardUrl,
+        description: copy.adminDashboardUrlDescription,
         complete: hasAdminUrl,
         category: SettingType.SITE,
       },
       {
-        label: "Branding",
-        description: "Add a logo or public favicon for a finished site identity.",
+        label: copy.branding,
+        description: copy.brandingDescription,
         complete: hasBranding,
         category: SettingType.SITE,
       },
       {
-        label: "Contact details",
-        description: "Publish an email plus phone or address for the public contact page.",
+        label: copy.contactDetails,
+        description: copy.contactDetailsDescription,
         complete: hasContact,
         category: SettingType.SITE,
       },
       {
-        label: "SEO basics",
-        description: "Add meta title and description for search and social previews.",
+        label: copy.seoBasics,
+        description: copy.seoBasicsDescription,
         complete: hasSeo,
         category: SettingType.SEO,
       },
       {
-        label: "Email delivery",
-        description: "Configure SMTP and use the Email Health Check to verify delivery.",
+        label: copy.emailDelivery,
+        description: copy.emailDeliveryDescription,
         complete: hasEmail,
         category: SettingType.EMAIL,
       },
       {
-        label: "User registration policy",
-        description: "Confirm the default role and password minimum for new users.",
+        label: copy.userRegistrationPolicy,
+        description: copy.userRegistrationPolicyDescription,
         complete: hasUserPolicy,
         category: SettingType.USER_MANAGEMENT,
       },
       {
-        label: "Legal pages",
-        description: "Publish privacy, terms, and cookie policy content.",
+        label: copy.legalPages,
+        description: copy.legalPagesDescription,
         complete: hasLegal,
         category: SettingType.CONTENT,
       },
     ];
-  }, [activeTenant?.sites, settings]);
+  }, [activeTenant?.sites, copy, settings]);
   const visibleSetupChecklist = React.useMemo(
     () =>
       setupChecklist.filter(
@@ -427,9 +564,9 @@ export default function SettingsPage() {
         <Card className="w-full max-w-md text-center">
           <CardContent className="p-8">
             <AlertCircle className="mx-auto mb-4 h-10 w-10 text-slate-400" />
-            <h1 className="text-2xl font-bold text-slate-950">Settings Unavailable</h1>
+            <h1 className="text-2xl font-bold text-slate-950">{copy.settingsUnavailable}</h1>
             <p className="mt-2 text-slate-600">
-              Settings are available only for admin accounts.
+              {copy.settingsUnavailableDescription}
             </p>
           </CardContent>
         </Card>
@@ -468,12 +605,12 @@ export default function SettingsPage() {
           <CardContent className="p-8 text-center">
             <AlertCircle className="mx-auto mb-4 h-8 w-8 text-red-500" />
             <h3 className="mb-2 text-lg font-medium text-slate-950">
-              Failed to Load Settings
+              {copy.failedToLoadSettings}
             </h3>
             <p className="mb-4 text-slate-600">{error}</p>
             <Button onClick={() => void loadSettings()} variant="outline">
               <RefreshCw className="mr-2 h-4 w-4" />
-              Try Again
+              {copy.tryAgain}
             </Button>
           </CardContent>
         </Card>
@@ -489,7 +626,7 @@ export default function SettingsPage() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="bg-white">
-                  {isSuperAdmin ? "Management Console" : activeTenant?.name || "Tenant Website"}
+                  {isSuperAdmin ? copy.managementConsole : activeTenant?.name || copy.tenantWebsite}
                 </Badge>
                 {!isSuperAdmin && activeTenant?.slug ? (
                   <span className="font-mono text-xs text-slate-400">{activeTenant.slug}</span>
@@ -506,9 +643,9 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <div className="grid grid-cols-3 overflow-hidden rounded-md border border-slate-200 bg-slate-50">
                 {[
-                  ["Settings", settings.length],
-                  ["Public", publicCount],
-                  ["Required", requiredCount],
+                  [copy.settings, settings.length],
+                  [copy.public, publicCount],
+                  [copy.required, requiredCount],
                 ].map(([label, value]) => (
                   <div key={label} className="border-r border-slate-200 px-3 py-2 last:border-r-0">
                     <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
@@ -522,7 +659,7 @@ export default function SettingsPage() {
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <Input
-                    placeholder="Search settings"
+                    placeholder={copy.searchSettings}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="h-10 border-slate-200 bg-white pl-9"
@@ -535,7 +672,7 @@ export default function SettingsPage() {
                   className="h-10 shrink-0 bg-white"
                 >
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh
+                  {copy.refresh}
                 </Button>
               </div>
             </div>
@@ -546,9 +683,9 @@ export default function SettingsPage() {
           <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
             <section className="rounded-md border border-slate-200 bg-white p-3">
               <div className="flex items-center justify-between px-2 py-2">
-                <h2 className="text-sm font-semibold text-slate-950">Sections</h2>
+                <h2 className="text-sm font-semibold text-slate-950">{copy.sections}</h2>
                 <Badge variant="outline" className="bg-white text-xs">
-                  {searchQuery ? `${filteredSettings.length} found` : `${getCategoryCount(selectedCategory)} shown`}
+                  {searchQuery ? copy.found(filteredSettings.length) : copy.shown(getCategoryCount(selectedCategory))}
                 </Badge>
               </div>
               <div className="flex gap-1 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0">
@@ -572,7 +709,7 @@ export default function SettingsPage() {
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       <span className="min-w-0 flex-1 truncate">
-                        {SETTING_CATEGORIES[categoryKey].label}
+                        {copy.categoryLabels[categoryKey] || SETTING_CATEGORIES[categoryKey].label}
                       </span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs ${
@@ -590,9 +727,9 @@ export default function SettingsPage() {
             <section className="rounded-md border border-slate-200 bg-white p-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <h2 className="text-sm font-semibold text-slate-950">Readiness</h2>
+                  <h2 className="text-sm font-semibold text-slate-950">{copy.readiness}</h2>
                   <p className="mt-1 text-xs text-slate-500">
-                    {completedSetupItems} of {visibleSetupChecklist.length} essentials complete
+                    {copy.essentialsComplete(completedSetupItems, visibleSetupChecklist.length)}
                   </p>
                 </div>
                 <span className="text-lg font-semibold text-slate-950">{setupProgress}%</span>
@@ -630,7 +767,7 @@ export default function SettingsPage() {
                 })}
                 {incompleteSetupItems.length === 0 ? (
                   <p className="px-2 py-1.5 text-sm text-emerald-700">
-                    Core settings are complete.
+                    {copy.coreComplete}
                   </p>
                 ) : null}
               </div>
@@ -645,7 +782,7 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-2">
                       <SelectedCategoryIcon className="h-5 w-5 text-slate-600" />
                       <h2 className="text-lg font-semibold text-slate-950">
-                        {selectedCategoryInfo.label}
+                        {copy.categoryLabels[selectedCategory] || selectedCategoryInfo.label}
                       </h2>
                     </div>
                     <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
@@ -667,10 +804,10 @@ export default function SettingsPage() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                           <Mail className="h-4 w-4 text-sky-700" />
-                          <h3 className="font-semibold text-slate-950">Email Health Check</h3>
+                          <h3 className="font-semibold text-slate-950">{copy.emailHealthCheck}</h3>
                         </div>
                         <p className="mt-1 text-sm text-slate-600">
-                          Send a real test message using the current SMTP settings.
+                          {copy.emailHealthDescription}
                         </p>
                         {emailTestResult ? (
                           <div
@@ -685,7 +822,7 @@ export default function SettingsPage() {
                               <p className="mt-1 text-xs opacity-80">
                                 SMTP: {emailTestResult.host}
                                 {emailTestResult.port ? `:${emailTestResult.port}` : ""} · From:{" "}
-                                {emailTestResult.fromAddress || "not configured"}
+                                {emailTestResult.fromAddress || copy.notConfigured}
                               </p>
                             ) : null}
                           </div>
@@ -711,7 +848,7 @@ export default function SettingsPage() {
                           ) : (
                             <Send className="mr-2 h-4 w-4" />
                           )}
-                          Send Test
+                          {copy.sendTest}
                         </Button>
                       </div>
                     </div>

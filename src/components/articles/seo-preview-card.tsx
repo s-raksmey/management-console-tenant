@@ -10,6 +10,7 @@ import {
   Search,
   Share2,
 } from "lucide-react";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 type SeoPreviewCardProps = {
   title: string;
@@ -64,10 +65,26 @@ export function SeoPreviewCard({
   publicBaseUrl,
   coverImageUrl,
 }: SeoPreviewCardProps) {
+  const { locale } = useAdminLocale();
+  const copy = locale === "km"
+    ? {
+        articleTitle: "Title អត្ថបទ",
+        excerpt: "Excerpt អត្ថបទនឹងបង្ហាញទីនេះសម្រាប់ search results និង shared links។",
+        heading: "SEO Preview",
+        copyUrl: "ចម្លង article URL",
+        openUrl: "បើក article URL",
+      }
+    : {
+        articleTitle: "Article title",
+        excerpt: "Article excerpt will appear here for search results and shared links.",
+        heading: "SEO Preview",
+        copyUrl: "Copy article URL",
+        openUrl: "Open article URL",
+      };
   const [copied, setCopied] = useState(false);
-  const displayTitle = title.trim() || "Article title";
+  const displayTitle = title.trim() || copy.articleTitle;
   const displayExcerpt =
-    excerpt?.trim() || "Article excerpt will appear here for search results and shared links.";
+    excerpt?.trim() || copy.excerpt;
   const displaySiteName = siteName?.trim() || "Pulse News";
   const articleUrl = buildArticleUrl({
     publicBaseUrl,
@@ -93,15 +110,15 @@ export function SeoPreviewCard({
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <Search className="h-4 w-4 text-slate-500" aria-hidden="true" />
-          <h3 className="text-sm font-semibold text-slate-800">SEO Preview</h3>
+          <h3 className="text-sm font-semibold text-slate-800">{copy.heading}</h3>
         </div>
         <div className="flex items-center gap-1">
           <button
             type="button"
             onClick={() => void copyArticleUrl()}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
-            aria-label="Copy article URL"
-            title="Copy article URL"
+            aria-label={copy.copyUrl}
+            title={copy.copyUrl}
           >
             {copied ? (
               <Check className="h-4 w-4 text-emerald-600" aria-hidden="true" />
@@ -113,8 +130,8 @@ export function SeoPreviewCard({
             type="button"
             onClick={openArticleUrl}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:text-slate-900"
-            aria-label="Open article URL"
-            title="Open article URL"
+            aria-label={copy.openUrl}
+            title={copy.openUrl}
           >
             <ExternalLink className="h-4 w-4" aria-hidden="true" />
           </button>

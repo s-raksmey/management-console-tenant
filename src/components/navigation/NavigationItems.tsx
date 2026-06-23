@@ -18,6 +18,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { Permission } from "../permissions/PermissionGuard";
+import type { AdminLocale } from "@/hooks/useAdminLocale";
 
 export interface NavigationItem {
   name: string;
@@ -31,6 +32,129 @@ export interface NavigationItem {
   openInNewTab?: boolean;
 }
 
+const navCopy = {
+  en: {
+    dashboard: "Dashboard",
+    tenantManagement: "Tenant Management",
+    userManagement: "User Management",
+    roleManagement: "Role Management",
+    analytics: "Analytics",
+    media: "Media",
+    carousel: "Carousel",
+    ads: "Ads",
+    logs: "Logs",
+    settings: "Settings",
+    articles: "Articles",
+    allArticles: "All Articles",
+    myArticles: "My Articles",
+    websiteSettings: "Website Settings",
+    reviewQueue: "Review Queue",
+    comments: "Comments",
+    categories: "Categories",
+    users: "Users",
+    allUsers: "All Users",
+    auditLogs: "Audit Logs",
+    publicReaders: "Public Readers",
+    newsletter: "Newsletter",
+    newArticle: "New Article",
+    newTenant: "New Tenant",
+    newUser: "New User",
+    newCategory: "New Category",
+    newSlide: "New Slide",
+    platformOverview: "Platform overview",
+    manageTenantWebsites: "Manage tenant websites",
+    managePlatformUsers: "Manage platform users",
+    manageRolePermissions: "Manage role permissions",
+    platformAnalytics: "Platform analytics",
+    filesImages: "Files & images",
+    publicHeroSlides: "Public hero slides",
+    sponsoredPlacements: "Sponsored placements",
+    systemActivityLogs: "System activity logs",
+    platformConfiguration: "Platform configuration",
+    overviewStats: "Overview & stats",
+    manageContent: "Manage content",
+    viewAllArticles: "View all articles",
+    yourArticles: "Your articles",
+    tenantWebsiteSetup: "Tenant website setup",
+    articlesPendingReview: "Articles pending review",
+    readerCommentActivity: "Reader comment activity",
+    organizeContent: "Organize content",
+    performanceData: "Performance data",
+    userManagementDescription: "User management",
+    viewAllUsers: "View all users",
+    manageUserRoles: "Manage user roles",
+    websiteConfiguration: "Website configuration",
+    passwordlessWebsiteReaders: "Passwordless website readers",
+    subscriberExports: "Subscriber exports",
+    createNewArticle: "Create new article",
+    createTenantWebsite: "Create tenant website",
+    createNewUser: "Create new user",
+    createNewCategory: "Create new category",
+    reviewArticles: "Review articles",
+    createCarouselSlide: "Create carousel slide",
+  },
+  km: {
+    dashboard: "ផ្ទាំងសង្ខេប",
+    tenantManagement: "គ្រប់គ្រង Tenant",
+    userManagement: "គ្រប់គ្រងអ្នកប្រើ",
+    roleManagement: "គ្រប់គ្រងតួនាទី",
+    analytics: "វិភាគទិន្នន័យ",
+    media: "មេឌៀ",
+    carousel: "Carousel",
+    ads: "ពាណិជ្ជកម្ម",
+    logs: "កំណត់ហេតុ",
+    settings: "ការកំណត់",
+    articles: "អត្ថបទ",
+    allArticles: "អត្ថបទទាំងអស់",
+    myArticles: "អត្ថបទរបស់ខ្ញុំ",
+    websiteSettings: "ការកំណត់គេហទំព័រ",
+    reviewQueue: "ជួរពិនិត្យ",
+    comments: "មតិយោបល់",
+    categories: "ប្រភេទ",
+    users: "អ្នកប្រើ",
+    allUsers: "អ្នកប្រើទាំងអស់",
+    auditLogs: "កំណត់ហេតុសវនកម្ម",
+    publicReaders: "អ្នកអានសាធារណៈ",
+    newsletter: "Newsletter",
+    newArticle: "អត្ថបទថ្មី",
+    newTenant: "Tenant ថ្មី",
+    newUser: "អ្នកប្រើថ្មី",
+    newCategory: "ប្រភេទថ្មី",
+    newSlide: "Slide ថ្មី",
+    platformOverview: "ទិដ្ឋភាពវេទិកា",
+    manageTenantWebsites: "គ្រប់គ្រងគេហទំព័រ tenant",
+    managePlatformUsers: "គ្រប់គ្រងអ្នកប្រើវេទិកា",
+    manageRolePermissions: "គ្រប់គ្រងសិទ្ធិតួនាទី",
+    platformAnalytics: "វិភាគទិន្នន័យវេទិកា",
+    filesImages: "ឯកសារ និងរូបភាព",
+    publicHeroSlides: "Hero slides សាធារណៈ",
+    sponsoredPlacements: "ទីតាំងផ្សាយពាណិជ្ជកម្ម",
+    systemActivityLogs: "កំណត់ហេតុសកម្មភាពប្រព័ន្ធ",
+    platformConfiguration: "ការកំណត់វេទិកា",
+    overviewStats: "ទិដ្ឋភាព និងស្ថិតិ",
+    manageContent: "គ្រប់គ្រងមាតិកា",
+    viewAllArticles: "មើលអត្ថបទទាំងអស់",
+    yourArticles: "អត្ថបទរបស់អ្នក",
+    tenantWebsiteSetup: "រៀបចំគេហទំព័រ tenant",
+    articlesPendingReview: "អត្ថបទរង់ចាំពិនិត្យ",
+    readerCommentActivity: "សកម្មភាពមតិយោបល់អ្នកអាន",
+    organizeContent: "រៀបចំមាតិកា",
+    performanceData: "ទិន្នន័យប្រតិបត្តិការ",
+    userManagementDescription: "គ្រប់គ្រងអ្នកប្រើ",
+    viewAllUsers: "មើលអ្នកប្រើទាំងអស់",
+    manageUserRoles: "គ្រប់គ្រងតួនាទីអ្នកប្រើ",
+    websiteConfiguration: "ការកំណត់គេហទំព័រ",
+    passwordlessWebsiteReaders: "អ្នកអានគេហទំព័រ passwordless",
+    subscriberExports: "នាំចេញអ្នកជាវ",
+    createNewArticle: "បង្កើតអត្ថបទថ្មី",
+    createTenantWebsite: "បង្កើតគេហទំព័រ tenant",
+    createNewUser: "បង្កើតអ្នកប្រើថ្មី",
+    createNewCategory: "បង្កើតប្រភេទថ្មី",
+    reviewArticles: "ពិនិត្យអត្ថបទ",
+    createCarouselSlide: "បង្កើត carousel slide",
+  },
+};
+
 /**
  * Get navigation items based on user permissions and role
  */
@@ -43,62 +167,64 @@ export const getNavigationItems = (
     reviewQueue?: number;
   },
   userRole?: string,
+  locale: AdminLocale = "en",
 ): NavigationItem[] => {
+  const copy = navCopy[locale];
   if (userRole === "SUPER_ADMIN") {
     return [
       {
-        name: "Dashboard",
+        name: copy.dashboard,
         href: "/",
         icon: LayoutDashboard,
         badge: null,
-        description: "Platform overview",
+        description: copy.platformOverview,
       },
       {
-        name: "Tenant Management",
+        name: copy.tenantManagement,
         href: "/tenants",
         icon: Building2,
         badge: null,
-        description: "Manage tenant websites",
+        description: copy.manageTenantWebsites,
         permissions: [Permission.SYSTEM_ADMINISTRATION],
       },
       {
-        name: "User Management",
+        name: copy.userManagement,
         href: "/users",
         icon: Users,
         badge: counts.users > 0 ? counts.users.toString() : null,
-        description: "Manage platform users",
+        description: copy.managePlatformUsers,
         permissions: [Permission.VIEW_ALL_USERS],
       },
       {
-        name: "Role Management",
+        name: copy.roleManagement,
         href: "/users/roles",
         icon: Shield,
         badge: null,
-        description: "Manage role permissions",
+        description: copy.manageRolePermissions,
         permissions: [Permission.MANAGE_USER_ROLES],
       },
       {
-        name: "Analytics",
+        name: copy.analytics,
         href: "/analytics",
         icon: BarChart3,
         badge: null,
-        description: "Platform analytics",
+        description: copy.platformAnalytics,
         permissions: [Permission.VIEW_ANALYTICS],
       },
       {
-        name: "Media",
+        name: copy.media,
         href: "/media",
         icon: Image,
         badge: counts.media > 0 ? counts.media.toString() : null,
-        description: "Files & images",
+        description: copy.filesImages,
         permissions: [Permission.VIEW_MEDIA, Permission.MANAGE_MEDIA],
       },
       {
-        name: "Carousel",
+        name: copy.carousel,
         href: "/carousel",
         icon: Image,
         badge: null,
-        description: "Public hero slides",
+        description: copy.publicHeroSlides,
         permissions: [
           Permission.CREATE_CAROUSEL,
           Permission.UPDATE_CAROUSEL,
@@ -106,27 +232,27 @@ export const getNavigationItems = (
         ],
       },
       {
-        name: "Ads",
+        name: copy.ads,
         href: "/ads",
         icon: Megaphone,
         badge: null,
-        description: "Sponsored placements",
+        description: copy.sponsoredPlacements,
         permissions: [Permission.VIEW_ADS],
       },
       {
-        name: "Logs",
+        name: copy.logs,
         href: "/audit",
         icon: Archive,
         badge: null,
-        description: "System activity logs",
+        description: copy.systemActivityLogs,
         permissions: [Permission.VIEW_AUDIT_LOGS],
       },
       {
-        name: "Settings",
+        name: copy.settings,
         href: "/settings",
         icon: Settings,
         badge: null,
-        description: "Platform configuration",
+        description: copy.platformConfiguration,
         permissions: [Permission.VIEW_SETTINGS],
       },
     ];
@@ -135,20 +261,20 @@ export const getNavigationItems = (
   const navigationItems: NavigationItem[] = [
     // Dashboard - Available to all users
     {
-      name: "Dashboard",
+      name: copy.dashboard,
       href: "/",
       icon: LayoutDashboard,
       badge: null,
-      description: "Overview & stats",
+      description: copy.overviewStats,
     },
 
     // Articles - Available to all users with different permissions
     {
-      name: "Articles",
+      name: copy.articles,
       href: "/articles",
       icon: FileText,
       badge: counts.articles > 0 ? counts.articles.toString() : null,
-      description: "Manage content",
+      description: copy.manageContent,
       permissions: [
         Permission.CREATE_ARTICLE,
         Permission.VIEW_ALL_ARTICLES,
@@ -161,57 +287,57 @@ export const getNavigationItems = (
       ],
       children: [
         {
-          name: "All Articles",
+          name: copy.allArticles,
           href: "/articles",
           icon: FileText,
-          description: "View all articles",
+          description: copy.viewAllArticles,
           permissions: [Permission.VIEW_ALL_ARTICLES],
         },
         {
-          name: "My Articles",
+          name: copy.myArticles,
           href: "/articles/my",
           icon: FileText,
-          description: "Your articles",
+          description: copy.yourArticles,
           permissions: [Permission.UPDATE_OWN_ARTICLE],
         },
       ],
     },
 
     {
-      name: "Website Settings",
+      name: copy.websiteSettings,
       href: "/tenants",
       icon: Building2,
       badge: null,
-      description: "Tenant website setup",
+      description: copy.tenantWebsiteSetup,
       permissions: [Permission.UPDATE_SETTINGS, Permission.SYSTEM_ADMINISTRATION],
     },
 
     // Review Queue - Editors and Admins only
     {
-      name: "Review Queue",
+      name: copy.reviewQueue,
       href: "/review",
       icon: ClipboardList,
       badge: counts.reviewQueue ? counts.reviewQueue.toString() : null,
-      description: "Articles pending review",
+      description: copy.articlesPendingReview,
       permissions: [Permission.REVIEW_ARTICLES],
     },
 
     {
-      name: "Comments",
+      name: copy.comments,
       href: "/comments",
       icon: MessageSquare,
       badge: null,
-      description: "Reader comment activity",
+      description: copy.readerCommentActivity,
       permissions: [Permission.REVIEW_ARTICLES],
     },
 
     // Categories and topics - visible to roles with structure management access
     {
-      name: "Categories",
+      name: copy.categories,
       href: "/categories",
       icon: Tags,
       badge: counts.categories > 0 ? counts.categories.toString() : null,
-      description: "Organize content",
+      description: copy.organizeContent,
       permissions: [
         Permission.LIST_CATEGORIES,
         Permission.CREATE_CATEGORY,
@@ -225,20 +351,20 @@ export const getNavigationItems = (
 
     // Media - Available to all content creators
     {
-      name: "Media",
+      name: copy.media,
       href: "/media",
       icon: Image,
       badge: counts.media > 0 ? counts.media.toString() : null,
-      description: "Files & images",
+      description: copy.filesImages,
       permissions: [Permission.VIEW_MEDIA, Permission.MANAGE_MEDIA],
     },
 
     {
-      name: "Carousel",
+      name: copy.carousel,
       href: "/carousel",
       icon: Image,
       badge: null,
-      description: "Homepage hero slides",
+      description: copy.publicHeroSlides,
       permissions: [
         Permission.CREATE_CAROUSEL,
         Permission.UPDATE_CAROUSEL,
@@ -247,45 +373,45 @@ export const getNavigationItems = (
     },
 
     {
-      name: "Ads",
+      name: copy.ads,
       href: "/ads",
       icon: Megaphone,
       badge: null,
-      description: "Sponsored placements",
+      description: copy.sponsoredPlacements,
       permissions: [Permission.VIEW_ADS],
     },
 
     // Analytics - Available to all users
     {
-      name: "Analytics",
+      name: copy.analytics,
       href: "/analytics",
       icon: BarChart3,
       badge: null,
-      description: "Performance data",
+      description: copy.performanceData,
       permissions: [Permission.VIEW_ANALYTICS],
     },
 
     // User Management - Admins only
     {
-      name: "Users",
+      name: copy.users,
       href: "/users",
       icon: Users,
       badge: counts.users > 0 ? counts.users.toString() : null,
-      description: "User management",
+      description: copy.userManagementDescription,
       permissions: [Permission.VIEW_ALL_USERS],
       children: [
         {
-          name: "All Users",
+          name: copy.allUsers,
           href: "/users",
           icon: Users,
-          description: "View all users",
+          description: copy.viewAllUsers,
           permissions: [Permission.VIEW_ALL_USERS],
         },
         {
-          name: "Role Management",
+          name: copy.roleManagement,
           href: "/users/roles",
           icon: Shield,
-          description: "Manage user roles",
+          description: copy.manageUserRoles,
           permissions: [Permission.MANAGE_USER_ROLES],
         },
       ],
@@ -293,40 +419,40 @@ export const getNavigationItems = (
 
     // Audit Logs - Admins only
     {
-      name: "Audit Logs",
+      name: copy.auditLogs,
       href: "/audit",
       icon: Archive,
       badge: null,
-      description: "System activity logs",
+      description: copy.systemActivityLogs,
       permissions: [Permission.VIEW_AUDIT_LOGS],
     },
 
   ];
 
   navigationItems.push({
-    name: "Settings",
+    name: copy.settings,
     href: "/settings",
     icon: Settings,
     badge: null,
-    description: "Website configuration",
+    description: copy.websiteConfiguration,
     permissions: [Permission.VIEW_SETTINGS],
   });
 
   navigationItems.push({
-    name: "Public Readers",
+    name: copy.publicReaders,
     href: "/readers",
     icon: Users,
     badge: null,
-    description: "Passwordless website readers",
+    description: copy.passwordlessWebsiteReaders,
     permissions: [Permission.VIEW_SETTINGS],
   });
 
   navigationItems.push({
-    name: "Newsletter",
+    name: copy.newsletter,
     href: "/newsletter",
     icon: Mail,
     badge: null,
-    description: "Subscriber exports",
+    description: copy.subscriberExports,
     permissions: [Permission.VIEW_SETTINGS],
   });
 
@@ -336,48 +462,49 @@ export const getNavigationItems = (
 /**
  * Get quick actions based on user role
  */
-export const getQuickActions = (userRole?: string): NavigationItem[] => {
+export const getQuickActions = (userRole?: string, locale: AdminLocale = "en"): NavigationItem[] => {
+  const copy = navCopy[locale];
   const baseActions: NavigationItem[] = [
     {
-      name: "New Article",
+      name: copy.newArticle,
       href: "/articles/new",
       icon: FileText,
-      description: "Create new article",
+      description: copy.createNewArticle,
       permissions: [Permission.CREATE_ARTICLE],
     },
     {
-      name: "New Tenant",
+      name: copy.newTenant,
       href: "/tenants",
       icon: Building2,
-      description: "Create tenant website",
+      description: copy.createTenantWebsite,
       permissions: [Permission.SYSTEM_ADMINISTRATION],
     },
     {
-      name: "New User",
+      name: copy.newUser,
       href: "/users/new",
       icon: Users,
-      description: "Create new user",
+      description: copy.createNewUser,
       permissions: [Permission.CREATE_USER],
     },
     {
-      name: "New Category",
+      name: copy.newCategory,
       href: "/categories/new",
       icon: Tags,
-      description: "Create new category",
+      description: copy.createNewCategory,
       permissions: [Permission.CREATE_CATEGORY],
     },
     {
-      name: "Review Queue",
+      name: copy.reviewQueue,
       href: "/review",
       icon: ClipboardList,
-      description: "Review articles",
+      description: copy.reviewArticles,
       permissions: [Permission.REVIEW_ARTICLES],
     },
     {
-      name: "New Slide",
+      name: copy.newSlide,
       href: "/carousel/new",
       icon: Image,
-      description: "Create carousel slide",
+      description: copy.createCarouselSlide,
       permissions: [Permission.CREATE_CAROUSEL],
     },
   ];

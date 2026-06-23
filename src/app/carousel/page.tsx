@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Edit, Image as ImageIcon, Loader2, Plus, Trash2 } from "lucide-react";
+import { Edit, Image as ImageIcon, Loader2, PlayCircle, Plus, Trash2 } from "lucide-react";
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
 import {
   CarouselSlide,
@@ -233,13 +233,23 @@ export default function CarouselListPage() {
                   className="grid gap-4 bg-white p-4 transition-colors hover:bg-slate-50 lg:grid-cols-[144px_1fr_auto]"
                 >
                   <div className="flex h-24 items-center justify-center overflow-hidden rounded-md bg-slate-100">
-                    {slide.imageUrl ? (
+                    {slide.mediaType === "VIDEO" && slide.videoProvider === "MP4" && slide.videoUrl ? (
+                      <video
+                        src={slide.videoUrl}
+                        poster={slide.imageUrl || undefined}
+                        className="h-full w-full object-cover"
+                        muted
+                        playsInline
+                      />
+                    ) : slide.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={slide.imageUrl}
                         alt={slide.title}
                         className="h-full w-full object-cover"
                       />
+                    ) : slide.mediaType === "VIDEO" ? (
+                      <PlayCircle className="h-7 w-7 text-slate-400" />
                     ) : (
                       <ImageIcon className="h-7 w-7 text-slate-400" />
                     )}
@@ -252,6 +262,11 @@ export default function CarouselListPage() {
                       <Badge variant="outline">Order {slide.sortOrder}</Badge>
                       <Badge variant="outline">
                         {slide.size === "STANDARD" ? "Standard" : "Wide"}
+                      </Badge>
+                      <Badge variant="outline">
+                        {slide.mediaType === "VIDEO"
+                          ? `Video${slide.videoProvider ? `: ${slide.videoProvider}` : ""}`
+                          : "Image"}
                       </Badge>
                       <Badge variant="outline">
                         {slide.placement === "HOME"

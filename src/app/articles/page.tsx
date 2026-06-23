@@ -25,6 +25,7 @@ import { format } from "date-fns";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
 import { useTenant } from "@/contexts/TenantContext";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 const statusColors = {
   DRAFT: "bg-gray-100 text-gray-800",
@@ -35,7 +36,144 @@ const statusColors = {
 
 const PAGE_SIZE = 10;
 
+const articlesCopy = {
+  en: {
+    confirm: "Confirm",
+    pageTitle: "Articles",
+    pageDescription: "Create, edit, and publish articles.",
+    newArticle: "New Article",
+    all: "All",
+    statuses: {
+      DRAFT: "DRAFT",
+      REVIEW: "REVIEW",
+      PUBLISHED: "PUBLISHED",
+      ARCHIVED: "ARCHIVED",
+    },
+    empty: "No articles found.",
+    createFirst: "Create your first article",
+    edit: "Edit",
+    publish: "Publish",
+    publishTitle: "Publish Article?",
+    publishDescription: (title: string) => `Publish "${title}" now?`,
+    approvePublish: "Approve & Publish",
+    approvePublishTitle: "Approve and Publish?",
+    approvePublishDescription: (title: string) => `Approve "${title}" and publish it?`,
+    reject: "Reject",
+    rejectTitle: "Reject Article?",
+    rejectDescription: (title: string) => `Reject "${title}" and archive it?`,
+    unpublish: "Unpublish",
+    unpublishTitle: "Unpublish Article?",
+    unpublishDescription: (title: string) => `Move "${title}" back to draft?`,
+    share: "Share",
+    delete: "Delete",
+    uncategorized: "Uncategorized",
+    featured: "Featured",
+    editorsPick: "Editor's Pick",
+    breaking: "Breaking",
+    revisionStatus: (status: string) => `Revision ${status.toLowerCase()}`,
+    updated: "Updated",
+    tableTitle: "Title",
+    status: "Status",
+    category: "Category",
+    topic: "Topic",
+    actions: "Actions",
+    breakingRequestPending: "Breaking Request: Pending",
+    breakingRequestApproved: "Breaking Request: Approved",
+    breakingRequestRejected: "Breaking Request: Rejected",
+    revisionRequested: "Revision Requested",
+    revisionApproved: "Revision Approved",
+    revisionRejected: "Revision Rejected",
+    revisionEnd: "Revision End",
+    revisionNote: (note: string) => `Revision note: ${note}`,
+    approveRevision: "Approve Revision",
+    approveRevisionTitle: "Approve Revision?",
+    approveRevisionDescription: (title: string) => `Approve the revision request for "${title}"?`,
+    rejectRevision: "Reject Revision",
+    rejectRevisionTitle: "Reject Revision?",
+    rejectRevisionDescription: (title: string) => `Reject the revision request for "${title}"?`,
+    noActions: "-",
+    showing: (start: number, end: number, total: number) =>
+      `Showing ${start}-${end} of ${total} articles`,
+    previous: "Previous",
+    next: "Next",
+    pageOf: (page: number, total: number) => `Page ${page} of ${total}`,
+    deleteTitle: "Delete Article?",
+    deleteDescription: (title: string) =>
+      `Delete "${title || "this article"}"? This action cannot be undone.`,
+    deleteConfirm: "Delete Article",
+    cancel: "Cancel",
+  },
+  km: {
+    confirm: "បញ្ជាក់",
+    pageTitle: "អត្ថបទ",
+    pageDescription: "បង្កើត កែសម្រួល និងផ្សព្វផ្សាយអត្ថបទ។",
+    newArticle: "អត្ថបទថ្មី",
+    all: "ទាំងអស់",
+    statuses: {
+      DRAFT: "ព្រាង",
+      REVIEW: "រង់ចាំពិនិត្យ",
+      PUBLISHED: "បានផ្សព្វផ្សាយ",
+      ARCHIVED: "បានរក្សាទុក",
+    },
+    empty: "រកមិនឃើញអត្ថបទទេ។",
+    createFirst: "បង្កើតអត្ថបទដំបូង",
+    edit: "កែសម្រួល",
+    publish: "ផ្សព្វផ្សាយ",
+    publishTitle: "ផ្សព្វផ្សាយអត្ថបទ?",
+    publishDescription: (title: string) => `ផ្សព្វផ្សាយ "${title}" ឥឡូវនេះ?`,
+    approvePublish: "អនុម័ត និងផ្សព្វផ្សាយ",
+    approvePublishTitle: "អនុម័ត និងផ្សព្វផ្សាយ?",
+    approvePublishDescription: (title: string) => `អនុម័ត "${title}" ហើយផ្សព្វផ្សាយ?`,
+    reject: "បដិសេធ",
+    rejectTitle: "បដិសេធអត្ថបទ?",
+    rejectDescription: (title: string) => `បដិសេធ "${title}" ហើយដាក់ក្នុងប័ណ្ណសារ?`,
+    unpublish: "ដកចេញពីការផ្សព្វផ្សាយ",
+    unpublishTitle: "ដកអត្ថបទចេញពីការផ្សព្វផ្សាយ?",
+    unpublishDescription: (title: string) => `ប្ដូរ "${title}" ត្រឡប់ទៅជាព្រាង?`,
+    share: "ចែករំលែក",
+    delete: "លុប",
+    uncategorized: "មិនទាន់មានប្រភេទ",
+    featured: "អត្ថបទពិសេស",
+    editorsPick: "ជម្រើសអ្នកនិពន្ធ",
+    breaking: "ព័ត៌មានទាន់ហេតុការណ៍",
+    revisionStatus: (status: string) => `កំណែសម្រួល ${status.toLowerCase()}`,
+    updated: "បានកែប្រែ",
+    tableTitle: "ចំណងជើង",
+    status: "ស្ថានភាព",
+    category: "ប្រភេទ",
+    topic: "ប្រធានបទ",
+    actions: "សកម្មភាព",
+    breakingRequestPending: "សំណើព័ត៌មានទាន់ហេតុការណ៍៖ រង់ចាំ",
+    breakingRequestApproved: "សំណើព័ត៌មានទាន់ហេតុការណ៍៖ បានអនុម័ត",
+    breakingRequestRejected: "សំណើព័ត៌មានទាន់ហេតុការណ៍៖ បានបដិសេធ",
+    revisionRequested: "បានស្នើកែសម្រួល",
+    revisionApproved: "បានអនុម័តកំណែសម្រួល",
+    revisionRejected: "បានបដិសេធកំណែសម្រួល",
+    revisionEnd: "កំណែសម្រួលបានបញ្ចប់",
+    revisionNote: (note: string) => `ចំណាំកំណែសម្រួល៖ ${note}`,
+    approveRevision: "អនុម័តកំណែសម្រួល",
+    approveRevisionTitle: "អនុម័តកំណែសម្រួល?",
+    approveRevisionDescription: (title: string) => `អនុម័តសំណើកែសម្រួលសម្រាប់ "${title}"?`,
+    rejectRevision: "បដិសេធកំណែសម្រួល",
+    rejectRevisionTitle: "បដិសេធកំណែសម្រួល?",
+    rejectRevisionDescription: (title: string) => `បដិសេធសំណើកែសម្រួលសម្រាប់ "${title}"?`,
+    noActions: "-",
+    showing: (start: number, end: number, total: number) =>
+      `បង្ហាញ ${start}-${end} ក្នុងចំណោម ${total} អត្ថបទ`,
+    previous: "មុន",
+    next: "បន្ទាប់",
+    pageOf: (page: number, total: number) => `ទំព័រ ${page} ក្នុងចំណោម ${total}`,
+    deleteTitle: "លុបអត្ថបទ?",
+    deleteDescription: (title: string) =>
+      `លុប "${title || "អត្ថបទនេះ"}"? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`,
+    deleteConfirm: "លុបអត្ថបទ",
+    cancel: "បោះបង់",
+  },
+} as const;
+
 export default function AdminArticlesPage() {
+  const { locale } = useAdminLocale();
+  const copy = articlesCopy[locale];
   const [articles, setArticles] = useState<Article[]>([]);
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,7 +197,7 @@ export default function AdminArticlesPage() {
     open: false,
     title: "",
     description: "",
-    confirmText: "Confirm",
+    confirmText: copy.confirm,
     onConfirm: () => {},
   });
   const [shareArticle, setShareArticle] = useState<Article | null>(null);
@@ -286,16 +424,16 @@ export default function AdminArticlesPage() {
     <main className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">Articles</h1>
+          <h1 className="text-xl font-semibold text-slate-900">{copy.pageTitle}</h1>
           <p className="text-sm text-slate-600">
-            Create, edit, and publish articles.
+            {copy.pageDescription}
           </p>
         </div>
         {hasPermission(Permission.CREATE_ARTICLE) && (
           <Link href="/articles/new">
             <Button>
               <Plus className="w-4 h-4 mr-2" />
-              New Article
+              {copy.newArticle}
             </Button>
           </Link>
         )}
@@ -308,7 +446,7 @@ export default function AdminArticlesPage() {
           size="sm"
           onClick={() => setStatusFilter(undefined)}
         >
-          All
+          {copy.all}
         </Button>
         {(["DRAFT", "REVIEW", "PUBLISHED", "ARCHIVED"] as ArticleStatus[]).map(
           (status) => (
@@ -318,7 +456,7 @@ export default function AdminArticlesPage() {
               size="sm"
               onClick={() => setStatusFilter(status)}
             >
-              {status}
+              {copy.statuses[status]}
             </Button>
           ),
         )}
@@ -327,10 +465,10 @@ export default function AdminArticlesPage() {
       <div className="space-y-3 md:hidden">
         {articles.length === 0 ? (
           <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-slate-500">
-            No articles found.{" "}
+            {copy.empty}{" "}
             {hasPermission(Permission.CREATE_ARTICLE) && (
               <Link href="/articles/new" className="text-blue-600 hover:underline">
-                Create your first article
+                {copy.createFirst}
               </Link>
             )}
           </div>
@@ -342,7 +480,7 @@ export default function AdminArticlesPage() {
             >
               <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-4 py-3">
                 <Badge className={`text-[11px] font-bold tracking-wide ${statusColors[article.status]}`}>
-                  {article.status}
+                  {copy.statuses[article.status]}
                 </Badge>
                 {hasRowActions(article) ? (
                   <DropdownMenu>
@@ -356,7 +494,7 @@ export default function AdminArticlesPage() {
                         <DropdownMenuItem asChild>
                           <Link href={`/articles/${article.id}/edit`}>
                             <Edit className="mr-2 h-4 w-4" />
-                            Edit
+                            {copy.edit}
                           </Link>
                         </DropdownMenuItem>
                       )}
@@ -365,15 +503,15 @@ export default function AdminArticlesPage() {
                           <DropdownMenuItem
                             onClick={() =>
                               requestArticleAction({
-                                title: "Publish Article?",
-                                description: `Publish "${article.title}" now?`,
-                                confirmText: "Publish",
+                                title: copy.publishTitle,
+                                description: copy.publishDescription(article.title),
+                                confirmText: copy.publish,
                                 onConfirm: () => handleStatusChange(article.id, "PUBLISHED"),
                               })
                             }
                             disabled={mutationLoading}
                           >
-                            Publish
+                            {copy.publish}
                           </DropdownMenuItem>
                         )}
                       {article.status === "REVIEW" &&
@@ -381,15 +519,15 @@ export default function AdminArticlesPage() {
                           <DropdownMenuItem
                             onClick={() =>
                               requestArticleAction({
-                                title: "Approve and Publish?",
-                                description: `Approve "${article.title}" and publish it?`,
-                                confirmText: "Approve & Publish",
+                                title: copy.approvePublishTitle,
+                                description: copy.approvePublishDescription(article.title),
+                                confirmText: copy.approvePublish,
                                 onConfirm: () => handleStatusChange(article.id, "PUBLISHED"),
                               })
                             }
                             disabled={mutationLoading}
                           >
-                            Approve & Publish
+                            {copy.approvePublish}
                           </DropdownMenuItem>
                         )}
                       {article.status === "REVIEW" &&
@@ -397,16 +535,16 @@ export default function AdminArticlesPage() {
                           <DropdownMenuItem
                             onClick={() =>
                               requestArticleAction({
-                                title: "Reject Article?",
-                                description: `Reject "${article.title}" and archive it?`,
-                                confirmText: "Reject",
+                                title: copy.rejectTitle,
+                                description: copy.rejectDescription(article.title),
+                                confirmText: copy.reject,
                                 variant: "destructive",
                                 onConfirm: () => handleStatusChange(article.id, "ARCHIVED"),
                               })
                             }
                             disabled={mutationLoading}
                           >
-                            Reject
+                            {copy.reject}
                           </DropdownMenuItem>
                         )}
                       {article.status === "PUBLISHED" &&
@@ -414,21 +552,21 @@ export default function AdminArticlesPage() {
                           <DropdownMenuItem
                             onClick={() =>
                               requestArticleAction({
-                                title: "Unpublish Article?",
-                                description: `Move "${article.title}" back to draft?`,
-                                confirmText: "Unpublish",
+                                title: copy.unpublishTitle,
+                                description: copy.unpublishDescription(article.title),
+                                confirmText: copy.unpublish,
                                 onConfirm: () => handleStatusChange(article.id, "DRAFT"),
                               })
                             }
                             disabled={mutationLoading}
                           >
-                            Unpublish
+                            {copy.unpublish}
                           </DropdownMenuItem>
                         )}
                       {article.status === "PUBLISHED" && (
                         <DropdownMenuItem onClick={() => setShareArticle(article)}>
                           <Share2 className="mr-2 h-4 w-4" />
-                          Share
+                          {copy.share}
                         </DropdownMenuItem>
                       )}
                       {hasPermission(Permission.DELETE_ANY_ARTICLE) && (
@@ -438,7 +576,7 @@ export default function AdminArticlesPage() {
                           className="text-red-600"
                         >
                           <Trash2 className="mr-2 h-4 w-4" />
-                          Delete
+                          {copy.delete}
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
@@ -459,9 +597,9 @@ export default function AdminArticlesPage() {
                 <div className="flex flex-wrap gap-2">
                   <span
                     className="max-w-full truncate rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
-                    title={article.category?.name ?? "Uncategorized"}
+                    title={article.category?.name ?? copy.uncategorized}
                   >
-                    {article.category?.name ?? "Uncategorized"}
+                    {article.category?.name ?? copy.uncategorized}
                   </span>
                   {article.topic && (
                     <span
@@ -471,18 +609,18 @@ export default function AdminArticlesPage() {
                       {article.topic}
                     </span>
                   )}
-                  {article.isFeatured && <Badge variant="secondary" className="text-xs">Featured</Badge>}
-                  {article.isEditorsPick && <Badge variant="secondary" className="text-xs">Editor&apos;s Pick</Badge>}
-                  {article.isBreaking && <Badge variant="destructive" className="text-xs">Breaking</Badge>}
+                  {article.isFeatured && <Badge variant="secondary" className="text-xs">{copy.featured}</Badge>}
+                  {article.isEditorsPick && <Badge variant="secondary" className="text-xs">{copy.editorsPick}</Badge>}
+                  {article.isBreaking && <Badge variant="destructive" className="text-xs">{copy.breaking}</Badge>}
                   {revisionRequestStatusById[article.id] && (
                     <Badge variant="outline" className="text-xs">
-                      Revision {revisionRequestStatusById[article.id].toLowerCase()}
+                      {copy.revisionStatus(revisionRequestStatusById[article.id])}
                     </Badge>
                   )}
                 </div>
 
                 <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
-                  <span>Updated</span>
+                  <span>{copy.updated}</span>
                   <span className="font-semibold text-slate-700">
                     {format(new Date(article.updatedAt), "MMM d, yyyy")}
                   </span>
@@ -495,23 +633,23 @@ export default function AdminArticlesPage() {
 
       <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white md:block">
         <div className="grid grid-cols-[minmax(0,1fr)_120px_120px_108px_48px] items-center gap-4 border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600 xl:grid-cols-[minmax(0,1fr)_120px_140px_140px_112px_48px]">
-          <div>Title</div>
-          <div>Status</div>
-          <div>Category</div>
-          <div className="hidden xl:block">Topic</div>
-          <div>Updated</div>
-          <div className="text-right">Actions</div>
+          <div>{copy.tableTitle}</div>
+          <div>{copy.status}</div>
+          <div>{copy.category}</div>
+          <div className="hidden xl:block">{copy.topic}</div>
+          <div>{copy.updated}</div>
+          <div className="text-right">{copy.actions}</div>
         </div>
 
         {articles.length === 0 ? (
           <div className="px-4 py-8 text-center text-slate-500">
-            No articles found.{" "}
+            {copy.empty}{" "}
             {hasPermission(Permission.CREATE_ARTICLE) && (
               <Link
                 href="/articles/new"
                 className="text-blue-600 hover:underline"
               >
-                Create your first article
+                {copy.createFirst}
               </Link>
             )}
           </div>
@@ -529,17 +667,17 @@ export default function AdminArticlesPage() {
                   <span className="truncate" title={`/${article.slug}`}>/{article.slug}</span>
                   {article.isFeatured && (
                     <Badge variant="secondary" className="hidden shrink-0 text-xs lg:inline-flex">
-                      Featured
+                      {copy.featured}
                     </Badge>
                   )}
                   {article.isEditorsPick && (
                     <Badge variant="secondary" className="hidden shrink-0 text-xs 2xl:inline-flex">
-                      Editor&apos;s Pick
+                      {copy.editorsPick}
                     </Badge>
                   )}
                   {article.isBreaking && (
                     <Badge variant="destructive" className="hidden shrink-0 text-xs lg:inline-flex">
-                      Breaking
+                      {copy.breaking}
                     </Badge>
                   )}
                   {article.breakingNewsRequestStatus === "PENDING" && (
@@ -547,7 +685,7 @@ export default function AdminArticlesPage() {
                       variant="outline"
                       className="text-xs bg-yellow-50 border-yellow-200"
                     >
-                      🔔 Breaking Request: Pending
+                      {copy.breakingRequestPending}
                     </Badge>
                   )}
                   {!hasPermission(Permission.SET_BREAKING_NEWS) &&
@@ -556,7 +694,7 @@ export default function AdminArticlesPage() {
                         variant="outline"
                         className="text-xs bg-green-50 border-green-200"
                       >
-                        ✅ Breaking Request: Approved
+                        {copy.breakingRequestApproved}
                       </Badge>
                     )}
                   {!hasPermission(Permission.SET_BREAKING_NEWS) &&
@@ -565,7 +703,7 @@ export default function AdminArticlesPage() {
                         variant="outline"
                         className="text-xs bg-red-50 border-red-200"
                       >
-                        ❌ Breaking Request: Rejected
+                        {copy.breakingRequestRejected}
                       </Badge>
                     )}
                   {revisionRequestStatusById[article.id] === "PENDING" && (
@@ -573,7 +711,7 @@ export default function AdminArticlesPage() {
                       variant="outline"
                       className="text-xs bg-purple-50 border-purple-200"
                     >
-                      📝 Revision Requested
+                      {copy.revisionRequested}
                     </Badge>
                   )}
                   {revisionRequestStatusById[article.id] === "APPROVED" && (
@@ -581,7 +719,7 @@ export default function AdminArticlesPage() {
                       variant="outline"
                       className="text-xs bg-green-50 border-green-200"
                     >
-                      ✅ Revision Approved
+                      {copy.revisionApproved}
                     </Badge>
                   )}
                   {revisionRequestStatusById[article.id] === "REJECTED" && (
@@ -589,7 +727,7 @@ export default function AdminArticlesPage() {
                       variant="outline"
                       className="text-xs bg-red-50 border-red-200"
                     >
-                      ❌ Revision Rejected
+                      {copy.revisionRejected}
                     </Badge>
                   )}
                   {revisionRequestStatusById[article.id] === "CONSUMED" && (
@@ -597,20 +735,20 @@ export default function AdminArticlesPage() {
                       variant="outline"
                       className="text-xs bg-slate-50 border-slate-200"
                     >
-                      ✔ Revision End
+                      {copy.revisionEnd}
                     </Badge>
                   )}
                 </div>
                 {revisionRequestStatusById[article.id] === "PENDING" &&
                   revisionRequestNoteById[article.id] && (
                     <div className="mt-1 truncate text-xs text-slate-500" title={revisionRequestNoteById[article.id]}>
-                      Revision note: {revisionRequestNoteById[article.id]}
+                      {copy.revisionNote(revisionRequestNoteById[article.id])}
                     </div>
                   )}
               </div>
               <div>
                 <Badge className={`text-xs ${statusColors[article.status]}`}>
-                  {article.status}
+                  {copy.statuses[article.status]}
                 </Badge>
               </div>
               <div className="truncate text-xs text-slate-600" title={article.category?.name ?? "—"}>
@@ -635,7 +773,7 @@ export default function AdminArticlesPage() {
                         <DropdownMenuItem asChild>
                           <Link href={`/articles/${article.id}/edit`}>
                             <Edit className="w-4 h-4 mr-2" />
-                            Edit
+                            {copy.edit}
                           </Link>
                         </DropdownMenuItem>
                       )}
@@ -644,15 +782,15 @@ export default function AdminArticlesPage() {
                           <DropdownMenuItem
                             onClick={() =>
                               requestArticleAction({
-                                title: "Publish Article?",
-                                description: `Publish "${article.title}" now?`,
-                                confirmText: "Publish",
+                                title: copy.publishTitle,
+                                description: copy.publishDescription(article.title),
+                                confirmText: copy.publish,
                                 onConfirm: () => handleStatusChange(article.id, "PUBLISHED"),
                               })
                             }
                             disabled={mutationLoading}
                           >
-                            Publish
+                            {copy.publish}
                           </DropdownMenuItem>
                         )}
                       {article.status === "REVIEW" &&
@@ -660,15 +798,15 @@ export default function AdminArticlesPage() {
                           <DropdownMenuItem
                             onClick={() =>
                               requestArticleAction({
-                                title: "Approve and Publish?",
-                                description: `Approve "${article.title}" and publish it?`,
-                                confirmText: "Approve & Publish",
+                                title: copy.approvePublishTitle,
+                                description: copy.approvePublishDescription(article.title),
+                                confirmText: copy.approvePublish,
                                 onConfirm: () => handleStatusChange(article.id, "PUBLISHED"),
                               })
                             }
                             disabled={mutationLoading}
                           >
-                            Approve & Publish
+                            {copy.approvePublish}
                           </DropdownMenuItem>
                         )}
                       {article.status === "REVIEW" &&
@@ -676,16 +814,16 @@ export default function AdminArticlesPage() {
                           <DropdownMenuItem
                             onClick={() =>
                               requestArticleAction({
-                                title: "Reject Article?",
-                                description: `Reject "${article.title}" and archive it?`,
-                                confirmText: "Reject",
+                                title: copy.rejectTitle,
+                                description: copy.rejectDescription(article.title),
+                                confirmText: copy.reject,
                                 variant: "destructive",
                                 onConfirm: () => handleStatusChange(article.id, "ARCHIVED"),
                               })
                             }
                             disabled={mutationLoading}
                           >
-                            Reject
+                            {copy.reject}
                           </DropdownMenuItem>
                         )}
                       {article.status === "PUBLISHED" &&
@@ -693,21 +831,21 @@ export default function AdminArticlesPage() {
                           <DropdownMenuItem
                             onClick={() =>
                               requestArticleAction({
-                                title: "Unpublish Article?",
-                                description: `Move "${article.title}" back to draft?`,
-                                confirmText: "Unpublish",
+                                title: copy.unpublishTitle,
+                                description: copy.unpublishDescription(article.title),
+                                confirmText: copy.unpublish,
                                 onConfirm: () => handleStatusChange(article.id, "DRAFT"),
                               })
                             }
                             disabled={mutationLoading}
                           >
-                            Unpublish
+                            {copy.unpublish}
                           </DropdownMenuItem>
                         )}
                       {article.status === "PUBLISHED" && (
                         <DropdownMenuItem onClick={() => setShareArticle(article)}>
                           <Share2 className="mr-2 h-4 w-4" />
-                          Share
+                          {copy.share}
                         </DropdownMenuItem>
                       )}
                       {article.revisionStatus === "REQUESTED" &&
@@ -716,29 +854,29 @@ export default function AdminArticlesPage() {
                             <DropdownMenuItem
                               onClick={() =>
                                 requestArticleAction({
-                                  title: "Approve Revision?",
-                                  description: `Approve the revision request for "${article.title}"?`,
-                                  confirmText: "Approve Revision",
+                                  title: copy.approveRevisionTitle,
+                                  description: copy.approveRevisionDescription(article.title),
+                                  confirmText: copy.approveRevision,
                                   onConfirm: () => handleApproveRevision(article.id),
                                 })
                               }
                               disabled={mutationLoading}
                             >
-                              ✓ Approve Revision
+                              {copy.approveRevision}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() =>
                                 requestArticleAction({
-                                  title: "Reject Revision?",
-                                  description: `Reject the revision request for "${article.title}"?`,
-                                  confirmText: "Reject Revision",
+                                  title: copy.rejectRevisionTitle,
+                                  description: copy.rejectRevisionDescription(article.title),
+                                  confirmText: copy.rejectRevision,
                                   variant: "destructive",
                                   onConfirm: () => handleRejectRevision(article.id),
                                 })
                               }
                               disabled={mutationLoading}
                             >
-                              ✗ Reject Revision
+                              {copy.rejectRevision}
                             </DropdownMenuItem>
                           </>
                         )}
@@ -749,13 +887,13 @@ export default function AdminArticlesPage() {
                           className="text-red-600"
                         >
                           <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
+                          {copy.delete}
                         </DropdownMenuItem>
                       )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
-                  <span className="text-xs text-slate-400">-</span>
+                  <span className="text-xs text-slate-400">{copy.noActions}</span>
                 )}
               </div>
             </div>
@@ -766,7 +904,7 @@ export default function AdminArticlesPage() {
       {articles.length > 0 && (
         <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            Showing {startItem}-{endItem} of {articles.length} articles
+            {copy.showing(startItem, endItem, articles.length)}
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -776,10 +914,10 @@ export default function AdminArticlesPage() {
               onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
               disabled={safeCurrentPage === 1 || loading}
             >
-              Previous
+              {copy.previous}
             </Button>
             <span className="min-w-20 text-center text-xs font-medium text-slate-500">
-              Page {safeCurrentPage} of {totalPages}
+              {copy.pageOf(safeCurrentPage, totalPages)}
             </span>
             <Button
               type="button"
@@ -788,7 +926,7 @@ export default function AdminArticlesPage() {
               onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
               disabled={safeCurrentPage === totalPages || loading}
             >
-              Next
+              {copy.next}
             </Button>
           </div>
         </div>
@@ -799,10 +937,10 @@ export default function AdminArticlesPage() {
         onOpenChange={(open) =>
           setDeleteDialog((current) => ({ ...current, open }))
         }
-        title="Delete Article?"
-        description={`Delete "${deleteDialog.articleTitle || "this article"}"? This action cannot be undone.`}
-        confirmText="Delete Article"
-        cancelText="Cancel"
+        title={copy.deleteTitle}
+        description={copy.deleteDescription(deleteDialog.articleTitle)}
+        confirmText={copy.deleteConfirm}
+        cancelText={copy.cancel}
         variant="destructive"
         onConfirm={() => {
           void confirmDelete();
@@ -824,7 +962,7 @@ export default function AdminArticlesPage() {
         title={actionDialog.title}
         description={actionDialog.description}
         confirmText={actionDialog.confirmText}
-        cancelText="Cancel"
+        cancelText={copy.cancel}
         variant={actionDialog.variant}
         onConfirm={() => {
           void actionDialog.onConfirm();

@@ -13,6 +13,8 @@ export interface User {
   name: string;
   role: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR';
   isActive: boolean;
+  twoFactorEnabled?: boolean;
+  twoFactorSetupAt?: string | null;
   createdAt: string;
   tenantMemberships?: Array<{
     id: string;
@@ -157,6 +159,8 @@ const LIST_USERS_QUERY = `
         name
         role
         isActive
+        twoFactorEnabled
+        twoFactorSetupAt
         createdAt
         tenantMemberships {
           id
@@ -189,6 +193,8 @@ const GET_USER_BY_ID_QUERY = `
       name
       role
       isActive
+      twoFactorEnabled
+      twoFactorSetupAt
       createdAt
     }
   }

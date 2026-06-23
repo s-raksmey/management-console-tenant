@@ -8,6 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import type { MediaFile, MediaUploadProgress, MediaUploadOptions } from '@/types/media';
 import { getAuthFetchHeaders } from '@/services/graphql-client';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface FileUploadProps {
   onUploadComplete?: (files: MediaFile[]) => void;
@@ -34,6 +35,49 @@ const formatFileSize = (bytes: number): string => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
+const fileUploadCopy = {
+  en: {
+    uploadFailed: 'Upload failed',
+    unknownError: 'Unknown error',
+    dropFilesHere: 'Drop files here',
+    unsupportedFiles: 'Some files are not supported',
+    dragDrop: 'Drag & drop files here',
+    browse: 'or click to browse files',
+    maximumFiles: (count: number) => `Maximum ${count} files`,
+    selectedCount: (count: number) => `${count} file${count !== 1 ? 's' : ''} selected`,
+    selectedFiles: 'Selected Files',
+    uploadCount: (count: number) => `Upload ${count} file${count !== 1 ? 's' : ''}`,
+    clearAll: 'Clear All',
+    uploadProgress: 'Upload Progress',
+    statuses: {
+      uploading: 'uploading',
+      processing: 'processing',
+      completed: 'completed',
+      error: 'error',
+    },
+  },
+  km: {
+    uploadFailed: 'Upload មិនបាន',
+    unknownError: 'បញ្ហាមិនស្គាល់',
+    dropFilesHere: 'ទម្លាក់ឯកសារនៅទីនេះ',
+    unsupportedFiles: 'ឯកសារខ្លះមិនគាំទ្រ',
+    dragDrop: 'អូស និងទម្លាក់ឯកសារនៅទីនេះ',
+    browse: 'ឬចុចដើម្បីជ្រើសឯកសារ',
+    maximumFiles: (count: number) => `អតិបរមា ${count} ឯកសារ`,
+    selectedCount: (count: number) => `បានជ្រើស ${count} ឯកសារ`,
+    selectedFiles: 'ឯកសារដែលបានជ្រើស',
+    uploadCount: (count: number) => `Upload ${count} ឯកសារ`,
+    clearAll: 'សម្អាតទាំងអស់',
+    uploadProgress: 'ដំណើរការ Upload',
+    statuses: {
+      uploading: 'កំពុង Upload',
+      processing: 'កំពុងដំណើរការ',
+      completed: 'បានបញ្ចប់',
+      error: 'មានបញ្ហា',
+    },
+  },
+} as const;
+
 export function FileUpload({
   onUploadComplete,
   onUploadProgress,
@@ -42,11 +86,13 @@ export function FileUpload({
   maxFiles = 10,
   className,
 }: FileUploadProps) {
+  const { locale } = useAdminLocale();
+  const copy = fileUploadCopy[locale];
   const [uploadProgress, setUploadProgress] = useState<MediaUploadProgress[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
-  const uploadFile = async (file: File): Promise<MediaFile> => {
+  const uploadFile = useCallback(async (file: File): Promise<MediaFile> => {
     const formData = new FormData();
     formData.append('file', file);
     if (Object.keys(options).length > 0) {
@@ -62,11 +108,11 @@ export function FileUpload({
     const result = await response.json();
     
     if (!result.success) {
-      throw new Error(result.message || 'Upload failed');
+      throw new Error(locale === 'en' ? result.message || copy.uploadFailed : copy.uploadFailed);
     }
 
     return result.file;
-  };
+  }, [copy.uploadFailed, locale, options]);
 
   const handleUpload = useCallback(async (files: File[]) => {
     if (files.length === 0) return;
@@ -107,10 +153,10 @@ export function FileUpload({
 
       } catch (error) {
         console.error(`Upload failed for ${file.name}:`, error);
-        errors.push(`${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        errors.push(`${file.name}: ${error instanceof Error ? error.message : copy.unknownError}`);
         
         progressItem.status = 'error';
-        progressItem.error = error instanceof Error ? error.message : 'Unknown error';
+        progressItem.error = error instanceof Error ? error.message : copy.unknownError;
         setUploadProgress([...progressItems]);
         onUploadProgress?.([...progressItems]);
       }
@@ -131,7 +177,7 @@ export function FileUpload({
     setTimeout(() => {
       setUploadProgress([]);
     }, 3000);
-  }, [options, onUploadComplete, onUploadProgress]);
+  }, [copy, onUploadComplete, onUploadProgress, uploadFile]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     setSelectedFiles(prev => [...prev, ...acceptedFiles]);
@@ -188,21 +234,21 @@ export function FileUpload({
           
           <div>
             <p className="text-lg font-medium text-slate-900">
-              {isDragActive && !isDragReject && 'Drop files here'}
-              {isDragReject && 'Some files are not supported'}
-              {!isDragActive && 'Drag & drop files here'}
+              {isDragActive && !isDragReject && copy.dropFilesHere}
+              {isDragReject && copy.unsupportedFiles}
+              {!isDragActive && copy.dragDrop}
             </p>
             <p className="text-sm text-slate-500 mt-1">
-              or click to browse files
+              {copy.browse}
             </p>
             {maxFiles > 1 && (
               <p className="text-xs text-slate-400 mt-2">
-                Maximum {maxFiles} files
+                {copy.maximumFiles(maxFiles)}
               </p>
             )}
             {selectedFiles.length > 0 && (
               <p className="text-sm text-blue-600 mt-2 font-medium">
-                {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} selected
+                {copy.selectedCount(selectedFiles.length)}
               </p>
             )}
           </div>
@@ -213,7 +259,7 @@ export function FileUpload({
       {selectedFiles.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-slate-900">Selected Files</h4>
+            <h4 className="font-medium text-slate-900">{copy.selectedFiles}</h4>
             <div className="flex gap-2">
               <Button
                 onClick={handleManualUpload}
@@ -221,14 +267,14 @@ export function FileUpload({
                 className="flex items-center gap-2"
               >
                 <Upload className="w-4 h-4" />
-                Upload {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''}
+                {copy.uploadCount(selectedFiles.length)}
               </Button>
               <Button
                 variant="outline"
                 onClick={clearSelectedFiles}
                 disabled={isUploading}
               >
-                Clear All
+                {copy.clearAll}
               </Button>
             </div>
           </div>
@@ -267,7 +313,7 @@ export function FileUpload({
       {/* Upload Progress */}
       {uploadProgress.length > 0 && (
         <div className="space-y-3">
-          <h4 className="font-medium text-slate-900">Upload Progress</h4>
+          <h4 className="font-medium text-slate-900">{copy.uploadProgress}</h4>
           {uploadProgress.map((item) => (
             <div key={item.id} className="bg-white border border-slate-200 rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
@@ -280,7 +326,7 @@ export function FileUpload({
                       {item.filename}
                     </p>
                     <p className="text-sm text-slate-500 capitalize">
-                      {item.status}
+                      {copy.statuses[item.status]}
                     </p>
                   </div>
                 </div>

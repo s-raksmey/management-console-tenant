@@ -35,6 +35,7 @@ import {
   Permission,
 } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 interface Topic {
   id: string;
@@ -74,7 +75,164 @@ type ConfirmationState = {
   onConfirm: () => void;
 };
 
+const categoryCopy = {
+  en: {
+    confirm: "Confirm",
+    cancel: "Cancel",
+    error: "Error",
+    warning: "Warning",
+    success: "Success",
+    validationError: "Validation Error",
+    loadCategoriesFailed: "Failed to load categories",
+    loadTopicsFailed: "Failed to load topics",
+    topicTitleRequired: "Topic title is required",
+    topicSlugRequired: "Topic slug is required",
+    topicSlugUnique: "Topic slug must be unique",
+    topicAdded: "Topic added to list",
+    nameRequired: "Name is required",
+    slugRequired: "Slug is required",
+    saveCategoryFirst: "Please save the category first",
+    updateCategoryTitle: "Update Category?",
+    createCategoryTitle: "Create Category?",
+    saveChangesTo: (name: string) => `Save changes to "${name}"?`,
+    createCategoryDescription: (name: string, count: number) =>
+      `Create "${name}"${count > 0 ? ` with ${count} sub-categor${count === 1 ? "y" : "ies"}` : ""}?`,
+    updateCategory: "Update Category",
+    createCategory: "Create Category",
+    updateSubCategoryTitle: "Update Sub-Category?",
+    createSubCategoryTitle: "Create Sub-Category?",
+    createTopicUnder: (title: string, category: string) => `Create "${title}" under "${category}"?`,
+    updateTopic: "Update Topic",
+    createTopic: "Create Topic",
+    deleteSubCategoryTitle: "Delete Sub-Category?",
+    deleteDescription: (name: string) => `Delete "${name}"? This action cannot be undone.`,
+    deleteTopic: "Delete Topic",
+    deleteCategoryTitle: "Delete Category?",
+    deleteCategory: "Delete Category",
+    categoryUpdated: "Category updated successfully",
+    categoryCreated: "Category created successfully",
+    failedCreateTopic: (title: string) => `Failed to create topic: ${title}`,
+    createdTopicsFor: (count: number, name: string) => `Created ${count} topics for ${name}`,
+    saveCategoryFailed: "Failed to save category",
+    topicUpdated: "Topic updated successfully",
+    topicCreated: "Topic created successfully",
+    saveTopicFailed: "Failed to save topic",
+    topicDeleted: "Topic deleted successfully",
+    deleteTopicFailed: "Failed to delete topic",
+    categoryDeleted: "Category deleted successfully",
+    deleteCategoryFailed: "Failed to delete category",
+    pageTitle: "Category Management",
+    pageDescription: "Create bilingual categories and organize their sub-categories.",
+    editCategory: "Edit Category",
+    editTopic: "Edit Topic",
+    editing: (name: string) => `Editing ${name}`,
+    formDescription: "Add the English and Khmer labels used across the public website.",
+    englishName: "English Name",
+    khmerName: "Khmer Name",
+    slug: "Slug",
+    subCategories: "Sub-Categories",
+    optionalTopics: "Optional topics can be created with this category.",
+    addTopic: "Add Topic",
+    englishTitle: "English Title",
+    khmerTitle: "Khmer Title",
+    topicSlug: "Topic Slug",
+    addToList: "Add to List",
+    topicsToCreate: "Topics to be created",
+    noSubCategoriesAdded: "No sub-categories added yet.",
+    subCategoriesFor: (name: string) => `Sub-Categories for ${name}`,
+    addNewTopic: "Add New Topic",
+    noSubCategoriesYet: "No sub-categories yet.",
+    edit: "Edit",
+    allCategories: "All Categories",
+    noCategoriesFound: "No categories found.",
+    categoriesFound: (count: number) => `${count} categor${count === 1 ? "y" : "ies"} found`,
+    noCategoriesYet: "No categories yet.",
+    created: "Created",
+    editManageTopics: "Edit & Manage Topics",
+    delete: "Delete",
+    loading: "Loading...",
+  },
+  km: {
+    confirm: "បញ្ជាក់",
+    cancel: "បោះបង់",
+    error: "បញ្ហា",
+    warning: "ព្រមាន",
+    success: "ជោគជ័យ",
+    validationError: "ទិន្នន័យមិនត្រឹមត្រូវ",
+    loadCategoriesFailed: "មិនអាចផ្ទុក categories បានទេ",
+    loadTopicsFailed: "មិនអាចផ្ទុក topics បានទេ",
+    topicTitleRequired: "ត្រូវការ title របស់ topic",
+    topicSlugRequired: "ត្រូវការ slug របស់ topic",
+    topicSlugUnique: "Slug របស់ topic ត្រូវតែមិនស្ទួន",
+    topicAdded: "បានបន្ថែម topic ទៅក្នុងបញ្ជី",
+    nameRequired: "ត្រូវការឈ្មោះ",
+    slugRequired: "ត្រូវការ slug",
+    saveCategoryFirst: "សូមរក្សាទុក category ជាមុនសិន",
+    updateCategoryTitle: "កែ Category?",
+    createCategoryTitle: "បង្កើត Category?",
+    saveChangesTo: (name: string) => `រក្សាទុកការកែប្រែ "${name}"?`,
+    createCategoryDescription: (name: string, count: number) =>
+      `បង្កើត "${name}"${count > 0 ? ` ជាមួយ sub-categories ${count}` : ""}?`,
+    updateCategory: "កែ Category",
+    createCategory: "បង្កើត Category",
+    updateSubCategoryTitle: "កែ Sub-Category?",
+    createSubCategoryTitle: "បង្កើត Sub-Category?",
+    createTopicUnder: (title: string, category: string) => `បង្កើត "${title}" ក្រោម "${category}"?`,
+    updateTopic: "កែ Topic",
+    createTopic: "បង្កើត Topic",
+    deleteSubCategoryTitle: "លុប Sub-Category?",
+    deleteDescription: (name: string) => `លុប "${name}"? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`,
+    deleteTopic: "លុប Topic",
+    deleteCategoryTitle: "លុប Category?",
+    deleteCategory: "លុប Category",
+    categoryUpdated: "បានកែ category ដោយជោគជ័យ",
+    categoryCreated: "បានបង្កើត category ដោយជោគជ័យ",
+    failedCreateTopic: (title: string) => `មិនអាចបង្កើត topic: ${title}`,
+    createdTopicsFor: (count: number, name: string) => `បានបង្កើត topics ${count} សម្រាប់ ${name}`,
+    saveCategoryFailed: "មិនអាចរក្សាទុក category បានទេ",
+    topicUpdated: "បានកែ topic ដោយជោគជ័យ",
+    topicCreated: "បានបង្កើត topic ដោយជោគជ័យ",
+    saveTopicFailed: "មិនអាចរក្សាទុក topic បានទេ",
+    topicDeleted: "បានលុប topic ដោយជោគជ័យ",
+    deleteTopicFailed: "មិនអាចលុប topic បានទេ",
+    categoryDeleted: "បានលុប category ដោយជោគជ័យ",
+    deleteCategoryFailed: "មិនអាចលុប category បានទេ",
+    pageTitle: "គ្រប់គ្រង Category",
+    pageDescription: "បង្កើត categories ពីរភាសា និងរៀបចំ sub-categories។",
+    editCategory: "កែ Category",
+    editTopic: "កែ Topic",
+    editing: (name: string) => `កំពុងកែ ${name}`,
+    formDescription: "បន្ថែម English និង Khmer labels សម្រាប់ public website។",
+    englishName: "ឈ្មោះ English",
+    khmerName: "ឈ្មោះ Khmer",
+    slug: "Slug",
+    subCategories: "Sub-Categories",
+    optionalTopics: "Topics ជាជម្រើសអាចបង្កើតជាមួយ category នេះបាន។",
+    addTopic: "បន្ថែម Topic",
+    englishTitle: "Title English",
+    khmerTitle: "Title Khmer",
+    topicSlug: "Topic Slug",
+    addToList: "បន្ថែមទៅបញ្ជី",
+    topicsToCreate: "Topics ដែលនឹងបង្កើត",
+    noSubCategoriesAdded: "មិនទាន់មាន sub-categories។",
+    subCategoriesFor: (name: string) => `Sub-Categories សម្រាប់ ${name}`,
+    addNewTopic: "បន្ថែម Topic ថ្មី",
+    noSubCategoriesYet: "មិនទាន់មាន sub-categories។",
+    edit: "កែ",
+    allCategories: "Categories ទាំងអស់",
+    noCategoriesFound: "រកមិនឃើញ categories។",
+    categoriesFound: (count: number) => `រកឃើញ categories ${count}`,
+    noCategoriesYet: "មិនទាន់មាន categories។",
+    created: "បានបង្កើត",
+    editManageTopics: "កែ និងគ្រប់គ្រង Topics",
+    delete: "លុប",
+    loading: "កំពុងផ្ទុក...",
+  },
+};
+
 export default function CategoriesPage() {
+  const { locale } = useAdminLocale();
+  const copy = categoryCopy[locale];
   const { hasPermission } = usePermissions();
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
@@ -87,7 +245,7 @@ export default function CategoriesPage() {
     open: false,
     title: "",
     description: "",
-    confirmText: "Confirm",
+    confirmText: copy.confirm,
     variant: "default",
     onConfirm: () => {},
   });
@@ -132,9 +290,9 @@ export default function CategoriesPage() {
       }
     } catch (err) {
       console.error("❌ Error loading categories:", err);
-      showErrorRef.current("Error", "Failed to load categories");
+      showErrorRef.current(copy.error, copy.loadCategoriesFailed);
     }
-  }, [getCategories]);
+  }, [copy.error, copy.loadCategoriesFailed, getCategories]);
 
   const loadTopicsForCategory = useCallback(
     async (categorySlug: string) => {
@@ -164,10 +322,10 @@ export default function CategoriesPage() {
         setTopics(result.topicsByCategory || []);
       } catch (err) {
         console.error("Failed to load topics:", err);
-        showErrorRef.current("Error", "Failed to load topics");
+        showErrorRef.current(copy.error, copy.loadTopicsFailed);
       }
     },
-    [query],
+    [copy.error, copy.loadTopicsFailed, query],
   );
 
   useEffect(() => {
@@ -188,17 +346,22 @@ export default function CategoriesPage() {
   const generateSlug = (name: string) => {
     return name
       .toLowerCase()
+      .trim()
       .replace(/[^a-z0-9\s-]/g, "")
       .replace(/\s+/g, "-")
       .replace(/-+/g, "-")
-      .trim();
+      .replace(/^-|-$/g, "");
+  };
+
+  const shouldSyncSlugFromTitle = (currentSlug: string, previousTitle: string) => {
+    return !currentSlug || currentSlug === generateSlug(previousTitle);
   };
 
   const handleNameChange = (name: string) => {
     setFormData((prev) => ({
       ...prev,
       name,
-      slug: prev.slug || generateSlug(name),
+      slug: shouldSyncSlugFromTitle(prev.slug, prev.name) ? generateSlug(name) : prev.slug,
     }));
   };
 
@@ -206,7 +369,7 @@ export default function CategoriesPage() {
     setTopicFormData((prev) => ({
       ...prev,
       title,
-      slug: prev.slug || generateSlug(title),
+      slug: shouldSyncSlugFromTitle(prev.slug, prev.title) ? generateSlug(title) : prev.slug,
     }));
   };
 
@@ -256,24 +419,24 @@ export default function CategoriesPage() {
 
   const addPendingTopic = () => {
     if (!topicFormData.title.trim()) {
-      showError("Validation Error", "Topic title is required");
+      showError(copy.validationError, copy.topicTitleRequired);
       return;
     }
 
     if (!topicFormData.slug.trim()) {
-      showError("Validation Error", "Topic slug is required");
+      showError(copy.validationError, copy.topicSlugRequired);
       return;
     }
 
     // Check for duplicate slugs in pending topics
     if (pendingTopics.some((t) => t.slug === topicFormData.slug)) {
-      showError("Validation Error", "Topic slug must be unique");
+      showError(copy.validationError, copy.topicSlugUnique);
       return;
     }
 
     setPendingTopics((prev) => [...prev, { ...topicFormData }]);
     resetTopicForm();
-    showSuccess("Success", "Topic added to list");
+    showSuccess(copy.success, copy.topicAdded);
   };
 
   const removePendingTopic = (index: number) => {
@@ -289,21 +452,21 @@ export default function CategoriesPage() {
 
   const requestSaveCategory = () => {
     if (!formData.name.trim()) {
-      showError("Validation Error", "Name is required");
+      showError(copy.validationError, copy.nameRequired);
       return;
     }
 
     if (!formData.slug.trim()) {
-      showError("Validation Error", "Slug is required");
+      showError(copy.validationError, copy.slugRequired);
       return;
     }
 
     openConfirmation({
-      title: editingCategory ? "Update Category?" : "Create Category?",
+      title: editingCategory ? copy.updateCategoryTitle : copy.createCategoryTitle,
       description: editingCategory
-        ? `Save changes to "${formData.name}"?`
-        : `Create "${formData.name}"${pendingTopics.length > 0 ? ` with ${pendingTopics.length} sub-categor${pendingTopics.length === 1 ? "y" : "ies"}` : ""}?`,
-      confirmText: editingCategory ? "Update Category" : "Create Category",
+        ? copy.saveChangesTo(formData.name)
+        : copy.createCategoryDescription(formData.name, pendingTopics.length),
+      confirmText: editingCategory ? copy.updateCategory : copy.createCategory,
       variant: "default",
       onConfirm: () => {
         void saveCategory();
@@ -313,26 +476,26 @@ export default function CategoriesPage() {
 
   const requestSaveTopic = () => {
     if (!editingCategory) {
-      showError("Error", "Please save the category first");
+      showError(copy.error, copy.saveCategoryFirst);
       return;
     }
 
     if (!topicFormData.title.trim()) {
-      showError("Validation Error", "Topic title is required");
+      showError(copy.validationError, copy.topicTitleRequired);
       return;
     }
 
     if (!topicFormData.slug.trim()) {
-      showError("Validation Error", "Topic slug is required");
+      showError(copy.validationError, copy.topicSlugRequired);
       return;
     }
 
     openConfirmation({
-      title: editingTopic ? "Update Sub-Category?" : "Create Sub-Category?",
+      title: editingTopic ? copy.updateSubCategoryTitle : copy.createSubCategoryTitle,
       description: editingTopic
-        ? `Save changes to "${topicFormData.title}"?`
-        : `Create "${topicFormData.title}" under "${editingCategory.name}"?`,
-      confirmText: editingTopic ? "Update Topic" : "Create Topic",
+        ? copy.saveChangesTo(topicFormData.title)
+        : copy.createTopicUnder(topicFormData.title, editingCategory.name),
+      confirmText: editingTopic ? copy.updateTopic : copy.createTopic,
       variant: "default",
       onConfirm: () => {
         void saveTopic();
@@ -342,9 +505,9 @@ export default function CategoriesPage() {
 
   const requestDeleteTopic = (topicId: string, topicTitle: string) => {
     openConfirmation({
-      title: "Delete Sub-Category?",
-      description: `Delete "${topicTitle}"? This action cannot be undone.`,
-      confirmText: "Delete Topic",
+      title: copy.deleteSubCategoryTitle,
+      description: copy.deleteDescription(topicTitle),
+      confirmText: copy.deleteTopic,
       variant: "destructive",
       onConfirm: () => {
         void deleteTopic(topicId);
@@ -354,9 +517,9 @@ export default function CategoriesPage() {
 
   const requestDeleteCategory = (categoryId: string, categoryName: string) => {
     openConfirmation({
-      title: "Delete Category?",
-      description: `Delete "${categoryName}"? This action cannot be undone.`,
-      confirmText: "Delete Category",
+      title: copy.deleteCategoryTitle,
+      description: copy.deleteDescription(categoryName),
+      confirmText: copy.deleteCategory,
       variant: "destructive",
       onConfirm: () => {
         void deleteCategory(categoryId);
@@ -366,12 +529,12 @@ export default function CategoriesPage() {
 
   const saveCategory = async () => {
     if (!formData.name.trim()) {
-      showError("Validation Error", "Name is required");
+      showError(copy.validationError, copy.nameRequired);
       return;
     }
 
     if (!formData.slug.trim()) {
-      showError("Validation Error", "Slug is required");
+      showError(copy.validationError, copy.slugRequired);
       return;
     }
 
@@ -393,14 +556,14 @@ export default function CategoriesPage() {
           input,
         });
         savedCategory = { ...editingCategory, ...input };
-        showSuccess("Success", "Category updated successfully");
+        showSuccess(copy.success, copy.categoryUpdated);
       } else {
         // Create new category
         const result = await client.request(M_CREATE_CATEGORY, {
           input,
         });
         savedCategory = result.createCategory;
-        showSuccess("Success", "Category created successfully");
+        showSuccess(copy.success, copy.categoryCreated);
 
         // Create pending topics for new category
         if (pendingTopics.length > 0) {
@@ -410,14 +573,14 @@ export default function CategoriesPage() {
             } catch (err) {
               console.error("Failed to create topic:", pendingTopic.title, err);
               showError(
-                "Warning",
-                `Failed to create topic: ${pendingTopic.title}`,
+                copy.warning,
+                copy.failedCreateTopic(pendingTopic.title),
               );
             }
           }
           showSuccess(
-            "Success",
-            `Created ${pendingTopics.length} topics for ${savedCategory.name}`,
+            copy.success,
+            copy.createdTopicsFor(pendingTopics.length, savedCategory.name),
           );
         }
       }
@@ -427,7 +590,7 @@ export default function CategoriesPage() {
       resetForm();
     } catch (err: any) {
       console.error("Error saving category:", err);
-      showError("Error", err.message || "Failed to save category");
+      showError(copy.error, locale === "en" ? err.message || copy.saveCategoryFailed : copy.saveCategoryFailed);
     } finally {
       setIsLoading(false);
     }
@@ -479,17 +642,17 @@ export default function CategoriesPage() {
 
   const saveTopic = async () => {
     if (!editingCategory) {
-      showError("Error", "Please save the category first");
+      showError(copy.error, copy.saveCategoryFirst);
       return;
     }
 
     if (!topicFormData.title.trim()) {
-      showError("Validation Error", "Topic title is required");
+      showError(copy.validationError, copy.topicTitleRequired);
       return;
     }
 
     if (!topicFormData.slug.trim()) {
-      showError("Validation Error", "Topic slug is required");
+      showError(copy.validationError, copy.topicSlugRequired);
       return;
     }
 
@@ -503,17 +666,17 @@ export default function CategoriesPage() {
 
       if (result.upsertTopic) {
         showSuccess(
-          "Success",
+          copy.success,
           editingTopic
-            ? "Topic updated successfully"
-            : "Topic created successfully",
+            ? copy.topicUpdated
+            : copy.topicCreated,
         );
         resetTopicForm();
         loadTopicsForCategory(editingCategory.slug);
       }
     } catch (err: any) {
       console.error("Failed to save topic:", err);
-      showError("Error", err.message || "Failed to save topic");
+      showError(copy.error, locale === "en" ? err.message || copy.saveTopicFailed : copy.saveTopicFailed);
     } finally {
       setIsLoading(false);
     }
@@ -532,14 +695,14 @@ export default function CategoriesPage() {
       const result = await query(DELETE_TOPIC_MUTATION, { id: topicId });
 
       if (result.deleteTopic) {
-        showSuccess("Success", "Topic deleted successfully");
+        showSuccess(copy.success, copy.topicDeleted);
         if (editingCategory) {
           loadTopicsForCategory(editingCategory.slug);
         }
       }
     } catch (err: any) {
       console.error("Failed to delete topic:", err);
-      showError("Error", err.message || "Failed to delete topic");
+      showError(copy.error, locale === "en" ? err.message || copy.deleteTopicFailed : copy.deleteTopicFailed);
     } finally {
       setIsLoading(false);
     }
@@ -558,7 +721,7 @@ export default function CategoriesPage() {
         prevCategories.filter((category) => category.id !== categoryId),
       );
 
-      showSuccess("Success", "Category deleted successfully");
+      showSuccess(copy.success, copy.categoryDeleted);
 
       // Also refresh from server to ensure consistency
       try {
@@ -572,7 +735,7 @@ export default function CategoriesPage() {
       }
     } catch (err: any) {
       console.error("Error deleting category:", err);
-      showError("Error", err.message || "Failed to delete category");
+      showError(copy.error, locale === "en" ? err.message || copy.deleteCategoryFailed : copy.deleteCategoryFailed);
     } finally {
       setIsLoading(false);
     }
@@ -584,10 +747,10 @@ export default function CategoriesPage() {
       <div>
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
-            Category Management
+            {copy.pageTitle}
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Create bilingual categories and organize their sub-categories.
+            {copy.pageDescription}
           </p>
         </div>
       </div>
@@ -600,12 +763,12 @@ export default function CategoriesPage() {
               <div>
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <FolderTree className="h-5 w-5 text-blue-600" />
-                  {editingCategory ? "Edit Category" : "Create Category"}
+                  {editingCategory ? copy.editCategory : copy.createCategory}
                 </CardTitle>
                 <CardDescription className="mt-1">
                   {editingCategory
-                    ? `Editing ${editingCategory.name}`
-                    : "Add the English and Khmer labels used across the public website."}
+                    ? copy.editing(editingCategory.name)
+                    : copy.formDescription}
                 </CardDescription>
               </div>
               {editingCategory && (
@@ -619,7 +782,7 @@ export default function CategoriesPage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_260px]">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-slate-700">
-                  English Name <span className="text-red-500">*</span>
+                  {copy.englishName} <span className="text-red-500">*</span>
                 </label>
                 <Input
                   value={formData.name}
@@ -630,7 +793,7 @@ export default function CategoriesPage() {
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
                   <Languages className="h-4 w-4 text-slate-400" />
-                  Khmer Name
+                  {copy.khmerName}
                 </label>
                 <Input
                   value={formData.nameKhmer}
@@ -645,7 +808,7 @@ export default function CategoriesPage() {
               </div>
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-slate-700">
-                  Slug <span className="text-red-500">*</span>
+                  {copy.slug} <span className="text-red-500">*</span>
                 </label>
                 <Input
                   value={formData.slug}
@@ -663,10 +826,10 @@ export default function CategoriesPage() {
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h4 className="font-medium text-slate-950">
-                      Sub-Categories
+                      {copy.subCategories}
                     </h4>
                     <p className="text-sm text-slate-500">
-                      Optional topics can be created with this category.
+                      {copy.optionalTopics}
                     </p>
                   </div>
                   <PermissionGuard permissions={[Permission.CREATE_TOPIC]} fallback={null}>
@@ -677,7 +840,7 @@ export default function CategoriesPage() {
                       className="w-full items-center gap-2 sm:w-auto"
                     >
                       <Plus className="h-4 w-4" />
-                      Add Topic
+                      {copy.addTopic}
                     </Button>
                   </PermissionGuard>
                 </div>
@@ -689,7 +852,7 @@ export default function CategoriesPage() {
                     <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_220px]">
                       <div className="space-y-1.5">
                         <label className="block text-sm font-medium text-slate-700">
-                          English Title <span className="text-red-500">*</span>
+                          {copy.englishTitle} <span className="text-red-500">*</span>
                         </label>
                         <Input
                           value={topicFormData.title}
@@ -702,7 +865,7 @@ export default function CategoriesPage() {
                       </div>
                       <div className="space-y-1.5">
                         <label className="block text-sm font-medium text-slate-700">
-                          Khmer Title
+                          {copy.khmerTitle}
                         </label>
                         <Input
                           value={topicFormData.titleKhmer}
@@ -718,7 +881,7 @@ export default function CategoriesPage() {
                       </div>
                       <div className="space-y-1.5">
                         <label className="block text-sm font-medium text-slate-700">
-                          Topic Slug <span className="text-red-500">*</span>
+                          {copy.topicSlug} <span className="text-red-500">*</span>
                         </label>
                         <Input
                           value={topicFormData.slug}
@@ -740,7 +903,7 @@ export default function CategoriesPage() {
                         className="flex items-center gap-2"
                       >
                         <Plus className="h-3 w-3" />
-                        Add to List
+                        {copy.addToList}
                       </Button>
                       <Button
                         variant="outline"
@@ -749,7 +912,7 @@ export default function CategoriesPage() {
                         className="flex items-center gap-2"
                       >
                         <X className="h-3 w-3" />
-                        Cancel
+                        {copy.cancel}
                       </Button>
                     </div>
                   </div>
@@ -760,7 +923,7 @@ export default function CategoriesPage() {
                 {pendingTopics.length > 0 ? (
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-slate-700">
-                      Topics to be created
+                      {copy.topicsToCreate}
                     </p>
                     {pendingTopics.map((topic, index) => (
                       <div
@@ -794,7 +957,7 @@ export default function CategoriesPage() {
                 ) : (
                   !showTopicForm && (
                     <div className="rounded-md border border-dashed bg-white px-4 py-8 text-center text-sm text-slate-500">
-                      No sub-categories added yet.
+                      {copy.noSubCategoriesAdded}
                     </div>
                   )
                 )}
@@ -808,10 +971,10 @@ export default function CategoriesPage() {
                 className="w-full items-center gap-2 sm:w-auto"
               >
                 <Save className="h-4 w-4" />
-                {editingCategory ? "Update Category" : "Create Category"}
+                {editingCategory ? copy.updateCategory : copy.createCategory}
                 {!editingCategory &&
                   pendingTopics.length > 0 &&
-                  ` & ${pendingTopics.length} Topics`}
+                  ` & ${pendingTopics.length} ${copy.subCategories}`}
               </Button>
               {editingCategory && (
                 <Button
@@ -820,7 +983,7 @@ export default function CategoriesPage() {
                   className="w-full items-center gap-2 sm:w-auto"
                 >
                   <X className="h-4 w-4" />
-                  Cancel
+                  {copy.cancel}
                 </Button>
               )}
             </div>
@@ -833,7 +996,7 @@ export default function CategoriesPage() {
         <Card className="overflow-hidden border-slate-200 shadow-sm">
           <CardHeader className="border-b bg-white px-6 py-5">
             <CardTitle className="flex items-center justify-between gap-3 text-lg">
-              <span>Sub-Categories for {editingCategory.name}</span>
+              <span>{copy.subCategoriesFor(editingCategory.name)}</span>
               <PermissionGuard permissions={[Permission.CREATE_TOPIC]}>
                 <Button
                   onClick={() => setShowTopicForm(true)}
@@ -841,7 +1004,7 @@ export default function CategoriesPage() {
                   className="flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Add Topic
+                  {copy.addTopic}
                 </Button>
               </PermissionGuard>
             </CardTitle>
@@ -856,12 +1019,12 @@ export default function CategoriesPage() {
               <PermissionGuard permissions={[Permission.CREATE_TOPIC]}>
                 <div className="rounded-md border bg-slate-50/70 p-4">
                   <h4 className="mb-3 font-medium text-slate-950">
-                    {editingTopic ? "Edit Topic" : "Add New Topic"}
+                    {editingTopic ? copy.editTopic : copy.addNewTopic}
                   </h4>
                   <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_240px]">
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-slate-700">
-                        English Title <span className="text-red-500">*</span>
+                        {copy.englishTitle} <span className="text-red-500">*</span>
                       </label>
                       <Input
                         value={topicFormData.title}
@@ -871,7 +1034,7 @@ export default function CategoriesPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-slate-700">
-                        Khmer Title
+                        {copy.khmerTitle}
                       </label>
                       <Input
                         value={topicFormData.titleKhmer}
@@ -886,7 +1049,7 @@ export default function CategoriesPage() {
                     </div>
                     <div className="space-y-2">
                       <label className="block text-sm font-medium text-slate-700">
-                        Slug <span className="text-red-500">*</span>
+                        {copy.slug} <span className="text-red-500">*</span>
                       </label>
                       <Input
                         value={topicFormData.slug}
@@ -908,7 +1071,7 @@ export default function CategoriesPage() {
                       className="flex items-center gap-2"
                     >
                       <Save className="h-4 w-4" />
-                      {editingTopic ? "Update Topic" : "Add Topic"}
+                      {editingTopic ? copy.updateTopic : copy.addTopic}
                     </Button>
                     <Button
                       variant="outline"
@@ -917,7 +1080,7 @@ export default function CategoriesPage() {
                       className="flex items-center gap-2"
                     >
                       <X className="h-4 w-4" />
-                      Cancel
+                      {copy.cancel}
                     </Button>
                   </div>
                 </div>
@@ -927,7 +1090,7 @@ export default function CategoriesPage() {
             {/* Topics List */}
             {topics.length === 0 ? (
               <div className="rounded-md border border-dashed py-10 text-center text-sm text-slate-500">
-                No sub-categories yet.
+                {copy.noSubCategoriesYet}
               </div>
             ) : (
               <div className="space-y-2">
@@ -962,7 +1125,7 @@ export default function CategoriesPage() {
                           className="flex items-center gap-1"
                         >
                           <Edit className="h-3 w-3" />
-                          Edit
+                          {copy.edit}
                         </Button>
                       </PermissionGuard>
                       <PermissionGuard permissions={[Permission.DELETE_TOPIC]} fallback={null}>
@@ -976,7 +1139,7 @@ export default function CategoriesPage() {
                           className="flex items-center gap-1 text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-3 w-3" />
-                          Delete
+                          {copy.delete}
                         </Button>
                       </PermissionGuard>
                     </div>
@@ -993,11 +1156,11 @@ export default function CategoriesPage() {
         <CardHeader className="border-b bg-white px-6 py-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <CardTitle className="text-lg">All Categories</CardTitle>
+              <CardTitle className="text-lg">{copy.allCategories}</CardTitle>
               <CardDescription className="mt-1">
                 {categories.length === 0
-                  ? "No categories found."
-                  : `${categories.length} categor${categories.length === 1 ? "y" : "ies"} found`}
+                  ? copy.noCategoriesFound
+                  : copy.categoriesFound(categories.length)}
               </CardDescription>
             </div>
           </div>
@@ -1005,7 +1168,7 @@ export default function CategoriesPage() {
         <CardContent className="p-0">
           {categories.length === 0 ? (
             <div className="py-12 text-center text-sm text-slate-500">
-              <p>No categories yet.</p>
+              <p>{copy.noCategoriesYet}</p>
             </div>
           ) : (
             <div className="divide-y">
@@ -1025,7 +1188,7 @@ export default function CategoriesPage() {
                       <Badge variant="secondary">{category.slug}</Badge>
                     </div>
                     <div className="text-xs text-slate-500">
-                      Created{" "}
+                      {copy.created}{" "}
                       {new Date(category.createdAt).toLocaleDateString()}
                     </div>
                   </div>
@@ -1039,7 +1202,7 @@ export default function CategoriesPage() {
                         className="flex items-center gap-1"
                       >
                         <Edit className="h-3 w-3" />
-                        Edit & Manage Topics
+                        {copy.editManageTopics}
                       </Button>
                     </PermissionGuard>
                     <PermissionGuard permissions={[Permission.DELETE_CATEGORY]} fallback={null}>
@@ -1053,7 +1216,7 @@ export default function CategoriesPage() {
                         className="flex items-center gap-1 text-red-600 hover:text-red-700"
                       >
                         <Trash2 className="h-3 w-3" />
-                        Delete
+                        {copy.delete}
                       </Button>
                     </PermissionGuard>
                   </div>
@@ -1066,7 +1229,7 @@ export default function CategoriesPage() {
 
       {categoriesLoading && (
         <div className="text-center py-4">
-          <p>Loading...</p>
+          <p>{copy.loading}</p>
         </div>
       )}
 
@@ -1078,7 +1241,7 @@ export default function CategoriesPage() {
         title={confirmation.title}
         description={confirmation.description}
         confirmText={confirmation.confirmText}
-        cancelText="Cancel"
+        cancelText={copy.cancel}
         variant={confirmation.variant}
         onConfirm={confirmation.onConfirm}
       />

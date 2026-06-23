@@ -8,6 +8,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { Permission } from '@/components/permissions/PermissionGuard';
 import { UserService } from '../../services/user.gql';
 import type { AssignableUserRole, CreateUserInput } from '../../types/user';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface UserCreateModalProps {
   isOpen: boolean;
@@ -15,25 +16,78 @@ interface UserCreateModalProps {
   onUserCreated: () => void;
 }
 
+const createUserCopy = {
+  en: {
+    platformRole: 'Platform Role',
+    tenantRole: 'Tenant Role',
+    superAdmin: 'Super Admin',
+    tenantAdmin: 'Tenant Admin',
+    admin: 'Admin',
+    editor: 'Editor',
+    author: 'Author',
+    superAdminBlocked: 'Tenant users cannot create super admin accounts.',
+    createFailed: 'Failed to create user',
+    title: 'Create New User',
+    close: 'Close',
+    fullName: 'Full Name *',
+    fullNamePlaceholder: 'Enter full name',
+    email: 'Email Address *',
+    emailPlaceholder: 'Enter email address',
+    password: 'Password *',
+    passwordPlaceholder: 'Enter password (min 8 characters)',
+    accountActive: 'Account is active',
+    sendWelcomeEmail: 'Send welcome email',
+    cancel: 'Cancel',
+    creating: 'Creating...',
+    createUser: 'Create User',
+  },
+  km: {
+    platformRole: 'តួនាទីវេទិកា',
+    tenantRole: 'តួនាទី Tenant',
+    superAdmin: 'Super Admin',
+    tenantAdmin: 'Tenant Admin',
+    admin: 'Admin',
+    editor: 'Editor',
+    author: 'Author',
+    superAdminBlocked: 'អ្នកប្រើ tenant មិនអាចបង្កើតគណនី super admin បានទេ។',
+    createFailed: 'មិនអាចបង្កើតអ្នកប្រើបានទេ',
+    title: 'បង្កើតអ្នកប្រើថ្មី',
+    close: 'បិទ',
+    fullName: 'ឈ្មោះពេញ *',
+    fullNamePlaceholder: 'បញ្ចូលឈ្មោះពេញ',
+    email: 'អ៊ីមែល *',
+    emailPlaceholder: 'បញ្ចូលអ៊ីមែល',
+    password: 'ពាក្យសម្ងាត់ *',
+    passwordPlaceholder: 'បញ្ចូលពាក្យសម្ងាត់ (យ៉ាងតិច 8 តួ)',
+    accountActive: 'គណនីសកម្ម',
+    sendWelcomeEmail: 'ផ្ញើអ៊ីមែលស្វាគមន៍',
+    cancel: 'បោះបង់',
+    creating: 'កំពុងបង្កើត...',
+    createUser: 'បង្កើតអ្នកប្រើ',
+  },
+};
+
 export default function UserCreateModal({ isOpen, onClose, onUserCreated }: UserCreateModalProps) {
+  const { locale } = useAdminLocale();
+  const copy = createUserCopy[locale];
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
   const canAssignSuperAdmin = user?.role === 'SUPER_ADMIN';
   const canManageRoles = hasPermission(Permission.MANAGE_USER_ROLES);
-  const roleLabel = canAssignSuperAdmin ? 'Platform Role' : 'Tenant Role';
+  const roleLabel = canAssignSuperAdmin ? copy.platformRole : copy.tenantRole;
   const defaultRole: AssignableUserRole = canAssignSuperAdmin ? 'ADMIN' : 'AUTHOR';
   const roleOptions: Array<{ value: AssignableUserRole; label: string }> = canAssignSuperAdmin
     ? [
-        { value: 'SUPER_ADMIN', label: 'Super Admin' },
-        { value: 'ADMIN', label: 'Tenant Admin' },
+        { value: 'SUPER_ADMIN', label: copy.superAdmin },
+        { value: 'ADMIN', label: copy.tenantAdmin },
       ]
     : canManageRoles
       ? [
-          { value: 'ADMIN', label: 'Admin' },
-          { value: 'EDITOR', label: 'Editor' },
-          { value: 'AUTHOR', label: 'Author' },
+          { value: 'ADMIN', label: copy.admin },
+          { value: 'EDITOR', label: copy.editor },
+          { value: 'AUTHOR', label: copy.author },
         ]
-      : [{ value: defaultRole, label: defaultRole === 'ADMIN' ? 'Admin' : 'Author' }];
+      : [{ value: defaultRole, label: defaultRole === 'ADMIN' ? copy.admin : copy.author }];
   const [formData, setFormData] = useState<CreateUserInput>({
     name: '',
     email: '',
@@ -48,6 +102,11 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canAssignSuperAdmin && formData.role === 'SUPER_ADMIN') {
+      setError(copy.superAdminBlocked);
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -69,7 +128,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
         setError(result.message);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create user');
+      setError(locale === 'en' && err instanceof Error ? err.message : copy.createFailed);
     } finally {
       setLoading(false);
     }
@@ -97,11 +156,12 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900">Create New User</h2>
+          <h2 className="text-xl font-semibold text-gray-900">{copy.title}</h2>
           <button
             onClick={handleClose}
             disabled={loading}
             className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
+            aria-label={copy.close}
           >
             <X className="w-6 h-6" />
           </button>
@@ -118,7 +178,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
           {/* Name Field */}
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name *
+              {copy.fullName}
             </label>
             <input
               type="text"
@@ -127,7 +187,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter full name"
+              placeholder={copy.fullNamePlaceholder}
               disabled={loading}
             />
           </div>
@@ -135,7 +195,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
           {/* Email Field */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-              Email Address *
+              {copy.email}
             </label>
             <input
               type="email"
@@ -144,7 +204,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter email address"
+              placeholder={copy.emailPlaceholder}
               disabled={loading}
             />
           </div>
@@ -152,7 +212,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
           {/* Password Field */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Password *
+              {copy.password}
             </label>
             <div className="relative">
               <input
@@ -162,7 +222,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter password (min 8 characters)"
+                placeholder={copy.passwordPlaceholder}
                 minLength={8}
                 disabled={loading}
               />
@@ -208,7 +268,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
               disabled={loading}
             />
             <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
-              Account is active
+              {copy.accountActive}
             </label>
           </div>
 
@@ -223,7 +283,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
               disabled={loading}
             />
             <label htmlFor="sendWelcomeEmail" className="ml-2 block text-sm text-gray-700">
-              Send welcome email
+              {copy.sendWelcomeEmail}
             </label>
           </div>
 
@@ -235,7 +295,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
               disabled={loading}
               className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 disabled:opacity-50"
             >
-              Cancel
+              {copy.cancel}
             </button>
             <button
               type="submit"
@@ -243,7 +303,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 flex items-center gap-2"
             >
               {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-              {loading ? 'Creating...' : 'Create User'}
+              {loading ? copy.creating : copy.createUser}
             </button>
           </div>
         </form>

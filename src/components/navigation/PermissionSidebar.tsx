@@ -21,6 +21,7 @@ import { getNavigationItems, NavigationItem } from "./NavigationItems";
 import { useState, useEffect } from "react";
 import { useCounts } from "@/hooks/useCounts";
 import { useArticles } from "@/hooks/useGraphQL";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 
 interface PermissionSidebarProps {
@@ -36,6 +37,19 @@ interface NavigationItemComponentProps {
   level?: number;
 }
 
+const sidebarCopy = {
+  en: {
+    panel: "Panel",
+    expand: "Expand navigation sidebar",
+    collapse: "Collapse navigation sidebar",
+  },
+  km: {
+    panel: "ផ្ទាំង",
+    expand: "ពង្រីកម៉ឺនុយ",
+    collapse: "បង្រួមម៉ឺនុយ",
+  },
+};
+
 const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
   item,
   collapsed,
@@ -50,14 +64,8 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
     pathname === child.href || pathname.startsWith(child.href + '/')
   );
   
-  const [isExpanded, setIsExpanded] = useState(shouldAutoExpand || false);
-
-  // Update expanded state when pathname changes
-  useEffect(() => {
-    if (shouldAutoExpand && !isExpanded) {
-      setIsExpanded(true);
-    }
-  }, [shouldAutoExpand, isExpanded]);
+  const [manualExpanded, setManualExpanded] = useState<boolean | null>(null);
+  const isExpanded = manualExpanded ?? Boolean(shouldAutoExpand);
 
   const itemContent = (
     <div
@@ -92,7 +100,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    setIsExpanded(!isExpanded);
+                    setManualExpanded(!isExpanded);
                   }}
                   className="ml-2 rounded p-1 transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
                 >
@@ -130,7 +138,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
       <div>
         {hasChildren && !collapsed ? (
           <div
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={() => setManualExpanded(!isExpanded)}
             className="cursor-pointer"
           >
             {itemContent}
@@ -178,6 +186,8 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
   const pathname = usePathname();
   const { user, isLoading } = useAuth();
   const { activeTenant } = useTenant();
+  const { locale } = useAdminLocale();
+  const copy = sidebarCopy[locale];
   const { hasPermission, userRole } = usePermissions();
   const { counts } = useCounts(userRole);
   const { getArticles } = useArticles();
@@ -215,7 +225,8 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
       ...counts,
       reviewQueue: reviewQueueCount,
     },
-    userRole
+    userRole,
+    locale
   );
 
   // Keep the current sidebar mounted during background auth/permission refreshes.
@@ -266,7 +277,7 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
               <p className="max-w-[170px] truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {brandName}
               </p>
-              <p className="text-xs capitalize text-slate-500 dark:text-slate-400">{userRole?.toLowerCase()} Panel</p>
+              <p className="text-xs capitalize text-slate-500 dark:text-slate-400">{userRole?.toLowerCase()} {copy.panel}</p>
             </div>
           </motion.div>
         ) : null}
@@ -275,8 +286,8 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
           variant="ghost"
           size="sm"
           onClick={onToggle}
-          aria-label={collapsed ? "Expand navigation sidebar" : "Collapse navigation sidebar"}
-          title={collapsed ? "Expand navigation sidebar" : "Collapse navigation sidebar"}
+          aria-label={collapsed ? copy.expand : copy.collapse}
+          title={collapsed ? copy.expand : copy.collapse}
           className="h-8 w-8 p-0 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus-visible:bg-slate-800"
         >
           {collapsed ? (

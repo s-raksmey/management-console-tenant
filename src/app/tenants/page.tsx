@@ -50,6 +50,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 const emptyTenant: CreateTenantInput = {
   name: "",
@@ -70,6 +71,185 @@ const emptyAdmin: CreateTenantAdminInput = {
 
 const tenantStatuses: TenantStatus[] = ["ACTIVE", "SUSPENDED", "ARCHIVED"];
 
+const tenantsCopy = {
+  en: {
+    confirm: "Confirm",
+    cancel: "Cancel",
+    copied: "Copied",
+    copiedDescription: (label: string) => `${label} copied to clipboard.`,
+    copyFailed: "Copy Failed",
+    copyFailedDescription: (label: string) => `Could not copy ${label}.`,
+    error: "Error",
+    validationError: "Validation Error",
+    loadFailed: "Failed to load tenants.",
+    tenantNameRequired: "Tenant name is required.",
+    createTenantTitle: "Create Tenant Website?",
+    createTenantDescription: (name: string) => `Create tenant website "${name}"?`,
+    createTenant: "Create Tenant",
+    tenantCreated: "Tenant Created",
+    tenantCreatedDescription: (name: string) => `${name} is ready.`,
+    createTenantFailed: "Failed to create tenant.",
+    tenantUserRequired: "Tenant, name, and email are required.",
+    createTenantUserTitle: "Create Tenant User?",
+    createTenantUserDescription: (name: string, role?: string | null) =>
+      `Create ${name} as a tenant ${role?.toLowerCase()}?`,
+    createUser: "Create User",
+    tenantUserCreated: "Tenant User Created",
+    tenantUserCreatedDescription: "The user can now access this tenant.",
+    createTenantUserFailed: "Failed to create tenant user.",
+    resetTwoFactorTitle: "Reset Two-Factor Setup?",
+    resetTwoFactorDescription: (name: string) =>
+      `Reset two-factor setup for "${name}"? They will need to scan a new QR code on next login.`,
+    resetTwoFactor: "Reset Two-Factor",
+    resetTwoFactorFailed: "Failed to reset two-factor setup.",
+    resetTwoFactorSuccess: "Two-Factor Reset",
+    saveTenantTitle: "Save Tenant Changes?",
+    saveTenantDescription: (name: string) => `Save changes to tenant "${name}"?`,
+    saveTenant: "Save Tenant",
+    tenantUpdated: "Tenant Updated",
+    tenantUpdatedDescription: (name: string) => `${name} has been updated.`,
+    updateTenantFailed: "Failed to update tenant.",
+    archiveTenantTitle: "Archive Tenant?",
+    restoreTenantTitle: "Restore Tenant?",
+    archiveTenantDescription: (name: string) => `Archive "${name}"?`,
+    restoreTenantDescription: (name: string) => `Restore "${name}"?`,
+    archiveTenant: "Archive Tenant",
+    restoreTenant: "Restore Tenant",
+    tenantArchived: "Tenant Archived",
+    tenantRestored: "Tenant Restored",
+    tenantArchivedDescription: (name: string) => `${name} is hidden from public/admin access.`,
+    tenantRestoredDescription: (name: string) => `${name} is active again.`,
+    tenantLifecycleFailed: (action: string) => `Failed to ${action} tenant.`,
+    archiveAction: "archive",
+    restoreAction: "restore",
+    eyebrowSuper: "Tenant Control",
+    eyebrowTenant: "Website Control",
+    titleSuper: "Tenant Websites",
+    titleTenant: "Current Website",
+    descriptionSuper: "Create tenant websites, inspect users, and manage each tenant from one place.",
+    descriptionTenant: "Manage this tenant admin website and public website identity.",
+    createTenantWebsite: "Create Tenant Website",
+    newSite: "New admin and public site",
+    activeTenants: "Active Tenants",
+    tenantUsers: "Tenant Users",
+    activeSites: "Active Sites",
+    archived: "Archived",
+    tenants: "Tenants",
+    website: "Website",
+    tenantsConfigured: (count: number) => `${count} tenant website${count !== 1 ? "s" : ""} configured`,
+    websiteDescription: "Update the name, URLs, locale, and active state for this tenant",
+    refresh: "Refresh",
+    loadingTenants: "Loading tenants...",
+    noTenants: "No tenants yet.",
+    createTenantDialogDescription: "Create a clean tenant admin and public website. Content starts empty.",
+    tenantName: "Tenant Name",
+    slug: "Slug",
+    formDescription: "Description",
+    publicUrl: "Public URL",
+    adminUrl: "Admin URL",
+    createTenantUser: "Create Tenant User",
+    createTenantUserDialogDescription: "Create a user directly inside this tenant and choose their role.",
+    tenant: "Tenant",
+    selectFromTenantUsers: "Select from a tenant's Users panel",
+    name: "Name",
+    email: "Email",
+    role: "Role",
+    admin: "Admin",
+    editor: "Editor",
+    author: "Author",
+    password: "Password",
+    passwordPlaceholder: "Required for new users",
+  },
+  km: {
+    confirm: "បញ្ជាក់",
+    cancel: "បោះបង់",
+    copied: "បានចម្លង",
+    copiedDescription: (label: string) => `បានចម្លង ${label} ទៅ clipboard។`,
+    copyFailed: "ចម្លងមិនបាន",
+    copyFailedDescription: (label: string) => `មិនអាចចម្លង ${label} បានទេ។`,
+    error: "បញ្ហា",
+    validationError: "ទិន្នន័យមិនត្រឹមត្រូវ",
+    loadFailed: "មិនអាចផ្ទុក tenants បានទេ។",
+    tenantNameRequired: "ត្រូវការឈ្មោះ tenant។",
+    createTenantTitle: "បង្កើតគេហទំព័រ Tenant?",
+    createTenantDescription: (name: string) => `បង្កើតគេហទំព័រ tenant "${name}"?`,
+    createTenant: "បង្កើត Tenant",
+    tenantCreated: "បានបង្កើត Tenant",
+    tenantCreatedDescription: (name: string) => `${name} រួចរាល់ហើយ។`,
+    createTenantFailed: "មិនអាចបង្កើត tenant បានទេ។",
+    tenantUserRequired: "ត្រូវការ tenant, ឈ្មោះ និងអ៊ីមែល។",
+    createTenantUserTitle: "បង្កើតអ្នកប្រើ Tenant?",
+    createTenantUserDescription: (name: string, role?: string | null) =>
+      `បង្កើត ${name} ជា tenant ${role?.toLowerCase()}?`,
+    createUser: "បង្កើតអ្នកប្រើ",
+    tenantUserCreated: "បានបង្កើតអ្នកប្រើ Tenant",
+    tenantUserCreatedDescription: "អ្នកប្រើអាចចូលប្រើ tenant នេះបានហើយ។",
+    createTenantUserFailed: "មិនអាចបង្កើតអ្នកប្រើ tenant បានទេ។",
+    resetTwoFactorTitle: "កំណត់ Two-Factor ឡើងវិញ?",
+    resetTwoFactorDescription: (name: string) =>
+      `កំណត់ Two-Factor setup សម្រាប់ "${name}" ឡើងវិញ? ពួកគេត្រូវស្កេន QR ថ្មីនៅពេលចូលលើកក្រោយ។`,
+    resetTwoFactor: "កំណត់ Two-Factor ឡើងវិញ",
+    resetTwoFactorFailed: "មិនអាចកំណត់ Two-Factor setup ឡើងវិញបានទេ។",
+    resetTwoFactorSuccess: "បានកំណត់ Two-Factor ឡើងវិញ",
+    saveTenantTitle: "រក្សាទុកការកែ Tenant?",
+    saveTenantDescription: (name: string) => `រក្សាទុកការកែប្រែ tenant "${name}"?`,
+    saveTenant: "រក្សាទុក Tenant",
+    tenantUpdated: "បានកែ Tenant",
+    tenantUpdatedDescription: (name: string) => `${name} ត្រូវបានកែប្រែហើយ។`,
+    updateTenantFailed: "មិនអាចកែ tenant បានទេ។",
+    archiveTenantTitle: "Archive Tenant?",
+    restoreTenantTitle: "Restore Tenant?",
+    archiveTenantDescription: (name: string) => `Archive "${name}"?`,
+    restoreTenantDescription: (name: string) => `Restore "${name}"?`,
+    archiveTenant: "Archive Tenant",
+    restoreTenant: "Restore Tenant",
+    tenantArchived: "បាន Archive Tenant",
+    tenantRestored: "បាន Restore Tenant",
+    tenantArchivedDescription: (name: string) => `${name} ត្រូវបានលាក់ពី public/admin access។`,
+    tenantRestoredDescription: (name: string) => `${name} សកម្មឡើងវិញ។`,
+    tenantLifecycleFailed: (action: string) => `មិនអាច ${action} tenant បានទេ។`,
+    archiveAction: "archive",
+    restoreAction: "restore",
+    eyebrowSuper: "គ្រប់គ្រង Tenant",
+    eyebrowTenant: "គ្រប់គ្រង Website",
+    titleSuper: "គេហទំព័រ Tenant",
+    titleTenant: "គេហទំព័របច្ចុប្បន្ន",
+    descriptionSuper: "បង្កើតគេហទំព័រ tenant ពិនិត្យអ្នកប្រើ និងគ្រប់គ្រង tenant ទាំងអស់ពីកន្លែងតែមួយ។",
+    descriptionTenant: "គ្រប់គ្រង tenant admin website និង public website identity។",
+    createTenantWebsite: "បង្កើតគេហទំព័រ Tenant",
+    newSite: "Admin និង public site ថ្មី",
+    activeTenants: "Tenants សកម្ម",
+    tenantUsers: "អ្នកប្រើ Tenant",
+    activeSites: "Sites សកម្ម",
+    archived: "Archived",
+    tenants: "Tenants",
+    website: "Website",
+    tenantsConfigured: (count: number) => `បានកំណត់ ${count} tenant website`,
+    websiteDescription: "កែឈ្មោះ URLs locale និង active state របស់ tenant នេះ",
+    refresh: "ផ្ទុកឡើងវិញ",
+    loadingTenants: "កំពុងផ្ទុក tenants...",
+    noTenants: "មិនទាន់មាន tenants។",
+    createTenantDialogDescription: "បង្កើត tenant admin និង public website ស្អាត។ មាតិកាចាប់ផ្តើមទទេ។",
+    tenantName: "ឈ្មោះ Tenant",
+    slug: "Slug",
+    formDescription: "ពណ៌នា",
+    publicUrl: "Public URL",
+    adminUrl: "Admin URL",
+    createTenantUser: "បង្កើតអ្នកប្រើ Tenant",
+    createTenantUserDialogDescription: "បង្កើតអ្នកប្រើដោយផ្ទាល់ក្នុង tenant នេះ និងជ្រើសតួនាទី។",
+    tenant: "Tenant",
+    selectFromTenantUsers: "ជ្រើសពីផ្ទាំង Users របស់ tenant",
+    name: "ឈ្មោះ",
+    email: "អ៊ីមែល",
+    role: "តួនាទី",
+    admin: "Admin",
+    editor: "Editor",
+    author: "Author",
+    password: "ពាក្យសម្ងាត់",
+    passwordPlaceholder: "ត្រូវការសម្រាប់អ្នកប្រើថ្មី",
+  },
+};
+
 function toSlug(value: string) {
   return value
     .trim()
@@ -80,13 +260,27 @@ function toSlug(value: string) {
     .replace(/^-|-$/g, "");
 }
 
+function shouldSyncSlugFromName(currentSlug: string | null | undefined, previousName: string | null | undefined) {
+  return !currentSlug || currentSlug === toSlug(previousName || "");
+}
+
 function statusBadgeVariant(status: TenantStatus) {
   if (status === "ACTIVE") return "outline";
   if (status === "SUSPENDED") return "secondary";
   return "destructive";
 }
 
+function getTenantScopedMemberships(tenant: Tenant) {
+  return tenant.memberships.filter(
+    (membership) =>
+      membership.role !== "SUPER_ADMIN" &&
+      membership.user.role !== "SUPER_ADMIN",
+  );
+}
+
 export default function TenantsPage() {
+  const { locale } = useAdminLocale();
+  const copy = tenantsCopy[locale];
   const { showSuccess, showError } = useToastHelpers();
   const { refreshTenants } = useTenant();
   const { user } = useAuth();
@@ -120,7 +314,7 @@ export default function TenantsPage() {
     open: false,
     title: "",
     description: "",
-    confirmText: "Confirm",
+    confirmText: copy.confirm,
     onConfirm: () => {},
   });
 
@@ -130,7 +324,7 @@ export default function TenantsPage() {
   const activeTenantCount = tenants.filter((tenant) => tenant.status === "ACTIVE").length;
   const archivedTenantCount = tenants.filter((tenant) => tenant.status === "ARCHIVED").length;
   const tenantUserCount = tenants.reduce(
-    (total, tenant) => total + tenant.memberships.length,
+    (total, tenant) => total + getTenantScopedMemberships(tenant).length,
     0,
   );
   const activeSiteCount = tenants.reduce(
@@ -142,9 +336,9 @@ export default function TenantsPage() {
   const copyTenantValue = async (label: string, value: string) => {
     try {
       await navigator.clipboard.writeText(value);
-      showSuccess("Copied", `${label} copied to clipboard.`);
+      showSuccess(copy.copied, copy.copiedDescription(label));
     } catch {
-      showError("Copy Failed", `Could not copy ${label}.`);
+      showError(copy.copyFailed, copy.copyFailedDescription(label));
     }
   };
 
@@ -189,13 +383,15 @@ export default function TenantsPage() {
       }));
     } catch (error: any) {
       showErrorRef.current(
-        "Error",
-        error?.response?.errors?.[0]?.message || "Failed to load tenants.",
+        copy.error,
+        locale === "en"
+          ? error?.response?.errors?.[0]?.message || copy.loadFailed
+          : copy.loadFailed,
       );
     } finally {
       setLoading(false);
     }
-  }, [isSuperAdmin]);
+  }, [copy.error, copy.loadFailed, isSuperAdmin, locale]);
 
   useEffect(() => {
     void loadTenants();
@@ -205,14 +401,14 @@ export default function TenantsPage() {
     event.preventDefault();
 
     if (!tenantForm.name.trim()) {
-      showError("Validation Error", "Tenant name is required.");
+      showError(copy.validationError, copy.tenantNameRequired);
       return;
     }
 
     requestConfirmation({
-      title: "Create Tenant Website?",
-      description: `Create tenant website "${tenantForm.name.trim()}"?`,
-      confirmText: "Create Tenant",
+      title: copy.createTenantTitle,
+      description: copy.createTenantDescription(tenantForm.name.trim()),
+      confirmText: copy.createTenant,
       onConfirm: async () => {
     setSavingTenant(true);
     try {
@@ -230,12 +426,14 @@ export default function TenantsPage() {
       setAdminForm((current) => ({ ...current, tenantId: tenant.id }));
       setTenantForm(emptyTenant);
       setTenantDialogOpen(false);
-      showSuccess("Tenant Created", `${tenant.name} is ready.`);
+      showSuccess(copy.tenantCreated, copy.tenantCreatedDescription(tenant.name));
       await refreshTenants();
     } catch (error: any) {
       showError(
-        "Error",
-        error?.response?.errors?.[0]?.message || "Failed to create tenant.",
+        copy.error,
+        locale === "en"
+          ? error?.response?.errors?.[0]?.message || copy.createTenantFailed
+          : copy.createTenantFailed,
       );
     } finally {
       setSavingTenant(false);
@@ -248,14 +446,14 @@ export default function TenantsPage() {
     event.preventDefault();
 
     if (!adminForm.tenantId || !adminForm.email.trim() || !adminForm.name.trim()) {
-      showError("Validation Error", "Tenant, name, and email are required.");
+      showError(copy.validationError, copy.tenantUserRequired);
       return;
     }
 
     requestConfirmation({
-      title: "Create Tenant User?",
-      description: `Create ${adminForm.name.trim()} as a tenant ${adminForm.role?.toLowerCase()}?`,
-      confirmText: "Create User",
+      title: copy.createTenantUserTitle,
+      description: copy.createTenantUserDescription(adminForm.name.trim(), adminForm.role),
+      confirmText: copy.createUser,
       onConfirm: async () => {
     setSavingAdmin(true);
     try {
@@ -267,12 +465,14 @@ export default function TenantsPage() {
       });
       setAdminForm((current) => ({ ...emptyAdmin, tenantId: current.tenantId }));
       setAdminDialogOpen(false);
-      showSuccess("Tenant User Created", "The user can now access this tenant.");
+      showSuccess(copy.tenantUserCreated, copy.tenantUserCreatedDescription);
       await loadTenants();
     } catch (error: any) {
       showError(
-        "Error",
-        error?.response?.errors?.[0]?.message || "Failed to create tenant user.",
+        copy.error,
+        locale === "en"
+          ? error?.response?.errors?.[0]?.message || copy.createTenantUserFailed
+          : copy.createTenantUserFailed,
       );
     } finally {
       setSavingAdmin(false);
@@ -283,25 +483,33 @@ export default function TenantsPage() {
 
   const resetUserTwoFactor = async (targetUser: { id: string; name: string }) => {
     requestConfirmation({
-      title: "Reset Two-Factor Setup?",
-      description: `Reset two-factor setup for "${targetUser.name}"? They will need to scan a new QR code on next login.`,
-      confirmText: "Reset Two-Factor",
+      title: copy.resetTwoFactorTitle,
+      description: copy.resetTwoFactorDescription(targetUser.name),
+      confirmText: copy.resetTwoFactor,
       variant: "destructive",
       onConfirm: async () => {
     setSavingTwoFactorUserId(targetUser.id);
     try {
       const result = await UserService.resetUserTwoFactor(targetUser.id);
       if (!result.success) {
-        showError("Error", result.message || "Failed to reset two-factor setup.");
+        showError(
+          copy.error,
+          locale === "en" && result.message ? result.message : copy.resetTwoFactorFailed,
+        );
         return;
       }
 
-      showSuccess("Two-Factor Reset", result.message);
+      showSuccess(
+        copy.resetTwoFactorSuccess,
+        locale === "en" ? result.message : copy.resetTwoFactorSuccess,
+      );
       await loadTenants();
     } catch (error: any) {
       showError(
-        "Error",
-        error?.response?.errors?.[0]?.message || "Failed to reset two-factor setup.",
+        copy.error,
+        locale === "en"
+          ? error?.response?.errors?.[0]?.message || copy.resetTwoFactorFailed
+          : copy.resetTwoFactorFailed,
       );
     } finally {
       setSavingTwoFactorUserId(null);
@@ -345,15 +553,15 @@ export default function TenantsPage() {
 
     if (!editingTenantId) return;
     if (!editTenantForm.name?.trim()) {
-      showError("Validation Error", "Tenant name is required.");
+      showError(copy.validationError, copy.tenantNameRequired);
       return;
     }
     const tenantName = editTenantForm.name.trim();
 
     requestConfirmation({
-      title: "Save Tenant Changes?",
-      description: `Save changes to tenant "${tenantName}"?`,
-      confirmText: "Save Tenant",
+      title: copy.saveTenantTitle,
+      description: copy.saveTenantDescription(tenantName),
+      confirmText: copy.saveTenant,
       onConfirm: async () => {
     setSavingEdit(true);
     try {
@@ -373,12 +581,14 @@ export default function TenantsPage() {
         current.map((item) => (item.id === tenant.id ? tenant : item)),
       );
       cancelTenantEdit();
-      showSuccess("Tenant Updated", `${tenant.name} has been updated.`);
+      showSuccess(copy.tenantUpdated, copy.tenantUpdatedDescription(tenant.name));
       await refreshTenants();
     } catch (error: any) {
       showError(
-        "Error",
-        error?.response?.errors?.[0]?.message || "Failed to update tenant.",
+        copy.error,
+        locale === "en"
+          ? error?.response?.errors?.[0]?.message || copy.updateTenantFailed
+          : copy.updateTenantFailed,
       );
     } finally {
       setSavingEdit(false);
@@ -389,12 +599,14 @@ export default function TenantsPage() {
 
   const updateTenantLifecycle = async (tenant: Tenant, nextStatus: TenantStatus) => {
     const isArchiving = nextStatus === "ARCHIVED";
-    const actionLabel = isArchiving ? "archive" : "restore";
+    const actionLabel = isArchiving ? copy.archiveAction : copy.restoreAction;
 
     requestConfirmation({
-      title: `${isArchiving ? "Archive" : "Restore"} Tenant?`,
-      description: `${isArchiving ? "Archive" : "Restore"} "${tenant.name}"?`,
-      confirmText: isArchiving ? "Archive Tenant" : "Restore Tenant",
+      title: isArchiving ? copy.archiveTenantTitle : copy.restoreTenantTitle,
+      description: isArchiving
+        ? copy.archiveTenantDescription(tenant.name)
+        : copy.restoreTenantDescription(tenant.name),
+      confirmText: isArchiving ? copy.archiveTenant : copy.restoreTenant,
       variant: isArchiving ? "destructive" : "default",
       onConfirm: async () => {
     setSavingLifecycleId(tenant.id);
@@ -408,16 +620,18 @@ export default function TenantsPage() {
         current.map((item) => (item.id === updatedTenant.id ? updatedTenant : item)),
       );
       showSuccess(
-        isArchiving ? "Tenant Archived" : "Tenant Restored",
+        isArchiving ? copy.tenantArchived : copy.tenantRestored,
         isArchiving
-          ? `${tenant.name} is hidden from public/admin access.`
-          : `${tenant.name} is active again.`,
+          ? copy.tenantArchivedDescription(tenant.name)
+          : copy.tenantRestoredDescription(tenant.name),
       );
       await refreshTenants();
     } catch (error: any) {
       showError(
-        "Error",
-        error?.response?.errors?.[0]?.message || `Failed to ${actionLabel} tenant.`,
+        copy.error,
+        locale === "en"
+          ? error?.response?.errors?.[0]?.message || copy.tenantLifecycleFailed(actionLabel)
+          : copy.tenantLifecycleFailed(actionLabel),
       );
     } finally {
       setSavingLifecycleId(null);
@@ -433,15 +647,13 @@ export default function TenantsPage() {
         <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-              {isSuperAdmin ? "Tenant Control" : "Website Control"}
+              {isSuperAdmin ? copy.eyebrowSuper : copy.eyebrowTenant}
             </p>
             <h1 className="mt-2 text-3xl font-bold text-slate-950">
-              {isSuperAdmin ? "Tenant Websites" : "Current Website"}
+              {isSuperAdmin ? copy.titleSuper : copy.titleTenant}
             </h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              {isSuperAdmin
-                ? "Create tenant websites, inspect users, and manage each tenant from one place."
-                : "Manage this tenant admin website and public website identity."}
+              {isSuperAdmin ? copy.descriptionSuper : copy.descriptionTenant}
             </p>
           </div>
 
@@ -457,9 +669,9 @@ export default function TenantsPage() {
                     <Globe2 className="h-5 w-5" />
                   </span>
                   <span>
-                    <span className="block font-semibold">Create Tenant Website</span>
+                    <span className="block font-semibold">{copy.createTenantWebsite}</span>
                     <span className="mt-0.5 block text-xs text-blue-100">
-                      New admin and public site
+                      {copy.newSite}
                     </span>
                   </span>
                 </div>
@@ -471,10 +683,10 @@ export default function TenantsPage() {
         {isSuperAdmin && (
           <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
-              ["Active Tenants", activeTenantCount, Building2],
-              ["Tenant Users", tenantUserCount, Users],
-              ["Active Sites", activeSiteCount, Globe2],
-              ["Archived", archivedTenantCount, Archive],
+              [copy.activeTenants, activeTenantCount, Building2],
+              [copy.tenantUsers, tenantUserCount, Users],
+              [copy.activeSites, activeSiteCount, Globe2],
+              [copy.archived, archivedTenantCount, Archive],
             ].map(([label, value, Icon]) => {
               const StatIcon = Icon as typeof Building2;
               return (
@@ -499,16 +711,16 @@ export default function TenantsPage() {
         <CardHeader className="border-b">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <CardTitle>{isSuperAdmin ? "Tenants" : "Website"}</CardTitle>
+              <CardTitle>{isSuperAdmin ? copy.tenants : copy.website}</CardTitle>
               <CardDescription>
                 {isSuperAdmin
-                  ? `${tenants.length} tenant website${tenants.length !== 1 ? "s" : ""} configured`
-                  : "Update the name, URLs, locale, and active state for this tenant"}
+                  ? copy.tenantsConfigured(tenants.length)
+                  : copy.websiteDescription}
               </CardDescription>
             </div>
             <Button type="button" variant="outline" size="sm" onClick={() => void loadTenants()}>
               <RotateCcw className="mr-2 h-4 w-4" />
-              Refresh
+              {copy.refresh}
             </Button>
           </div>
         </CardHeader>
@@ -516,19 +728,20 @@ export default function TenantsPage() {
           {loading ? (
             <div className="flex items-center justify-center py-16 text-slate-500">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Loading tenants...
+              {copy.loadingTenants}
             </div>
           ) : tenants.length === 0 ? (
             <div className="py-16 text-center">
               <Building2 className="mx-auto h-10 w-10 text-slate-400" />
-              <p className="mt-3 text-sm text-slate-500">No tenants yet.</p>
+              <p className="mt-3 text-sm text-slate-500">{copy.noTenants}</p>
             </div>
           ) : (
             <div className="divide-y">
               {tenants.map((tenant) => {
                 const site = tenant.sites.find((item) => item.isPrimary) ?? tenant.sites[0];
                 const isEditing = editingTenantId === tenant.id;
-                const adminCount = tenant.memberships.filter((member) => member.role === "ADMIN").length;
+                const tenantMemberships = getTenantScopedMemberships(tenant);
+                const adminCount = tenantMemberships.filter((member) => member.role === "ADMIN").length;
                 const isUsersExpanded = expandedUsersTenantId === tenant.id;
                 const isConnectionExpanded = expandedConnectionTenantId === tenant.id;
 
@@ -568,7 +781,7 @@ export default function TenantsPage() {
                             <Users className="mr-2 h-4 w-4" />
                             Users
                             <Badge variant="secondary" className="ml-2">
-                              {tenant.memberships.length}
+                              {tenantMemberships.length}
                             </Badge>
                           </Button>
                           <Button
@@ -745,7 +958,7 @@ export default function TenantsPage() {
                               Tenant Users
                             </h3>
                             <p className="text-sm text-slate-500">
-                              {tenant.memberships.length} user{tenant.memberships.length !== 1 ? "s" : ""} in {tenant.name}
+                              {tenantMemberships.length} user{tenantMemberships.length !== 1 ? "s" : ""} in {tenant.name}
                             </p>
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
@@ -765,7 +978,7 @@ export default function TenantsPage() {
                           </div>
                         </div>
 
-                        {tenant.memberships.length === 0 ? (
+                        {tenantMemberships.length === 0 ? (
                           <div className="p-6 text-center text-sm text-slate-500">
                             No users are assigned to this tenant yet.
                           </div>
@@ -784,7 +997,7 @@ export default function TenantsPage() {
                                 </tr>
                               </thead>
                               <tbody>
-                                {tenant.memberships.map((membership) => (
+                                {tenantMemberships.map((membership) => (
                                   <tr key={membership.id} className="border-b last:border-0">
                                     <td className="px-4 py-3">
                                       <p className="font-medium text-slate-950">
@@ -863,7 +1076,13 @@ export default function TenantsPage() {
                               id={`edit-name-${tenant.id}`}
                               value={editTenantForm.name ?? ""}
                               onChange={(event) =>
-                                setEditTenantForm((current) => ({ ...current, name: event.target.value }))
+                                setEditTenantForm((current) => ({
+                                  ...current,
+                                  name: event.target.value,
+                                  slug: shouldSyncSlugFromName(current.slug, current.name)
+                                    ? toSlug(event.target.value)
+                                    : current.slug,
+                                }))
                               }
                             />
                           </div>
@@ -996,15 +1215,15 @@ export default function TenantsPage() {
       <Dialog open={tenantDialogOpen} onOpenChange={setTenantDialogOpen}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
-            <DialogTitle>Create Tenant Website</DialogTitle>
+            <DialogTitle>{copy.createTenantWebsite}</DialogTitle>
             <DialogDescription>
-              Create a clean tenant admin and public website. Content starts empty.
+              {copy.createTenantDialogDescription}
             </DialogDescription>
           </DialogHeader>
           <form className="space-y-4" onSubmit={createTenant}>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="tenant-name">Tenant Name</Label>
+                <Label htmlFor="tenant-name">{copy.tenantName}</Label>
                 <Input
                   id="tenant-name"
                   value={tenantForm.name}
@@ -1012,14 +1231,16 @@ export default function TenantsPage() {
                     setTenantForm((current) => ({
                       ...current,
                       name: event.target.value,
-                      slug: current.slug || toSlug(event.target.value),
+                      slug: shouldSyncSlugFromName(current.slug, current.name)
+                        ? toSlug(event.target.value)
+                        : current.slug,
                     }))
                   }
                   placeholder="Pulse Business"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="tenant-slug">Slug</Label>
+                <Label htmlFor="tenant-slug">{copy.slug}</Label>
                 <Input
                   id="tenant-slug"
                   value={tenantForm.slug ?? ""}
@@ -1035,7 +1256,7 @@ export default function TenantsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="tenant-description">Description</Label>
+              <Label htmlFor="tenant-description">{copy.formDescription}</Label>
               <Textarea
                 id="tenant-description"
                 value={tenantForm.description ?? ""}
@@ -1050,7 +1271,7 @@ export default function TenantsPage() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="public-url">Public URL</Label>
+                <Label htmlFor="public-url">{copy.publicUrl}</Label>
                 <Input
                   id="public-url"
                   value={tenantForm.publicBaseUrl ?? ""}
@@ -1064,7 +1285,7 @@ export default function TenantsPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="admin-url">Admin URL</Label>
+                <Label htmlFor="admin-url">{copy.adminUrl}</Label>
                 <Input
                   id="admin-url"
                   value={tenantForm.adminBaseUrl ?? ""}
@@ -1081,7 +1302,7 @@ export default function TenantsPage() {
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setTenantDialogOpen(false)}>
-                Cancel
+                {copy.cancel}
               </Button>
               <Button type="submit" disabled={savingTenant}>
                 {savingTenant ? (
@@ -1089,7 +1310,7 @@ export default function TenantsPage() {
                 ) : (
                   <Plus className="mr-2 h-4 w-4" />
                 )}
-                Create Tenant
+                {copy.createTenant}
               </Button>
             </DialogFooter>
           </form>
@@ -1099,17 +1320,17 @@ export default function TenantsPage() {
       <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Create Tenant User</DialogTitle>
+            <DialogTitle>{copy.createTenantUser}</DialogTitle>
             <DialogDescription>
-              Create a user directly inside this tenant and choose their role.
+              {copy.createTenantUserDialogDescription}
             </DialogDescription>
           </DialogHeader>
           <form className="space-y-4" onSubmit={createTenantAdmin}>
             <div className="space-y-2">
-              <Label>Tenant</Label>
+              <Label>{copy.tenant}</Label>
               <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm">
                 <p className="font-medium text-slate-950">
-                  {selectedUserTenant?.name || "Select from a tenant's Users panel"}
+                  {selectedUserTenant?.name || copy.selectFromTenantUsers}
                 </p>
                 {selectedUserTenant && (
                   <p className="text-xs text-slate-500">/{selectedUserTenant.slug}</p>
@@ -1117,7 +1338,7 @@ export default function TenantsPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="admin-name">Name</Label>
+              <Label htmlFor="admin-name">{copy.name}</Label>
               <Input
                 id="admin-name"
                 value={adminForm.name}
@@ -1127,7 +1348,7 @@ export default function TenantsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="admin-email">Email</Label>
+              <Label htmlFor="admin-email">{copy.email}</Label>
               <Input
                 id="admin-email"
                 type="email"
@@ -1138,7 +1359,7 @@ export default function TenantsPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="admin-role">Role</Label>
+              <Label htmlFor="admin-role">{copy.role}</Label>
               <select
                 id="admin-role"
                 value={adminForm.role ?? "AUTHOR"}
@@ -1150,13 +1371,13 @@ export default function TenantsPage() {
                 }
                 className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
               >
-                <option value="ADMIN">Admin</option>
-                <option value="EDITOR">Editor</option>
-                <option value="AUTHOR">Author</option>
+                <option value="ADMIN">{copy.admin}</option>
+                <option value="EDITOR">{copy.editor}</option>
+                <option value="AUTHOR">{copy.author}</option>
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="admin-password">Password</Label>
+              <Label htmlFor="admin-password">{copy.password}</Label>
               <Input
                 id="admin-password"
                 type="password"
@@ -1164,13 +1385,13 @@ export default function TenantsPage() {
                 onChange={(event) =>
                   setAdminForm((current) => ({ ...current, password: event.target.value }))
                 }
-                placeholder="Required for new users"
+                placeholder={copy.passwordPlaceholder}
               />
             </div>
 
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setAdminDialogOpen(false)}>
-                Cancel
+                {copy.cancel}
               </Button>
               <Button type="submit" disabled={savingAdmin}>
                 {savingAdmin ? (
@@ -1178,7 +1399,7 @@ export default function TenantsPage() {
                 ) : (
                   <UserPlus className="mr-2 h-4 w-4" />
                 )}
-                Create User
+                {copy.createUser}
               </Button>
             </DialogFooter>
           </form>
@@ -1192,7 +1413,7 @@ export default function TenantsPage() {
         title={confirmation.title}
         description={confirmation.description}
         confirmText={confirmation.confirmText}
-        cancelText="Cancel"
+        cancelText={copy.cancel}
         variant={confirmation.variant}
         onConfirm={() => {
           void confirmation.onConfirm();

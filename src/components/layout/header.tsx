@@ -50,17 +50,77 @@ import {
 import { useVisibilityPolling } from "@/hooks/usePolling";
 import { formatDistanceToNow } from "date-fns";
 import { COLOR_SCHEME_CHANGED_EVENT } from "@/lib/tweakcn-theme";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 interface HeaderProps {
   onMobileNavOpen: (open: boolean) => void;
   showBrand?: boolean;
 }
 
+const headerCopy = {
+  en: {
+    search: "Search",
+    searchPlaceholder: "Search articles, categories, users...",
+    keepTyping: "Keep typing or pause to search.",
+    searching: "Searching...",
+    noResults: "No results found",
+    tryDifferent: "Try searching with different keywords",
+    emptySearch: "Type to search articles, categories, or users.",
+    language: "Language",
+    english: "English",
+    khmer: "Khmer",
+    lightMode: "Light mode",
+    darkMode: "Dark mode",
+    notifications: "Notifications",
+    loadingNotifications: "Loading notifications...",
+    noNotifications: "No notifications",
+    caughtUp: "You are all caught up",
+    markAllRead: "Mark all as read",
+    reviewQueue: "Review queue",
+    reviewRequest: "Review request",
+    openArticle: "Open article",
+    viewDetails: "View details",
+    profile: "Profile",
+    settings: "Settings",
+    signOut: "Sign out",
+    newCount: (count: number) => `${count} new`,
+  },
+  km: {
+    search: "ស្វែងរក",
+    searchPlaceholder: "ស្វែងរកអត្ថបទ ប្រភេទ ឬអ្នកប្រើ...",
+    keepTyping: "បន្តវាយ ឬឈប់បន្តិចដើម្បីស្វែងរក។",
+    searching: "កំពុងស្វែងរក...",
+    noResults: "រកមិនឃើញលទ្ធផល",
+    tryDifferent: "សាកល្បងពាក្យស្វែងរកផ្សេងទៀត",
+    emptySearch: "វាយដើម្បីស្វែងរកអត្ថបទ ប្រភេទ ឬអ្នកប្រើ។",
+    language: "ភាសា",
+    english: "អង់គ្លេស",
+    khmer: "ខ្មែរ",
+    lightMode: "ផ្ទៃភ្លឺ",
+    darkMode: "ផ្ទៃងងឹត",
+    notifications: "ការជូនដំណឹង",
+    loadingNotifications: "កំពុងផ្ទុកការជូនដំណឹង...",
+    noNotifications: "មិនមានការជូនដំណឹង",
+    caughtUp: "អ្នកបានមើលអស់ហើយ",
+    markAllRead: "សម្គាល់ថាបានអានទាំងអស់",
+    reviewQueue: "ជួរពិនិត្យ",
+    reviewRequest: "ពិនិត្យសំណើ",
+    openArticle: "បើកអត្ថបទ",
+    viewDetails: "មើលលម្អិត",
+    profile: "ប្រវត្តិរូប",
+    settings: "ការកំណត់",
+    signOut: "ចេញ",
+    newCount: (count: number) => `${count} ថ្មី`,
+  },
+};
+
 export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
   const { activeTenant } = useTenant();
   const { searchArticles } = useSearch();
+  const { locale, selectLocale } = useAdminLocale();
+  const copy = headerCopy[locale];
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,6 +128,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
     Array<{ id: string; title: string; slug: string }>
   >([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [hasSearchCompleted, setHasSearchCompleted] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
@@ -374,7 +435,8 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
       const isCmdOrCtrl = event.metaKey || event.ctrlKey;
       if (isCmdOrCtrl && event.key.toLowerCase() === "k") {
         event.preventDefault();
-        searchInputRef.current?.focus();
+        setShowSuggestions(true);
+        window.requestAnimationFrame(() => searchInputRef.current?.focus());
       }
     };
 
@@ -388,12 +450,19 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
     if (!query) {
       setSearchResults([]);
       setIsSearching(false);
+      setHasSearchCompleted(false);
       return;
     }
 
+    setIsSearching(false);
+    setHasSearchCompleted(false);
+
     const handle = setTimeout(async () => {
-      try {
+      const loadingHandle = window.setTimeout(() => {
         setIsSearching(true);
+      }, 180);
+
+      try {
         const result = await searchArticles({ query, take: 6, skip: 0 });
         const articles = result?.searchArticles?.articles || [];
         setSearchResults(
@@ -406,7 +475,9 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
       } catch {
         setSearchResults([]);
       } finally {
+        window.clearTimeout(loadingHandle);
         setIsSearching(false);
+        setHasSearchCompleted(true);
       }
     }, 300);
 
@@ -425,7 +496,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
 
   return (
     <TooltipProvider>
-      <header className="sticky top-0 z-30 flex h-12 min-w-0 items-center gap-2 overflow-hidden border-b border-slate-100 bg-white px-3 dark:border-slate-800 dark:bg-slate-900 md:gap-3 md:px-4">
+      <header className="sticky top-0 z-30 flex h-12 min-w-0 items-center gap-2 overflow-visible border-b border-slate-100 bg-white px-3 dark:border-slate-800 dark:bg-slate-900 md:gap-3 md:px-4">
         {/* Mobile nav trigger */}
         <MobileNavTrigger onOpenChange={onMobileNavOpen} />
 
@@ -436,64 +507,87 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                 {brandInitials || "PN"}
               </span>
             </div>
-            <span className="max-w-[160px] truncate font-semibold tracking-tight text-slate-900">
+            <span className="max-w-[260px] truncate font-semibold tracking-tight text-slate-900 dark:text-slate-100 xl:max-w-[360px] 2xl:max-w-[460px]">
               {brandName}
             </span>
           </div>
         )}
 
-        {/* Enhanced Search */}
-        <div className="hidden min-w-0 flex-1 sm:block md:max-w-sm xl:max-w-md 2xl:max-w-lg">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              const query = searchQuery.trim();
-              if (!query) return;
-              setShowSuggestions(true);
-            }}
-          >
-            <div className="relative">
-              <Search
-                className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${
-                  searchFocused ? "text-blue-500" : "text-slate-500"
-                }`}
-              />
-              <input
-                ref={searchInputRef}
-                name="search"
-                type="search"
-                placeholder="Search articles, categories, users... (Ctrl+K)"
-                className={`h-9 w-full rounded-full border py-1.5 pl-9 pr-10 text-sm placeholder:text-slate-500 transition-colors duration-200 ${
-                  searchFocused
-                    ? "border-slate-300 bg-white"
-                    : "border-slate-200 bg-slate-50/80 hover:bg-white"
-                }`}
-                onFocus={() => {
-                  setSearchFocused(true);
-                  setShowSuggestions(true);
-                }}
-                onBlur={() => {
-                  setSearchFocused(false);
-                  setTimeout(() => setShowSuggestions(false), 150);
-                }}
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-              />
-              {!searchFocused && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <kbd className="hidden sm:inline-flex h-5 select-none items-center gap-1 rounded-full border border-slate-200 bg-white px-1.5 font-mono text-xs text-slate-500">
-                    <span className="text-xs">⌘</span>K
-                  </kbd>
-                </div>
-              )}
+        {/* Right side actions */}
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {/* Search */}
+          <div className="relative">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  onClick={() => {
+                    setShowSuggestions((open) => !open);
+                    window.requestAnimationFrame(() => searchInputRef.current?.focus());
+                  }}
+                  aria-label={copy.search}
+                >
+                  <Search className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>{copy.search}</p>
+              </TooltipContent>
+            </Tooltip>
 
-              {showSuggestions && searchQuery.trim() && (
-                <div className="absolute left-0 right-0 top-full z-30 mt-2 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg">
-                  {isSearching ? (
-                    <div className="px-4 py-3 text-sm text-slate-500">
+            {showSuggestions && (
+              <div className="absolute right-0 top-full z-40 mt-2 w-[min(calc(100vw-1rem),28rem)] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const query = searchQuery.trim();
+                    if (!query) return;
+                    setShowSuggestions(true);
+                  }}
+                  className="border-b border-slate-100 p-2 dark:border-slate-800"
+                >
+                  <div className="relative">
+                    <Search
+                      className={`absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors duration-200 ${
+                        searchFocused ? "text-blue-500" : "text-slate-500"
+                      }`}
+                    />
+                    <input
+                      ref={searchInputRef}
+                      name="search"
+                      type="search"
+                      placeholder={copy.searchPlaceholder}
+                      className={`h-10 w-full rounded-md border py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-500 transition-colors duration-200 dark:text-slate-100 ${
+                        searchFocused
+                          ? "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-950"
+                          : "border-slate-200 bg-slate-50/80 hover:bg-white dark:border-slate-700 dark:bg-slate-950 dark:hover:bg-slate-950"
+                      }`}
+                      onFocus={() => {
+                        setSearchFocused(true);
+                        setShowSuggestions(true);
+                      }}
+                      onBlur={() => {
+                        setSearchFocused(false);
+                        setTimeout(() => setShowSuggestions(false), 150);
+                      }}
+                      value={searchQuery}
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                    />
+                  </div>
+                </form>
+
+                {searchQuery.trim() ? (
+                  !hasSearchCompleted && !isSearching ? (
+                    <div className="px-4 py-5 text-sm text-slate-500 dark:text-slate-400">
+                      {copy.keepTyping}
+                    </div>
+                  ) : isSearching ? (
+                    <div className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
                       <div className="flex items-center gap-2">
-                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-500"></div>
-                        <span>Searching...</span>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-500 dark:border-slate-700 dark:border-t-blue-400"></div>
+                        <span>{copy.searching}</span>
                       </div>
                     </div>
                   ) : searchResults.length > 0 ? (
@@ -502,7 +596,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                         <li key={result.id}>
                           <button
                             type="button"
-                            className="flex w-full items-center px-4 py-2 text-left text-sm text-slate-700 hover:bg-slate-50 transition-colors"
+                            className="flex w-full items-center px-4 py-2 text-left text-sm text-slate-700 transition-colors hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-800"
                             onMouseDown={(event) => event.preventDefault()}
                             onClick={() => {
                               setShowSuggestions(false);
@@ -510,7 +604,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                               router.push(`/articles/${result.id}`);
                             }}
                           >
-                            <Search className="h-4 w-4 mr-2 text-slate-400 flex-shrink-0" />
+                            <Search className="mr-2 h-4 w-4 flex-shrink-0 text-slate-400" />
                             <span className="truncate">
                               {highlightMatch(result.title, searchQuery)}
                             </span>
@@ -520,25 +614,29 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                     </ul>
                   ) : (
                     <div className="px-4 py-6 text-center">
-                      <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-2">
+                      <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800">
                         <Search className="h-5 w-5 text-slate-400" />
                       </div>
-                      <p className="text-sm font-medium text-slate-700 mb-1">
-                        No results found
+                      <p className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+                        {copy.noResults}
                       </p>
-                      <p className="text-xs text-slate-500">
-                        Try searching with different keywords
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {copy.tryDifferent}
                       </p>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </form>
-        </div>
+                  )
+                ) : (
+                  <div className="px-4 py-5 text-sm text-slate-500 dark:text-slate-400">
+                    {copy.emptySearch}
+                    <kbd className="ml-2 inline-flex h-5 select-none items-center gap-1 rounded border border-slate-200 bg-slate-50 px-1.5 font-mono text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                      <span className="text-xs">⌘</span>K
+                    </kbd>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
-        {/* Right side actions */}
-        <div className="ml-auto flex shrink-0 items-center gap-1">
           {activeTenant && user?.role !== "SUPER_ADMIN" && (
             <div className="hidden h-8 max-w-[180px] items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2 lg:flex xl:max-w-[220px]">
               <Building2 className="h-4 w-4 text-slate-500" />
@@ -556,15 +654,15 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuLabel>Language</DropdownMenuLabel>
+              <DropdownMenuLabel>{copy.language}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <span className="mr-2">🇺🇸</span>
-                English
+              <DropdownMenuItem onClick={() => selectLocale("en")}>
+                <span className="mr-2">EN</span>
+                {copy.english}
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <span className="mr-2">🇰🇭</span>
-                ខ្មែរ
+              <DropdownMenuItem onClick={() => selectLocale("km")}>
+                <span className="mr-2">ខ្មែរ</span>
+                {copy.khmer}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -586,7 +684,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{isDarkMode ? "Light mode" : "Dark mode"}</p>
+              <p>{isDarkMode ? copy.lightMode : copy.darkMode}</p>
             </TooltipContent>
           </Tooltip>
 
@@ -607,7 +705,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                     {unreadCount > 9 ? "9+" : unreadCount}
                   </Badge>
                 )}
-                <span className="sr-only">Notifications</span>
+                <span className="sr-only">{copy.notifications}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -615,10 +713,10 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
               className="max-w-[calc(100vw-1rem)] w-[calc(100vw-1rem)] overflow-hidden border-slate-200 bg-white p-0 text-slate-950 shadow-xl dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50 sm:w-96"
             >
               <DropdownMenuLabel className="flex items-center justify-between px-4 py-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Notifications
+                {copy.notifications}
                 {unreadCount > 0 && (
                   <Badge className="border border-blue-200 bg-blue-50 text-xs text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/15 dark:text-blue-200">
-                    {unreadCount} new
+                    {copy.newCount(unreadCount)}
                   </Badge>
                 )}
               </DropdownMenuLabel>
@@ -628,7 +726,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                   <div className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
                     <div className="flex items-center gap-2">
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-500 dark:border-slate-700 dark:border-t-blue-300"></div>
-                      <span>Loading notifications...</span>
+                      <span>{copy.loadingNotifications}</span>
                     </div>
                   </div>
                 ) : notifications.length > 0 ? (
@@ -653,12 +751,12 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                         const target = getNotificationTarget(notification);
                         const actionLabel =
                           target === "/review"
-                            ? "Review queue"
+                            ? copy.reviewQueue
                             : target === "/users"
-                              ? "Review request"
+                              ? copy.reviewRequest
                               : target
-                                ? "Open article"
-                                : "View details";
+                                ? copy.openArticle
+                                : copy.viewDetails;
                         const fromLabel =
                           getNotificationFromLabel(notification);
 
@@ -708,10 +806,10 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                       <Bell className="h-5 w-5 text-slate-400 dark:text-slate-500" />
                     </div>
                     <p className="mb-1 text-sm font-medium text-slate-700 dark:text-slate-200">
-                      No notifications
+                      {copy.noNotifications}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      You are all caught up
+                      {copy.caughtUp}
                     </p>
                   </div>
                 )}
@@ -722,7 +820,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                 onClick={handleMarkAllRead}
                 disabled={unreadCount === 0}
               >
-                Mark all as read
+                {copy.markAllRead}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -786,12 +884,12 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
               <DropdownMenuItem asChild>
                 <Link href="/profile" className="h-9 cursor-pointer rounded-md px-3">
                   <User className="mr-2 h-4 w-4" />
-                  Profile
+                  {copy.profile}
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="h-9 cursor-pointer rounded-md px-3">
                 <Settings className="mr-2 h-4 w-4" />
-                Settings
+                {copy.settings}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -799,7 +897,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                 onClick={handleLogout}
               >
                 <LogOut className="mr-2 h-4 w-4" />
-                Sign out
+                {copy.signOut}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

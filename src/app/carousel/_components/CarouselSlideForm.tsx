@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   Image as ImageIcon,
   Loader2,
+  PlayCircle,
   Save,
   UploadCloud,
   X,
@@ -42,6 +43,9 @@ export type SlideForm = {
   subtitle: string;
   subtitleKhmer: string;
   imageUrl: string;
+  mediaType: "IMAGE" | "VIDEO";
+  videoUrl: string;
+  videoProvider: "MP4" | "YOUTUBE" | "FACEBOOK";
   linkUrl: string;
   ctaLabel: string;
   ctaLabelKhmer: string;
@@ -59,6 +63,9 @@ const emptyForm: SlideForm = {
   subtitle: "",
   subtitleKhmer: "",
   imageUrl: "",
+  mediaType: "IMAGE",
+  videoUrl: "",
+  videoProvider: "MP4",
   linkUrl: "",
   ctaLabel: "",
   ctaLabelKhmer: "",
@@ -79,6 +86,9 @@ function toForm(slide?: CarouselSlide | null): SlideForm {
     subtitle: slide.subtitle ?? "",
     subtitleKhmer: slide.subtitleKhmer ?? "",
     imageUrl: slide.imageUrl ?? "",
+    mediaType: slide.mediaType ?? "IMAGE",
+    videoUrl: slide.videoUrl ?? "",
+    videoProvider: slide.videoProvider ?? "MP4",
     linkUrl: slide.linkUrl ?? "",
     ctaLabel: slide.ctaLabel ?? "",
     ctaLabelKhmer: slide.ctaLabelKhmer ?? "",
@@ -100,6 +110,9 @@ function toInput(form: SlideForm): CarouselSlideInput {
     subtitle: form.subtitle.trim() || null,
     subtitleKhmer: form.subtitleKhmer.trim() || null,
     imageUrl: form.imageUrl.trim() || null,
+    mediaType: form.mediaType,
+    videoUrl: form.mediaType === "VIDEO" ? form.videoUrl.trim() || null : null,
+    videoProvider: form.mediaType === "VIDEO" ? form.videoProvider : null,
     linkUrl: form.linkUrl.trim() || null,
     ctaLabel: form.ctaLabel.trim() || null,
     ctaLabelKhmer: form.ctaLabelKhmer.trim() || null,
@@ -107,6 +120,30 @@ function toInput(form: SlideForm): CarouselSlideInput {
     sortOrder: Number.parseInt(form.sortOrder, 10) || 0,
     isActive: form.isActive,
   };
+}
+
+function inferVideoProvider(url: string): SlideForm["videoProvider"] {
+  if (/youtu\.be|youtube\.com/i.test(url)) return "YOUTUBE";
+  if (/facebook\.com|fb\.watch/i.test(url)) return "FACEBOOK";
+  return "MP4";
+}
+
+function getEmbedUrl(provider: SlideForm["videoProvider"], url: string) {
+  if (!url.trim()) return "";
+
+  if (provider === "YOUTUBE") {
+    const directMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?/]+)/i);
+    const videoId = directMatch?.[1];
+    return videoId
+      ? `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&playsinline=1&loop=1&playlist=${videoId}`
+      : url;
+  }
+
+  if (provider === "FACEBOOK") {
+    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&autoplay=1&mute=1&show_text=0`;
+  }
+
+  return url;
 }
 
 type CarouselSlideFormProps = {
@@ -138,6 +175,8 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
     () => form.imageUrl.trim().length > 0,
     [form.imageUrl],
   );
+  const hasVideo = form.mediaType === "VIDEO" && form.videoUrl.trim().length > 0;
+  const embedUrl = getEmbedUrl(form.videoProvider, form.videoUrl);
   const availableTopics = useMemo(
     () => topics.filter((topic) => topic.category?.slug === form.categorySlug),
     [form.categorySlug, topics],
@@ -202,9 +241,14 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
     void loadPlacementOptions();
   }, [isSuperAdmin, selectedTenantId]);
 
-  const handleImageUpload = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
+  const handleMediaUpload = async (file: File, mediaType: "image" | "video") => {
+    if (mediaType === "image" && !file.type.startsWith("image/")) {
       showError("Upload Error", "Please select an image file.");
+      return;
+    }
+
+    if (mediaType === "video" && file.type !== "video/mp4") {
+      showError("Upload Error", "Please select an MP4 video file.");
       return;
     }
 
@@ -216,9 +260,13 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
         "options",
         JSON.stringify({
           folder: "carousel",
-          maxWidth: 1920,
-          maxHeight: 720,
-          quality: 90,
+          ...(mediaType === "image"
+            ? {
+                maxWidth: 1920,
+                maxHeight: 720,
+                quality: 90,
+              }
+            : {}),
         }),
       );
 
@@ -240,13 +288,22 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
 
       setForm((current) => ({
         ...current,
-        imageUrl: data.file.url,
+        ...(mediaType === "image"
+          ? { imageUrl: data.file.url }
+          : {
+              mediaType: "VIDEO",
+              videoProvider: "MP4",
+              videoUrl: data.file.url,
+            }),
       }));
-      showSuccess("Image Uploaded", "Carousel image is ready.");
+      showSuccess(
+        mediaType === "image" ? "Image Uploaded" : "Video Uploaded",
+        mediaType === "image" ? "Carousel image is ready." : "Carousel video is ready.",
+      );
     } catch (error) {
       showError(
-        "Upload Error",
-        error instanceof Error ? error.message : "Failed to upload image.",
+          "Upload Error",
+        error instanceof Error ? error.message : "Failed to upload media.",
       );
     } finally {
       setUploading(false);
@@ -273,6 +330,11 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
 
     if (isSuperAdmin && !selectedTenantId) {
       showError("Validation Error", "Please select the tenant for this slide.");
+      return;
+    }
+
+    if (form.mediaType === "VIDEO" && !form.videoUrl.trim()) {
+      showError("Validation Error", "Please add an MP4, YouTube, or Facebook video URL.");
       return;
     }
 
@@ -315,7 +377,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
           <CardTitle>{isEditing ? "Edit Slide" : "Create Slide"}</CardTitle>
           <CardDescription>
             Manage the copy, placement, destination link, display order, and
-            image for one public carousel slide.
+            image or video media for one public carousel slide.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -576,10 +638,30 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
               </div>
             </div>
 
-            <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="space-y-2">
+                <Label htmlFor="media-type">Carousel Media</Label>
+                <select
+                  id="media-type"
+                  value={form.mediaType}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      mediaType: event.target.value as SlideForm["mediaType"],
+                    }))
+                  }
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                >
+                  <option value="IMAGE">Image</option>
+                  <option value="VIDEO">Video</option>
+                </select>
+              </div>
+
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="flex-1 space-y-2">
-                  <Label htmlFor="image-url">Image URL</Label>
+                  <Label htmlFor="image-url">
+                    {form.mediaType === "VIDEO" ? "Poster Image URL" : "Image URL"}
+                  </Label>
                   <Input
                     id="image-url"
                     value={form.imageUrl}
@@ -612,15 +694,86 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                       onChange={(event) => {
                         const file = event.target.files?.[0];
                         event.target.value = "";
-                        if (file) void handleImageUpload(file);
+                        if (file) void handleMediaUpload(file, "image");
                       }}
                     />
                   </label>
                 </Button>
               </div>
+              {form.mediaType === "VIDEO" && (
+                <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_auto] md:items-end">
+                  <div className="space-y-2">
+                    <Label htmlFor="video-provider">Video Source</Label>
+                    <select
+                      id="video-provider"
+                      value={form.videoProvider}
+                      onChange={(event) =>
+                        setForm((current) => ({
+                          ...current,
+                          videoProvider: event.target.value as SlideForm["videoProvider"],
+                        }))
+                      }
+                      className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
+                    >
+                      <option value="MP4">MP4 upload / URL</option>
+                      <option value="YOUTUBE">YouTube</option>
+                      <option value="FACEBOOK">Facebook</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="video-url">Video URL</Label>
+                    <Input
+                      id="video-url"
+                      value={form.videoUrl}
+                      placeholder={
+                        form.videoProvider === "MP4"
+                          ? "/uploads/carousel/video.mp4"
+                          : form.videoProvider === "YOUTUBE"
+                            ? "https://www.youtube.com/watch?v=..."
+                            : "https://www.facebook.com/.../videos/..."
+                      }
+                      onChange={(event) => {
+                        const nextUrl = event.target.value;
+                        setForm((current) => ({
+                          ...current,
+                          videoUrl: nextUrl,
+                          videoProvider:
+                            current.videoProvider === "MP4" && /^https?:\/\//.test(nextUrl)
+                              ? inferVideoProvider(nextUrl)
+                              : current.videoProvider,
+                        }));
+                      }}
+                    />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={uploading}
+                    asChild
+                  >
+                    <label className="cursor-pointer">
+                      {uploading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <UploadCloud className="mr-2 h-4 w-4" />
+                      )}
+                      Upload MP4
+                      <input
+                        type="file"
+                        accept="video/mp4"
+                        className="sr-only"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          event.target.value = "";
+                          if (file) void handleMediaUpload(file, "video");
+                        }}
+                      />
+                    </label>
+                  </Button>
+                </div>
+              )}
               <p className="text-xs text-slate-500">
-                Recommended image: 1920x720 for wide, 1200x520 for standard. Uploaded files are stored
-                in /uploads/carousel.
+                Recommended image: 1920x720 for wide, 1200x520 for standard. MP4 videos should be muted-friendly and under 100MB.
               </p>
             </div>
 
@@ -675,7 +828,29 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 form.size === "STANDARD" ? "rounded-xl" : "rounded-lg"
               }`}
             >
-              {hasImage ? (
+              {hasVideo && form.videoProvider === "MP4" ? (
+                <video
+                  src={form.videoUrl}
+                  poster={form.imageUrl || undefined}
+                  className={`w-full object-cover ${
+                    form.size === "STANDARD" ? "h-48" : "h-64"
+                  }`}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                />
+              ) : hasVideo ? (
+                <iframe
+                  src={embedUrl}
+                  title={previewTitle}
+                  className={`w-full border-0 ${
+                    form.size === "STANDARD" ? "h-48" : "h-64"
+                  }`}
+                  allow="autoplay; encrypted-media; picture-in-picture"
+                  allowFullScreen
+                />
+              ) : hasImage ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={form.imageUrl}
@@ -690,7 +865,11 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                     form.size === "STANDARD" ? "h-48" : "h-64"
                   }`}
                 >
-                  <ImageIcon className="h-10 w-10 text-slate-400" />
+                  {form.mediaType === "VIDEO" ? (
+                    <PlayCircle className="h-10 w-10 text-slate-400" />
+                  ) : (
+                    <ImageIcon className="h-10 w-10 text-slate-400" />
+                  )}
                 </div>
               )}
               <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/65 to-red-950/50" />

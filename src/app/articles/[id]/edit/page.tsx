@@ -27,12 +27,14 @@ import { ArticleStatus, canDeleteArticle, canEditArticle, canViewArticleForEdit 
 import { ArticleBreakingNewsRequestStatus } from "@/types/article";
 import { Permission } from "@/components/permissions/PermissionGuard";
 import { SeoPreviewCard } from "@/components/articles/seo-preview-card";
+import { useToastHelpers } from "@/components/ui/toast";
 import {
   ArticleReadinessCard,
   getArticleReadinessIssues,
   hasMeaningfulArticleContent,
 } from "@/components/articles/article-readiness-card";
 import { format } from "date-fns";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 import type { OutputData } from "@editorjs/editorjs";
 import type { NewsEditorRef } from "@/components/editor/news-editor";
@@ -53,7 +55,8 @@ function slugify(s: string) {
     .trim()
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function normalizeTopic(value: string) {
@@ -70,16 +73,244 @@ function toDateTimeLocal(value?: string | null) {
   return Number.isNaN(date.getTime()) ? "" : date.toISOString().slice(0, 16);
 }
 
+const editArticleCopy = {
+  en: {
+    invalidCategory: (slug: string) => `Category "${slug}" does not exist in the database. Please select a valid category.`,
+    beforeAction: (action: string, issues: string[]) => `Before ${action}: ${issues.join(", ")}.`,
+    publishing: "publishing",
+    review: "submitting for review",
+    submitReviewFailed: "Failed to submit for review.",
+    breakingRequested: "Breaking News Requested",
+    breakingRequestedDescription: "The request was submitted for review.",
+    breakingRequestFailed: "Breaking News Request Failed",
+    breakingServerRejected: "The server did not accept the request.",
+    breakingUnable: "Unable to submit the request.",
+    saveFailed: "Failed to save article.",
+    approvePermission: "You do not have permission to approve articles.",
+    approveFailed: "Failed to approve article.",
+    rejectPermission: "You do not have permission to reject articles.",
+    rejectFailed: "Failed to reject article.",
+    revisionUnavailable: "Revision Not Available",
+    revisionUnavailableDescription: "Revisions can only be requested while the article is in review.",
+    revisionNoteRequired: "Revision Note Required",
+    revisionNoteRequiredDescription: "Please describe the changes you'd like to make.",
+    revisionChangeRequired: "Please make at least one change before submitting a revision request.",
+    revisionRequested: "Revision Requested",
+    revisionRequestedDescription: "Your changes were submitted for review.",
+    revisionApproved: "Revision Approved",
+    revisionApprovedDescription: "The revision request was approved.",
+    revisionApprovalFailed: "Revision Approval Failed",
+    revisionApprovalFailedDescription: "Unable to approve the revision request.",
+    revisionRejected: "Revision Rejected",
+    revisionRejectedDescription: "The revision request was rejected.",
+    revisionRejectionFailed: "Revision Rejection Failed",
+    revisionRejectionFailedDescription: "Unable to reject the revision request.",
+    loading: "Loading...",
+    accessDenied: "Access Denied",
+    accessDeniedDescription: "Authors can only view their own articles.",
+    backToArticles: "Back to Articles",
+    readOnlyMode: "Read-Only Mode",
+    readOnlyReview: 'This article is in review. To propose changes, use the "Request Revision" form below.',
+    readOnlyPublished: 'This article is published. To propose changes, use the "Request Revision" form below.',
+    readOnlyArchived: "This article is archived and cannot be modified.",
+    editArticle: "Edit Article",
+    unpublish: "Unpublish",
+    approvePublish: "Approve & Publish",
+    reject: "Reject",
+    publish: "Publish",
+    save: "Save",
+    delete: "Delete",
+    title: "Title",
+    slug: "Slug",
+    author: "Author",
+    authorPlaceholder: "e.g. John Doe",
+    excerpt: "Excerpt",
+    category: "Category",
+    selectCategory: "— Select Category —",
+    loadingCategories: "Loading categories...",
+    topicOptional: "Topic (optional)",
+    noTopic: "— No topic —",
+    loadingTopics: "Loading topics...",
+    selectCategoryFirst: "Select a category first",
+    tags: "Tags",
+    tagsHelp: "Separate tags with commas.",
+    schedulePublishing: "Schedule publishing",
+    scheduleHelp: "Leave blank to keep manual publishing.",
+    categoryError: "Category Error",
+    topicsError: "Topics Error",
+    validationError: "Validation Error",
+    markBreaking: "Mark as breaking news",
+    markBreakingTitle: "Mark this article as breaking news",
+    requestBreaking: "Request as breaking news",
+    requestBreakingTitle: "Request this article to be marked as breaking news",
+    reviewHint: "(Editors/Admins will review)",
+    whyBreaking: "Why is this breaking news?",
+    breakingReasonPlaceholder: "Explain why this article should be marked as breaking news...",
+    breakingReasonHelp: "Admins and editors will review your request and decide if this article qualifies as breaking news.",
+    breakingPending: "Breaking News Request Pending",
+    breakingPendingDescription: "The author has requested this article to be marked as breaking news.",
+    requestedBy: "Requested by",
+    requestedAt: "Requested at",
+    approve: "Approve",
+    breakingApproved: "Breaking News Approved",
+    breakingApprovedDescription: "The article is now marked as breaking news.",
+    breakingApprovalFailed: "Breaking News Approval Failed",
+    breakingApprovalFailedDescription: "Unable to approve the request.",
+    breakingRejected: "Breaking News Rejected",
+    breakingRejectedDescription: "The request was rejected.",
+    breakingRejectionFailed: "Breaking News Rejection Failed",
+    breakingRejectionFailedDescription: "Unable to reject the request.",
+    revisionPending: "Revision Request Pending",
+    revisionPendingDescription: "The author has requested permission to revise this article.",
+    requestNote: "Request note",
+    requestRevision: "Request Revision",
+    revisionPendingReview: "Revision request is pending review",
+    revisionWasApproved: "Your revision request was approved",
+    revisionWasRejected: "Your revision request was rejected",
+    revisionConsumed: "Changes saved. Request a new revision to edit again.",
+    requestEditPermission: "Request permission to edit this article",
+    editorComment: "Editor comment",
+    proposeChanges: "Propose Changes",
+    describeChanges: "Describe the changes you'd like to make",
+    revisionPlaceholder: "e.g., Fix typo in paragraph 2, add recent data from Q4, update author bio...",
+    revisionHelp: "The system will automatically track which fields you've modified and submit them as proposed changes.",
+    cancel: "Cancel",
+    submitting: "Submitting...",
+    submitRequest: "Submit Request",
+    breakingRequestApproved: "Breaking News Request Approved",
+    breakingRequestApprovedDescription: "This article has been approved as breaking news and will be marked accordingly.",
+    breakingRequestRejected: "Breaking News Request Rejected",
+    breakingRequestRejectedDescription: "The breaking news request for this article was rejected.",
+    deleteTitle: "Delete Article?",
+    deleteDescription: (title?: string) => `This will permanently delete "${title || "this article"}". This action cannot be undone.`,
+    deleteConfirm: "Delete Article",
+  },
+  km: {
+    invalidCategory: (slug: string) => `Category "${slug}" មិនមានក្នុង database ទេ។ សូមជ្រើស category ត្រឹមត្រូវ។`,
+    beforeAction: (action: string, issues: string[]) => `មុន${action}: ${issues.join(", ")}។`,
+    publishing: " publish",
+    review: " ផ្ញើទៅ review",
+    submitReviewFailed: "មិនអាចផ្ញើទៅ review បានទេ។",
+    breakingRequested: "បានស្នើ Breaking News",
+    breakingRequestedDescription: "សំណើត្រូវបានផ្ញើទៅ review។",
+    breakingRequestFailed: "ស្នើ Breaking News មិនបាន",
+    breakingServerRejected: "Server មិនទទួលសំណើនេះទេ។",
+    breakingUnable: "មិនអាចផ្ញើសំណើបានទេ។",
+    saveFailed: "មិនអាចរក្សាទុកអត្ថបទបានទេ។",
+    approvePermission: "អ្នកមិនមានសិទ្ធិ approve អត្ថបទទេ។",
+    approveFailed: "មិនអាច approve អត្ថបទបានទេ។",
+    rejectPermission: "អ្នកមិនមានសិទ្ធិ reject អត្ថបទទេ។",
+    rejectFailed: "មិនអាច reject អត្ថបទបានទេ។",
+    revisionUnavailable: "មិនអាចស្នើ Revision បាន",
+    revisionUnavailableDescription: "Revisions អាចស្នើបានតែពេលអត្ថបទនៅក្នុង review។",
+    revisionNoteRequired: "ត្រូវការ Note Revision",
+    revisionNoteRequiredDescription: "សូមពណ៌នាការកែប្រែដែលអ្នកចង់ធ្វើ។",
+    revisionChangeRequired: "សូមកែប្រែយ៉ាងតិចមួយ មុនផ្ញើសំណើ revision។",
+    revisionRequested: "បានស្នើ Revision",
+    revisionRequestedDescription: "ការកែប្រែរបស់អ្នកត្រូវបានផ្ញើទៅ review។",
+    revisionApproved: "បាន Approve Revision",
+    revisionApprovedDescription: "សំណើ revision ត្រូវបាន approve។",
+    revisionApprovalFailed: "Approve Revision មិនបាន",
+    revisionApprovalFailedDescription: "មិនអាច approve សំណើ revision បានទេ។",
+    revisionRejected: "បាន Reject Revision",
+    revisionRejectedDescription: "សំណើ revision ត្រូវបាន reject។",
+    revisionRejectionFailed: "Reject Revision មិនបាន",
+    revisionRejectionFailedDescription: "មិនអាច reject សំណើ revision បានទេ។",
+    loading: "កំពុងផ្ទុក...",
+    accessDenied: "មិនមានសិទ្ធិចូល",
+    accessDeniedDescription: "Authors អាចមើលតែអត្ថបទរបស់ខ្លួនប៉ុណ្ណោះ។",
+    backToArticles: "ត្រឡប់ទៅអត្ថបទ",
+    readOnlyMode: "Read-Only Mode",
+    readOnlyReview: 'អត្ថបទនេះកំពុង review។ ដើម្បីស្នើកែប្រែ សូមប្រើ form "Request Revision" ខាងក្រោម។',
+    readOnlyPublished: 'អត្ថបទនេះបាន published។ ដើម្បីស្នើកែប្រែ សូមប្រើ form "Request Revision" ខាងក្រោម។',
+    readOnlyArchived: "អត្ថបទនេះ archived ហើយមិនអាចកែបានទេ។",
+    editArticle: "កែអត្ថបទ",
+    unpublish: "Unpublish",
+    approvePublish: "Approve & Publish",
+    reject: "Reject",
+    publish: "Publish",
+    save: "រក្សាទុក",
+    delete: "លុប",
+    title: "Title",
+    slug: "Slug",
+    author: "Author",
+    authorPlaceholder: "ឧ. John Doe",
+    excerpt: "Excerpt",
+    category: "Category",
+    selectCategory: "— ជ្រើស Category —",
+    loadingCategories: "កំពុងផ្ទុក categories...",
+    topicOptional: "Topic (ជម្រើស)",
+    noTopic: "— គ្មាន topic —",
+    loadingTopics: "កំពុងផ្ទុក topics...",
+    selectCategoryFirst: "ជ្រើស category ជាមុនសិន",
+    tags: "Tags",
+    tagsHelp: "បំបែក tags ដោយ comma។",
+    schedulePublishing: "កំណត់ពេល publish",
+    scheduleHelp: "ទុកទទេដើម្បី publish ដោយដៃ។",
+    categoryError: "បញ្ហា Category",
+    topicsError: "បញ្ហា Topics",
+    validationError: "ទិន្នន័យមិនត្រឹមត្រូវ",
+    markBreaking: "កំណត់ជា breaking news",
+    markBreakingTitle: "កំណត់អត្ថបទនេះជា breaking news",
+    requestBreaking: "ស្នើជា breaking news",
+    requestBreakingTitle: "ស្នើឱ្យអត្ថបទនេះកំណត់ជា breaking news",
+    reviewHint: "(Editors/Admins នឹង review)",
+    whyBreaking: "ហេតុអ្វីវាជា breaking news?",
+    breakingReasonPlaceholder: "ពន្យល់ថាហេតុអ្វីអត្ថបទនេះគួរត្រូវបានកំណត់ជា breaking news...",
+    breakingReasonHelp: "Admins និង editors នឹង review សំណើរបស់អ្នក ហើយសម្រេចថាអត្ថបទនេះស័ក្តិសមជា breaking news ឬទេ។",
+    breakingPending: "សំណើ Breaking News កំពុងរង់ចាំ",
+    breakingPendingDescription: "Author បានស្នើឱ្យអត្ថបទនេះកំណត់ជា breaking news។",
+    requestedBy: "ស្នើដោយ",
+    requestedAt: "ស្នើនៅ",
+    approve: "Approve",
+    breakingApproved: "បាន Approve Breaking News",
+    breakingApprovedDescription: "អត្ថបទនេះត្រូវបានកំណត់ជា breaking news ហើយ។",
+    breakingApprovalFailed: "Approve Breaking News មិនបាន",
+    breakingApprovalFailedDescription: "មិនអាច approve សំណើបានទេ។",
+    breakingRejected: "បាន Reject Breaking News",
+    breakingRejectedDescription: "សំណើត្រូវបាន reject។",
+    breakingRejectionFailed: "Reject Breaking News មិនបាន",
+    breakingRejectionFailedDescription: "មិនអាច reject សំណើបានទេ។",
+    revisionPending: "សំណើ Revision កំពុងរង់ចាំ",
+    revisionPendingDescription: "Author បានស្នើសិទ្ធិកែអត្ថបទនេះ។",
+    requestNote: "Note សំណើ",
+    requestRevision: "ស្នើ Revision",
+    revisionPendingReview: "សំណើ revision កំពុងរង់ចាំ review",
+    revisionWasApproved: "សំណើ revision របស់អ្នកត្រូវបាន approve",
+    revisionWasRejected: "សំណើ revision របស់អ្នកត្រូវបាន reject",
+    revisionConsumed: "បានរក្សាទុកការកែប្រែ។ ស្នើ revision ថ្មីដើម្បីកែម្តងទៀត។",
+    requestEditPermission: "ស្នើសិទ្ធិកែអត្ថបទនេះ",
+    editorComment: "មតិ Editor",
+    proposeChanges: "ស្នើការកែប្រែ",
+    describeChanges: "ពណ៌នាការកែប្រែដែលអ្នកចង់ធ្វើ",
+    revisionPlaceholder: "ឧ. កែកំហុសក្នុង paragraph 2, បន្ថែមទិន្នន័យ Q4, កែ author bio...",
+    revisionHelp: "ប្រព័ន្ធនឹងតាមដាន fields ដែលអ្នកបានកែ ហើយផ្ញើជាការកែប្រែដែលបានស្នើ។",
+    cancel: "បោះបង់",
+    submitting: "កំពុងផ្ញើ...",
+    submitRequest: "ផ្ញើសំណើ",
+    breakingRequestApproved: "សំណើ Breaking News ត្រូវបាន Approve",
+    breakingRequestApprovedDescription: "អត្ថបទនេះត្រូវបាន approve ជា breaking news និងនឹងត្រូវបានកំណត់តាមនោះ។",
+    breakingRequestRejected: "សំណើ Breaking News ត្រូវបាន Reject",
+    breakingRequestRejectedDescription: "សំណើ breaking news សម្រាប់អត្ថបទនេះត្រូវបាន reject។",
+    deleteTitle: "លុបអត្ថបទ?",
+    deleteDescription: (title?: string) => `វានឹងលុប "${title || "អត្ថបទនេះ"}" ជាអចិន្ត្រៃយ៍។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`,
+    deleteConfirm: "លុបអត្ថបទ",
+  },
+};
+
 /* =========================
    Page
 ========================= */
 export default function EditArticlePage() {
+  const { locale } = useAdminLocale();
+  const copy = editArticleCopy[locale];
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const id = params.id;
 
   const client = useMemo(() => getAuthenticatedGqlClient(), []);
   const editorRef = useRef<NewsEditorRef>(null);
+  const { showSuccess, showError, showWarning } = useToastHelpers();
   const {
     performWorkflowAction,
     requestBreakingNews,
@@ -233,7 +464,7 @@ export default function EditArticlePage() {
     // Validate category exists in database
     setValidationError(null);
     if (!categoriesLoading && !isValidCategory(categorySlug)) {
-      setValidationError(`Category "${categorySlug}" does not exist in the database. Please select a valid category.`);
+      setValidationError(copy.invalidCategory(categorySlug));
       return;
     }
 
@@ -252,12 +483,10 @@ export default function EditArticlePage() {
           excerpt,
           categorySlug,
           hasBodyContent: hasMeaningfulArticleContent(contentJson),
-        });
+        }, locale);
 
         if (readinessIssues.length > 0) {
-          setValidationError(
-            `Before ${nextStatus === "PUBLISHED" ? "publishing" : "submitting for review"}: ${readinessIssues.join(", ")}.`,
-          );
+          setValidationError(copy.beforeAction(nextStatus === "PUBLISHED" ? copy.publishing : copy.review, readinessIssues));
           return;
         }
       }
@@ -286,7 +515,7 @@ export default function EditArticlePage() {
         });
 
         if (!result?.performWorkflowAction?.success) {
-          const message = result?.performWorkflowAction?.message || 'Failed to submit for review.';
+          const message = locale === "en" ? result?.performWorkflowAction?.message || copy.submitReviewFailed : copy.submitReviewFailed;
           throw new Error(message);
         }
       }
@@ -303,13 +532,13 @@ export default function EditArticlePage() {
           setBreakingNewsRequestStatus('PENDING');
           setBreakingNewsRequestedAt(breakingResponse?.requestBreakingNews?.createdAt);
           if (breakingResponse?.requestBreakingNews?.id) {
-            alert('Breaking news request submitted for review.');
+            showSuccess(copy.breakingRequested, copy.breakingRequestedDescription);
           } else {
-            alert('Breaking news request was not accepted by the server.');
+            showError(copy.breakingRequestFailed, copy.breakingServerRejected);
           }
         } catch (err) {
           console.warn('Breaking news request submission failed:', err);
-          alert('Breaking news request submission failed.');
+          showError(copy.breakingRequestFailed, copy.breakingUnable);
           // Don't block the article save if breaking news request fails
         }
       }
@@ -346,7 +575,7 @@ export default function EditArticlePage() {
       }
     } catch (error) {
       console.error('Error saving article:', error);
-      const message = error instanceof Error ? error.message : 'Failed to save article.';
+      const message = locale === "en" && error instanceof Error ? error.message : copy.saveFailed;
       setValidationError(message);
     } finally {
       setSaving(false);
@@ -372,7 +601,7 @@ export default function EditArticlePage() {
 
   async function approveFromReview() {
     if (!hasPermission(Permission.APPROVE_ARTICLES)) {
-      setValidationError("You do not have permission to approve articles.");
+      setValidationError(copy.approvePermission);
       return;
     }
 
@@ -385,7 +614,7 @@ export default function EditArticlePage() {
       });
 
       if (!result?.performWorkflowAction?.success) {
-        const message = result?.performWorkflowAction?.message || "Failed to approve article.";
+        const message = locale === "en" ? result?.performWorkflowAction?.message || copy.approveFailed : copy.approveFailed;
         throw new Error(message);
       }
 
@@ -393,7 +622,7 @@ export default function EditArticlePage() {
       setOriginalStatus("PUBLISHED");
       setValidationError(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to approve article.";
+      const message = locale === "en" && error instanceof Error ? error.message : copy.approveFailed;
       setValidationError(message);
     } finally {
       setSaving(false);
@@ -402,7 +631,7 @@ export default function EditArticlePage() {
 
   async function rejectFromReview() {
     if (!hasPermission(Permission.REJECT_ARTICLES)) {
-      setValidationError("You do not have permission to reject articles.");
+      setValidationError(copy.rejectPermission);
       return;
     }
 
@@ -415,7 +644,7 @@ export default function EditArticlePage() {
       });
 
       if (!result?.performWorkflowAction?.success) {
-        const message = result?.performWorkflowAction?.message || "Failed to reject article.";
+        const message = locale === "en" ? result?.performWorkflowAction?.message || copy.rejectFailed : copy.rejectFailed;
         throw new Error(message);
       }
 
@@ -423,7 +652,7 @@ export default function EditArticlePage() {
       setOriginalStatus("ARCHIVED");
       setValidationError(null);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Failed to reject article.";
+      const message = locale === "en" && error instanceof Error ? error.message : copy.rejectFailed;
       setValidationError(message);
     } finally {
       setSaving(false);
@@ -461,11 +690,11 @@ export default function EditArticlePage() {
   async function submitRevisionRequest() {
     setValidationError(null);
     if (status !== 'REVIEW') {
-      alert('Revisions can only be requested while the article is in review.');
+      showWarning(copy.revisionUnavailable, copy.revisionUnavailableDescription);
       return;
     }
     if (!revisionNote.trim()) {
-      alert("Please describe the changes you'd like to make");
+      showWarning(copy.revisionNoteRequired, copy.revisionNoteRequiredDescription);
       return;
     }
 
@@ -490,7 +719,7 @@ export default function EditArticlePage() {
       }
       
       if (Object.keys(proposedChanges).length === 0) {
-        setValidationError('Please make at least one change before submitting a revision request.');
+        setValidationError(copy.revisionChangeRequired);
         setSaving(false);
         return;
       }
@@ -504,6 +733,7 @@ export default function EditArticlePage() {
 
       setShowRevisionForm(false);
       setRevisionNote("");
+      showSuccess(copy.revisionRequested, copy.revisionRequestedDescription);
       
       await refreshRevisionState();
     } finally {
@@ -517,10 +747,10 @@ export default function EditArticlePage() {
     try {
       await approveRevisionRequest(currentRevisionRequest.id);
       await refreshRevisionState();
-      alert('Revision request approved');
+      showSuccess(copy.revisionApproved, copy.revisionApprovedDescription);
     } catch (err) {
       console.error('Error approving revision request:', err);
-      alert('Failed to approve revision request');
+      showError(copy.revisionApprovalFailed, copy.revisionApprovalFailedDescription);
     } finally {
       setSaving(false);
     }
@@ -532,10 +762,10 @@ export default function EditArticlePage() {
     try {
       await rejectRevisionRequest(currentRevisionRequest.id);
       await refreshRevisionState();
-      alert('Revision request rejected');
+      showSuccess(copy.revisionRejected, copy.revisionRejectedDescription);
     } catch (err) {
       console.error('Error rejecting revision request:', err);
-      alert('Failed to reject revision request');
+      showError(copy.revisionRejectionFailed, copy.revisionRejectionFailedDescription);
     } finally {
       setSaving(false);
     }
@@ -590,7 +820,7 @@ export default function EditArticlePage() {
   }
 
   if (loading) {
-    return <div className="text-sm text-slate-600">Loading…</div>;
+    return <div className="text-sm text-slate-600">{copy.loading}</div>;
   }
 
   // Check if user can view this article
@@ -600,16 +830,16 @@ export default function EditArticlePage() {
     return (
       <main className="space-y-4">
         <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center">
-          <h2 className="text-lg font-semibold text-red-800 mb-2">Access Denied</h2>
+          <h2 className="text-lg font-semibold text-red-800 mb-2">{copy.accessDenied}</h2>
           <p className="text-sm text-red-600 mb-4">
-            Authors can only view their own articles.
+            {copy.accessDeniedDescription}
           </p>
           <Button 
             variant="outline" 
             onClick={() => router.push('/articles')}
             className="border-red-300 text-red-700 hover:bg-red-100"
           >
-            Back to Articles
+            {copy.backToArticles}
           </Button>
         </div>
       </main>
@@ -642,11 +872,11 @@ export default function EditArticlePage() {
           <div className="flex items-start gap-3">
             <div className="text-xl">📝</div>
             <div>
-              <h3 className="font-semibold text-amber-900">Read-Only Mode</h3>
+              <h3 className="font-semibold text-amber-900">{copy.readOnlyMode}</h3>
               <p className="text-sm text-amber-800 mt-1">
-                {status === 'REVIEW' && 'This article is in review. To propose changes, use the "Request Revision" form below.'}
-                {status === 'PUBLISHED' && 'This article is published. To propose changes, use the "Request Revision" form below.'}
-                {status === 'ARCHIVED' && 'This article is archived and cannot be modified.'}
+                {status === 'REVIEW' && copy.readOnlyReview}
+                {status === 'PUBLISHED' && copy.readOnlyPublished}
+                {status === 'ARCHIVED' && copy.readOnlyArchived}
               </p>
             </div>
           </div>
@@ -656,41 +886,41 @@ export default function EditArticlePage() {
       {/* ---------- Header ---------- */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Edit Article</h2>
+          <h2 className="text-lg font-semibold">{copy.editArticle}</h2>
           <p className="text-sm text-slate-600">ID: {id}</p>
         </div>
 
         <div className="flex gap-2">
           {status === "PUBLISHED" && hasPermission(Permission.UNPUBLISH_ARTICLE) && (
             <Button variant="outline" onClick={togglePublish} disabled={saving}>
-              Unpublish
+              {copy.unpublish}
             </Button>
           )}
           {status === "REVIEW" && (
             <>
               {hasPermission(Permission.APPROVE_ARTICLES) && (
                 <Button variant="outline" onClick={approveFromReview} disabled={saving}>
-                  Approve & Publish
+                  {copy.approvePublish}
                 </Button>
               )}
               {hasPermission(Permission.REJECT_ARTICLES) && (
                 <Button variant="outline" onClick={rejectFromReview} disabled={saving}>
-                  Reject
+                  {copy.reject}
                 </Button>
               )}
             </>
           )}
           {status !== "PUBLISHED" && status !== "REVIEW" && hasPermission(Permission.PUBLISH_ARTICLE) && (
             <Button variant="outline" onClick={publish} disabled={saving}>
-              Publish
+              {copy.publish}
             </Button>
           )}
           <Button onClick={save} disabled={saving || !title || isReadOnly}>
-            Save
+            {copy.save}
           </Button>
           {canDelete && (
             <Button variant="ghost" onClick={() => setDeleteDialogOpen(true)} disabled={saving}>
-              Delete
+              {copy.delete}
             </Button>
           )}
         </div>
@@ -699,7 +929,7 @@ export default function EditArticlePage() {
       {/* ---------- Meta ---------- */}
       <div className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4">
         <div className="grid gap-2">
-          <label className="text-xs font-semibold text-slate-600">Title</label>
+          <label className="text-xs font-semibold text-slate-600">{copy.title}</label>
           <Input
             value={title}
             disabled={isReadOnly}
@@ -711,24 +941,24 @@ export default function EditArticlePage() {
         </div>
 
         <div className="grid gap-2">
-          <label className="text-xs font-semibold text-slate-600">Slug</label>
+          <label className="text-xs font-semibold text-slate-600">{copy.slug}</label>
           <Input value={slug} disabled={isReadOnly} onChange={(e) => setSlug(e.target.value)} />
         </div>
 
         {/* ✅ AUTHOR FIELD — ADDED, NOTHING REMOVED */}
         <div className="grid gap-2">
-          <label className="text-xs font-semibold text-slate-600">Author</label>
+          <label className="text-xs font-semibold text-slate-600">{copy.author}</label>
           <Input
             value={authorName}
             disabled={isReadOnly}
             onChange={(e) => setAuthorName(e.target.value)}
-            placeholder="e.g. John Doe"
+            placeholder={copy.authorPlaceholder}
           />
         </div>
 
         <div className="grid gap-2">
           <label className="text-xs font-semibold text-slate-600">
-            Excerpt
+            {copy.excerpt}
           </label>
           <Input value={excerpt} disabled={isReadOnly} onChange={(e) => setExcerpt(e.target.value)} />
         </div>
@@ -736,7 +966,7 @@ export default function EditArticlePage() {
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-2">
             <label className="text-xs font-semibold text-slate-600">
-              Category
+              {copy.category}
             </label>
             <select
               className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
@@ -747,7 +977,7 @@ export default function EditArticlePage() {
                 setTopic("");
               }}
             >
-              <option value="">— Select Category —</option>
+              <option value="">{copy.selectCategory}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.slug}>
                   {category.name}
@@ -755,13 +985,13 @@ export default function EditArticlePage() {
               ))}
             </select>
             {categoriesLoading && (
-              <p className="text-xs text-slate-500">Loading categories...</p>
+              <p className="text-xs text-slate-500">{copy.loadingCategories}</p>
             )}
           </div>
 
           <div className="grid gap-2">
             <label className="text-xs font-semibold text-slate-600">
-              Topic (optional)
+              {copy.topicOptional}
             </label>
             <select
               className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
@@ -769,7 +999,7 @@ export default function EditArticlePage() {
               disabled={isReadOnly || topicsLoading || !categorySlug}
               onChange={(e) => setTopic(e.target.value)}
             >
-              <option value="">— No topic —</option>
+              <option value="">{copy.noTopic}</option>
               {topics.map((topicItem) => (
                 <option key={topicItem.id} value={topicItem.slug}>
                   {topicItem.title}
@@ -777,35 +1007,35 @@ export default function EditArticlePage() {
               ))}
             </select>
             {topicsLoading && (
-              <p className="text-xs text-slate-500">Loading topics...</p>
+              <p className="text-xs text-slate-500">{copy.loadingTopics}</p>
             )}
             {!categorySlug && (
-              <p className="text-xs text-slate-500">Select a category first</p>
+              <p className="text-xs text-slate-500">{copy.selectCategoryFirst}</p>
             )}
           </div>
         </div>
 
         <div className="grid gap-2">
-          <label className="text-xs font-semibold text-slate-600">Tags</label>
+          <label className="text-xs font-semibold text-slate-600">{copy.tags}</label>
           <Input
             value={tags}
             disabled={isReadOnly}
             onChange={(e) => setTags(e.target.value)}
             placeholder="politics, election, cambodia"
           />
-          <p className="text-xs text-slate-500">Separate tags with commas.</p>
+          <p className="text-xs text-slate-500">{copy.tagsHelp}</p>
         </div>
 
         {hasPermission(Permission.PUBLISH_ARTICLE) && (
           <div className="grid gap-2 sm:max-w-sm">
-            <label className="text-xs font-semibold text-slate-600">Schedule publishing</label>
+            <label className="text-xs font-semibold text-slate-600">{copy.schedulePublishing}</label>
             <Input
               type="datetime-local"
               value={scheduledAt}
               disabled={isReadOnly || saving}
               onChange={(e) => setScheduledAt(e.target.value)}
             />
-            <p className="text-xs text-slate-500">Leave blank to keep manual publishing.</p>
+            <p className="text-xs text-slate-500">{copy.scheduleHelp}</p>
           </div>
         )}
 
@@ -813,7 +1043,7 @@ export default function EditArticlePage() {
         {categoriesError && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3">
             <p className="text-sm text-red-600">
-              <strong>Category Error:</strong> {categoriesError}
+              <strong>{copy.categoryError}:</strong> {categoriesError}
             </p>
           </div>
         )}
@@ -821,7 +1051,7 @@ export default function EditArticlePage() {
         {topicsError && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3">
             <p className="text-sm text-red-600">
-              <strong>Topics Error:</strong> {topicsError}
+              <strong>{copy.topicsError}:</strong> {topicsError}
             </p>
           </div>
         )}
@@ -829,7 +1059,7 @@ export default function EditArticlePage() {
         {validationError && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3">
             <p className="text-sm text-red-600">
-              <strong>Validation Error:</strong> {validationError}
+              <strong>{copy.validationError}:</strong> {validationError}
             </p>
           </div>
         )}
@@ -837,7 +1067,7 @@ export default function EditArticlePage() {
         {categoriesLoading && (
           <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
             <p className="text-sm text-blue-600">
-              Loading categories...
+              {copy.loadingCategories}
             </p>
           </div>
         )}
@@ -866,9 +1096,9 @@ export default function EditArticlePage() {
             <label
               htmlFor="breaking-news"
               className="text-xs font-semibold text-slate-600"
-              title="Mark this article as breaking news"
+              title={copy.markBreakingTitle}
             >
-              Mark as breaking news
+              {copy.markBreaking}
             </label>
           </div>
         )}
@@ -886,10 +1116,10 @@ export default function EditArticlePage() {
             <label
               htmlFor="request-breaking-news"
               className="text-xs font-semibold text-slate-600"
-              title="Request this article to be marked as breaking news"
+              title={copy.requestBreakingTitle}
             >
-              Request as breaking news
-              <span className="ml-1 text-xs text-slate-500">(Editors/Admins will review)</span>
+              {copy.requestBreaking}
+              <span className="ml-1 text-xs text-slate-500">{copy.reviewHint}</span>
             </label>
           </div>
         )}
@@ -899,19 +1129,19 @@ export default function EditArticlePage() {
           <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-3">
             <div>
               <label htmlFor="breaking-news-reason" className="block text-sm font-medium text-orange-900 mb-1">
-                Why is this breaking news?
+                {copy.whyBreaking}
               </label>
               <textarea
                 id="breaking-news-reason"
                 value={breakingNewsReason}
                 onChange={(e) => setBreakingNewsReason(e.target.value)}
-                placeholder="Explain why this article should be marked as breaking news..."
+                placeholder={copy.breakingReasonPlaceholder}
                 className="w-full rounded-md border border-orange-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 rows={3}
                 disabled={saving}
               />
               <p className="text-xs text-orange-700 mt-2">
-                Admins and editors will review your request and decide if this article qualifies as breaking news.
+                {copy.breakingReasonHelp}
               </p>
             </div>
           </div>
@@ -924,19 +1154,19 @@ export default function EditArticlePage() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">🔔</span>
-                  <h3 className="text-sm font-semibold text-orange-900">Breaking News Request Pending</h3>
+                  <h3 className="text-sm font-semibold text-orange-900">{copy.breakingPending}</h3>
                 </div>
                 <p className="text-xs text-orange-700 mb-2">
-                  The author has requested this article to be marked as breaking news.
+                  {copy.breakingPendingDescription}
                 </p>
                 {breakingNewsRequestedBy && (
                   <p className="text-xs text-orange-600">
-                    <strong>Requested by:</strong> {breakingNewsRequestedBy}
+                    <strong>{copy.requestedBy}:</strong> {breakingNewsRequestedBy}
                   </p>
                 )}
                 {breakingNewsRequestedAt && (
                   <p className="text-xs text-orange-600">
-                    <strong>Requested at:</strong> {format(new Date(breakingNewsRequestedAt), 'MMM d, yyyy h:mm a')}
+                    <strong>{copy.requestedAt}:</strong> {format(new Date(breakingNewsRequestedAt), 'MMM d, yyyy h:mm a')}
                   </p>
                 )}
               </div>
@@ -953,16 +1183,16 @@ export default function EditArticlePage() {
                         await approveBreakingNewsRequest(request.id);
                         setBreakingNewsRequestStatus(undefined);
                         setIsBreaking(true);
-                        alert('Breaking news request approved!');
+                        showSuccess(copy.breakingApproved, copy.breakingApprovedDescription);
                       }
                     } catch (err) {
                       console.error('Error approving breaking news:', err);
-                      alert('Failed to approve breaking news request');
+                      showError(copy.breakingApprovalFailed, copy.breakingApprovalFailedDescription);
                     }
                   }}
                   disabled={saving}
                 >
-                  ✓ Approve
+                  ✓ {copy.approve}
                 </Button>
                 <Button
                   size="sm"
@@ -975,16 +1205,16 @@ export default function EditArticlePage() {
                       if (request) {
                         await rejectBreakingNewsRequest(request.id);
                         setBreakingNewsRequestStatus(undefined);
-                        alert('Breaking news request rejected');
+                        showSuccess(copy.breakingRejected, copy.breakingRejectedDescription);
                       }
                     } catch (err) {
                       console.error('Error rejecting breaking news:', err);
-                      alert('Failed to reject breaking news request');
+                      showError(copy.breakingRejectionFailed, copy.breakingRejectionFailedDescription);
                     }
                   }}
                   disabled={saving}
                 >
-                  ✗ Reject
+                  ✗ {copy.reject}
                 </Button>
               </div>
             </div>
@@ -998,14 +1228,14 @@ export default function EditArticlePage() {
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xl">📝</span>
-                  <h3 className="text-sm font-semibold text-purple-900">Revision Request Pending</h3>
+                  <h3 className="text-sm font-semibold text-purple-900">{copy.revisionPending}</h3>
                 </div>
                 <p className="text-xs text-purple-700 mb-2">
-                  The author has requested permission to revise this article.
+                  {copy.revisionPendingDescription}
                 </p>
                 {currentRevisionRequest?.note && (
                   <p className="text-xs text-purple-700">
-                    <strong>Request note:</strong> {currentRevisionRequest.note}
+                    <strong>{copy.requestNote}:</strong> {currentRevisionRequest.note}
                   </p>
                 )}
               </div>
@@ -1017,7 +1247,7 @@ export default function EditArticlePage() {
                   onClick={approveRevision}
                   disabled={saving}
                 >
-                  ✓ Approve
+                  ✓ {copy.approve}
                 </Button>
                 <Button
                   size="sm"
@@ -1026,7 +1256,7 @@ export default function EditArticlePage() {
                   onClick={rejectRevision}
                   disabled={saving}
                 >
-                  ✗ Reject
+                  ✗ {copy.reject}
                 </Button>
               </div>
             </div>
@@ -1038,21 +1268,21 @@ export default function EditArticlePage() {
           <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="text-sm font-semibold text-blue-900 mb-1">Request Revision</h3>
+                <h3 className="text-sm font-semibold text-blue-900 mb-1">{copy.requestRevision}</h3>
                 <p className="text-xs text-blue-700 mb-3">
                   {currentRevisionRequest?.status === 'PENDING'
-                    ? '⏳ Revision request is pending review'
+                    ? `⏳ ${copy.revisionPendingReview}`
                     : currentRevisionRequest?.status === 'APPROVED'
-                    ? '✓ Your revision request was approved'
+                    ? `✓ ${copy.revisionWasApproved}`
                     : currentRevisionRequest?.status === 'REJECTED'
-                    ? '✗ Your revision request was rejected'
+                    ? `✗ ${copy.revisionWasRejected}`
                     : currentRevisionRequest?.status === 'CONSUMED'
-                    ? 'Changes saved. Request a new revision to edit again.'
-                    : 'Request permission to edit this article'}
+                    ? copy.revisionConsumed
+                    : copy.requestEditPermission}
                 </p>
                 {currentRevisionRequest?.reviewComment && (
                   <p className="text-xs text-blue-600 mt-2 italic">
-                    Editor comment: {currentRevisionRequest.reviewComment}
+                    {copy.editorComment}: {currentRevisionRequest.reviewComment}
                   </p>
                 )}
               </div>
@@ -1064,7 +1294,7 @@ export default function EditArticlePage() {
                   disabled={saving}
                   className="whitespace-nowrap"
                 >
-                  Propose Changes
+                  {copy.proposeChanges}
                 </Button>
               )}
             </div>
@@ -1073,17 +1303,17 @@ export default function EditArticlePage() {
               <div className="mt-4 space-y-3 border-t border-blue-200 pt-4">
                 <div className="grid gap-2">
                   <label className="text-xs font-semibold text-blue-900">
-                    Describe the changes you'd like to make
+                    {copy.describeChanges}
                   </label>
                   <textarea
                     className="min-h-20 rounded-md border border-blue-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="e.g., Fix typo in paragraph 2, add recent data from Q4, update author bio..."
+                    placeholder={copy.revisionPlaceholder}
                     value={revisionNote}
                     onChange={(e) => setRevisionNote(e.target.value)}
                     disabled={saving}
                   />
                   <p className="text-xs text-blue-600 mt-1">
-                    The system will automatically track which fields you've modified and submit them as proposed changes.
+                    {copy.revisionHelp}
                   </p>
                 </div>
                 <div className="flex gap-2 justify-end">
@@ -1096,14 +1326,14 @@ export default function EditArticlePage() {
                     }}
                     disabled={saving}
                   >
-                    Cancel
+                    {copy.cancel}
                   </Button>
                   <Button
                     size="sm"
                     onClick={submitRevisionRequest}
                     disabled={saving || !revisionNote.trim()}
                   >
-                    {saving ? "Submitting..." : "Submit Request"}
+                    {saving ? copy.submitting : copy.submitRequest}
                   </Button>
                 </div>
               </div>
@@ -1114,18 +1344,18 @@ export default function EditArticlePage() {
 
         {breakingNewsRequestStatus === 'APPROVED' && (
           <div className="rounded-md border border-green-300 bg-green-50 p-4">
-            <p className="text-sm font-semibold text-green-900">✓ Breaking News Request Approved</p>
+            <p className="text-sm font-semibold text-green-900">✓ {copy.breakingRequestApproved}</p>
             <p className="text-xs text-green-700 mt-1">
-              This article has been approved as breaking news and will be marked accordingly.
+              {copy.breakingRequestApprovedDescription}
             </p>
           </div>
         )}
 
         {breakingNewsRequestStatus === 'REJECTED' && (
           <div className="rounded-md border border-red-300 bg-red-50 p-4">
-            <p className="text-sm font-semibold text-red-900">✗ Breaking News Request Rejected</p>
+            <p className="text-sm font-semibold text-red-900">✗ {copy.breakingRequestRejected}</p>
             <p className="text-xs text-red-700 mt-1">
-              The breaking news request for this article was rejected.
+              {copy.breakingRequestRejectedDescription}
             </p>
           </div>
         )}
@@ -1164,9 +1394,9 @@ export default function EditArticlePage() {
       <ConfirmationDialog
         open={deleteDialogOpen}
         onOpenChange={setDeleteDialogOpen}
-        title="Delete Article?"
-        description={`This will permanently delete "${title || 'this article'}". This action cannot be undone.`}
-        confirmText="Delete Article"
+        title={copy.deleteTitle}
+        description={copy.deleteDescription(title)}
+        confirmText={copy.deleteConfirm}
         variant="destructive"
         onConfirm={() => void remove()}
       />

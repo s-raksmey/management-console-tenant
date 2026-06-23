@@ -28,8 +28,18 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useStableLoading } from "@/hooks/useStableLoading";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
+
+function getTenantScopedMemberships(tenant: Tenant) {
+  return tenant.memberships.filter(
+    (membership) =>
+      membership.role !== "SUPER_ADMIN" &&
+      membership.user.role !== "SUPER_ADMIN",
+  );
+}
 
 export default function SuperAdminDashboard() {
+  const { locale } = useAdminLocale();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -77,42 +87,131 @@ export default function SuperAdminDashboard() {
     0,
   );
   const memberCount = tenants.reduce(
-    (total, tenant) => total + tenant.memberships.length,
+    (total, tenant) => total + getTenantScopedMemberships(tenant).length,
     0,
   );
   const recentAuditCount = auditLogs.length;
   const suspendedTenants = tenants.filter(
     (tenant) => tenant.status === "SUSPENDED",
   ).length;
+  const copy = locale === "km"
+    ? {
+        eyebrow: "ផ្ទាំងគ្រប់គ្រង",
+        title: "ផ្ទាំងគ្រប់គ្រងប្រព័ន្ធ",
+        description: "តាមដាន tenant websites, អ្នកប្រើវេទិកា, system logs និង settings។",
+        manageTenants: "គ្រប់គ្រង Tenants",
+        activeTenants: "Tenants សកម្ម",
+        platformUsers: "អ្នកប្រើវេទិកា",
+        publicSites: "គេហទំព័រសាធារណៈ",
+        recentLogs: "កំណត់ត្រាថ្មីៗ",
+        actions: [
+          {
+            title: "គ្រប់គ្រង Tenants",
+            description: "បង្កើតគេហទំព័រ គ្រប់គ្រង domains និងកំណត់ tenant admins។",
+          },
+          {
+            title: "គ្រប់គ្រងអ្នកប្រើ",
+            description: "ពិនិត្យអ្នកប្រើវេទិកា និងគ្រប់គ្រងសិទ្ធិចូលប្រើ។",
+          },
+          {
+            title: "Logs",
+            description: "ពិនិត្យសកម្មភាព audit ទូទាំងវេទិកា។",
+          },
+          {
+            title: "Analytics",
+            description: "ពិនិត្យ charts និង performance trends របស់វេទិកា។",
+          },
+          {
+            title: "Settings",
+            description: "គ្រប់គ្រង configuration របស់វេទិកា។",
+          },
+        ],
+        recentTenants: "Tenants ថ្មីៗ",
+        tenantStatusSummary: (active: number, suspended: number) =>
+          `សកម្ម: ${active} | ផ្អាក: ${suspended}`,
+        loadingTenants: "កំពុងផ្ទុក tenants...",
+        open: "បើក",
+        noTenants: "មិនទាន់មាន tenant ត្រូវបានបង្កើត។",
+        recentLogsTitle: "កំណត់ត្រាថ្មីៗ",
+        recentLogsDescription: "សកម្មភាពវេទិកាចុងក្រោយពី audit logs។",
+        loadingLogs: "កំពុងផ្ទុក logs...",
+        noLogs: "រកមិនឃើញ audit logs។",
+        systemEvent: "ព្រឹត្តិការណ៍ប្រព័ន្ធ",
+        system: "ប្រព័ន្ធ",
+      }
+    : {
+        eyebrow: "Management Console",
+        title: "System Dashboard",
+        description: "Monitor tenant websites, platform users, system logs, and settings.",
+        manageTenants: "Manage Tenants",
+        activeTenants: "Active tenants",
+        platformUsers: "Platform users",
+        publicSites: "Public sites",
+        recentLogs: "Recent logs",
+        actions: [
+          {
+            title: "Tenant Management",
+            description: "Create websites, manage domains, and assign tenant admins.",
+          },
+          {
+            title: "User Management",
+            description: "Review platform users and manage access.",
+          },
+          {
+            title: "Logs",
+            description: "Inspect audit activity across the platform.",
+          },
+          {
+            title: "Analytics",
+            description: "Review platform-wide charts and performance trends.",
+          },
+          {
+            title: "Settings",
+            description: "Control platform configuration.",
+          },
+        ],
+        recentTenants: "Recent Tenants",
+        tenantStatusSummary: (active: number, suspended: number) =>
+          `Active: ${active} | Suspended: ${suspended}`,
+        loadingTenants: "Loading tenants...",
+        open: "Open",
+        noTenants: "No tenants have been created yet.",
+        recentLogsTitle: "Recent Logs",
+        recentLogsDescription: "Latest platform activity captured by audit logs.",
+        loadingLogs: "Loading logs...",
+        noLogs: "No audit logs found.",
+        systemEvent: "System Event",
+        system: "System",
+      };
 
   const platformActions = [
     {
-      title: "Tenant Management",
-      description: "Create websites, manage domains, and assign tenant admins.",
+      title: copy.actions[0].title,
+      description: copy.actions[0].description,
       href: "/tenants",
       icon: Building2,
     },
     {
-      title: "User Management",
-      description: "Review platform users and manage access.",
+      title: copy.actions[1].title,
+      description: copy.actions[1].description,
       href: "/users",
       icon: Users,
     },
     {
-      title: "Logs",
-      description: "Inspect audit activity across the platform.",
+      title: copy.actions[2].title,
+      description: copy.actions[2].description,
       href: "/audit",
       icon: Activity,
     },
     {
-      title: "Analytics",
-      description: "Review platform-wide charts and performance trends.",
+      title: copy.actions[3].title,
+      description: copy.actions[3].description,
       href: "/analytics",
       icon: BarChart3,
     },
     {
-      title: "Settings",
-      description: "Control platform configuration.",
+      title: copy.actions[4].title,
+      description: copy.actions[4].description,
       href: "/settings",
       icon: Settings,
     },
@@ -123,19 +222,19 @@ export default function SuperAdminDashboard() {
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase text-blue-600">
-            Management Console
+            {copy.eyebrow}
           </p>
           <h1 className="mt-2 text-3xl font-bold text-slate-950 dark:text-slate-100">
-            System Dashboard
+            {copy.title}
           </h1>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            Monitor tenant websites, platform users, system logs, and settings.
+            {copy.description}
           </p>
         </div>
         <Button asChild>
           <Link href="/tenants">
             <Building2 className="mr-2 h-4 w-4" />
-            Manage Tenants
+            {copy.manageTenants}
           </Link>
         </Button>
       </div>
@@ -143,7 +242,7 @@ export default function SuperAdminDashboard() {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Active tenants</CardDescription>
+            <CardDescription>{copy.activeTenants}</CardDescription>
             <CardTitle className="text-3xl">{activeTenants}</CardTitle>
           </CardHeader>
           <CardContent>
@@ -152,7 +251,7 @@ export default function SuperAdminDashboard() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Platform users</CardDescription>
+            <CardDescription>{copy.platformUsers}</CardDescription>
             <CardTitle className="text-3xl">
               {userStats?.totalUsers ?? memberCount}
             </CardTitle>
@@ -163,7 +262,7 @@ export default function SuperAdminDashboard() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Public sites</CardDescription>
+            <CardDescription>{copy.publicSites}</CardDescription>
             <CardTitle className="text-3xl">{siteCount}</CardTitle>
           </CardHeader>
           <CardContent>
@@ -172,7 +271,7 @@ export default function SuperAdminDashboard() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>Recent logs</CardDescription>
+            <CardDescription>{copy.recentLogs}</CardDescription>
             <CardTitle className="text-3xl">{recentAuditCount}</CardTitle>
           </CardHeader>
           <CardContent>
@@ -206,16 +305,16 @@ export default function SuperAdminDashboard() {
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
       <Card>
         <CardHeader>
-          <CardTitle>Recent Tenants</CardTitle>
+          <CardTitle>{copy.recentTenants}</CardTitle>
           <CardDescription>
-              Active: {activeTenants} | Suspended: {suspendedTenants}
+              {copy.tenantStatusSummary(activeTenants, suspendedTenants)}
           </CardDescription>
         </CardHeader>
         <CardContent>
           {showLoading ? (
             <div className="flex items-center py-8 text-slate-500 dark:text-slate-400">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Loading tenants...
+              {copy.loadingTenants}
             </div>
           ) : (
             <div className="divide-y divide-slate-200 rounded-md border border-slate-200 dark:divide-slate-700 dark:border-slate-700">
@@ -236,13 +335,13 @@ export default function SuperAdminDashboard() {
                     </p>
                   </div>
                   <Button asChild variant="outline" size="sm">
-                    <Link href="/tenants">Open</Link>
+                    <Link href="/tenants">{copy.open}</Link>
                   </Button>
                 </div>
               ))}
               {tenants.length === 0 && (
                 <div className="p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                  No tenants have been created yet.
+                  {copy.noTenants}
                 </div>
               )}
             </div>
@@ -252,20 +351,20 @@ export default function SuperAdminDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Logs</CardTitle>
+            <CardTitle>{copy.recentLogsTitle}</CardTitle>
             <CardDescription>
-              Latest platform activity captured by audit logs.
+              {copy.recentLogsDescription}
             </CardDescription>
           </CardHeader>
           <CardContent>
             {showLoading ? (
               <div className="flex items-center py-8 text-slate-500 dark:text-slate-400">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading logs...
+                {copy.loadingLogs}
               </div>
             ) : auditLogs.length === 0 ? (
               <div className="rounded-md border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                No audit logs found.
+                {copy.noLogs}
               </div>
             ) : (
               <div className="space-y-3">
@@ -281,10 +380,10 @@ export default function SuperAdminDashboard() {
                       </span>
                     </div>
                     <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">
-                      {log.resourceName || log.resourceType || "System Event"}
+                      {log.resourceName || log.resourceType || copy.systemEvent}
                     </p>
                     <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                      {log.userEmail || "System"}
+                      {log.userEmail || copy.system}
                     </p>
                   </div>
                 ))}

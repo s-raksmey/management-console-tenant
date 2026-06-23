@@ -180,7 +180,7 @@ export default function EditCarouselSlidePage() {
       <div>
         <h1 className="text-3xl font-bold text-slate-950">Edit Slide</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Update the public hero slide content and image.
+          Update the public hero slide content and media.
         </p>
       </div>
 

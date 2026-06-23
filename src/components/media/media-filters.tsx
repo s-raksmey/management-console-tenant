@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import type { MediaFilters, MediaType } from '@/types/media';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface MediaFiltersProps {
   filters: MediaFilters;
@@ -15,20 +16,64 @@ interface MediaFiltersProps {
   className?: string;
 }
 
-const mediaTypes: { value: MediaType; label: string }[] = [
-  { value: 'image', label: 'Images' },
-  { value: 'video', label: 'Videos' },
-  { value: 'audio', label: 'Audio' },
-  { value: 'document', label: 'Documents' },
-  { value: 'other', label: 'Other' },
+const mediaFilterCopy = {
+  en: {
+    searchPlaceholder: 'Search files...',
+    allTypes: 'All types',
+    allFolders: 'All folders',
+    clear: 'Clear',
+    activeSearch: (value: string) => `Search: ${value}`,
+    activeType: (value?: string) => `Type: ${value}`,
+    activeFolder: (value: string) => `Folder: ${value}`,
+    activeTags: (value: string) => `Tags: ${value}`,
+    mediaTypes: {
+      image: 'Images',
+      video: 'Videos',
+      audio: 'Audio',
+      document: 'Documents',
+      other: 'Other',
+    },
+    sortOptions: {
+      name: 'Name',
+      date: 'Date',
+      size: 'Size',
+      type: 'Type',
+    },
+  },
+  km: {
+    searchPlaceholder: 'ស្វែងរកឯកសារ...',
+    allTypes: 'ប្រភេទទាំងអស់',
+    allFolders: 'ថតទាំងអស់',
+    clear: 'សម្អាត',
+    activeSearch: (value: string) => `ស្វែងរក៖ ${value}`,
+    activeType: (value?: string) => `ប្រភេទ៖ ${value}`,
+    activeFolder: (value: string) => `ថត៖ ${value}`,
+    activeTags: (value: string) => `ស្លាក៖ ${value}`,
+    mediaTypes: {
+      image: 'រូបភាព',
+      video: 'វីដេអូ',
+      audio: 'សំឡេង',
+      document: 'ឯកសារ',
+      other: 'ផ្សេងៗ',
+    },
+    sortOptions: {
+      name: 'ឈ្មោះ',
+      date: 'កាលបរិច្ឆេទ',
+      size: 'ទំហំ',
+      type: 'ប្រភេទ',
+    },
+  },
+} as const;
+
+const mediaTypes: { value: MediaType }[] = [
+  { value: 'image' },
+  { value: 'video' },
+  { value: 'audio' },
+  { value: 'document' },
+  { value: 'other' },
 ];
 
-const sortOptions = [
-  { value: 'name', label: 'Name' },
-  { value: 'date', label: 'Date' },
-  { value: 'size', label: 'Size' },
-  { value: 'type', label: 'Type' },
-];
+const sortOptions = ['name', 'date', 'size', 'type'] as const;
 
 export function MediaFilters({
   filters,
@@ -36,6 +81,9 @@ export function MediaFilters({
   folders = [],
   className,
 }: MediaFiltersProps) {
+  const { locale } = useAdminLocale();
+  const copy = mediaFilterCopy[locale];
+
   const updateFilter = (key: keyof MediaFilters, value: any) => {
     onFiltersChange({
       ...filters,
@@ -68,7 +116,7 @@ export function MediaFilters({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
           <Input
-            placeholder="Search files..."
+            placeholder={copy.searchPlaceholder}
             value={filters.search || ''}
             onChange={(e) => updateFilter('search', e.target.value)}
             className="pl-10"
@@ -81,13 +129,13 @@ export function MediaFilters({
           onValueChange={(value) => updateFilter('type', value === 'all' ? undefined : value)}
         >
           <SelectTrigger className="w-full lg:w-48">
-            <SelectValue placeholder="All types" />
+            <SelectValue placeholder={copy.allTypes} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All types</SelectItem>
+            <SelectItem value="all">{copy.allTypes}</SelectItem>
             {mediaTypes.map((type) => (
               <SelectItem key={type.value} value={type.value}>
-                {type.label}
+                {copy.mediaTypes[type.value]}
               </SelectItem>
             ))}
           </SelectContent>
@@ -100,10 +148,10 @@ export function MediaFilters({
             onValueChange={(value) => updateFilter('folder', value === 'all' ? undefined : value)}
           >
             <SelectTrigger className="w-full lg:w-48">
-              <SelectValue placeholder="All folders" />
+              <SelectValue placeholder={copy.allFolders} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All folders</SelectItem>
+              <SelectItem value="all">{copy.allFolders}</SelectItem>
               {folders.map((folder) => (
                 <SelectItem key={folder} value={folder}>
                   {folder}
@@ -124,8 +172,8 @@ export function MediaFilters({
             </SelectTrigger>
             <SelectContent>
               {sortOptions.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
+                <SelectItem key={option} value={option}>
+                  {copy.sortOptions[option]}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -153,7 +201,7 @@ export function MediaFilters({
             className="flex items-center gap-2"
           >
             <X className="w-4 h-4" />
-            Clear
+            {copy.clear}
           </Button>
         )}
       </div>
@@ -163,7 +211,7 @@ export function MediaFilters({
         <div className="flex flex-wrap gap-2 mb-4">
           {filters.search && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              Search: {filters.search}
+              {copy.activeSearch(filters.search)}
               <button
                 onClick={() => updateFilter('search', undefined)}
                 className="ml-1 hover:bg-slate-200 rounded-full p-0.5"
@@ -175,7 +223,7 @@ export function MediaFilters({
 
           {filters.type && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              Type: {mediaTypes.find(t => t.value === filters.type)?.label}
+              {copy.activeType(filters.type ? copy.mediaTypes[filters.type] : undefined)}
               <button
                 onClick={() => updateFilter('type', undefined)}
                 className="ml-1 hover:bg-slate-200 rounded-full p-0.5"
@@ -187,7 +235,7 @@ export function MediaFilters({
 
           {filters.folder && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              Folder: {filters.folder}
+              {copy.activeFolder(filters.folder)}
               <button
                 onClick={() => updateFilter('folder', undefined)}
                 className="ml-1 hover:bg-slate-200 rounded-full p-0.5"
@@ -199,7 +247,7 @@ export function MediaFilters({
 
           {filters.tags && filters.tags.length > 0 && (
             <Badge variant="secondary" className="flex items-center gap-1">
-              Tags: {filters.tags.join(', ')}
+              {copy.activeTags(filters.tags.join(', '))}
               <button
                 onClick={() => updateFilter('tags', undefined)}
                 className="ml-1 hover:bg-slate-200 rounded-full p-0.5"

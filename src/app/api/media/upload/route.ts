@@ -271,12 +271,13 @@ export async function POST(req: Request) {
     
     const options: MediaUploadOptions = optionsStr ? JSON.parse(optionsStr) : {};
     const folder = normalizeFolder(options.folder);
-    const authenticatedUser = await requireMediaPermission(
-      req,
+    const uploadPermissions =
       folder === "ads"
         ? ["MANAGE_MEDIA", "CREATE_ADS", "UPDATE_ADS"]
-        : ["MANAGE_MEDIA"],
-    );
+        : folder === "carousel"
+          ? ["MANAGE_MEDIA", "CREATE_CAROUSEL", "UPDATE_CAROUSEL"]
+          : ["MANAGE_MEDIA"];
+    const authenticatedUser = await requireMediaPermission(req, uploadPermissions);
     if (authenticatedUser instanceof NextResponse) return authenticatedUser;
 
     if (!ALLOWED_MIME_TYPES.has(file.type)) {

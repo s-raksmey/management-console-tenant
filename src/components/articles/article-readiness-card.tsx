@@ -2,6 +2,7 @@
 
 import { AlertCircle, CheckCircle2, ListChecks } from "lucide-react";
 import type { OutputData } from "@editorjs/editorjs";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 type ArticleReadinessCardProps = {
   title: string;
@@ -14,6 +15,25 @@ type ArticleReadinessCardProps = {
 export type ReadinessItem = {
   label: string;
   ready: boolean;
+};
+
+const readinessCopy = {
+  en: {
+    titleReady: "Title is specific and readable",
+    slugReady: "Slug is ready for the public URL",
+    excerptReady: "Excerpt is useful for cards and SEO",
+    categoryReady: "Category is selected",
+    bodyReady: "Story body has content",
+    heading: "Article Readiness",
+  },
+  km: {
+    titleReady: "Title ច្បាស់ និងអានងាយ",
+    slugReady: "Slug រួចរាល់សម្រាប់ public URL",
+    excerptReady: "Excerpt មានប្រយោជន៍សម្រាប់ cards និង SEO",
+    categoryReady: "បានជ្រើស Category",
+    bodyReady: "Story body មានមាតិកា",
+    heading: "ភាពរួចរាល់អត្ថបទ",
+  },
 };
 
 function stripHtml(value: string) {
@@ -40,31 +60,32 @@ export function getArticleReadinessItems({
   excerpt,
   categorySlug,
   hasBodyContent,
-}: ArticleReadinessCardProps): ReadinessItem[] {
+}: ArticleReadinessCardProps, locale: "en" | "km" = "en"): ReadinessItem[] {
   const normalizedSlug = slug.trim();
   const cleanExcerpt = excerpt?.trim() || "";
+  const copy = readinessCopy[locale];
 
   return [
     {
-      label: "Title is specific and readable",
+      label: copy.titleReady,
       ready: title.trim().length >= 12 && title.trim().length <= 90,
     },
     {
-      label: "Slug is ready for the public URL",
+      label: copy.slugReady,
       ready:
         normalizedSlug.length > 0 &&
         /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug),
     },
     {
-      label: "Excerpt is useful for cards and SEO",
+      label: copy.excerptReady,
       ready: cleanExcerpt.length >= 50 && cleanExcerpt.length <= 180,
     },
     {
-      label: "Category is selected",
+      label: copy.categoryReady,
       ready: Boolean(categorySlug?.trim()),
     },
     {
-      label: "Story body has content",
+      label: copy.bodyReady,
       ready: hasBodyContent,
     },
   ];
@@ -72,8 +93,9 @@ export function getArticleReadinessItems({
 
 export function getArticleReadinessIssues(
   props: ArticleReadinessCardProps,
+  locale: "en" | "km" = "en",
 ): string[] {
-  return getArticleReadinessItems(props)
+  return getArticleReadinessItems(props, locale)
     .filter((item) => !item.ready)
     .map((item) => item.label);
 }
@@ -85,13 +107,15 @@ export function ArticleReadinessCard({
   categorySlug,
   hasBodyContent,
 }: ArticleReadinessCardProps) {
+  const { locale } = useAdminLocale();
+  const copy = readinessCopy[locale];
   const items = getArticleReadinessItems({
     title,
     slug,
     excerpt,
     categorySlug,
     hasBodyContent,
-  });
+  }, locale);
   const readyCount = items.filter((item) => item.ready).length;
   const allReady = readyCount === items.length;
 
@@ -101,7 +125,7 @@ export function ArticleReadinessCard({
         <div className="flex items-center gap-2">
           <ListChecks className="h-4 w-4 text-slate-500" aria-hidden="true" />
           <h3 className="text-sm font-semibold text-slate-800">
-            Article Readiness
+            {copy.heading}
           </h3>
         </div>
         <span

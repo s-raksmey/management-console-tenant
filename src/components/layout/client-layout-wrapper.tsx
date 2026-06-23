@@ -7,6 +7,7 @@ import { Permission } from '@/components/permissions/PermissionGuard';
 import { usePermissions } from '@/hooks/usePermissions';
 import { LayoutWrapper } from './layout-wrapper';
 import { ApolloClientProvider } from '@/components/providers/ApolloClientProvider';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface ClientLayoutWrapperProps {
   children: React.ReactNode;
@@ -14,9 +15,21 @@ interface ClientLayoutWrapperProps {
 
 export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
   const { user, isAuthenticated, isInitializing } = useAuth();
+  const { locale } = useAdminLocale();
   const { hasPermission, isLoading: permissionsLoading } = usePermissions();
   const router = useRouter();
   const pathname = usePathname();
+  const copy = locale === 'km'
+    ? {
+        loading: 'កំពុងផ្ទុក...',
+        loginRedirect: 'កំពុងបញ្ជូនទៅទំព័រចូល...',
+        dashboardRedirect: 'កំពុងបញ្ជូនទៅផ្ទាំងគ្រប់គ្រងវេទិកា...',
+      }
+    : {
+        loading: 'Loading...',
+        loginRedirect: 'Redirecting to login...',
+        dashboardRedirect: 'Redirecting to platform dashboard...',
+      };
 
   // Public routes that don't require authentication
   const publicRoutes = ['/login', '/forgot-password', '/reset-password'];
@@ -81,7 +94,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading...</p>
+          <p className="text-slate-600">{copy.loading}</p>
         </div>
       </div>
     );
@@ -98,7 +111,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-slate-600">Redirecting to login...</p>
+          <p className="text-slate-600">{copy.loginRedirect}</p>
         </div>
       </div>
     );
@@ -113,7 +126,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-slate-600">Redirecting to platform dashboard...</p>
+          <p className="text-slate-600">{copy.dashboardRedirect}</p>
         </div>
       </div>
     );

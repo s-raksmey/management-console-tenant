@@ -24,10 +24,100 @@ import { Permission, PermissionGuard } from '@/components/permissions/Permission
 import { usePermissions } from '@/hooks/usePermissions';
 import { getAuthFetchHeaders } from '@/services/graphql-client';
 import { useToast } from '@/hooks/use-toast';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 const MEDIA_ACCESS_PERMISSIONS = [Permission.VIEW_MEDIA, Permission.MANAGE_MEDIA];
 
+const mediaPageCopy = {
+  en: {
+    loadFailedTitle: 'Media load failed',
+    loadFailedDescription: 'Unable to load media files.',
+    filesDeletedTitle: 'Files deleted',
+    filesDeletedDescription: (count: number) => `${count} file(s) removed.`,
+    someDeleteFailedTitle: 'Some files were not deleted',
+    someDeleteFailedDescription: (count: number) => `${count} file(s) could not be removed.`,
+    deleteFailedTitle: 'Delete failed',
+    deleteSelectedFailedDescription: 'Unable to delete the selected files.',
+    fileDeletedTitle: 'File deleted',
+    fileDeletedDescription: (name: string) => `${name} was removed.`,
+    deleteFileFailedDescription: 'Unable to delete the file.',
+    metadataUpdateFailed: 'Unable to update file metadata.',
+    metadataSavedTitle: 'Metadata saved',
+    metadataSavedDescription: (name: string) => `${name} was updated.`,
+    metadataUpdateFailedTitle: 'Metadata update failed',
+    pageTitle: 'Media Library',
+    pageDescription: (count: number, size: string) => `Manage your files and images. ${count} files (${size})`,
+    refresh: 'Refresh',
+    typeCount: (type: string) => `${type}s`,
+    library: 'Library',
+    upload: 'Upload',
+    selectAll: (count: number) => `Select All (${count} files)`,
+    selectedCount: (count: number) => `${count} file${count !== 1 ? 's' : ''} selected`,
+    download: 'Download',
+    delete: 'Delete',
+    clear: 'Clear',
+    loadingFiles: 'Loading files...',
+    bulkDeleteTitle: 'Delete Selected Files?',
+    bulkDeleteDescription: (count: number) =>
+      `Delete ${count} selected file${count !== 1 ? 's' : ''}? This action cannot be undone.`,
+    bulkDeleteConfirm: 'Delete Files',
+    cancel: 'Cancel',
+    editMetadataTitle: 'Edit media metadata',
+    editMetadataDescription: 'Update accessibility text, caption, and comma-separated tags for this file.',
+    altText: 'Alt text',
+    caption: 'Caption',
+    tags: 'Tags',
+    tagsPlaceholder: 'newsroom, homepage, politics',
+    saving: 'Saving...',
+    saveMetadata: 'Save metadata',
+  },
+  km: {
+    loadFailedTitle: 'Load Media មិនបាន',
+    loadFailedDescription: 'មិនអាច Load ឯកសារ media បានទេ។',
+    filesDeletedTitle: 'បានលុបឯកសារ',
+    filesDeletedDescription: (count: number) => `បានលុប ${count} ឯកសារ។`,
+    someDeleteFailedTitle: 'ឯកសារខ្លះមិនបានលុប',
+    someDeleteFailedDescription: (count: number) => `${count} ឯកសារមិនអាចលុបបានទេ។`,
+    deleteFailedTitle: 'លុបមិនបាន',
+    deleteSelectedFailedDescription: 'មិនអាចលុបឯកសារដែលបានជ្រើសបានទេ។',
+    fileDeletedTitle: 'បានលុបឯកសារ',
+    fileDeletedDescription: (name: string) => `បានលុប ${name}។`,
+    deleteFileFailedDescription: 'មិនអាចលុបឯកសារបានទេ។',
+    metadataUpdateFailed: 'មិនអាចកែ metadata របស់ឯកសារបានទេ។',
+    metadataSavedTitle: 'បានរក្សាទុក metadata',
+    metadataSavedDescription: (name: string) => `បានកែប្រែ ${name}។`,
+    metadataUpdateFailedTitle: 'កែ metadata មិនបាន',
+    pageTitle: 'បណ្ណាល័យ Media',
+    pageDescription: (count: number, size: string) => `គ្រប់គ្រងឯកសារ និងរូបភាព។ ${count} ឯកសារ (${size})`,
+    refresh: 'Refresh',
+    typeCount: (type: string) => `${type}`,
+    library: 'បណ្ណាល័យ',
+    upload: 'Upload',
+    selectAll: (count: number) => `ជ្រើសទាំងអស់ (${count} ឯកសារ)`,
+    selectedCount: (count: number) => `បានជ្រើស ${count} ឯកសារ`,
+    download: 'Download',
+    delete: 'លុប',
+    clear: 'សម្អាត',
+    loadingFiles: 'កំពុង Load ឯកសារ...',
+    bulkDeleteTitle: 'លុបឯកសារដែលបានជ្រើស?',
+    bulkDeleteDescription: (count: number) =>
+      `លុប ${count} ឯកសារដែលបានជ្រើស? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`,
+    bulkDeleteConfirm: 'លុបឯកសារ',
+    cancel: 'បោះបង់',
+    editMetadataTitle: 'កែ metadata របស់ media',
+    editMetadataDescription: 'កែ alt text, caption និង tags ដែលបំបែកដោយសញ្ញាក្បៀសសម្រាប់ឯកសារនេះ។',
+    altText: 'Alt text',
+    caption: 'Caption',
+    tags: 'Tags',
+    tagsPlaceholder: 'newsroom, homepage, politics',
+    saving: 'កំពុងរក្សាទុក...',
+    saveMetadata: 'រក្សាទុក metadata',
+  },
+} as const;
+
 export default function MediaPage() {
+  const { locale } = useAdminLocale();
+  const copy = mediaPageCopy[locale];
   const { toast } = useToast();
   const {
     hasPermission,
@@ -69,15 +159,19 @@ export default function MediaPage() {
         setFiles(data.files || []);
         setFolders(data.folders || []);
       } else {
-        toast({ title: 'Media load failed', description: data.message, variant: 'destructive' });
+        toast({
+          title: copy.loadFailedTitle,
+          description: locale === 'en' ? data.message : copy.loadFailedDescription,
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Failed to load files:', error);
-      toast({ title: 'Media load failed', description: 'Unable to load media files.', variant: 'destructive' });
+      toast({ title: copy.loadFailedTitle, description: copy.loadFailedDescription, variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [canAccessMedia, permissionsLoading, toast]);
+  }, [canAccessMedia, copy.loadFailedDescription, copy.loadFailedTitle, locale, permissionsLoading, toast]);
 
   useEffect(() => {
     if (permissionsLoading) return;
@@ -200,17 +294,17 @@ export default function MediaPage() {
       if (successfullyDeleted.length > 0) {
         setFiles(prev => prev.filter(f => !successfullyDeleted.includes(f.id)));
         setSelectedFiles([]);
-        toast({ title: 'Files deleted', description: `${successfullyDeleted.length} file(s) removed.`, variant: 'success' });
+        toast({ title: copy.filesDeletedTitle, description: copy.filesDeletedDescription(successfullyDeleted.length), variant: 'success' });
       }
       
       const failedCount = results.filter(result => !result.success).length;
       if (failedCount > 0) {
         console.error(`Failed to delete ${failedCount} files`);
-        toast({ title: 'Some files were not deleted', description: `${failedCount} file(s) could not be removed.`, variant: 'destructive' });
+        toast({ title: copy.someDeleteFailedTitle, description: copy.someDeleteFailedDescription(failedCount), variant: 'destructive' });
       }
     } catch (error) {
       console.error('Error during bulk delete:', error);
-      toast({ title: 'Delete failed', description: 'Unable to delete the selected files.', variant: 'destructive' });
+      toast({ title: copy.deleteFailedTitle, description: copy.deleteSelectedFailedDescription, variant: 'destructive' });
     }
   };
 
@@ -227,14 +321,14 @@ export default function MediaPage() {
       
       if (data.success) {
         setFiles(prev => prev.filter(f => f.id !== file.id));
-        toast({ title: 'File deleted', description: `${file.originalName} was removed.`, variant: 'success' });
+        toast({ title: copy.fileDeletedTitle, description: copy.fileDeletedDescription(file.originalName), variant: 'success' });
       } else {
         console.error('Failed to delete file:', data.message);
-        toast({ title: 'Delete failed', description: data.message, variant: 'destructive' });
+        toast({ title: copy.deleteFailedTitle, description: locale === 'en' ? data.message : copy.deleteFileFailedDescription, variant: 'destructive' });
       }
     } catch (error) {
       console.error('Error deleting file:', error);
-      toast({ title: 'Delete failed', description: 'Unable to delete the file.', variant: 'destructive' });
+      toast({ title: copy.deleteFailedTitle, description: copy.deleteFileFailedDescription, variant: 'destructive' });
     }
   };
 
@@ -266,16 +360,16 @@ export default function MediaPage() {
       const data = await response.json();
 
       if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Unable to update file metadata.');
+        throw new Error(locale === 'en' ? data.message || copy.metadataUpdateFailed : copy.metadataUpdateFailed);
       }
 
       setFiles(prev => prev.map(file => file.id === data.file.id ? data.file : file));
       setEditingFile(null);
-      toast({ title: 'Metadata saved', description: `${editingFile.originalName} was updated.`, variant: 'success' });
+      toast({ title: copy.metadataSavedTitle, description: copy.metadataSavedDescription(editingFile.originalName), variant: 'success' });
     } catch (error) {
       toast({
-        title: 'Metadata update failed',
-        description: error instanceof Error ? error.message : 'Unable to update file metadata.',
+        title: copy.metadataUpdateFailedTitle,
+        description: locale === 'en' && error instanceof Error ? error.message : copy.metadataUpdateFailed,
         variant: 'destructive',
       });
     } finally {
@@ -327,10 +421,10 @@ export default function MediaPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Media Library
+            {copy.pageTitle}
           </h1>
           <p className="text-slate-600">
-            Manage your files and images. {stats.totalFiles} files ({formatFileSize(stats.totalSize)})
+            {copy.pageDescription(stats.totalFiles, formatFileSize(stats.totalSize))}
           </p>
         </div>
         
@@ -342,7 +436,7 @@ export default function MediaPage() {
             disabled={loading}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
+            {copy.refresh}
           </Button>
           
           <div className="flex items-center border border-slate-200 rounded-lg">
@@ -372,7 +466,7 @@ export default function MediaPage() {
           {Object.entries(stats.byType).map(([type, count]) => (
             <div key={type} className="bg-white border border-slate-200 rounded-lg p-4 text-center">
               <div className="text-2xl font-bold text-slate-900">{count}</div>
-              <div className="text-sm text-slate-500 capitalize">{type}s</div>
+              <div className="text-sm text-slate-500 capitalize">{copy.typeCount(type)}</div>
             </div>
           ))}
         </div>
@@ -381,8 +475,8 @@ export default function MediaPage() {
       {/* Main Content */}
       <Tabs defaultValue="library" className="space-y-6">
         <TabsList>
-          <TabsTrigger value="library">Library</TabsTrigger>
-          {canManageMedia && <TabsTrigger value="upload">Upload</TabsTrigger>}
+          <TabsTrigger value="library">{copy.library}</TabsTrigger>
+          {canManageMedia && <TabsTrigger value="upload">{copy.upload}</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="library" className="space-y-6">
@@ -404,7 +498,7 @@ export default function MediaPage() {
                 className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
               />
               <label htmlFor="select-all" className="text-sm font-medium text-slate-700">
-                Select All ({filteredFiles.length} files)
+                {copy.selectAll(filteredFiles.length)}
               </label>
             </div>
           )}
@@ -414,25 +508,25 @@ export default function MediaPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium text-blue-900">
-                  {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} selected
+                  {copy.selectedCount(selectedFiles.length)}
                 </span>
                 <div className="flex items-center gap-2">
                   <Button size="sm" variant="outline" onClick={handleBulkDownload}>
-                    Download
+                    {copy.download}
                   </Button>
                   <Button
                     size="sm"
                     variant="destructive"
                     onClick={() => setBulkDeleteDialogOpen(true)}
                   >
-                    Delete
+                    {copy.delete}
                   </Button>
                   <Button 
                     size="sm" 
                     variant="ghost"
                     onClick={() => setSelectedFiles([])}
                   >
-                    Clear
+                    {copy.clear}
                   </Button>
                 </div>
               </div>
@@ -443,7 +537,7 @@ export default function MediaPage() {
           {loading ? (
             <div className="text-center py-12">
               <RefreshCw className="w-8 h-8 text-slate-400 mx-auto mb-4 animate-spin" />
-              <p className="text-slate-500">Loading files...</p>
+              <p className="text-slate-500">{copy.loadingFiles}</p>
             </div>
           ) : (
             <MediaGrid
@@ -469,10 +563,10 @@ export default function MediaPage() {
       <ConfirmationDialog
         open={bulkDeleteDialogOpen}
         onOpenChange={setBulkDeleteDialogOpen}
-        title="Delete Selected Files?"
-        description={`Delete ${selectedFiles.length} selected file${selectedFiles.length !== 1 ? 's' : ''}? This action cannot be undone.`}
-        confirmText="Delete Files"
-        cancelText="Cancel"
+        title={copy.bulkDeleteTitle}
+        description={copy.bulkDeleteDescription(selectedFiles.length)}
+        confirmText={copy.bulkDeleteConfirm}
+        cancelText={copy.cancel}
         variant="destructive"
         onConfirm={() => {
           void handleBulkDelete();
@@ -481,29 +575,29 @@ export default function MediaPage() {
       <Dialog open={!!editingFile} onOpenChange={(open) => !open && setEditingFile(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit media metadata</DialogTitle>
+            <DialogTitle>{copy.editMetadataTitle}</DialogTitle>
             <DialogDescription>
-              Update accessibility text, caption, and comma-separated tags for this file.
+              {copy.editMetadataDescription}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="media-alt">Alt text</Label>
+              <Label htmlFor="media-alt">{copy.altText}</Label>
               <Input id="media-alt" value={editAlt} onChange={(event) => setEditAlt(event.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="media-caption">Caption</Label>
+              <Label htmlFor="media-caption">{copy.caption}</Label>
               <Textarea id="media-caption" value={editCaption} onChange={(event) => setEditCaption(event.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="media-tags">Tags</Label>
-              <Input id="media-tags" value={editTags} onChange={(event) => setEditTags(event.target.value)} placeholder="newsroom, homepage, politics" />
+              <Label htmlFor="media-tags">{copy.tags}</Label>
+              <Input id="media-tags" value={editTags} onChange={(event) => setEditTags(event.target.value)} placeholder={copy.tagsPlaceholder} />
             </div>
           </div>
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setEditingFile(null)}>Cancel</Button>
+            <Button type="button" variant="outline" onClick={() => setEditingFile(null)}>{copy.cancel}</Button>
             <Button type="button" onClick={() => void handleMetadataSave()} disabled={savingMetadata}>
-              {savingMetadata ? 'Saving...' : 'Save metadata'}
+              {savingMetadata ? copy.saving : copy.saveMetadata}
             </Button>
           </DialogFooter>
         </DialogContent>

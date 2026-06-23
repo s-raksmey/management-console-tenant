@@ -9,6 +9,9 @@ export type CarouselSlide = {
   subtitle?: string | null;
   subtitleKhmer?: string | null;
   imageUrl?: string | null;
+  mediaType: "IMAGE" | "VIDEO";
+  videoUrl?: string | null;
+  videoProvider?: "MP4" | "YOUTUBE" | "FACEBOOK" | null;
   linkUrl?: string | null;
   ctaLabel?: string | null;
   ctaLabelKhmer?: string | null;
@@ -33,6 +36,9 @@ export type CarouselSlideInput = {
   subtitle?: string | null;
   subtitleKhmer?: string | null;
   imageUrl?: string | null;
+  mediaType?: "IMAGE" | "VIDEO";
+  videoUrl?: string | null;
+  videoProvider?: "MP4" | "YOUTUBE" | "FACEBOOK" | null;
   linkUrl?: string | null;
   ctaLabel?: string | null;
   ctaLabelKhmer?: string | null;
@@ -51,6 +57,9 @@ export const CAROUSEL_SLIDE_FIELDS = /* GraphQL */ `
   subtitle
   subtitleKhmer
   imageUrl
+  mediaType
+  videoUrl
+  videoProvider
   linkUrl
   ctaLabel
   ctaLabelKhmer

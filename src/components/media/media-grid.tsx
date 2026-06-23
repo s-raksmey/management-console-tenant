@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { cn } from '@/lib/utils';
 import type { MediaFile } from '@/types/media';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface MediaGridProps {
   files: MediaFile[];
@@ -46,6 +47,25 @@ const getTypeColor = (type: string): string => {
   return 'bg-slate-100 text-slate-800';
 };
 
+const mediaGridCopy = {
+  en: {
+    emptyTitle: 'No files found',
+    emptyDescription: 'Upload some files to get started.',
+    deleteTitle: 'Delete File?',
+    deleteDescription: 'Are you sure you want to delete this file? This action cannot be undone.',
+    deleteConfirm: 'Delete',
+    cancel: 'Cancel',
+  },
+  km: {
+    emptyTitle: 'រកមិនឃើញឯកសារ',
+    emptyDescription: 'Upload ឯកសារមួយចំនួនដើម្បីចាប់ផ្តើម។',
+    deleteTitle: 'លុបឯកសារ?',
+    deleteDescription: 'តើអ្នកប្រាកដថាចង់លុបឯកសារនេះមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។',
+    deleteConfirm: 'លុប',
+    cancel: 'បោះបង់',
+  },
+} as const;
+
 export function MediaGrid({
   files,
   onFileSelect,
@@ -55,6 +75,8 @@ export function MediaGrid({
   selectable = false,
   className,
 }: MediaGridProps) {
+  const { locale } = useAdminLocale();
+  const copy = mediaGridCopy[locale];
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
     file: MediaFile | null;
@@ -90,8 +112,8 @@ export function MediaGrid({
     return (
       <div className="text-center py-12">
         <File className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-slate-900 mb-2">No files found</h3>
-        <p className="text-slate-500">Upload some files to get started.</p>
+        <h3 className="text-lg font-medium text-slate-900 mb-2">{copy.emptyTitle}</h3>
+        <p className="text-slate-500">{copy.emptyDescription}</p>
       </div>
     );
   }
@@ -239,10 +261,10 @@ export function MediaGrid({
     </div><ConfirmationDialog
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
-        title="Delete File?"
-        description="Are you sure you want to delete this file? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
+        title={copy.deleteTitle}
+        description={copy.deleteDescription}
+        confirmText={copy.deleteConfirm}
+        cancelText={copy.cancel}
         variant="destructive"
         onConfirm={handleDeleteConfirm} /></>
   );

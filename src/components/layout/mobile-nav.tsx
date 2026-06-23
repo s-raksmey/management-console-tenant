@@ -29,6 +29,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { Permission } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAdminLocale, type AdminLocale } from "@/hooks/useAdminLocale";
 
 interface MobileNavProps {
   open: boolean;
@@ -37,6 +38,7 @@ interface MobileNavProps {
 
 const getNavigation = (
   userRole?: string,
+  locale: AdminLocale = "en",
   permissions: {
     canViewSettings: boolean;
     canViewUsers: boolean;
@@ -63,10 +65,45 @@ const getNavigation = (
     canUpdateSettings: false,
   },
 ) => {
+  const copy = {
+    en: {
+      dashboard: "Dashboard",
+      tenantManagement: "Tenant Management",
+      userManagement: "User Management",
+      roleManagement: "Role Management",
+      analytics: "Analytics",
+      media: "Media",
+      carousel: "Carousel",
+      ads: "Ads",
+      logs: "Logs",
+      settings: "Settings",
+      articles: "Articles",
+      websiteSettings: "Website Settings",
+      categories: "Categories",
+      users: "Users",
+    },
+    km: {
+      dashboard: "ផ្ទាំងសង្ខេប",
+      tenantManagement: "គ្រប់គ្រង Tenant",
+      userManagement: "គ្រប់គ្រងអ្នកប្រើ",
+      roleManagement: "គ្រប់គ្រងតួនាទី",
+      analytics: "វិភាគទិន្នន័យ",
+      media: "មេឌៀ",
+      carousel: "Carousel",
+      ads: "ពាណិជ្ជកម្ម",
+      logs: "កំណត់ហេតុ",
+      settings: "ការកំណត់",
+      articles: "អត្ថបទ",
+      websiteSettings: "ការកំណត់គេហទំព័រ",
+      categories: "ប្រភេទ",
+      users: "អ្នកប្រើ",
+    },
+  }[locale];
+
   if (userRole === "SUPER_ADMIN") {
     const platformItems = [
       {
-        name: "Dashboard",
+        name: copy.dashboard,
         href: "/",
         icon: LayoutDashboard,
       },
@@ -74,7 +111,7 @@ const getNavigation = (
 
     if (permissions.canSystemAdmin) {
       platformItems.push({
-        name: "Tenant Management",
+        name: copy.tenantManagement,
         href: "/tenants",
         icon: Building2,
       });
@@ -82,7 +119,7 @@ const getNavigation = (
 
     if (permissions.canViewUsers) {
       platformItems.push({
-        name: "User Management",
+        name: copy.userManagement,
         href: "/users",
         icon: Users,
       });
@@ -90,7 +127,7 @@ const getNavigation = (
 
     if (permissions.canManageRoles) {
       platformItems.push({
-        name: "Role Management",
+        name: copy.roleManagement,
         href: "/users/roles",
         icon: Shield,
       });
@@ -98,7 +135,7 @@ const getNavigation = (
 
     if (permissions.canViewAnalytics) {
       platformItems.push({
-        name: "Analytics",
+        name: copy.analytics,
         href: "/analytics",
         icon: BarChart3,
       });
@@ -106,7 +143,7 @@ const getNavigation = (
 
     if (permissions.canViewMedia) {
       platformItems.push({
-        name: "Media",
+        name: copy.media,
         href: "/media",
         icon: Image,
       });
@@ -114,7 +151,7 @@ const getNavigation = (
 
     if (permissions.canViewCarousel) {
       platformItems.push({
-        name: "Carousel",
+        name: copy.carousel,
         href: "/carousel",
         icon: Image,
       });
@@ -122,7 +159,7 @@ const getNavigation = (
 
     if (permissions.canViewAds) {
       platformItems.push({
-        name: "Ads",
+        name: copy.ads,
         href: "/ads",
         icon: Megaphone,
       });
@@ -130,7 +167,7 @@ const getNavigation = (
 
     if (permissions.canViewAuditLogs) {
       platformItems.push({
-        name: "Logs",
+        name: copy.logs,
         href: "/audit",
         icon: Archive,
       });
@@ -138,7 +175,7 @@ const getNavigation = (
 
     if (permissions.canViewSettings) {
       platformItems.push({
-        name: "Settings",
+        name: copy.settings,
         href: "/settings",
         icon: Settings,
       });
@@ -149,12 +186,12 @@ const getNavigation = (
 
   const baseItems = [
     {
-      name: "Dashboard",
+      name: copy.dashboard,
       href: "/",
       icon: LayoutDashboard,
     },
     {
-      name: "Articles",
+      name: copy.articles,
       href: "/articles",
       icon: FileText,
     },
@@ -162,7 +199,7 @@ const getNavigation = (
 
   if (permissions.canUpdateSettings || permissions.canSystemAdmin) {
     baseItems.push({
-      name: "Website Settings",
+      name: copy.websiteSettings,
       href: "/tenants",
       icon: Building2,
     });
@@ -170,7 +207,7 @@ const getNavigation = (
 
   if (permissions.canManageStructure) {
     baseItems.push({
-      name: "Categories",
+      name: copy.categories,
       href: "/categories",
       icon: Tags,
     });
@@ -178,7 +215,7 @@ const getNavigation = (
 
   if (permissions.canViewMedia) {
     baseItems.push({
-      name: "Media",
+      name: copy.media,
       href: "/media",
       icon: Image,
     });
@@ -186,7 +223,7 @@ const getNavigation = (
 
   if (permissions.canViewCarousel) {
     baseItems.push({
-      name: "Carousel",
+      name: copy.carousel,
       href: "/carousel",
       icon: Image,
     });
@@ -194,7 +231,7 @@ const getNavigation = (
 
   if (permissions.canViewAds) {
     baseItems.push({
-      name: "Ads",
+      name: copy.ads,
       href: "/ads",
       icon: Megaphone,
     });
@@ -202,7 +239,7 @@ const getNavigation = (
 
   if (permissions.canViewAnalytics) {
     baseItems.push({
-      name: "Analytics",
+      name: copy.analytics,
       href: "/analytics",
       icon: BarChart3,
     });
@@ -210,7 +247,7 @@ const getNavigation = (
 
   if (permissions.canViewUsers) {
     baseItems.push({
-      name: "Users",
+      name: copy.users,
       href: "/users",
       icon: Users,
     });
@@ -218,7 +255,7 @@ const getNavigation = (
 
   if (permissions.canViewSettings) {
     baseItems.push({
-      name: "Settings",
+      name: copy.settings,
       href: "/settings",
       icon: Settings,
     });
@@ -232,8 +269,9 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
   const { user } = useAuth();
   const { activeTenant } = useTenant();
   const { hasPermission } = usePermissions();
+  const { locale } = useAdminLocale();
   const userRole = user?.role?.toString().toUpperCase();
-  const navigation = getNavigation(userRole, {
+  const navigation = getNavigation(userRole, locale, {
     canViewSettings: hasPermission(Permission.VIEW_SETTINGS),
     canViewUsers: hasPermission(Permission.VIEW_ALL_USERS),
     canViewMedia:
@@ -283,7 +321,9 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
             </div>
             <div className="min-w-0">
               <div className="truncate font-semibold text-slate-900">{brandName}</div>
-              <div className="text-xs text-slate-500">Admin Dashboard</div>
+              <div className="text-xs text-slate-500">
+                {locale === "km" ? "ផ្ទាំងគ្រប់គ្រង" : "Admin Dashboard"}
+              </div>
             </div>
           </SheetTitle>
         </SheetHeader>

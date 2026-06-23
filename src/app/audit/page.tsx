@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { 
   Shield, 
   Download, 
@@ -29,12 +28,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { useToastHelpers } from '@/components/ui/toast';
 import { PermissionGuard, Permission } from '@/components/permissions/PermissionGuard';
 import { AuditService } from '@/services/audit.gql';
 import type { AuditLog, AuditLogFilters } from '@/types/audit';
 
 export default function AuditLogsPage() {
-  const router = useRouter();
+  const { showSuccess, showError } = useToastHelpers();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -67,6 +67,7 @@ export default function AuditLogsPage() {
       setTotalCount(result.totalCount);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
+      showError('Audit Logs Failed', 'Unable to load audit logs.');
     } finally {
       setLoading(false);
     }
@@ -101,8 +102,10 @@ export default function AuditLogsPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
+      showSuccess('Export Ready', 'Audit logs CSV has been downloaded.');
     } catch (error) {
       console.error('Error exporting audit logs:', error);
+      showError('Export Failed', 'Unable to export audit logs.');
     } finally {
       setIsExporting(false);
     }

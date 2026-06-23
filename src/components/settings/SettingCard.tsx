@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertCircle, Check, RotateCcw, Save } from 'lucide-react';
 import { Setting } from '@/services/settings.gql';
 import { SettingInput } from './SettingInput';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface SettingCardProps {
   setting: Setting;
@@ -28,6 +29,28 @@ export function SettingCard({
   loading = false,
   hasChanges = false
 }: SettingCardProps) {
+  const { locale } = useAdminLocale();
+  const copy = locale === 'km'
+    ? {
+        required: 'Required',
+        public: 'Public',
+        needsAttention: 'ត្រូវពិនិត្យ',
+        unsavedChanges: 'មិនទាន់រក្សាទុក',
+        saved: 'បានរក្សាទុក',
+        undo: 'Undo',
+        saving: 'កំពុងរក្សាទុក',
+        save: 'រក្សាទុក',
+      }
+    : {
+        required: 'Required',
+        public: 'Public',
+        needsAttention: 'Needs attention',
+        unsavedChanges: 'Unsaved changes',
+        saved: 'Saved',
+        undo: 'Undo',
+        saving: 'Saving',
+        save: 'Save',
+      };
   const [isSaving, setIsSaving] = React.useState(false);
   const [isResetting, setIsResetting] = React.useState(false);
 
@@ -67,12 +90,12 @@ export function SettingCard({
             </h3>
             {setting.isRequired && (
               <Badge variant="secondary" className="text-[11px]">
-                Required
+                {copy.required}
               </Badge>
             )}
             {setting.isPublic && (
               <Badge variant="outline" className="bg-white text-[11px]">
-                Public
+                {copy.public}
               </Badge>
             )}
           </div>
@@ -106,7 +129,7 @@ export function SettingCard({
               ) : (
                 <Check className="h-3.5 w-3.5" />
               )}
-              {error ? 'Needs attention' : hasChanges ? 'Unsaved changes' : 'Saved'}
+              {error ? copy.needsAttention : hasChanges ? copy.unsavedChanges : copy.saved}
             </div>
 
             <div className="flex items-center gap-2 sm:justify-end">
@@ -118,7 +141,7 @@ export function SettingCard({
                 className="h-8 bg-white px-3"
               >
                 <RotateCcw className="mr-1.5 h-3 w-3" />
-                Undo
+                {copy.undo}
               </Button>
 
               <Button
@@ -130,12 +153,12 @@ export function SettingCard({
                 {isSaving ? (
                   <div className="flex items-center gap-1">
                     <div className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                    <span>Saving</span>
+                    <span>{copy.saving}</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-1">
                     <Save className="h-3 w-3" />
-                    <span>Save</span>
+                    <span>{copy.save}</span>
                   </div>
                 )}
               </Button>

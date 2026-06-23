@@ -9,9 +9,64 @@ import { useAuth } from '@/contexts/AuthContext';
 interface LoginFormProps {
   onSuccess?: () => void;
   onSwitchToRegister?: () => void;
+  locale?: 'en' | 'km';
 }
 
-export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
+const loginCopy = {
+  en: {
+    verifyTitle: 'Verify Your Login',
+    welcomeTitle: 'Welcome Back',
+    setupDescription: 'Scan the QR code once, then enter the 6-digit code.',
+    verifyDescription: 'Enter the 6-digit code from your authenticator app.',
+    signInDescription: 'Sign in to your admin account',
+    verificationCode: 'Verification Code',
+    manualSetupKey: 'Manual setup key',
+    verifying: 'Verifying...',
+    backToPassword: 'Back to password',
+    email: 'Email Address',
+    emailPlaceholder: 'Enter your email',
+    password: 'Password',
+    passwordPlaceholder: 'Enter your password',
+    forgotPassword: 'Forgot password?',
+    signingIn: 'Signing in...',
+    signIn: 'Sign In',
+    missingFields: 'Please fill in all fields',
+    loginFailed: 'Login failed',
+    unexpectedError: 'An unexpected error occurred',
+    codeError: 'Enter the 6-digit code from your authenticator app',
+    verificationFailed: 'Verification failed',
+    noAccount: 'Do not have an account?',
+    createAccount: 'Create one here',
+  },
+  km: {
+    verifyTitle: 'ផ្ទៀងផ្ទាត់ការចូល',
+    welcomeTitle: 'សូមស្វាគមន៍ត្រឡប់មកវិញ',
+    setupDescription: 'ស្កេន QR code ម្តង រួចបញ្ចូលលេខកូដ ៦ ខ្ទង់។',
+    verifyDescription: 'បញ្ចូលលេខកូដ ៦ ខ្ទង់ពីកម្មវិធី authenticator របស់អ្នក។',
+    signInDescription: 'ចូលទៅកាន់គណនីគ្រប់គ្រងរបស់អ្នក',
+    verificationCode: 'លេខកូដផ្ទៀងផ្ទាត់',
+    manualSetupKey: 'លេខកូដដំឡើងដោយដៃ',
+    verifying: 'កំពុងផ្ទៀងផ្ទាត់...',
+    backToPassword: 'ត្រឡប់ទៅលេខសម្ងាត់',
+    email: 'អាសយដ្ឋានអ៊ីមែល',
+    emailPlaceholder: 'បញ្ចូលអ៊ីមែលរបស់អ្នក',
+    password: 'លេខសម្ងាត់',
+    passwordPlaceholder: 'បញ្ចូលលេខសម្ងាត់របស់អ្នក',
+    forgotPassword: 'ភ្លេចលេខសម្ងាត់?',
+    signingIn: 'កំពុងចូល...',
+    signIn: 'ចូល',
+    missingFields: 'សូមបំពេញព័ត៌មានទាំងអស់',
+    loginFailed: 'ការចូលបានបរាជ័យ',
+    unexpectedError: 'មានបញ្ហាមិនបានរំពឹងទុក',
+    codeError: 'បញ្ចូលលេខកូដ ៦ ខ្ទង់ពីកម្មវិធី authenticator របស់អ្នក',
+    verificationFailed: 'ការផ្ទៀងផ្ទាត់បានបរាជ័យ',
+    noAccount: 'មិនទាន់មានគណនី?',
+    createAccount: 'បង្កើតគណនីនៅទីនេះ',
+  },
+};
+
+export function LoginForm({ onSuccess, onSwitchToRegister, locale = 'en' }: LoginFormProps) {
+  const copy = loginCopy[locale];
   const { login, verifyTwoFactorLogin, isLoading } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
@@ -35,7 +90,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
     setError('');
 
     if (!formData.email || !formData.password) {
-      setError('Please fill in all fields');
+      setError(copy.missingFields);
       return;
     }
 
@@ -55,10 +110,10 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
       if (response.success) {
         onSuccess?.();
       } else {
-        setError(response.message || 'Login failed');
+        setError(response.message || copy.loginFailed);
       }
     } catch (error) {
-      setError('An unexpected error occurred');
+      setError(copy.unexpectedError);
     }
   };
 
@@ -68,7 +123,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
     if (!twoFactorState) return;
 
     if (!/^\d{6}$/.test(code.replace(/\s+/g, ''))) {
-      setError('Enter the 6-digit code from your authenticator app');
+      setError(copy.codeError);
       return;
     }
 
@@ -81,12 +136,12 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
       if (response.success) {
         onSuccess?.();
       } else {
-        setError(response.message || 'Verification failed');
+        setError(response.message || copy.verificationFailed);
       }
     } catch (error) {
-      setError('An unexpected error occurred');
+      setError(copy.unexpectedError);
     }
-  }, [onSuccess, twoFactorState, verifyTwoFactorLogin]);
+  }, [copy.codeError, copy.unexpectedError, copy.verificationFailed, onSuccess, twoFactorState, verifyTwoFactorLogin]);
 
   const handleTwoFactorSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,14 +177,14 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
             {twoFactorState ? <ShieldCheck className="h-6 w-6" /> : <LogIn className="h-6 w-6" />}
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            {twoFactorState ? 'Verify Your Login' : 'Welcome Back'}
+            {twoFactorState ? copy.verifyTitle : copy.welcomeTitle}
           </h1>
           <p className="text-slate-600">
             {twoFactorState
               ? twoFactorState.setupRequired
-                ? 'Scan the QR code once, then enter the 6-digit code.'
-                : 'Enter the 6-digit code from your authenticator app.'
-              : 'Sign in to your admin account'}
+                ? copy.setupDescription
+                : copy.verifyDescription
+              : copy.signInDescription}
           </p>
         </div>
 
@@ -145,7 +200,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
                   />
                   <div className="w-full rounded-md bg-white p-3 text-center">
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
-                      Manual setup key
+                      {copy.manualSetupKey}
                     </p>
                     <p className="mt-1 break-all font-mono text-sm text-slate-900">
                       {twoFactorState.setup.secret}
@@ -157,7 +212,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
 
             <div>
               <label htmlFor="twoFactorCode" className="block text-sm font-medium text-slate-700 mb-2">
-                Verification Code
+                {copy.verificationCode}
               </label>
               <div className="relative">
                 <input
@@ -196,7 +251,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
             {isLoading && (
               <div className="flex items-center justify-center rounded-md bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Verifying...
+                {copy.verifying}
               </div>
             )}
 
@@ -207,7 +262,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
               className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to password
+              {copy.backToPassword}
             </button>
           </form>
         ) : (
@@ -215,7 +270,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
           {/* Email Field */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
-              Email Address
+              {copy.email}
             </label>
             <input
               type="email"
@@ -224,7 +279,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
               value={formData.email}
               onChange={handleInputChange}
               className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter your email"
+              placeholder={copy.emailPlaceholder}
               required
               disabled={isLoading}
             />
@@ -234,13 +289,13 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
           <div>
             <div className="mb-2 flex items-center justify-between">
               <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-                Password
+                {copy.password}
               </label>
               <Link
                 href="/forgot-password"
                 className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
               >
-                Forgot password?
+                {copy.forgotPassword}
               </Link>
             </div>
             <div className="relative">
@@ -251,7 +306,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
                 value={formData.password}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Enter your password"
+                placeholder={copy.passwordPlaceholder}
                 required
                 disabled={isLoading}
               />
@@ -290,12 +345,12 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
             {isLoading ? (
               <>
                 <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                Signing in...
+                {copy.signingIn}
               </>
             ) : (
               <>
                 <LogIn className="-ml-1 mr-2 h-4 w-4" />
-                Sign In
+                {copy.signIn}
               </>
             )}
           </button>
@@ -306,14 +361,14 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
         {onSwitchToRegister && (
           <div className="mt-6 text-center">
             <p className="text-sm text-slate-600">
-              Don't have an account?{' '}
+              {copy.noAccount}{' '}
               <button
                 type="button"
                 onClick={onSwitchToRegister}
                 className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
                 disabled={isLoading}
               >
-                Create one here
+                {copy.createAccount}
               </button>
             </p>
           </div>

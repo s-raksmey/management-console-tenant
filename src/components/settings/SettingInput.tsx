@@ -8,6 +8,7 @@ import { Eye, EyeOff, Loader2, UploadCloud } from 'lucide-react';
 import { Setting, getSettingInputType } from '@/services/settings.gql';
 import { SettingInputProps } from '@/types/settings';
 import { getAuthFetchHeaders } from '@/services/graphql-client';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 const BRAND_IMAGE_SETTING_KEYS = new Set([
   'site.logo_url',
@@ -17,6 +18,54 @@ const BRAND_IMAGE_SETTING_KEYS = new Set([
 ]);
 
 export function SettingInput({ setting, value, onChange, error, disabled = false }: SettingInputProps) {
+  const { locale } = useAdminLocale();
+  const copy = locale === 'km'
+    ? {
+        enter: (label: string) => `បញ្ចូល ${label}`,
+        uploadImageOnly: 'សូម upload image file។',
+        uploadFailed: 'Upload មិនបាន',
+        enabled: 'Enabled',
+        disabled: 'Disabled',
+        select: (label: string) => `ជ្រើស ${label}`,
+        author: 'Author',
+        editor: 'Editor',
+        admin: 'Admin',
+        everyHour: 'រៀងរាល់ម៉ោង',
+        every6Hours: 'រៀងរាល់ 6 ម៉ោង',
+        every12Hours: 'រៀងរាល់ 12 ម៉ោង',
+        daily: 'ប្រចាំថ្ងៃ',
+        weekly: 'ប្រចាំសប្តាហ៍',
+        uploadFile: (type: string) => `Upload ${type} file`,
+        logo: 'logo',
+        favicon: 'favicon',
+        uploadHelp: 'Upload នឹងកំណត់ URL ខាងលើ។ ចុច Save ដើម្បី publish។',
+        uploading: 'កំពុង Upload',
+        chooseFile: 'ជ្រើស File',
+        urlHelp: 'ប្រើ URL ពេញលេញដែលចាប់ផ្តើមដោយ https:// ឬ http://',
+      }
+    : {
+        enter: (label: string) => `Enter ${label}`,
+        uploadImageOnly: 'Please upload an image file.',
+        uploadFailed: 'Upload failed',
+        enabled: 'Enabled',
+        disabled: 'Disabled',
+        select: (label: string) => `Select ${label}`,
+        author: 'Author',
+        editor: 'Editor',
+        admin: 'Admin',
+        everyHour: 'Every hour',
+        every6Hours: 'Every 6 hours',
+        every12Hours: 'Every 12 hours',
+        daily: 'Daily',
+        weekly: 'Weekly',
+        uploadFile: (type: string) => `Upload ${type} file`,
+        logo: 'logo',
+        favicon: 'favicon',
+        uploadHelp: 'Upload sets the URL above. Click Save to publish it.',
+        uploading: 'Uploading',
+        chooseFile: 'Choose File',
+        urlHelp: 'Use a complete URL beginning with https:// or http://',
+      };
   const [showPassword, setShowPassword] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
   const [uploadError, setUploadError] = React.useState<string | null>(null);
@@ -29,7 +78,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
   const inputPlaceholder =
     inputType === 'url'
       ? 'https://example.com'
-      : `Enter ${setting.label.toLowerCase()}`;
+      : copy.enter(setting.label.toLowerCase());
 
   const handleInputChange = (newValue: any) => {
     // Convert string values to appropriate types
@@ -45,7 +94,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
 
   const handleBrandImageUpload = async (file: File) => {
     if (!file.type.startsWith('image/') && !file.name.toLowerCase().endsWith('.ico')) {
-      setUploadError('Please upload an image file.');
+      setUploadError(copy.uploadImageOnly);
       return;
     }
 
@@ -74,13 +123,13 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
       const result = await response.json();
 
       if (!response.ok || !result.success || !result.file?.url) {
-        throw new Error(result.message || 'Upload failed');
+        throw new Error(result.message || copy.uploadFailed);
       }
 
       const absoluteUrl = new URL(result.file.url, window.location.origin).toString();
       onChange(absoluteUrl);
     } catch (uploadFailure) {
-      setUploadError(uploadFailure instanceof Error ? uploadFailure.message : 'Upload failed');
+      setUploadError(locale === 'en' && uploadFailure instanceof Error ? uploadFailure.message : copy.uploadFailed);
     } finally {
       setIsUploading(false);
     }
@@ -99,8 +148,8 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="true">Enabled</SelectItem>
-              <SelectItem value="false">Disabled</SelectItem>
+              <SelectItem value="true">{copy.enabled}</SelectItem>
+              <SelectItem value="false">{copy.disabled}</SelectItem>
             </SelectContent>
           </Select>
         );
@@ -112,7 +161,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
             onChange={(e) => handleInputChange(e.target.value)}
             disabled={disabled}
             className="flex min-h-[96px] w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder={`Enter ${setting.label.toLowerCase()}`}
+            placeholder={copy.enter(setting.label.toLowerCase())}
           />
         );
 
@@ -130,9 +179,9 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
 
           if (setting.key.includes('role')) {
             return [
-              { value: 'AUTHOR', label: 'Author' },
-              { value: 'EDITOR', label: 'Editor' },
-              { value: 'ADMIN', label: 'Admin' }
+              { value: 'AUTHOR', label: copy.author },
+              { value: 'EDITOR', label: copy.editor },
+              { value: 'ADMIN', label: copy.admin }
             ];
           }
           if (setting.key.includes('timezone')) {
@@ -147,11 +196,11 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
           }
           if (setting.key.includes('frequency')) {
             return [
-              { value: '1', label: 'Every hour' },
-              { value: '6', label: 'Every 6 hours' },
-              { value: '12', label: 'Every 12 hours' },
-              { value: '24', label: 'Daily' },
-              { value: '168', label: 'Weekly' }
+              { value: '1', label: copy.everyHour },
+              { value: '6', label: copy.every6Hours },
+              { value: '12', label: copy.every12Hours },
+              { value: '24', label: copy.daily },
+              { value: '168', label: copy.weekly }
             ];
           }
           return [];
@@ -165,7 +214,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
             disabled={disabled}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder={`Select ${setting.label.toLowerCase()}`} />
+              <SelectValue placeholder={copy.select(setting.label.toLowerCase())} />
             </SelectTrigger>
             <SelectContent>
               {options.map((option: { value: string; label: string }) => (
@@ -242,10 +291,10 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
                     )}
                     <div>
                       <p className="text-sm font-medium text-slate-700">
-                        Upload {isFaviconSetting ? 'favicon' : 'logo'} file
+                        {copy.uploadFile(isFaviconSetting ? copy.favicon : copy.logo)}
                       </p>
                       <p className="text-xs text-slate-500">
-                        Upload sets the URL above. Click Save to publish it.
+                        {copy.uploadHelp}
                       </p>
                     </div>
                   </div>
@@ -256,7 +305,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
                       ) : (
                         <UploadCloud className="mr-2 h-4 w-4" />
                       )}
-                      {isUploading ? 'Uploading' : 'Choose File'}
+                      {isUploading ? copy.uploading : copy.chooseFile}
                       <input
                         type="file"
                         accept="image/*,.ico"
@@ -291,7 +340,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
       )}
       {!error && inputType === 'url' && (
         <p className="text-xs text-slate-500">
-          Use a complete URL beginning with https:// or http://
+          {copy.urlHelp}
         </p>
       )}
     </div>

@@ -17,11 +17,13 @@ import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
 import { ArticleStatus } from "@/utils/articlePermissions";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
 import { SeoPreviewCard } from "@/components/articles/seo-preview-card";
+import { useToastHelpers } from "@/components/ui/toast";
 import {
   ArticleReadinessCard,
   getArticleReadinessIssues,
   hasMeaningfulArticleContent,
 } from "@/components/articles/article-readiness-card";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 import type { OutputData } from "@editorjs/editorjs";
 import type { NewsEditorRef } from "@/components/editor/news-editor";
@@ -43,7 +45,8 @@ function slugify(s: string) {
     .trim()
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
-    .replace(/-+/g, "-");
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function normalizeTopic(value: string) {
@@ -54,13 +57,113 @@ function parseTagSlugs(value: string) {
   return value.split(",").map(slugify).filter(Boolean);
 }
 
+const articleCopy = {
+  en: {
+    selectCategory: "Please select a category.",
+    invalidCategory: (slug: string) => `Category "${slug}" does not exist in the database. Please select a valid category.`,
+    beforeReview: (issues: string[]) => `Before submitting for review: ${issues.join(", ")}.`,
+    beforePublish: (issues: string[]) => `Before publishing: ${issues.join(", ")}.`,
+    submitReviewFailed: "Failed to submit for review.",
+    breakingRequested: "Breaking News Requested",
+    breakingRequestedDescription: "The request was submitted for review.",
+    breakingRequestFailed: "Breaking News Request Failed",
+    breakingServerRejected: "The server did not accept the request.",
+    breakingUnable: "Unable to submit the request.",
+    title: "New Article",
+    description: "Draft first, publish when ready.",
+    publishing: "Publishing...",
+    publish: "Publish",
+    saving: "Saving...",
+    save: "Save",
+    titleLabel: "Title",
+    titlePlaceholder: "Article title",
+    slug: "Slug",
+    author: "Author",
+    authorPlaceholder: "e.g. John Doe",
+    excerpt: "Excerpt",
+    excerptPlaceholder: "Short description for cards and SEO.",
+    category: "Category",
+    selectCategoryOption: "— Select Category —",
+    loadingCategories: "Loading categories...",
+    topicOptional: "Topic (optional)",
+    noTopic: "— No topic —",
+    loadingTopics: "Loading topics...",
+    selectCategoryFirst: "Select a category first",
+    tags: "Tags",
+    tagsHelp: "Separate tags with commas.",
+    schedulePublishing: "Schedule publishing",
+    scheduleHelp: "Saving with a future time keeps the article as a draft until publication.",
+    categoryError: "Category Error",
+    topicsError: "Topics Error",
+    validationError: "Validation Error",
+    markBreaking: "Mark as breaking news",
+    markBreakingTitle: "Mark this article as breaking news",
+    requestBreaking: "Request as breaking news",
+    requestBreakingTitle: "Request this article to be marked as breaking news",
+    reviewHint: "(Editors/Admins will review)",
+    whyBreaking: "Why is this breaking news?",
+    breakingReasonPlaceholder: "Explain why this article should be marked as breaking news...",
+    breakingReasonHelp: "Admins and editors will review your request and decide if this article qualifies as breaking news.",
+  },
+  km: {
+    selectCategory: "សូមជ្រើស category។",
+    invalidCategory: (slug: string) => `Category "${slug}" មិនមានក្នុង database ទេ។ សូមជ្រើស category ត្រឹមត្រូវ។`,
+    beforeReview: (issues: string[]) => `មុនផ្ញើទៅ review: ${issues.join(", ")}។`,
+    beforePublish: (issues: string[]) => `មុន publish: ${issues.join(", ")}។`,
+    submitReviewFailed: "មិនអាចផ្ញើទៅ review បានទេ។",
+    breakingRequested: "បានស្នើ Breaking News",
+    breakingRequestedDescription: "សំណើត្រូវបានផ្ញើទៅ review។",
+    breakingRequestFailed: "ស្នើ Breaking News មិនបាន",
+    breakingServerRejected: "Server មិនទទួលសំណើនេះទេ។",
+    breakingUnable: "មិនអាចផ្ញើសំណើបានទេ។",
+    title: "អត្ថបទថ្មី",
+    description: "រក្សាជា draft មុន ហើយ publish ពេលរួចរាល់។",
+    publishing: "កំពុង Publish...",
+    publish: "Publish",
+    saving: "កំពុងរក្សាទុក...",
+    save: "រក្សាទុក",
+    titleLabel: "Title",
+    titlePlaceholder: "Title អត្ថបទ",
+    slug: "Slug",
+    author: "Author",
+    authorPlaceholder: "ឧ. John Doe",
+    excerpt: "Excerpt",
+    excerptPlaceholder: "ពណ៌នាខ្លីសម្រាប់ cards និង SEO។",
+    category: "Category",
+    selectCategoryOption: "— ជ្រើស Category —",
+    loadingCategories: "កំពុងផ្ទុក categories...",
+    topicOptional: "Topic (ជម្រើស)",
+    noTopic: "— គ្មាន topic —",
+    loadingTopics: "កំពុងផ្ទុក topics...",
+    selectCategoryFirst: "ជ្រើស category ជាមុនសិន",
+    tags: "Tags",
+    tagsHelp: "បំបែក tags ដោយ comma។",
+    schedulePublishing: "កំណត់ពេល publish",
+    scheduleHelp: "រក្សាទុកជាមួយពេលអនាគត នឹងរក្សាអត្ថបទជា draft រហូតដល់ពេល publish។",
+    categoryError: "បញ្ហា Category",
+    topicsError: "បញ្ហា Topics",
+    validationError: "ទិន្នន័យមិនត្រឹមត្រូវ",
+    markBreaking: "កំណត់ជា breaking news",
+    markBreakingTitle: "កំណត់អត្ថបទនេះជា breaking news",
+    requestBreaking: "ស្នើជា breaking news",
+    requestBreakingTitle: "ស្នើឱ្យអត្ថបទនេះកំណត់ជា breaking news",
+    reviewHint: "(Editors/Admins នឹង review)",
+    whyBreaking: "ហេតុអ្វីវាជា breaking news?",
+    breakingReasonPlaceholder: "ពន្យល់ថាហេតុអ្វីអត្ថបទនេះគួរត្រូវបានកំណត់ជា breaking news...",
+    breakingReasonHelp: "Admins និង editors នឹង review សំណើរបស់អ្នក ហើយសម្រេចថាអត្ថបទនេះស័ក្តិសមជា breaking news ឬទេ។",
+  },
+};
+
 /* =========================
    Page
 ========================= */
 export default function NewArticlePage() {
+  const { locale } = useAdminLocale();
+  const copy = articleCopy[locale];
   const client = useMemo(() => getAuthenticatedGqlClient(), []);
   const editorRef = useRef<NewsEditorRef>(null);
   const { performWorkflowAction, requestBreakingNews } = useArticleMutations();
+  const { showSuccess, showError } = useToastHelpers();
   
   // Category and topic hooks
   const { categories, loading: categoriesLoading, error: categoriesError, isValidCategory } = useCategories();
@@ -123,11 +226,11 @@ export default function NewArticlePage() {
     // Validate category is selected and exists in database
     setValidationError(null);
     if (!categorySlug) {
-      setValidationError("Please select a category.");
+      setValidationError(copy.selectCategory);
       return;
     }
     if (!categoriesLoading && !isValidCategory(categorySlug)) {
-      setValidationError(`Category "${categorySlug}" does not exist in the database. Please select a valid category.`);
+      setValidationError(copy.invalidCategory(categorySlug));
       return;
     }
 
@@ -144,12 +247,10 @@ export default function NewArticlePage() {
           excerpt,
           categorySlug,
           hasBodyContent: hasMeaningfulArticleContent(contentJson),
-        });
+        }, locale);
 
         if (readinessIssues.length > 0) {
-          setValidationError(
-            `Before submitting for review: ${readinessIssues.join(", ")}.`,
-          );
+          setValidationError(copy.beforeReview(readinessIssues));
           return;
         }
       }
@@ -179,7 +280,7 @@ export default function NewArticlePage() {
         });
 
         if (!result?.performWorkflowAction?.success) {
-          const message = result?.performWorkflowAction?.message || 'Failed to submit for review.';
+          const message = locale === "en" ? result?.performWorkflowAction?.message || copy.submitReviewFailed : copy.submitReviewFailed;
           throw new Error(message);
         }
       }
@@ -189,13 +290,13 @@ export default function NewArticlePage() {
         try {
           const breakingResponse = await requestBreakingNews(response.upsertArticle.id, breakingNewsReason);
           if (breakingResponse?.requestBreakingNews?.id) {
-            alert('Breaking news request submitted for review.');
+            showSuccess(copy.breakingRequested, copy.breakingRequestedDescription);
           } else {
-            alert('Breaking news request was not accepted by the server.');
+            showError(copy.breakingRequestFailed, copy.breakingServerRejected);
           }
         } catch (err) {
           console.warn('Breaking news request submission failed:', err);
-          alert('Breaking news request submission failed.');
+          showError(copy.breakingRequestFailed, copy.breakingUnable);
           // Don't block the article save if breaking news request fails
         }
       }
@@ -215,11 +316,11 @@ export default function NewArticlePage() {
     // Validate category is selected and exists in database
     setValidationError(null);
     if (!categorySlug) {
-      setValidationError("Please select a category.");
+      setValidationError(copy.selectCategory);
       return;
     }
     if (!categoriesLoading && !isValidCategory(categorySlug)) {
-      setValidationError(`Category "${categorySlug}" does not exist in the database. Please select a valid category.`);
+      setValidationError(copy.invalidCategory(categorySlug));
       return;
     }
 
@@ -233,12 +334,10 @@ export default function NewArticlePage() {
         excerpt,
         categorySlug,
         hasBodyContent: hasMeaningfulArticleContent(contentJson),
-      });
+      }, locale);
 
       if (readinessIssues.length > 0) {
-        setValidationError(
-          `Before publishing: ${readinessIssues.join(", ")}.`,
-        );
+        setValidationError(copy.beforePublish(readinessIssues));
         return;
       }
 
@@ -263,13 +362,13 @@ export default function NewArticlePage() {
         try {
           const breakingResponse = await requestBreakingNews(response.upsertArticle.id, breakingNewsReason);
           if (breakingResponse?.requestBreakingNews?.id) {
-            alert('Breaking news request submitted for review.');
+            showSuccess(copy.breakingRequested, copy.breakingRequestedDescription);
           } else {
-            alert('Breaking news request was not accepted by the server.');
+            showError(copy.breakingRequestFailed, copy.breakingServerRejected);
           }
         } catch (err) {
           console.warn('Breaking news request submission failed:', err);
-          alert('Breaking news request submission failed.');
+          showError(copy.breakingRequestFailed, copy.breakingUnable);
           // Don't block the article save if breaking news request fails
         }
       }
@@ -288,20 +387,20 @@ export default function NewArticlePage() {
       {/* ---------- Header ---------- */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">New Article</h2>
+          <h2 className="text-lg font-semibold">{copy.title}</h2>
           <p className="text-sm text-slate-600">
-            Draft first, publish when ready.
+            {copy.description}
           </p>
         </div>
 
         <div className="flex gap-2">
           {hasPermission(Permission.PUBLISH_ARTICLE) && (
             <Button onClick={publish} disabled={saving || !title}>
-              {saving ? "Publishing..." : "Publish"}
+              {saving ? copy.publishing : copy.publish}
             </Button>
           )}
           <Button onClick={save} disabled={saving || !title}>
-            {saving ? "Saving..." : "Save"}
+            {saving ? copy.saving : copy.save}
           </Button>
         </div>
       </div>
@@ -309,19 +408,19 @@ export default function NewArticlePage() {
       {/* ---------- Meta ---------- */}
       <div className="grid gap-4 rounded-xl border border-slate-200 bg-white p-4">
         <div className="grid gap-2">
-          <label className="text-xs font-semibold text-slate-600">Title</label>
+          <label className="text-xs font-semibold text-slate-600">{copy.titleLabel}</label>
           <Input
             value={title}
             onChange={(e) => {
               setTitle(e.target.value);
               setSlug(slugify(e.target.value));
             }}
-            placeholder="Article title"
+            placeholder={copy.titlePlaceholder}
           />
         </div>
 
         <div className="grid gap-2">
-          <label className="text-xs font-semibold text-slate-600">Slug</label>
+          <label className="text-xs font-semibold text-slate-600">{copy.slug}</label>
           <Input
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
@@ -331,27 +430,27 @@ export default function NewArticlePage() {
 
         {/* ✅ AUTHOR FIELD — ADDED ONLY */}
         <div className="grid gap-2">
-          <label className="text-xs font-semibold text-slate-600">Author</label>
+          <label className="text-xs font-semibold text-slate-600">{copy.author}</label>
           <Input
             value={authorName}
             onChange={(e) => setAuthorName(e.target.value)}
-            placeholder="e.g. John Doe"
+            placeholder={copy.authorPlaceholder}
           />
         </div>
 
         <div className="grid gap-2">
-          <label className="text-xs font-semibold text-slate-600">Excerpt</label>
+          <label className="text-xs font-semibold text-slate-600">{copy.excerpt}</label>
           <Input
             value={excerpt}
             onChange={(e) => setExcerpt(e.target.value)}
-            placeholder="Short description for cards and SEO."
+            placeholder={copy.excerptPlaceholder}
           />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div className="grid gap-2">
             <label className="text-xs font-semibold text-slate-600">
-              Category
+              {copy.category}
             </label>
             <select
               className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
@@ -362,7 +461,7 @@ export default function NewArticlePage() {
               }}
               disabled={categoriesLoading}
             >
-              <option value="">— Select Category —</option>
+              <option value="">{copy.selectCategoryOption}</option>
               {categories.map((category) => (
                 <option key={category.id} value={category.slug}>
                   {category.name}
@@ -370,13 +469,13 @@ export default function NewArticlePage() {
               ))}
             </select>
             {categoriesLoading && (
-              <p className="text-xs text-slate-500">Loading categories...</p>
+              <p className="text-xs text-slate-500">{copy.loadingCategories}</p>
             )}
           </div>
 
           <div className="grid gap-2">
             <label className="text-xs font-semibold text-slate-600">
-              Topic (optional)
+              {copy.topicOptional}
             </label>
             <select
               className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
@@ -384,7 +483,7 @@ export default function NewArticlePage() {
               onChange={(e) => setTopic(e.target.value)}
               disabled={topicsLoading || !categorySlug}
             >
-              <option value="">— No topic —</option>
+              <option value="">{copy.noTopic}</option>
               {topics.map((topicItem) => (
                 <option key={topicItem.id} value={topicItem.slug}>
                   {topicItem.title}
@@ -392,34 +491,34 @@ export default function NewArticlePage() {
               ))}
             </select>
             {topicsLoading && (
-              <p className="text-xs text-slate-500">Loading topics...</p>
+              <p className="text-xs text-slate-500">{copy.loadingTopics}</p>
             )}
             {!categorySlug && (
-              <p className="text-xs text-slate-500">Select a category first</p>
+              <p className="text-xs text-slate-500">{copy.selectCategoryFirst}</p>
             )}
           </div>
         </div>
 
         <div className="grid gap-2">
-          <label className="text-xs font-semibold text-slate-600">Tags</label>
+          <label className="text-xs font-semibold text-slate-600">{copy.tags}</label>
           <Input
             value={tags}
             onChange={(e) => setTags(e.target.value)}
             placeholder="politics, election, cambodia"
           />
-          <p className="text-xs text-slate-500">Separate tags with commas.</p>
+          <p className="text-xs text-slate-500">{copy.tagsHelp}</p>
         </div>
 
         {hasPermission(Permission.PUBLISH_ARTICLE) && (
           <div className="grid gap-2 sm:max-w-sm">
-            <label className="text-xs font-semibold text-slate-600">Schedule publishing</label>
+            <label className="text-xs font-semibold text-slate-600">{copy.schedulePublishing}</label>
             <Input
               type="datetime-local"
               value={scheduledAt}
               onChange={(e) => setScheduledAt(e.target.value)}
               disabled={saving}
             />
-            <p className="text-xs text-slate-500">Saving with a future time keeps the article as a draft until publication.</p>
+            <p className="text-xs text-slate-500">{copy.scheduleHelp}</p>
           </div>
         )}
 
@@ -427,7 +526,7 @@ export default function NewArticlePage() {
         {categoriesError && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3">
             <p className="text-sm text-red-600">
-              <strong>Category Error:</strong> {categoriesError}
+              <strong>{copy.categoryError}:</strong> {categoriesError}
             </p>
           </div>
         )}
@@ -435,7 +534,7 @@ export default function NewArticlePage() {
         {topicsError && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3">
             <p className="text-sm text-red-600">
-              <strong>Topics Error:</strong> {topicsError}
+              <strong>{copy.topicsError}:</strong> {topicsError}
             </p>
           </div>
         )}
@@ -443,7 +542,7 @@ export default function NewArticlePage() {
         {validationError && (
           <div className="rounded-md border border-red-200 bg-red-50 p-3">
             <p className="text-sm text-red-600">
-              <strong>Validation Error:</strong> {validationError}
+              <strong>{copy.validationError}:</strong> {validationError}
             </p>
           </div>
         )}
@@ -451,7 +550,7 @@ export default function NewArticlePage() {
         {categoriesLoading && (
           <div className="rounded-md border border-blue-200 bg-blue-50 p-3">
             <p className="text-sm text-blue-600">
-              Loading categories...
+              {copy.loadingCategories}
             </p>
           </div>
         )}
@@ -478,9 +577,9 @@ export default function NewArticlePage() {
             <label
               htmlFor="breaking-news"
               className="text-xs font-semibold text-slate-600"
-              title="Mark this article as breaking news"
+              title={copy.markBreakingTitle}
             >
-              Mark as breaking news
+              {copy.markBreaking}
             </label>
           </div>
         )}
@@ -498,10 +597,10 @@ export default function NewArticlePage() {
             <label
               htmlFor="request-breaking-news"
               className="text-xs font-semibold text-slate-600"
-              title="Request this article to be marked as breaking news"
+              title={copy.requestBreakingTitle}
             >
-              Request as breaking news
-              <span className="ml-1 text-xs text-slate-500">(Editors/Admins will review)</span>
+              {copy.requestBreaking}
+              <span className="ml-1 text-xs text-slate-500">{copy.reviewHint}</span>
             </label>
           </div>
         )}
@@ -511,19 +610,19 @@ export default function NewArticlePage() {
           <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-3">
             <div>
               <label htmlFor="breaking-news-reason" className="block text-sm font-medium text-orange-900 mb-1">
-                Why is this breaking news?
+                {copy.whyBreaking}
               </label>
               <textarea
                 id="breaking-news-reason"
                 value={breakingNewsReason}
                 onChange={(e) => setBreakingNewsReason(e.target.value)}
-                placeholder="Explain why this article should be marked as breaking news..."
+                placeholder={copy.breakingReasonPlaceholder}
                 className="w-full rounded-md border border-orange-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500"
                 rows={3}
                 disabled={saving}
               />
               <p className="text-xs text-orange-700 mt-2">
-                Admins and editors will review your request and decide if this article qualifies as breaking news.
+                {copy.breakingReasonHelp}
               </p>
             </div>
           </div>

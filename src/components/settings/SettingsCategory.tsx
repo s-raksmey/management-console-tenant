@@ -8,6 +8,7 @@ import { Save, RotateCcw, AlertTriangle } from 'lucide-react';
 import { Setting, SettingType, SETTING_CATEGORIES, getSettingsByType } from '@/services/settings.gql';
 import { UpdateSettingInput } from '@/types/settings';
 import { SettingCard } from './SettingCard';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface SettingsCategoryProps {
   category: SettingType;
@@ -17,7 +18,7 @@ interface SettingsCategoryProps {
   loading?: boolean;
 }
 
-function getSaveErrorMessage(error: unknown): string {
+function getSaveErrorMessage(error: unknown, fallback: string): string {
   if (error && typeof error === 'object' && 'response' in error) {
     const response = (error as { response?: { errors?: Array<{ message?: string }> } }).response;
     const message = response?.errors?.[0]?.message;
@@ -25,8 +26,31 @@ function getSaveErrorMessage(error: unknown): string {
     if (message) return message;
   }
 
-  return error instanceof Error ? error.message : 'Failed to save setting';
+  return error instanceof Error ? error.message : fallback;
 }
+
+const settingsCategoryCopy = {
+  en: {
+    saveFailed: 'Failed to save setting',
+    noSettingsFound: 'No Settings Found',
+    noSettingsDescription: (category: string) => `No settings are available for the ${category} category.`,
+    unsavedChanges: (count: number) => `${count} unsaved change${count !== 1 ? 's' : ''}`,
+    errors: (count: number) => `${count} error${count !== 1 ? 's' : ''}`,
+    reviewSection: 'Review this section before moving on.',
+    discard: 'Discard',
+    saveAll: 'Save All',
+  },
+  km: {
+    saveFailed: 'មិនអាចរក្សាទុក setting បានទេ',
+    noSettingsFound: 'រកមិនឃើញ Settings',
+    noSettingsDescription: (category: string) => `មិនមាន settings សម្រាប់ category ${category}។`,
+    unsavedChanges: (count: number) => `${count} ការកែប្រែមិនទាន់រក្សាទុក`,
+    errors: (count: number) => `${count} បញ្ហា`,
+    reviewSection: 'ពិនិត្យផ្នែកនេះមុនបន្ត។',
+    discard: 'បោះបង់ការកែ',
+    saveAll: 'រក្សាទុកទាំងអស់',
+  },
+};
 
 export function SettingsCategory({
   category,
@@ -35,6 +59,8 @@ export function SettingsCategory({
   onResetSetting,
   loading = false
 }: SettingsCategoryProps) {
+  const { locale } = useAdminLocale();
+  const copy = settingsCategoryCopy[locale];
   const [formData, setFormData] = React.useState<Record<string, any>>({});
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [hasChanges, setHasChanges] = React.useState<Record<string, boolean>>({});
@@ -84,7 +110,7 @@ export function SettingsCategory({
       setHasChanges(prev => ({ ...prev, [key]: false }));
       
     } catch (error) {
-      const errorMessage = getSaveErrorMessage(error);
+      const errorMessage = locale === 'en' ? getSaveErrorMessage(error, copy.saveFailed) : copy.saveFailed;
       setErrors(prev => ({ ...prev, [key]: errorMessage }));
     }
   };
@@ -99,7 +125,7 @@ export function SettingsCategory({
       setHasChanges(prev => ({ ...prev, [key]: false }));
       
     } catch (error) {
-      const errorMessage = getSaveErrorMessage(error);
+      const errorMessage = locale === 'en' ? getSaveErrorMessage(error, copy.saveFailed) : copy.saveFailed;
       setErrors(prev => ({ ...prev, [key]: errorMessage }));
     }
   };
@@ -123,6 +149,7 @@ export function SettingsCategory({
       
     } catch (error) {
       console.error('Failed to save settings:', error);
+      setErrors({ _all: copy.saveFailed });
     }
   };
 
@@ -147,10 +174,10 @@ export function SettingsCategory({
         <CardContent className="p-8 text-center">
           <AlertTriangle className="h-12 w-12 text-slate-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-slate-900 mb-2">
-            No Settings Found
+            {copy.noSettingsFound}
           </h3>
           <p className="text-slate-600">
-            No settings are available for the {categoryInfo.label} category.
+            {copy.noSettingsDescription(categoryInfo.label)}
           </p>
         </CardContent>
       </Card>
@@ -165,16 +192,16 @@ export function SettingsCategory({
             <div className="flex flex-wrap items-center gap-2">
               {hasAnyChanges ? (
                 <Badge variant="secondary">
-                  {totalChanges} unsaved change{totalChanges !== 1 ? 's' : ''}
+                  {copy.unsavedChanges(totalChanges)}
                 </Badge>
               ) : null}
               {errorCount > 0 ? (
                 <Badge variant="destructive">
-                  {errorCount} error{errorCount !== 1 ? 's' : ''}
+                  {copy.errors(errorCount)}
                 </Badge>
               ) : null}
               <p className="text-sm text-slate-700">
-                Review this section before moving on.
+                {copy.reviewSection}
               </p>
             </div>
             <div className="flex gap-2 sm:justify-end">
@@ -186,11 +213,11 @@ export function SettingsCategory({
                 className="bg-white"
               >
                 <RotateCcw className="mr-2 h-4 w-4" />
-                Discard
+                {copy.discard}
               </Button>
               <Button size="sm" onClick={saveAllChanges} disabled={loading || !hasAnyChanges}>
                 <Save className="mr-2 h-4 w-4" />
-                Save All
+                {copy.saveAll}
               </Button>
             </div>
           </div>
