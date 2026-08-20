@@ -20,27 +20,27 @@ import { useAdminLocale } from "@/hooks/useAdminLocale";
 const analyticsCopy = {
   en: {
     loadAnalyticsFailed: "Failed to load analytics.",
-    noActiveTenants: "No active tenants are available for analytics.",
-    loadTenantsFailed: "Failed to load tenants.",
-    platformAnalytics: "Platform Analytics",
-    tenantAnalytics: "Tenant Analytics",
+    noActiveTenants: "No active sub-tenants are available for analytics.",
+    loadTenantsFailed: "Failed to load sub-tenants.",
+    mainTenantAnalytics: "Main Tenant Analytics",
+    tenantAnalytics: "Sub-tenant Analytics",
     title: "Analytics",
-    platformDescription: "Track platform-wide tenants, users, content, and operational activity.",
+    mainTenantDescription: "Track the main tenant, sub-tenants, users, content, and operational activity.",
     tenantDescription: (name: string) => `Track content, users, and public performance for ${name}.`,
-    fallbackTenant: "this tenant website",
-    loadingTenants: "Loading tenants...",
-    selectTenant: "Select tenant",
-    tenantView: "Tenant View",
+    fallbackTenant: "this sub-tenant website",
+    loadingTenants: "Loading sub-tenants...",
+    selectTenant: "Select sub-tenant",
+    tenantView: "Sub-tenant View",
     refresh: "Refresh",
   },
   km: {
     loadAnalyticsFailed: "ផ្ទុកទិន្នន័យវិភាគមិនបានសម្រេច។",
     noActiveTenants: "មិនមានគេហទំព័រសកម្មសម្រាប់វិភាគទេ។",
     loadTenantsFailed: "ផ្ទុកគេហទំព័រមិនបានសម្រេច។",
-    platformAnalytics: "វិភាគវេទិកា",
+    mainTenantAnalytics: "វិភាគអ្នកជួលមេ",
     tenantAnalytics: "វិភាគគេហទំព័រ",
     title: "វិភាគ",
-    platformDescription: "តាមដានគេហទំព័រ អ្នកប្រើ មាតិកា និងសកម្មភាពប្រតិបត្តិការទូទាំងវេទិកា។",
+    mainTenantDescription: "តាមដានអ្នកជួលរង អ្នកប្រើ មាតិកា និងសកម្មភាពប្រតិបត្តិការទូទាំងអ្នកជួលមេ។",
     tenantDescription: (name: string) => `តាមដានមាតិកា អ្នកប្រើ និងប្រសិទ្ធភាពសាធារណៈសម្រាប់ ${name}។`,
     fallbackTenant: "គេហទំព័រនេះ",
     loadingTenants: "កំពុងផ្ទុកគេហទំព័រ...",
@@ -142,7 +142,7 @@ export default function AnalyticsPage() {
     await loadAnalytics(tenantId);
   };
 
-  const isPlatform = analytics?.scope === "PLATFORM";
+  const isMainTenantView = analytics?.scope === "PLATFORM";
   const selectedTenant = tenantOptions.find(
     (tenant) => tenant.id === selectedAnalyticsTenantId,
   );
@@ -154,15 +154,15 @@ export default function AnalyticsPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-              {isPlatform ? copy.platformAnalytics : copy.tenantAnalytics}
+              {isMainTenantView ? copy.mainTenantAnalytics : copy.tenantAnalytics}
             </p>
             <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold text-slate-950 sm:text-3xl">
               <BarChart3 className="h-6 w-6 shrink-0 text-blue-600 sm:h-7 sm:w-7" />
               {copy.title}
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-              {isPlatform
-                ? copy.platformDescription
+              {isMainTenantView
+                ? copy.mainTenantDescription
                 : copy.tenantDescription(analytics?.tenantName || copy.fallbackTenant)}
             </p>
           </div>

@@ -29,7 +29,7 @@ const chartCopy = {
     noAnalytics: "No analytics data available.",
     noChartData: "No chart data yet.",
     noMonthlyActivity: "No monthly activity yet.",
-    noTenantActivity: "No tenant activity yet.",
+    noTenantActivity: "No sub-tenant activity yet.",
     created: "Created",
     published: "Published",
     createdTitle: (value: number) => `${value} created`,
@@ -39,27 +39,27 @@ const chartCopy = {
     sites: "sites",
     views: "views",
     items: "items",
-    tenants: "Tenants",
-    platformUsers: "Platform Users",
+    tenants: "Sub-tenants",
+    mainTenantUsers: "Main-tenant Users",
     auditEvents: "Audit Events",
     drafts: "Drafts",
-    platformCharts: "Platform Charts",
-    tenantCharts: "Tenant Charts",
-    platformDescription:
-      "Super admin view across tenants, public sites, platform users, and activity.",
+    mainTenantCharts: "Main Tenant Charts",
+    tenantCharts: "Sub-tenant Charts",
+    mainTenantDescription:
+      "Main-tenant view across sub-tenants, public sites, main-tenant users, and activity.",
     tenantDescription: (tenantName?: string | null) =>
-      `Tenant view for ${tenantName || "this website"} content, users, and public performance.`,
-    tenantActivity: "Tenant Activity",
-    tenantActivityDescription: "Article volume and active membership per tenant.",
-    platformRoles: "Platform Roles",
-    platformRolesDescription: "Super admins and tenant admins only.",
+      `Sub-tenant view for ${tenantName || "this website"} content, users, and public performance.`,
+    tenantActivity: "Sub-tenant Activity",
+    tenantActivityDescription: "Article volume and active membership per sub-tenant.",
+    mainTenantRoles: "Main Tenant Roles",
+    mainTenantRolesDescription: "Super admins and sub-tenant admins only.",
     contentTimeline: "Content Timeline",
     timelineDescription: "Created vs published articles over the last 6 months.",
     articleStatus: "Article Status",
     articleStatusDescription:
-      "Draft, review, published, and archived content for this tenant.",
-    tenantRoles: "Tenant Roles",
-    tenantRolesDescription: "Active team members by tenant role.",
+      "Draft, review, published, and archived content for this sub-tenant.",
+    tenantRoles: "Sub-tenant Roles",
+    tenantRolesDescription: "Active team members by sub-tenant role.",
     viewsByCategory: "Views By Category",
     viewsByCategoryDescription: "Public article views grouped by category.",
   },
@@ -81,19 +81,19 @@ const chartCopy = {
     views: "ចំនួនមើល",
     items: "ធាតុ",
     tenants: "គេហទំព័រ",
-    platformUsers: "អ្នកប្រើវេទិកា",
+    mainTenantUsers: "អ្នកប្រើអ្នកជួលមេ",
     auditEvents: "កំណត់ត្រាសវនកម្ម",
     drafts: "ព្រាង",
-    platformCharts: "ក្រាហ្វវេទិកា",
+    mainTenantCharts: "ក្រាហ្វអ្នកជួលមេ",
     tenantCharts: "ក្រាហ្វគេហទំព័រ",
-    platformDescription:
-      "ទិដ្ឋភាពអ្នកគ្រប់គ្រងកំពូលសម្រាប់គេហទំព័រ គេហទំព័រសាធារណៈ អ្នកប្រើវេទិកា និងសកម្មភាព។",
+    mainTenantDescription:
+      "ទិដ្ឋភាពអ្នកគ្រប់គ្រងកំពូលសម្រាប់អ្នកជួលរង គេហទំព័រសាធារណៈ អ្នកប្រើអ្នកជួលមេ និងសកម្មភាព។",
     tenantDescription: (tenantName?: string | null) =>
       `ទិដ្ឋភាពគេហទំព័រសម្រាប់ ${tenantName || "គេហទំព័រនេះ"} លើមាតិកា អ្នកប្រើ និងប្រសិទ្ធភាពសាធារណៈ។`,
     tenantActivity: "សកម្មភាពគេហទំព័រ",
     tenantActivityDescription: "បរិមាណអត្ថបទ និងសមាជិកសកម្មតាមគេហទំព័រ។",
-    platformRoles: "តួនាទីវេទិកា",
-    platformRolesDescription: "អ្នកគ្រប់គ្រងកំពូល និងអ្នកគ្រប់គ្រងគេហទំព័រប៉ុណ្ណោះ។",
+    mainTenantRoles: "តួនាទីអ្នកជួលមេ",
+    mainTenantRolesDescription: "អ្នកគ្រប់គ្រងកំពូល និងអ្នកគ្រប់គ្រងគេហទំព័រប៉ុណ្ណោះ។",
     contentTimeline: "ពេលវេលាមាតិកា",
     timelineDescription: "អត្ថបទបានបង្កើត និងបានផ្សព្វផ្សាយក្នុង 6 ខែចុងក្រោយ។",
     articleStatus: "ស្ថានភាពអត្ថបទ",
@@ -313,8 +313,8 @@ function SummaryStrip({
   locale: string;
 }) {
   const numberLocale = locale === "km" ? "km-KH" : undefined;
-  const isPlatform = analytics.scope === "PLATFORM";
-  const items = isPlatform
+  const isMainTenantView = analytics.scope === "PLATFORM";
+  const items = isMainTenantView
     ? [
         {
           label: copy.tenants,
@@ -322,7 +322,7 @@ function SummaryStrip({
           icon: Building2,
         },
         {
-          label: copy.platformUsers,
+          label: copy.mainTenantUsers,
           value: analytics.summary.totalUsers,
           icon: Users,
         },
@@ -411,7 +411,7 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
     );
   }
 
-  const isPlatform = analytics.scope === "PLATFORM";
+  const isMainTenantView = analytics.scope === "PLATFORM";
 
   return (
     <section className="space-y-6">
@@ -419,11 +419,11 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-blue-600" />
-            {isPlatform ? copy.platformCharts : copy.tenantCharts}
+            {isMainTenantView ? copy.mainTenantCharts : copy.tenantCharts}
           </CardTitle>
           <CardDescription>
-            {isPlatform
-              ? copy.platformDescription
+            {isMainTenantView
+              ? copy.mainTenantDescription
               : copy.tenantDescription(analytics.tenantName)}
           </CardDescription>
         </CardHeader>
@@ -432,7 +432,7 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
         </CardContent>
       </Card>
 
-      {isPlatform ? (
+      {isMainTenantView ? (
         <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
           <Card>
             <CardHeader>
@@ -448,9 +448,9 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>{copy.platformRoles}</CardTitle>
+                <CardTitle>{copy.mainTenantRoles}</CardTitle>
                 <CardDescription>
-                  {copy.platformRolesDescription}
+                  {copy.mainTenantRolesDescription}
                 </CardDescription>
               </CardHeader>
               <CardContent>

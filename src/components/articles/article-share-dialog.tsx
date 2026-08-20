@@ -68,7 +68,7 @@ const shareDialogCopy = {
     copied: "Copied",
     copy: "Copy",
     captionPlaceholder: "Write the caption to use with this article link...",
-    serverPrepared: "Prepared by the server using the tenant public URL. True auto-posting will need OAuth credentials for each platform.",
+    serverPrepared: "Prepared by the server using the sub-tenant public URL. True auto-posting will need OAuth credentials for each platform.",
     cancel: "Cancel",
     prepare: "Prepare",
     shareSelected: "Share selected",

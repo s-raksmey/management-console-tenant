@@ -23,12 +23,12 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     ? {
         loading: 'កំពុងផ្ទុក...',
         loginRedirect: 'កំពុងបញ្ជូនទៅទំព័រចូល...',
-        dashboardRedirect: 'កំពុងបញ្ជូនទៅផ្ទាំងគ្រប់គ្រងវេទិកា...',
+        dashboardRedirect: 'កំពុងបញ្ជូនទៅផ្ទាំងគ្រប់គ្រងអ្នកជួលមេ...',
       }
     : {
         loading: 'Loading...',
         loginRedirect: 'Redirecting to login...',
-        dashboardRedirect: 'Redirecting to platform dashboard...',
+        dashboardRedirect: 'Redirecting to the Main Tenant dashboard...',
       };
 
   // Public routes that don't require authentication

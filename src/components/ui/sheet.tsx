@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { cva, type VariantProps } from "class-variance-authority"
+import { AnimatePresence, motion } from "framer-motion"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -32,28 +33,36 @@ const Sheet = React.forwardRef<
     }
   }, [open, onOpenChange])
 
-  if (!open) return null
-
   return (
-    <div className="fixed inset-0 z-50">
-      {/* Overlay */}
-      <div
-        className="fixed inset-0 bg-black/50"
-        onClick={() => onOpenChange?.(false)}
-      />
-      
-      {/* Sheet */}
-      <div
-        ref={ref}
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 h-full w-3/4 max-w-sm bg-white p-6 shadow-lg transition-transform duration-300 ease-in-out sm:max-w-sm",
-          className
-        )}
-        {...props}
-      >
-        {children}
-      </div>
-    </div>
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-50">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="fixed inset-0 bg-black/50"
+            onClick={() => onOpenChange?.(false)}
+          />
+
+          <motion.div
+            initial={{ x: "-100%", opacity: 0.85 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: "-100%", opacity: 0.85 }}
+            transition={{ type: "spring", stiffness: 360, damping: 38, mass: 0.9 }}
+            className={cn(
+              "fixed inset-y-0 left-0 z-50 h-full w-3/4 max-w-sm bg-white p-6 shadow-lg sm:max-w-sm",
+              className
+            )}
+          >
+            <div ref={ref} className="h-full w-full" {...props}>
+              {children}
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   )
 })
 Sheet.displayName = "Sheet"

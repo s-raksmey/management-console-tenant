@@ -98,10 +98,10 @@ export default function SuperAdminDashboard() {
     ? {
         eyebrow: "ផ្ទាំងគ្រប់គ្រង",
         title: "ផ្ទាំងគ្រប់គ្រងប្រព័ន្ធ",
-        description: "តាមដានគេហទំព័រ អ្នកប្រើវេទិកា កំណត់ហេតុប្រព័ន្ធ និងការកំណត់។",
+        description: "តាមដានអ្នកជួលរង អ្នកប្រើអ្នកជួលមេ កំណត់ហេតុប្រព័ន្ធ និងការកំណត់។",
         manageTenants: "គ្រប់គ្រងគេហទំព័រ",
         activeTenants: "គេហទំព័រសកម្ម",
-        platformUsers: "អ្នកប្រើវេទិកា",
+        mainTenantUsers: "អ្នកប្រើអ្នកជួលមេ",
         publicSites: "គេហទំព័រសាធារណៈ",
         recentLogs: "កំណត់ត្រាថ្មីៗ",
         actions: [
@@ -111,19 +111,19 @@ export default function SuperAdminDashboard() {
           },
           {
             title: "គ្រប់គ្រងអ្នកប្រើ",
-            description: "ពិនិត្យអ្នកប្រើវេទិកា និងគ្រប់គ្រងសិទ្ធិចូលប្រើ។",
+            description: "ពិនិត្យអ្នកប្រើអ្នកជួលមេ និងគ្រប់គ្រងសិទ្ធិចូលប្រើ។",
           },
           {
             title: "កំណត់ហេតុ",
-            description: "ពិនិត្យសកម្មភាពសវនកម្មទូទាំងវេទិកា។",
+            description: "ពិនិត្យសកម្មភាពសវនកម្មទូទាំងអ្នកជួលមេ។",
           },
           {
             title: "វិភាគទិន្នន័យ",
-            description: "ពិនិត្យក្រាហ្វ និងនិន្នាការប្រសិទ្ធភាពរបស់វេទិកា។",
+            description: "ពិនិត្យក្រាហ្វ និងនិន្នាការប្រសិទ្ធភាពរបស់អ្នកជួលមេ។",
           },
           {
             title: "ការកំណត់",
-            description: "គ្រប់គ្រងការកំណត់រចនាសម្ព័ន្ធរបស់វេទិកា។",
+            description: "គ្រប់គ្រងការកំណត់រចនាសម្ព័ន្ធរបស់អ្នកជួលមេ។",
           },
         ],
         recentTenants: "គេហទំព័រថ្មីៗ",
@@ -133,7 +133,7 @@ export default function SuperAdminDashboard() {
         open: "បើក",
         noTenants: "មិនទាន់មានគេហទំព័រត្រូវបានបង្កើត។",
         recentLogsTitle: "កំណត់ត្រាថ្មីៗ",
-        recentLogsDescription: "សកម្មភាពវេទិកាចុងក្រោយពីកំណត់ហេតុសវនកម្ម។",
+        recentLogsDescription: "សកម្មភាពអ្នកជួលមេចុងក្រោយពីកំណត់ហេតុសវនកម្ម។",
         loadingLogs: "កំពុងផ្ទុកកំណត់ហេតុ...",
         noLogs: "រកមិនឃើញកំណត់ហេតុសវនកម្ម។",
         systemEvent: "ព្រឹត្តិការណ៍ប្រព័ន្ធ",
@@ -142,49 +142,49 @@ export default function SuperAdminDashboard() {
     : {
         eyebrow: "Management Console",
         title: "System Dashboard",
-        description: "Monitor tenant websites, platform users, system logs, and settings.",
-        manageTenants: "Manage Tenants",
-        activeTenants: "Active tenants",
-        platformUsers: "Platform users",
+        description: "Monitor sub-tenant websites, main-tenant users, system logs, and settings.",
+        manageTenants: "Manage Sub-tenants",
+        activeTenants: "Active sub-tenants",
+        mainTenantUsers: "Main-tenant users",
         publicSites: "Public sites",
         recentLogs: "Recent logs",
         actions: [
           {
-            title: "Tenant Management",
-            description: "Create websites, manage domains, and assign tenant admins.",
+            title: "Sub-tenant Management",
+            description: "Create websites, manage domains, and assign sub-tenant admins.",
           },
           {
             title: "User Management",
-            description: "Review platform users and manage access.",
+            description: "Review main-tenant users and manage access.",
           },
           {
             title: "Logs",
-            description: "Inspect audit activity across the platform.",
+            description: "Inspect audit activity across the Main Tenant.",
           },
           {
             title: "Analytics",
-            description: "Review platform-wide charts and performance trends.",
+            description: "Review Main Tenant charts and performance trends.",
           },
           {
             title: "Settings",
-            description: "Control platform configuration.",
+            description: "Control Main Tenant configuration.",
           },
         ],
-        recentTenants: "Recent Tenants",
+        recentTenants: "Recent Sub-tenants",
         tenantStatusSummary: (active: number, suspended: number) =>
           `Active: ${active} | Suspended: ${suspended}`,
-        loadingTenants: "Loading tenants...",
+        loadingTenants: "Loading sub-tenants...",
         open: "Open",
-        noTenants: "No tenants have been created yet.",
+        noTenants: "No sub-tenants have been created yet.",
         recentLogsTitle: "Recent Logs",
-        recentLogsDescription: "Latest platform activity captured by audit logs.",
+        recentLogsDescription: "Latest Main Tenant activity captured by audit logs.",
         loadingLogs: "Loading logs...",
         noLogs: "No audit logs found.",
         systemEvent: "System Event",
         system: "System",
       };
 
-  const platformActions = [
+  const mainTenantActions = [
     {
       title: copy.actions[0].title,
       description: copy.actions[0].description,
@@ -251,7 +251,7 @@ export default function SuperAdminDashboard() {
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardDescription>{copy.platformUsers}</CardDescription>
+            <CardDescription>{copy.mainTenantUsers}</CardDescription>
             <CardTitle className="text-3xl">
               {userStats?.totalUsers ?? memberCount}
             </CardTitle>
@@ -281,7 +281,7 @@ export default function SuperAdminDashboard() {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {platformActions.map((action) => {
+        {mainTenantActions.map((action) => {
           const Icon = action.icon;
 
           return (

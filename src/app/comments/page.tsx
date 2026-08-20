@@ -73,7 +73,7 @@ const commentsCopy = {
     tenant: "Website",
     reader: "Reader",
     to: "to",
-    replyPlaceholder: "Reply as tenant...",
+    replyPlaceholder: "Reply as sub-tenant...",
     reply: "Reply",
     deleting: "Deleting...",
   },

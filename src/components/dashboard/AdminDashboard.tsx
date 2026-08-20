@@ -149,7 +149,7 @@ const adminDashboardCopy = {
     live: 'Live',
     activeConnections: 'Active Connections',
     userManagement: 'User Management',
-    userManagementDescription: 'Tenant users by role and management tools',
+    userManagementDescription: 'Sub-tenant users by role and management tools',
     manageUsers: 'Manage Users',
     admins: 'Admins',
     editors: 'Editors',
@@ -173,7 +173,7 @@ const adminDashboardCopy = {
     responseTimeLabel: 'Response Time:',
     connections: 'Connections:',
     systemActivity: 'System Activity',
-    systemActivityDescription: 'Recent tenant activity',
+    systemActivityDescription: 'Recent sub-tenant activity',
     noRecentActivity: 'No recent activity',
     viewAuditLogs: 'View Audit Logs',
     accessDenied: 'Access Denied',
@@ -224,7 +224,7 @@ const adminDashboardCopy = {
     },
   },
   km: {
-    tenant: 'Tenant',
+    tenant: 'Sub-tenant',
     unknown: 'មិនស្គាល់',
     uncategorized: 'មិនមានប្រភេទ',
     system: 'ប្រព័ន្ធ',
@@ -638,7 +638,7 @@ export const AdminDashboard: React.FC = () => {
                 </CardContent>
               </Card>
 
-              {/* Platform Analytics */}
+              {/* Main-tenant analytics */}
               <Card className="border-purple-200/70 hover:border-purple-300 hover:shadow-md transition-shadow dark:border-slate-700 dark:bg-slate-900 dark:hover:border-purple-500/50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">

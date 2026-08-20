@@ -26,8 +26,8 @@ const loginPageCopy = {
     badge: "Secure editorial operations",
     headline: "Management Console",
     description:
-      "A focused workspace for newsroom operations, tenant administration, and platform security.",
-    statusOnline: "Platform online",
+      "A focused workspace for newsroom operations, sub-tenant administration, and main-tenant security.",
+    statusOnline: "System online",
     auditEnabled: "Audit logging enabled",
     authorized: "Authorized access only",
     verified: "Email verified successfully. You can now sign in.",
@@ -48,8 +48,8 @@ const loginPageCopy = {
         icon: FileText,
       },
       {
-        title: "Tenant operations",
-        detail: "Manage tenant spaces, team access, roles, and configuration.",
+        title: "Sub-tenant operations",
+        detail: "Manage sub-tenant spaces, team access, roles, and configuration.",
         icon: Users,
       },
       {
@@ -65,7 +65,7 @@ const loginPageCopy = {
     headline: "ផ្ទាំងគ្រប់គ្រង",
     description:
       "កន្លែងធ្វើការសម្រាប់ប្រតិបត្តិការព័ត៌មាន ការគ្រប់គ្រងអង្គភាព និងសុវត្ថិភាពប្រព័ន្ធ។",
-    statusOnline: "វេទិកាកំពុងដំណើរការ",
+    statusOnline: "ប្រព័ន្ធកំពុងដំណើរការ",
     auditEnabled: "បានបើកកំណត់ហេតុសវនកម្ម",
     authorized: "សម្រាប់អ្នកមានសិទ្ធិចូលប៉ុណ្ណោះ",
     verified: "បានផ្ទៀងផ្ទាត់អ៊ីមែលដោយជោគជ័យ។ ឥឡូវនេះអ្នកអាចចូលបាន។",

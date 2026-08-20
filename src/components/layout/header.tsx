@@ -11,7 +11,6 @@ import {
   LogOut,
   Moon,
   Sun,
-  Globe,
   ChevronDown,
   CheckCircle,
   XCircle,
@@ -19,7 +18,6 @@ import {
   FileText,
   Archive,
   UserPlus,
-  Building2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -51,6 +49,7 @@ import { useVisibilityPolling } from "@/hooks/usePolling";
 import { formatDistanceToNow } from "date-fns";
 import { COLOR_SCHEME_CHANGED_EVENT } from "@/lib/tweakcn-theme";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
+import { AdminLanguageToggle } from "./language-toggle";
 
 interface HeaderProps {
   onMobileNavOpen: (open: boolean) => void;
@@ -66,9 +65,6 @@ const headerCopy = {
     noResults: "No results found",
     tryDifferent: "Try searching with different keywords",
     emptySearch: "Type to search articles, categories, or users.",
-    language: "Language",
-    english: "English",
-    khmer: "Khmer",
     lightMode: "Light mode",
     darkMode: "Dark mode",
     notifications: "Notifications",
@@ -105,9 +101,6 @@ const headerCopy = {
     noResults: "រកមិនឃើញលទ្ធផល",
     tryDifferent: "សាកល្បងពាក្យស្វែងរកផ្សេងទៀត",
     emptySearch: "វាយដើម្បីស្វែងរកអត្ថបទ ប្រភេទ ឬអ្នកប្រើ។",
-    language: "ភាសា",
-    english: "អង់គ្លេស",
-    khmer: "ខ្មែរ",
     lightMode: "ផ្ទៃភ្លឺ",
     darkMode: "ផ្ទៃងងឹត",
     notifications: "ការជូនដំណឹង",
@@ -143,7 +136,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const { user, logout } = useAuth();
   const { activeTenant } = useTenant();
   const { searchArticles } = useSearch();
-  const { locale, selectLocale } = useAdminLocale();
+  const { locale } = useAdminLocale();
   const copy = headerCopy[locale];
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
@@ -159,7 +152,9 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
   const brandName =
-    user?.role === "SUPER_ADMIN" ? copy.managementConsole : activeTenant?.name || "Pulse News";
+    user?.role === "SUPER_ADMIN"
+      ? copy.managementConsole
+      : activeTenant?.name || "Pulse News";
   const brandInitials = brandName
     .split(" ")
     .filter(Boolean)
@@ -661,35 +656,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
             )}
           </div>
 
-          {activeTenant && user?.role !== "SUPER_ADMIN" && (
-            <div className="hidden h-8 max-w-[180px] items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2 lg:flex xl:max-w-[220px]">
-              <Building2 className="h-4 w-4 text-slate-500" />
-              <span className="truncate text-xs font-semibold text-slate-700">
-                {activeTenant.name}
-              </span>
-            </div>
-          )}
-
-          {/* Language Selector */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                <Globe className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuLabel>{copy.language}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => selectLocale("en")}>
-                <span className="mr-2">EN</span>
-                {copy.english}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => selectLocale("km")}>
-                <span className="mr-2">ខ្មែរ</span>
-                {copy.khmer}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <AdminLanguageToggle />
 
           {/* Theme Toggle */}
           <Tooltip>

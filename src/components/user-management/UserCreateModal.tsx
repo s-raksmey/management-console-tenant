@@ -18,14 +18,14 @@ interface UserCreateModalProps {
 
 const createUserCopy = {
   en: {
-    platformRole: 'Platform Role',
-    tenantRole: 'Tenant Role',
+    mainTenantRole: 'Main Tenant Role',
+    tenantRole: 'Sub-tenant Role',
     superAdmin: 'Super Admin',
-    tenantAdmin: 'Tenant Admin',
+    tenantAdmin: 'Sub-tenant Admin',
     admin: 'Admin',
     editor: 'Editor',
     author: 'Author',
-    superAdminBlocked: 'Tenant users cannot create super admin accounts.',
+    superAdminBlocked: 'Sub-tenant users cannot create super admin accounts.',
     createFailed: 'Failed to create user',
     title: 'Create New User',
     close: 'Close',
@@ -44,7 +44,7 @@ const createUserCopy = {
     hidePassword: 'Hide password',
   },
   km: {
-    platformRole: 'តួនាទីវេទិកា',
+    mainTenantRole: 'តួនាទីអ្នកជួលមេ',
     tenantRole: 'តួនាទីគេហទំព័រ',
     superAdmin: 'អ្នកគ្រប់គ្រងកំពូល',
     tenantAdmin: 'អ្នកគ្រប់គ្រងគេហទំព័រ',
@@ -78,7 +78,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
   const { hasPermission } = usePermissions();
   const canAssignSuperAdmin = user?.role === 'SUPER_ADMIN';
   const canManageRoles = hasPermission(Permission.MANAGE_USER_ROLES);
-  const roleLabel = canAssignSuperAdmin ? copy.platformRole : copy.tenantRole;
+  const roleLabel = canAssignSuperAdmin ? copy.mainTenantRole : copy.tenantRole;
   const defaultRole: AssignableUserRole = canAssignSuperAdmin ? 'ADMIN' : 'AUTHOR';
   const roleOptions: Array<{ value: AssignableUserRole; label: string }> = canAssignSuperAdmin
     ? [

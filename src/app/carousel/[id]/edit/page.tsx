@@ -16,14 +16,14 @@ import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 const editCarouselCopy = {
   en: {
-    loadTenantFailed: "Failed to load tenant options.",
+    loadTenantFailed: "Failed to load sub-tenant options.",
     slideNotFound: "Carousel slide was not found.",
     loadSlideFailed: "Failed to load carousel slide.",
     accessDenied: "Access denied: Insufficient permissions",
     loadingSlide: "Loading slide...",
-    selectTenant: "Select Tenant",
-    selectTenantDescription: "Choose the tenant that owns this carousel slide.",
-    selectTenantPlaceholder: "Select tenant",
+    selectTenant: "Select Sub-tenant",
+    selectTenantDescription: "Choose the sub-tenant that owns this carousel slide.",
+    selectTenantPlaceholder: "Select sub-tenant",
     unableToLoad: "Unable to Load Slide",
     backToCarousel: "Back to Carousel",
     title: "Edit Slide",

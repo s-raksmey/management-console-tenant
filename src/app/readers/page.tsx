@@ -16,7 +16,7 @@ const readersCopy = {
     accessDenied: "Access denied: Settings permission required.",
     eyebrow: "Audience",
     title: "Public Readers",
-    description: "Google readers who signed in on this tenant website. These are passwordless public accounts, separate from CMS users.",
+    description: "Google readers who signed in on this sub-tenant website. These are passwordless public accounts, separate from CMS users.",
     loading: "Loading readers...",
     empty: "No public readers have signed in yet.",
     comments: (count: number) => `${count} comment${count === 1 ? "" : "s"}`,

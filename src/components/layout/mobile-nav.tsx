@@ -30,6 +30,7 @@ import { useTenant } from "@/contexts/TenantContext";
 import { Permission } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAdminLocale, type AdminLocale } from "@/hooks/useAdminLocale";
+import { AdminLanguageToggle } from "./language-toggle";
 
 interface MobileNavProps {
   open: boolean;
@@ -68,7 +69,7 @@ const getNavigation = (
   const copy = {
     en: {
       dashboard: "Dashboard",
-      tenantManagement: "Tenant Management",
+      tenantManagement: "Sub-tenant Management",
       userManagement: "User Management",
       roleManagement: "Role Management",
       analytics: "Analytics",
@@ -101,7 +102,7 @@ const getNavigation = (
   }[locale];
 
   if (userRole === "SUPER_ADMIN") {
-    const platformItems = [
+    const mainTenantItems = [
       {
         name: copy.dashboard,
         href: "/",
@@ -110,7 +111,7 @@ const getNavigation = (
     ];
 
     if (permissions.canSystemAdmin) {
-      platformItems.push({
+      mainTenantItems.push({
         name: copy.tenantManagement,
         href: "/tenants",
         icon: Building2,
@@ -118,7 +119,7 @@ const getNavigation = (
     }
 
     if (permissions.canViewUsers) {
-      platformItems.push({
+      mainTenantItems.push({
         name: copy.userManagement,
         href: "/users",
         icon: Users,
@@ -126,7 +127,7 @@ const getNavigation = (
     }
 
     if (permissions.canManageRoles) {
-      platformItems.push({
+      mainTenantItems.push({
         name: copy.roleManagement,
         href: "/users/roles",
         icon: Shield,
@@ -134,7 +135,7 @@ const getNavigation = (
     }
 
     if (permissions.canViewAnalytics) {
-      platformItems.push({
+      mainTenantItems.push({
         name: copy.analytics,
         href: "/analytics",
         icon: BarChart3,
@@ -142,7 +143,7 @@ const getNavigation = (
     }
 
     if (permissions.canViewMedia) {
-      platformItems.push({
+      mainTenantItems.push({
         name: copy.media,
         href: "/media",
         icon: Image,
@@ -150,7 +151,7 @@ const getNavigation = (
     }
 
     if (permissions.canViewCarousel) {
-      platformItems.push({
+      mainTenantItems.push({
         name: copy.carousel,
         href: "/carousel",
         icon: Image,
@@ -158,7 +159,7 @@ const getNavigation = (
     }
 
     if (permissions.canViewAds) {
-      platformItems.push({
+      mainTenantItems.push({
         name: copy.ads,
         href: "/ads",
         icon: Megaphone,
@@ -166,7 +167,7 @@ const getNavigation = (
     }
 
     if (permissions.canViewAuditLogs) {
-      platformItems.push({
+      mainTenantItems.push({
         name: copy.logs,
         href: "/audit",
         icon: Archive,
@@ -174,14 +175,14 @@ const getNavigation = (
     }
 
     if (permissions.canViewSettings) {
-      platformItems.push({
+      mainTenantItems.push({
         name: copy.settings,
         href: "/settings",
         icon: Settings,
       });
     }
 
-    return platformItems;
+    return mainTenantItems;
   }
 
   const baseItems = [
@@ -308,11 +309,14 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
     <Sheet
       open={open}
       onOpenChange={onOpenChange}
-      className="w-[min(86vw,320px)] max-w-none bg-white p-0 dark:bg-slate-900"
+      className="h-dvh w-screen max-w-none bg-white p-0 shadow-none dark:bg-slate-900 sm:max-w-none"
     >
       <SheetContent className="flex w-full flex-col overflow-hidden p-0">
-        <SheetClose />
-        <SheetHeader className="border-b px-4 py-4 text-left">
+        <SheetClose
+          onClick={() => onOpenChange(false)}
+          className="z-10 flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 opacity-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700"
+        />
+        <SheetHeader className="border-b px-4 py-4 pr-16 text-left dark:border-slate-800">
           <SheetTitle className="flex min-w-0 items-center gap-2">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
               <span className="text-white font-bold text-sm">
@@ -320,15 +324,15 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
               </span>
             </div>
             <div className="min-w-0">
-              <div className="truncate font-semibold text-slate-900">{brandName}</div>
-              <div className="text-xs text-slate-500">
+              <div className="truncate font-semibold text-slate-900 dark:text-white">{brandName}</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400">
                 {locale === "km" ? "ផ្ទាំងគ្រប់គ្រង" : "Admin Dashboard"}
               </div>
             </div>
           </SheetTitle>
         </SheetHeader>
 
-        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-4">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain px-3 py-4">
           {navigation.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
@@ -341,8 +345,8 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
                 className={cn(
                   "flex min-w-0 items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-blue-50 text-blue-700 border border-blue-200"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-50",
+                    ? "border border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-300"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white",
                 )}
               >
                 <Icon className="h-5 w-5" />
@@ -352,8 +356,15 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
           })}
         </nav>
 
-        <div className="border-t px-4 py-3">
-          <div className="text-xs text-slate-500 text-center">
+        <div className="flex items-center justify-between gap-3 border-t px-4 py-3 dark:border-slate-800">
+          <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            {locale === "km" ? "ភាសា" : "Language"}
+          </span>
+          <AdminLanguageToggle />
+        </div>
+
+        <div className="border-t px-4 py-3 dark:border-slate-800">
+          <div className="text-center text-xs text-slate-500 dark:text-slate-400">
             © 2024 {brandName}
           </div>
         </div>

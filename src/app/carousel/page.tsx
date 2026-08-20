@@ -36,7 +36,7 @@ const carouselListCopy = {
   en: {
     error: "Error",
     success: "Success",
-    loadTenantFailed: "Failed to load tenant options.",
+    loadTenantFailed: "Failed to load sub-tenant options.",
     loadSlidesFailed: "Failed to load carousel slides",
     deleted: "Carousel slide deleted.",
     deleteFailed: "Failed to delete carousel slide",
@@ -44,10 +44,10 @@ const carouselListCopy = {
     title: "Public Carousel",
     description: "Manage hero slides for the homepage, category pages, and sub-category pages.",
     newSlide: "New Slide",
-    selectTenant: "Select Tenant",
+    selectTenant: "Select Sub-tenant",
     selectTenantDescription:
-      "Super admin carousel changes are applied to the selected tenant public website.",
-    selectTenantPlaceholder: "Select tenant",
+      "Super admin carousel changes are applied to the selected sub-tenant public website.",
+    selectTenantPlaceholder: "Select sub-tenant",
     allSlides: "All Slides",
     slidesConfigured: (count: number) => `${count} slides configured`,
     loadingSlides: "Loading slides...",

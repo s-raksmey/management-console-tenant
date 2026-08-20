@@ -51,7 +51,7 @@ const adsPageCopy = {
   en: {
     error: "Error",
     archivedTitle: "Archived",
-    loadTenantFailed: "Failed to load tenant options.",
+    loadTenantFailed: "Failed to load sub-tenant options.",
     loadAdsFailed: "Failed to load advertisements.",
     archiveFailed: "Failed to archive advertisement.",
     archivedDescription: "Advertisement moved to archive.",
@@ -69,7 +69,7 @@ const adsPageCopy = {
     revenueWorkspace: "Revenue Workspace",
     title: "Ads Management",
     description: "Review sponsored placements, delivery health, schedules, and campaign performance.",
-    selectTenant: "Select tenant",
+    selectTenant: "Select sub-tenant",
     metrics: {
       active: { label: "Active", detail: "Publishing now" },
       scheduled: { label: "Scheduled", detail: "Starting later" },
