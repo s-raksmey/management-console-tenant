@@ -40,16 +40,18 @@ const createUserCopy = {
     cancel: 'Cancel',
     creating: 'Creating...',
     createUser: 'Create User',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
   },
   km: {
     platformRole: 'តួនាទីវេទិកា',
-    tenantRole: 'តួនាទី Tenant',
-    superAdmin: 'Super Admin',
-    tenantAdmin: 'Tenant Admin',
-    admin: 'Admin',
-    editor: 'Editor',
-    author: 'Author',
-    superAdminBlocked: 'អ្នកប្រើ tenant មិនអាចបង្កើតគណនី super admin បានទេ។',
+    tenantRole: 'តួនាទីគេហទំព័រ',
+    superAdmin: 'អ្នកគ្រប់គ្រងកំពូល',
+    tenantAdmin: 'អ្នកគ្រប់គ្រងគេហទំព័រ',
+    admin: 'អ្នកគ្រប់គ្រង',
+    editor: 'អ្នកកែសម្រួល',
+    author: 'អ្នកនិពន្ធ',
+    superAdminBlocked: 'អ្នកប្រើគេហទំព័រមិនអាចបង្កើតគណនីអ្នកគ្រប់គ្រងកំពូលបានទេ។',
     createFailed: 'មិនអាចបង្កើតអ្នកប្រើបានទេ',
     title: 'បង្កើតអ្នកប្រើថ្មី',
     close: 'បិទ',
@@ -64,6 +66,8 @@ const createUserCopy = {
     cancel: 'បោះបង់',
     creating: 'កំពុងបង្កើត...',
     createUser: 'បង្កើតអ្នកប្រើ',
+    showPassword: 'បង្ហាញពាក្យសម្ងាត់',
+    hidePassword: 'លាក់ពាក្យសម្ងាត់',
   },
 };
 
@@ -229,6 +233,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? copy.hidePassword : copy.showPassword}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
                 disabled={loading}
               >

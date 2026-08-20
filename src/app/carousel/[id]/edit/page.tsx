@@ -12,8 +12,42 @@ import { Permission } from "@/components/permissions/PermissionGuard";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Tenant, TenantService } from "@/services/tenant.gql";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
+
+const editCarouselCopy = {
+  en: {
+    loadTenantFailed: "Failed to load tenant options.",
+    slideNotFound: "Carousel slide was not found.",
+    loadSlideFailed: "Failed to load carousel slide.",
+    accessDenied: "Access denied: Insufficient permissions",
+    loadingSlide: "Loading slide...",
+    selectTenant: "Select Tenant",
+    selectTenantDescription: "Choose the tenant that owns this carousel slide.",
+    selectTenantPlaceholder: "Select tenant",
+    unableToLoad: "Unable to Load Slide",
+    backToCarousel: "Back to Carousel",
+    title: "Edit Slide",
+    description: "Update the public hero slide content and media.",
+  },
+  km: {
+    loadTenantFailed: "មិនអាចផ្ទុកជម្រើសគេហទំព័របានទេ។",
+    slideNotFound: "រកមិនឃើញស្លាយការ៉ូសែល។",
+    loadSlideFailed: "មិនអាចផ្ទុកស្លាយការ៉ូសែលបានទេ។",
+    accessDenied: "គ្មានសិទ្ធិ៖ សិទ្ធិមិនគ្រប់គ្រាន់",
+    loadingSlide: "កំពុងផ្ទុកស្លាយ...",
+    selectTenant: "ជ្រើសគេហទំព័រ",
+    selectTenantDescription: "ជ្រើសគេហទំព័រដែលជាម្ចាស់ស្លាយការ៉ូសែលនេះ។",
+    selectTenantPlaceholder: "ជ្រើសគេហទំព័រ",
+    unableToLoad: "មិនអាចផ្ទុកស្លាយបាន",
+    backToCarousel: "ត្រឡប់ទៅការ៉ូសែល",
+    title: "កែស្លាយ",
+    description: "កែប្រែមាតិកា និងមេឌៀរបស់ស្លាយមុខសាធារណៈ។",
+  },
+} as const;
 
 export default function EditCarouselSlidePage() {
+  const { locale } = useAdminLocale();
+  const copy = editCarouselCopy[locale];
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const id = params.id;
@@ -42,7 +76,7 @@ export default function EditCarouselSlidePage() {
         setTenants(activeItems);
         setSelectedTenantId((current) => current || activeItems[0]?.id || "");
       } catch {
-        setError("Failed to load tenant options.");
+        setError(copy.loadTenantFailed);
       }
     };
 
@@ -84,7 +118,7 @@ export default function EditCarouselSlidePage() {
         if (!isMounted) return;
 
         if (!selectedSlide) {
-          setError("Carousel slide was not found.");
+          setError(copy.slideNotFound);
           setSlide(null);
           return;
         }
@@ -96,8 +130,9 @@ export default function EditCarouselSlidePage() {
       } catch (err: any) {
         if (!isMounted) return;
         setError(
-          err?.response?.errors?.[0]?.message ||
-            "Failed to load carousel slide.",
+          locale === "en"
+            ? err?.response?.errors?.[0]?.message || copy.loadSlideFailed
+            : copy.loadSlideFailed,
         );
       } finally {
         if (isMounted) {
@@ -116,7 +151,7 @@ export default function EditCarouselSlidePage() {
   if (!permissionsLoading && !canUpdate) {
     return (
       <div className="text-sm text-red-600">
-        Access denied: Insufficient permissions
+        {copy.accessDenied}
       </div>
     );
   }
@@ -126,7 +161,7 @@ export default function EditCarouselSlidePage() {
       <Card>
         <CardContent className="flex items-center justify-center py-16 text-slate-500">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          Loading slide...
+          {copy.loadingSlide}
         </CardContent>
       </Card>
     );
@@ -138,9 +173,9 @@ export default function EditCarouselSlidePage() {
         {isSuperAdmin && (
           <Card>
             <CardHeader>
-              <CardTitle>Select Tenant</CardTitle>
+              <CardTitle>{copy.selectTenant}</CardTitle>
               <CardDescription>
-                Choose the tenant that owns this carousel slide.
+                {copy.selectTenantDescription}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -149,7 +184,7 @@ export default function EditCarouselSlidePage() {
                 onChange={(event) => setSelectedTenantId(event.target.value)}
                 className="flex h-10 w-full max-w-md rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
               >
-                <option value="">Select tenant</option>
+                <option value="">{copy.selectTenantPlaceholder}</option>
                 {tenants.map((tenant) => (
                   <option key={tenant.id} value={tenant.id}>
                     {tenant.name} /{tenant.slug}
@@ -163,11 +198,11 @@ export default function EditCarouselSlidePage() {
           <CardContent className="py-16 text-center">
           <AlertCircle className="mx-auto h-10 w-10 text-red-500" />
           <h1 className="mt-4 text-xl font-semibold text-slate-950">
-            Unable to Load Slide
+            {copy.unableToLoad}
           </h1>
           <p className="mt-2 text-sm text-slate-600">{error}</p>
           <Button className="mt-5" asChild>
-            <a href="/carousel">Back to Carousel</a>
+            <a href="/carousel">{copy.backToCarousel}</a>
           </Button>
           </CardContent>
         </Card>
@@ -178,9 +213,9 @@ export default function EditCarouselSlidePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-slate-950">Edit Slide</h1>
+        <h1 className="text-3xl font-bold text-slate-950">{copy.title}</h1>
         <p className="mt-2 text-sm text-slate-600">
-          Update the public hero slide content and media.
+          {copy.description}
         </p>
       </div>
 

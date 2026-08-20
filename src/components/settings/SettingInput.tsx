@@ -22,26 +22,28 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
   const copy = locale === 'km'
     ? {
         enter: (label: string) => `បញ្ចូល ${label}`,
-        uploadImageOnly: 'សូម upload image file។',
-        uploadFailed: 'Upload មិនបាន',
-        enabled: 'Enabled',
-        disabled: 'Disabled',
+        uploadImageOnly: 'សូមផ្ទុកឯកសាររូបភាព។',
+        uploadFailed: 'ផ្ទុកឡើងមិនបាន',
+        enabled: 'បានបើក',
+        disabled: 'បានបិទ',
         select: (label: string) => `ជ្រើស ${label}`,
-        author: 'Author',
-        editor: 'Editor',
-        admin: 'Admin',
+        author: 'អ្នកនិពន្ធ',
+        editor: 'អ្នកកែសម្រួល',
+        admin: 'អ្នកគ្រប់គ្រង',
         everyHour: 'រៀងរាល់ម៉ោង',
         every6Hours: 'រៀងរាល់ 6 ម៉ោង',
         every12Hours: 'រៀងរាល់ 12 ម៉ោង',
         daily: 'ប្រចាំថ្ងៃ',
         weekly: 'ប្រចាំសប្តាហ៍',
-        uploadFile: (type: string) => `Upload ${type} file`,
+        uploadFile: (type: string) => `ផ្ទុកឯកសារ ${type}`,
         logo: 'logo',
         favicon: 'favicon',
-        uploadHelp: 'Upload នឹងកំណត់ URL ខាងលើ។ ចុច Save ដើម្បី publish។',
-        uploading: 'កំពុង Upload',
-        chooseFile: 'ជ្រើស File',
+        uploadHelp: 'ការផ្ទុកឡើងនឹងកំណត់ URL ខាងលើ។ ចុចរក្សាទុកដើម្បីផ្សព្វផ្សាយ។',
+        uploading: 'កំពុងផ្ទុកឡើង',
+        chooseFile: 'ជ្រើសឯកសារ',
         urlHelp: 'ប្រើ URL ពេញលេញដែលចាប់ផ្តើមដោយ https:// ឬ http://',
+        showPassword: 'បង្ហាញពាក្យសម្ងាត់',
+        hidePassword: 'លាក់ពាក្យសម្ងាត់',
       }
     : {
         enter: (label: string) => `Enter ${label}`,
@@ -65,6 +67,8 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
         uploading: 'Uploading',
         chooseFile: 'Choose File',
         urlHelp: 'Use a complete URL beginning with https:// or http://',
+        showPassword: 'Show password',
+        hidePassword: 'Hide password',
       };
   const [showPassword, setShowPassword] = React.useState(false);
   const [isUploading, setIsUploading] = React.useState(false);
@@ -266,6 +270,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
                 size="sm"
                 className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? copy.hidePassword : copy.showPassword}
                 disabled={disabled}
               >
                 {showPassword ? (

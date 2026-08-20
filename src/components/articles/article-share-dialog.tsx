@@ -15,13 +15,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 type PlatformStatus = "idle" | "ready" | "opened" | "copied";
 
 type SharePlatform = {
   id: ArticleSharePlatform;
   label: string;
-  helper: string;
 };
 
 const STORAGE_KEY = "pulse-news-share-platforms";
@@ -30,39 +30,95 @@ const PLATFORMS: SharePlatform[] = [
   {
     id: "FACEBOOK",
     label: "Facebook",
-    helper: "Open Facebook composer for the published link.",
   },
   {
     id: "X",
     label: "X / Twitter",
-    helper: "Open a prepared post with the article link.",
   },
   {
     id: "LINKEDIN",
     label: "LinkedIn",
-    helper: "Open LinkedIn share for professional pages.",
   },
   {
     id: "TELEGRAM",
     label: "Telegram",
-    helper: "Send the article into Telegram channels or chats.",
   },
   {
     id: "WHATSAPP",
     label: "WhatsApp",
-    helper: "Open WhatsApp with the caption ready.",
   },
   {
     id: "EMAIL",
     label: "Email",
-    helper: "Open your default mail composer.",
   },
   {
     id: "YOUTUBE",
     label: "YouTube",
-    helper: "Copy caption and open YouTube Studio.",
   },
 ];
+
+const shareDialogCopy = {
+  en: {
+    prepareError: "Unable to prepare sharing. Check the public website URL setting.",
+    title: "Share published article",
+    description: "Select platforms once, prepare the post text, then open all selected share composers.",
+    publishedOnly: "This action is available only after the article is published.",
+    selected: "Selected",
+    caption: "Caption",
+    copied: "Copied",
+    copy: "Copy",
+    captionPlaceholder: "Write the caption to use with this article link...",
+    serverPrepared: "Prepared by the server using the tenant public URL. True auto-posting will need OAuth credentials for each platform.",
+    cancel: "Cancel",
+    prepare: "Prepare",
+    shareSelected: "Share selected",
+    status: {
+      ready: "Ready",
+      opened: "Opened",
+      copied: "Copied",
+      idle: "Idle",
+    },
+    helper: {
+      FACEBOOK: "Open Facebook composer for the published link.",
+      X: "Open a prepared post with the article link.",
+      LINKEDIN: "Open LinkedIn share for professional pages.",
+      TELEGRAM: "Send the article into Telegram channels or chats.",
+      WHATSAPP: "Open WhatsApp with the caption ready.",
+      EMAIL: "Open your default mail composer.",
+      YOUTUBE: "Copy caption and open YouTube Studio.",
+    },
+  },
+  km: {
+    prepareError: "មិនអាចរៀបចំការចែករំលែកបានទេ។ សូមពិនិត្យការកំណត់ URL គេហទំព័រសាធារណៈ។",
+    title: "ចែករំលែកអត្ថបទដែលបានផ្សព្វផ្សាយ",
+    description: "ជ្រើសវេទិកាម្តង រៀបចំអត្ថបទបង្ហោះ បន្ទាប់មកបើកកម្មវិធីចែករំលែកដែលបានជ្រើសទាំងអស់។",
+    publishedOnly: "សកម្មភាពនេះប្រើបានតែបន្ទាប់ពីអត្ថបទត្រូវបានផ្សព្វផ្សាយ។",
+    selected: "បានជ្រើស",
+    caption: "អត្ថបទភ្ជាប់",
+    copied: "បានចម្លង",
+    copy: "ចម្លង",
+    captionPlaceholder: "សរសេរអត្ថបទភ្ជាប់សម្រាប់ប្រើជាមួយតំណអត្ថបទនេះ...",
+    serverPrepared: "បានរៀបចំដោយម៉ាស៊ីនមេដោយប្រើ URL សាធារណៈរបស់គេហទំព័រ។ ការបង្ហោះស្វ័យប្រវត្តិពិតៗត្រូវការព័ត៌មាន OAuth សម្រាប់វេទិកានីមួយៗ។",
+    cancel: "បោះបង់",
+    prepare: "រៀបចំ",
+    shareSelected: "ចែករំលែកដែលបានជ្រើស",
+    status: {
+      ready: "រួចរាល់",
+      opened: "បានបើក",
+      copied: "បានចម្លង",
+      idle: "នៅទំនេរ",
+    },
+    helper: {
+      FACEBOOK: "បើកកន្លែងរៀបចំ Facebook សម្រាប់តំណដែលបានផ្សព្វផ្សាយ។",
+      X: "បើកការបង្ហោះដែលបានរៀបចំជាមួយតំណអត្ថបទ។",
+      LINKEDIN: "បើកការចែករំលែក LinkedIn សម្រាប់ទំព័រវិជ្ជាជីវៈ។",
+      TELEGRAM: "ផ្ញើអត្ថបទទៅឆានែល ឬការជជែក Telegram។",
+      WHATSAPP: "បើក WhatsApp ជាមួយអត្ថបទភ្ជាប់រួចរាល់។",
+      EMAIL: "បើកកម្មវិធីអ៊ីមែលលំនាំដើមរបស់អ្នក។",
+      YOUTUBE: "ចម្លងអត្ថបទភ្ជាប់ ហើយបើក YouTube Studio។",
+    },
+  },
+} as const;
 
 interface ArticleShareDialogProps {
   article: Article | null;
@@ -115,6 +171,8 @@ export function ArticleShareDialog({
   onOpenChange,
   publicBaseUrl,
 }: ArticleShareDialogProps) {
+  const { locale } = useAdminLocale();
+  const copy = shareDialogCopy[locale];
   const { prepareArticleShare, loading } = useArticleMutations();
   const [selected, setSelected] = useState<Set<ArticleSharePlatform>>(getInitialPlatforms);
   const [message, setMessage] = useState("");
@@ -171,7 +229,7 @@ export function ArticleShareDialog({
 
     const nextTargets = (response?.prepareArticleShare || []) as ArticleShareTarget[];
     if (!nextTargets.length) {
-      setError("Unable to prepare sharing. Check the public website URL setting.");
+      setError(copy.prepareError);
       return [];
     }
 
@@ -215,17 +273,17 @@ export function ArticleShareDialog({
         <DialogHeader className="border-b px-5 py-4">
           <DialogTitle className="flex items-center gap-2">
             <Share2 className="h-5 w-5 text-blue-600" />
-            Share published article
+            {copy.title}
           </DialogTitle>
           <DialogDescription>
-            Select platforms once, prepare the post text, then open all selected share composers.
+            {copy.description}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 px-5 py-4">
           {!canShare ? (
             <div className="rounded-lg border bg-amber-50 p-4 text-sm text-amber-800">
-              This action is available only after the article is published.
+              {copy.publishedOnly}
             </div>
           ) : (
             <>
@@ -257,13 +315,13 @@ export function ArticleShareDialog({
                         {status && status !== "idle" ? (
                           <Badge variant="outline" className="gap-1 text-[10px]">
                             <CheckCircle2 className="h-3 w-3" />
-                            {status}
+                            {copy.status[status]}
                           </Badge>
                         ) : checked ? (
-                          <Badge className="text-[10px]">Selected</Badge>
+                          <Badge className="text-[10px]">{copy.selected}</Badge>
                         ) : null}
                       </div>
-                      <p className="mt-1 text-xs text-slate-500">{platform.helper}</p>
+                      <p className="mt-1 text-xs text-slate-500">{copy.helper[platform.id]}</p>
                     </button>
                   );
                 })}
@@ -272,11 +330,11 @@ export function ArticleShareDialog({
               <div className="rounded-xl border bg-white p-4">
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Caption
+                    {copy.caption}
                   </p>
                   <Button type="button" variant="outline" size="sm" onClick={() => handleCopy()}>
                     <Copy className="mr-2 h-4 w-4" />
-                    {copied ? "Copied" : "Copy"}
+                    {copied ? copy.copied : copy.copy}
                   </Button>
                 </div>
                 <Textarea
@@ -287,11 +345,10 @@ export function ArticleShareDialog({
                     setStatuses({});
                   }}
                   className="mt-3 min-h-28 resize-y"
-                  placeholder="Write the caption to use with this article link..."
+                  placeholder={copy.captionPlaceholder}
                 />
                 <p className="mt-2 text-xs text-slate-500">
-                  Prepared by the server using the tenant public URL. True auto-posting will need
-                  OAuth credentials for each platform.
+                  {copy.serverPrepared}
                 </p>
               </div>
 
@@ -317,7 +374,7 @@ export function ArticleShareDialog({
 
         <DialogFooter className="border-t px-5 py-4">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
+            {copy.cancel}
           </Button>
           <Button
             type="button"
@@ -325,7 +382,7 @@ export function ArticleShareDialog({
             onClick={prepareTargets}
             disabled={!canShare || selected.size === 0 || loading}
           >
-            Prepare
+            {copy.prepare}
           </Button>
           <Button
             type="button"
@@ -333,7 +390,7 @@ export function ArticleShareDialog({
             disabled={!canShare || selected.size === 0 || loading}
           >
             <ExternalLink className="mr-2 h-4 w-4" />
-            Share selected
+            {copy.shareSelected}
           </Button>
         </DialogFooter>
       </DialogContent>

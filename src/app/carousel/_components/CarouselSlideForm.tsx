@@ -33,6 +33,7 @@ import { Q_CATEGORIES, type Category } from "@/services/category.gql";
 import { Q_TOPICS, type Topic } from "@/services/topic.gql";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tenant, TenantService } from "@/services/tenant.gql";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 export type SlideForm = {
   placement: "HOME" | "CATEGORY" | "TOPIC";
@@ -150,7 +151,156 @@ type CarouselSlideFormProps = {
   slide?: CarouselSlide | null;
 };
 
+const carouselFormCopy = {
+  en: {
+    pulseNews: "Pulse News",
+    defaultSubtitle: "Breaking news, insightful analysis, and stories that matter",
+    error: "Error",
+    success: "Success",
+    uploadError: "Upload Error",
+    validationError: "Validation Error",
+    loadTenantFailed: "Failed to load tenant options.",
+    loadCategoryFailed: "Failed to load category options.",
+    selectImage: "Please select an image file.",
+    selectMp4: "Please select an MP4 video file.",
+    uploadFailed: "Upload failed",
+    imageUploaded: "Image Uploaded",
+    videoUploaded: "Video Uploaded",
+    imageReady: "Carousel image is ready.",
+    videoReady: "Carousel video is ready.",
+    mediaUploadFailed: "Failed to upload media.",
+    titleRequired: "English title is required.",
+    categoryRequired: "Please select a category.",
+    topicRequired: "Please select a sub-category.",
+    tenantRequired: "Please select the tenant for this slide.",
+    videoRequired: "Please add an MP4, YouTube, or Facebook video URL.",
+    slideUpdated: "Carousel slide updated.",
+    slideCreated: "Carousel slide created.",
+    saveFailed: "Failed to save carousel slide.",
+    editSlide: "Edit Slide",
+    createSlide: "Create Slide",
+    formDescription:
+      "Manage the copy, placement, destination link, display order, and image or video media for one public carousel slide.",
+    tenantWebsite: "Tenant Website",
+    selectTenant: "Select tenant",
+    tenantHelp: (name?: string) =>
+      `This slide will be managed inside the selected tenant public website.${name ? ` Current tenant: ${name}.` : ""}`,
+    showOn: "Show On",
+    homepage: "Homepage",
+    categoryPage: "Category page",
+    topicPage: "Sub-category page",
+    category: "Category",
+    selectCategory: "Select category",
+    topic: "Sub-category",
+    selectTopic: "Select sub-category",
+    englishTitle: "English Title",
+    khmerTitle: "Khmer Title",
+    englishSubtitle: "English Subtitle",
+    khmerSubtitle: "Khmer Subtitle",
+    displaySize: "Display Size",
+    wideHero: "Wide hero",
+    standardBanner: "Standard banner",
+    sizeHelp: "Wide spans the page. Standard keeps the carousel inside a contained banner.",
+    linkUrl: "Link URL",
+    sortOrder: "Sort Order",
+    ctaLabel: "CTA Label",
+    ctaLabelKhmer: "CTA Label Khmer",
+    readMore: "Read More",
+    carouselMedia: "Carousel Media",
+    image: "Image",
+    video: "Video",
+    posterImageUrl: "Poster Image URL",
+    imageUrl: "Image URL",
+    uploadImage: "Upload Image",
+    videoSource: "Video Source",
+    mp4Source: "MP4 upload / URL",
+    videoUrl: "Video URL",
+    uploadMp4: "Upload MP4",
+    mediaHelp:
+      "Recommended image: 1920x720 for wide, 1200x520 for standard. MP4 videos should be muted-friendly and under 100MB.",
+    showPublicly: "Show this slide publicly",
+    cancel: "Cancel",
+    updateSlide: "Update Slide",
+    preview: "Preview",
+    previewDescription: "How the slide will feel on the selected public page.",
+  },
+  km: {
+    pulseNews: "Pulse News",
+    defaultSubtitle: "ព័ត៌មានទាន់ហេតុការណ៍ ការវិភាគ និងរឿងរ៉ាវសំខាន់ៗ",
+    error: "បញ្ហា",
+    success: "ជោគជ័យ",
+    uploadError: "បញ្ហាផ្ទុកឡើង",
+    validationError: "បញ្ហាពិនិត្យទិន្នន័យ",
+    loadTenantFailed: "មិនអាចផ្ទុកជម្រើសគេហទំព័របានទេ។",
+    loadCategoryFailed: "មិនអាចផ្ទុកជម្រើសប្រភេទបានទេ។",
+    selectImage: "សូមជ្រើសរូបភាពមួយ។",
+    selectMp4: "សូមជ្រើសវីដេអូ MP4 មួយ។",
+    uploadFailed: "ផ្ទុកឡើងមិនបាន",
+    imageUploaded: "បានផ្ទុករូបភាពឡើង",
+    videoUploaded: "បានផ្ទុកវីដេអូឡើង",
+    imageReady: "រូបភាពការ៉ូសែលរួចរាល់ហើយ។",
+    videoReady: "វីដេអូការ៉ូសែលរួចរាល់ហើយ។",
+    mediaUploadFailed: "ផ្ទុកមេឌៀឡើងមិនបាន។",
+    titleRequired: "ត្រូវបញ្ចូលចំណងជើងអង់គ្លេស។",
+    categoryRequired: "សូមជ្រើសប្រភេទ។",
+    topicRequired: "សូមជ្រើសប្រធានបទរង។",
+    tenantRequired: "សូមជ្រើសគេហទំព័រសម្រាប់ស្លាយនេះ។",
+    videoRequired: "សូមបញ្ចូល URL វីដេអូ MP4, YouTube ឬ Facebook។",
+    slideUpdated: "បានកែប្រែស្លាយការ៉ូសែល។",
+    slideCreated: "បានបង្កើតស្លាយការ៉ូសែល។",
+    saveFailed: "រក្សាទុកស្លាយការ៉ូសែលមិនបាន។",
+    editSlide: "កែស្លាយ",
+    createSlide: "បង្កើតស្លាយ",
+    formDescription:
+      "គ្រប់គ្រងអត្ថបទ ទីតាំងតំណ លំដាប់បង្ហាញ និងមេឌៀរូបភាព ឬវីដេអូសម្រាប់ស្លាយការ៉ូសែល។",
+    tenantWebsite: "គេហទំព័រ",
+    selectTenant: "ជ្រើសគេហទំព័រ",
+    tenantHelp: (name?: string) =>
+      `ស្លាយនេះនឹងត្រូវគ្រប់គ្រងក្នុងគេហទំព័រសាធារណៈដែលបានជ្រើស។${name ? ` គេហទំព័របច្ចុប្បន្ន៖ ${name}។` : ""}`,
+    showOn: "បង្ហាញលើ",
+    homepage: "ទំព័រដើម",
+    categoryPage: "ទំព័រប្រភេទ",
+    topicPage: "ទំព័រប្រធានបទរង",
+    category: "ប្រភេទ",
+    selectCategory: "ជ្រើសប្រភេទ",
+    topic: "ប្រធានបទរង",
+    selectTopic: "ជ្រើសប្រធានបទរង",
+    englishTitle: "ចំណងជើងអង់គ្លេស",
+    khmerTitle: "ចំណងជើងខ្មែរ",
+    englishSubtitle: "ចំណងជើងរងអង់គ្លេស",
+    khmerSubtitle: "ចំណងជើងរងខ្មែរ",
+    displaySize: "ទំហំបង្ហាញ",
+    wideHero: "ផ្ទៃមុខធំ",
+    standardBanner: "បដាស្តង់ដារ",
+    sizeHelp: "ផ្ទៃមុខធំបង្ហាញពេញទំព័រ។ បដាស្តង់ដាររក្សាការ៉ូសែលក្នុងបដាដែលបានកំណត់។",
+    linkUrl: "URL តំណ",
+    sortOrder: "លំដាប់",
+    ctaLabel: "ស្លាកប៊ូតុង",
+    ctaLabelKhmer: "ស្លាកប៊ូតុងខ្មែរ",
+    readMore: "អានបន្ថែម",
+    carouselMedia: "មេឌៀការ៉ូសែល",
+    image: "រូបភាព",
+    video: "វីដេអូ",
+    posterImageUrl: "URL រូបភាពគម្រប",
+    imageUrl: "URL រូបភាព",
+    uploadImage: "ផ្ទុករូបភាពឡើង",
+    videoSource: "ប្រភពវីដេអូ",
+    mp4Source: "ផ្ទុក MP4 ឡើង / URL",
+    videoUrl: "Video URL",
+    uploadMp4: "ផ្ទុក MP4 ឡើង",
+    mediaHelp:
+      "រូបភាពណែនាំ៖ 1920x720 សម្រាប់ទំហំធំ, 1200x520 សម្រាប់ស្តង់ដារ។ វីដេអូ MP4 គួរតែដំណើរការល្អពេលបិទសំឡេង និងក្រោម 100MB។",
+    showPublicly: "បង្ហាញស្លាយនេះជាសាធារណៈ",
+    cancel: "បោះបង់",
+    updateSlide: "កែស្លាយ",
+    preview: "មើលជាមុន",
+    previewDescription: "របៀបដែលស្លាយនឹងបង្ហាញលើទំព័រសាធារណៈដែលបានជ្រើស។",
+  },
+} as const;
+
 export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
+  const { locale } = useAdminLocale();
+  const copy = carouselFormCopy[locale];
   const router = useRouter();
   const { user } = useAuth();
   const { showSuccess, showError } = useToastHelpers();
@@ -166,10 +316,10 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
   const isEditing = !!slide;
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const selectedTenant = tenants.find((tenant) => tenant.id === selectedTenantId) ?? null;
-  const previewTitle = form.title.trim() || "Pulse News";
+  const previewTitle = form.title.trim() || copy.pulseNews;
   const previewSubtitle =
     form.subtitle.trim() ||
-    "Breaking news, insightful analysis, and stories that matter";
+    copy.defaultSubtitle;
 
   const hasImage = useMemo(
     () => form.imageUrl.trim().length > 0,
@@ -200,7 +350,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
         setTenants(activeItems);
         setSelectedTenantId((current) => current || activeItems[0]?.id || "");
       } catch {
-        showErrorRef.current("Error", "Failed to load tenant options.");
+        showErrorRef.current(copy.error, copy.loadTenantFailed);
       }
     };
 
@@ -232,7 +382,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
         setCategories(categoryResult.categories ?? []);
         setTopics(topicResult.topics ?? []);
       } catch {
-        showErrorRef.current("Error", "Failed to load category options.");
+        showErrorRef.current(copy.error, copy.loadCategoryFailed);
       } finally {
         setLoadingOptions(false);
       }
@@ -243,12 +393,12 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
 
   const handleMediaUpload = async (file: File, mediaType: "image" | "video") => {
     if (mediaType === "image" && !file.type.startsWith("image/")) {
-      showError("Upload Error", "Please select an image file.");
+      showError(copy.uploadError, copy.selectImage);
       return;
     }
 
     if (mediaType === "video" && file.type !== "video/mp4") {
-      showError("Upload Error", "Please select an MP4 video file.");
+      showError(copy.uploadError, copy.selectMp4);
       return;
     }
 
@@ -283,7 +433,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
       const data = await response.json();
 
       if (!response.ok || !data.success || !data.file?.url) {
-        throw new Error(data.message || "Upload failed");
+        throw new Error(locale === "en" ? data.message || copy.uploadFailed : copy.uploadFailed);
       }
 
       setForm((current) => ({
@@ -297,13 +447,13 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
             }),
       }));
       showSuccess(
-        mediaType === "image" ? "Image Uploaded" : "Video Uploaded",
-        mediaType === "image" ? "Carousel image is ready." : "Carousel video is ready.",
+        mediaType === "image" ? copy.imageUploaded : copy.videoUploaded,
+        mediaType === "image" ? copy.imageReady : copy.videoReady,
       );
     } catch (error) {
       showError(
-          "Upload Error",
-        error instanceof Error ? error.message : "Failed to upload media.",
+        copy.uploadError,
+        locale === "en" && error instanceof Error ? error.message : copy.mediaUploadFailed,
       );
     } finally {
       setUploading(false);
@@ -314,27 +464,27 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
     event.preventDefault();
 
     if (!form.title.trim()) {
-      showError("Validation Error", "English title is required.");
+      showError(copy.validationError, copy.titleRequired);
       return;
     }
 
     if (form.placement !== "HOME" && !form.categorySlug) {
-      showError("Validation Error", "Please select a category.");
+      showError(copy.validationError, copy.categoryRequired);
       return;
     }
 
     if (form.placement === "TOPIC" && !form.topicSlug) {
-      showError("Validation Error", "Please select a sub-category.");
+      showError(copy.validationError, copy.topicRequired);
       return;
     }
 
     if (isSuperAdmin && !selectedTenantId) {
-      showError("Validation Error", "Please select the tenant for this slide.");
+      showError(copy.validationError, copy.tenantRequired);
       return;
     }
 
     if (form.mediaType === "VIDEO" && !form.videoUrl.trim()) {
-      showError("Validation Error", "Please add an MP4, YouTube, or Facebook video URL.");
+      showError(copy.validationError, copy.videoRequired);
       return;
     }
 
@@ -351,19 +501,20 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
           id: slide.id,
           input,
         });
-        showSuccess("Success", "Carousel slide updated.");
+        showSuccess(copy.success, copy.slideUpdated);
       } else {
         await client.request(M_CREATE_HOME_CAROUSEL_SLIDE, { input });
-        showSuccess("Success", "Carousel slide created.");
+        showSuccess(copy.success, copy.slideCreated);
       }
 
       router.push("/carousel");
       router.refresh();
     } catch (error: any) {
       showError(
-        "Error",
-        error?.response?.errors?.[0]?.message ||
-          "Failed to save carousel slide.",
+        copy.error,
+        locale === "en"
+          ? error?.response?.errors?.[0]?.message || copy.saveFailed
+          : copy.saveFailed,
       );
     } finally {
       setSaving(false);
@@ -374,17 +525,16 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_420px]">
       <Card>
         <CardHeader>
-          <CardTitle>{isEditing ? "Edit Slide" : "Create Slide"}</CardTitle>
+          <CardTitle>{isEditing ? copy.editSlide : copy.createSlide}</CardTitle>
           <CardDescription>
-            Manage the copy, placement, destination link, display order, and
-            image or video media for one public carousel slide.
+            {copy.formDescription}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form className="space-y-6" onSubmit={handleSubmit}>
             {isSuperAdmin && (
               <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <Label htmlFor="tenant">Tenant Website</Label>
+                <Label htmlFor="tenant">{copy.tenantWebsite}</Label>
                 <select
                   id="tenant"
                   value={selectedTenantId}
@@ -399,7 +549,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                   disabled={isEditing}
                   className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <option value="">Select tenant</option>
+                  <option value="">{copy.selectTenant}</option>
                   {tenants.map((tenant) => (
                     <option key={tenant.id} value={tenant.id}>
                       {tenant.name} /{tenant.slug}
@@ -407,15 +557,14 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                   ))}
                 </select>
                 <p className="text-xs text-slate-500">
-                  This slide will be managed inside the selected tenant public website.
-                  {selectedTenant ? ` Current tenant: ${selectedTenant.name}.` : ""}
+                  {copy.tenantHelp(selectedTenant?.name)}
                 </p>
               </div>
             )}
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="placement">Show On</Label>
+                <Label htmlFor="placement">{copy.showOn}</Label>
                 <select
                   id="placement"
                   value={form.placement}
@@ -433,14 +582,14 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                   }
                   className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
                 >
-                  <option value="HOME">Homepage</option>
-                  <option value="CATEGORY">Category page</option>
-                  <option value="TOPIC">Sub-category page</option>
+                  <option value="HOME">{copy.homepage}</option>
+                  <option value="CATEGORY">{copy.categoryPage}</option>
+                  <option value="TOPIC">{copy.topicPage}</option>
                 </select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">Category</Label>
+                <Label htmlFor="category">{copy.category}</Label>
                 <select
                   id="category"
                   value={form.categorySlug}
@@ -458,7 +607,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                   }
                   className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <option value="">Select category</option>
+                  <option value="">{copy.selectCategory}</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.slug}>
                       {category.name}
@@ -469,7 +618,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
 
               {form.placement === "TOPIC" && (
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="topic">Sub-category</Label>
+                  <Label htmlFor="topic">{copy.topic}</Label>
                   <select
                     id="topic"
                     value={form.topicSlug}
@@ -486,7 +635,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                     }
                     className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    <option value="">Select sub-category</option>
+                    <option value="">{copy.selectTopic}</option>
                     {availableTopics.map((topic) => (
                       <option key={topic.id} value={topic.slug}>
                         {topic.title}
@@ -499,7 +648,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="title">English Title</Label>
+                <Label htmlFor="title">{copy.englishTitle}</Label>
                 <Input
                   id="title"
                   value={form.title}
@@ -512,7 +661,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="title-khmer">Khmer Title</Label>
+                <Label htmlFor="title-khmer">{copy.khmerTitle}</Label>
                 <Input
                   id="title-khmer"
                   value={form.titleKhmer}
@@ -528,7 +677,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="subtitle">English Subtitle</Label>
+                <Label htmlFor="subtitle">{copy.englishSubtitle}</Label>
                 <Textarea
                   id="subtitle"
                   value={form.subtitle}
@@ -541,7 +690,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="subtitle-khmer">Khmer Subtitle</Label>
+                <Label htmlFor="subtitle-khmer">{copy.khmerSubtitle}</Label>
                 <Textarea
                   id="subtitle-khmer"
                   value={form.subtitleKhmer}
@@ -557,7 +706,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="size">Display Size</Label>
+                <Label htmlFor="size">{copy.displaySize}</Label>
                 <select
                   id="size"
                   value={form.size}
@@ -569,16 +718,16 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                   }
                   className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
                 >
-                  <option value="WIDE">Wide hero</option>
-                  <option value="STANDARD">Standard banner</option>
+                  <option value="WIDE">{copy.wideHero}</option>
+                  <option value="STANDARD">{copy.standardBanner}</option>
                 </select>
                 <p className="text-xs text-slate-500">
-                  Wide spans the page. Standard keeps the carousel inside a contained banner.
+                  {copy.sizeHelp}
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="link-url">Link URL</Label>
+                <Label htmlFor="link-url">{copy.linkUrl}</Label>
                 <Input
                   id="link-url"
                   value={form.linkUrl}
@@ -592,7 +741,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sort-order">Sort Order</Label>
+                <Label htmlFor="sort-order">{copy.sortOrder}</Label>
                 <Input
                   id="sort-order"
                   type="number"
@@ -610,11 +759,11 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="cta-label">CTA Label</Label>
+                <Label htmlFor="cta-label">{copy.ctaLabel}</Label>
                 <Input
                   id="cta-label"
                   value={form.ctaLabel}
-                  placeholder="Read More"
+                  placeholder={copy.readMore}
                   onChange={(event) =>
                     setForm((current) => ({
                       ...current,
@@ -624,7 +773,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cta-label-khmer">CTA Label Khmer</Label>
+                <Label htmlFor="cta-label-khmer">{copy.ctaLabelKhmer}</Label>
                 <Input
                   id="cta-label-khmer"
                   value={form.ctaLabelKhmer}
@@ -640,7 +789,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
 
             <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
               <div className="space-y-2">
-                <Label htmlFor="media-type">Carousel Media</Label>
+                <Label htmlFor="media-type">{copy.carouselMedia}</Label>
                 <select
                   id="media-type"
                   value={form.mediaType}
@@ -652,15 +801,15 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                   }
                   className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
                 >
-                  <option value="IMAGE">Image</option>
-                  <option value="VIDEO">Video</option>
+                  <option value="IMAGE">{copy.image}</option>
+                  <option value="VIDEO">{copy.video}</option>
                 </select>
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
                 <div className="flex-1 space-y-2">
                   <Label htmlFor="image-url">
-                    {form.mediaType === "VIDEO" ? "Poster Image URL" : "Image URL"}
+                    {form.mediaType === "VIDEO" ? copy.posterImageUrl : copy.imageUrl}
                   </Label>
                   <Input
                     id="image-url"
@@ -686,7 +835,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                     ) : (
                       <UploadCloud className="mr-2 h-4 w-4" />
                     )}
-                    Upload Image
+                    {copy.uploadImage}
                     <input
                       type="file"
                       accept="image/*"
@@ -703,7 +852,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
               {form.mediaType === "VIDEO" && (
                 <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_auto] md:items-end">
                   <div className="space-y-2">
-                    <Label htmlFor="video-provider">Video Source</Label>
+                    <Label htmlFor="video-provider">{copy.videoSource}</Label>
                     <select
                       id="video-provider"
                       value={form.videoProvider}
@@ -715,13 +864,13 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                       }
                       className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
                     >
-                      <option value="MP4">MP4 upload / URL</option>
+                      <option value="MP4">{copy.mp4Source}</option>
                       <option value="YOUTUBE">YouTube</option>
                       <option value="FACEBOOK">Facebook</option>
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="video-url">Video URL</Label>
+                    <Label htmlFor="video-url">{copy.videoUrl}</Label>
                     <Input
                       id="video-url"
                       value={form.videoUrl}
@@ -757,7 +906,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                       ) : (
                         <UploadCloud className="mr-2 h-4 w-4" />
                       )}
-                      Upload MP4
+                      {copy.uploadMp4}
                       <input
                         type="file"
                         accept="video/mp4"
@@ -773,7 +922,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 </div>
               )}
               <p className="text-xs text-slate-500">
-                Recommended image: 1920x720 for wide, 1200x520 for standard. MP4 videos should be muted-friendly and under 100MB.
+                {copy.mediaHelp}
               </p>
             </div>
 
@@ -789,7 +938,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 }
                 className="h-4 w-4 rounded border-slate-300"
               />
-              Show this slide publicly
+              {copy.showPublicly}
             </label>
 
             <div className="flex justify-end gap-2 border-t border-slate-100 pt-5">
@@ -799,7 +948,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 onClick={() => router.push("/carousel")}
               >
                 <X className="mr-2 h-4 w-4" />
-                Cancel
+                {copy.cancel}
               </Button>
               <Button type="submit" disabled={saving || uploading}>
                 {saving ? (
@@ -807,7 +956,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 ) : (
                   <Save className="mr-2 h-4 w-4" />
                 )}
-                {isEditing ? "Update Slide" : "Create Slide"}
+                {isEditing ? copy.updateSlide : copy.createSlide}
               </Button>
             </div>
           </form>
@@ -817,9 +966,9 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
       <aside className="space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle>Preview</CardTitle>
+            <CardTitle>{copy.preview}</CardTitle>
             <CardDescription>
-              How the slide will feel on the selected public page.
+              {copy.previewDescription}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -875,7 +1024,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/65 to-red-950/50" />
               <div className="absolute inset-x-0 bottom-0 p-5 text-white">
                 <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-red-200">
-                  Pulse News
+                  {copy.pulseNews}
                 </p>
                 <h2
                   className={`line-clamp-2 font-black ${

@@ -27,11 +27,11 @@ const readinessCopy = {
     heading: "Article Readiness",
   },
   km: {
-    titleReady: "Title ច្បាស់ និងអានងាយ",
-    slugReady: "Slug រួចរាល់សម្រាប់ public URL",
-    excerptReady: "Excerpt មានប្រយោជន៍សម្រាប់ cards និង SEO",
-    categoryReady: "បានជ្រើស Category",
-    bodyReady: "Story body មានមាតិកា",
+    titleReady: "ចំណងជើងច្បាស់ និងអានងាយ",
+    slugReady: "ស្លាក URL រួចរាល់សម្រាប់ URL សាធារណៈ",
+    excerptReady: "សេចក្ដីសង្ខេបមានប្រយោជន៍សម្រាប់កាត និង SEO",
+    categoryReady: "បានជ្រើសប្រភេទ",
+    bodyReady: "តួអត្ថបទមានមាតិកា",
     heading: "ភាពរួចរាល់អត្ថបទ",
   },
 };

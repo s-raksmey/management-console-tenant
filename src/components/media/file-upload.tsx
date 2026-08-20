@@ -57,7 +57,7 @@ const fileUploadCopy = {
     },
   },
   km: {
-    uploadFailed: 'Upload មិនបាន',
+    uploadFailed: 'ផ្ទុកឡើងមិនបាន',
     unknownError: 'បញ្ហាមិនស្គាល់',
     dropFilesHere: 'ទម្លាក់ឯកសារនៅទីនេះ',
     unsupportedFiles: 'ឯកសារខ្លះមិនគាំទ្រ',
@@ -66,11 +66,11 @@ const fileUploadCopy = {
     maximumFiles: (count: number) => `អតិបរមា ${count} ឯកសារ`,
     selectedCount: (count: number) => `បានជ្រើស ${count} ឯកសារ`,
     selectedFiles: 'ឯកសារដែលបានជ្រើស',
-    uploadCount: (count: number) => `Upload ${count} ឯកសារ`,
+    uploadCount: (count: number) => `ផ្ទុកឯកសារ ${count} ឡើង`,
     clearAll: 'សម្អាតទាំងអស់',
-    uploadProgress: 'ដំណើរការ Upload',
+    uploadProgress: 'ដំណើរការផ្ទុកឡើង',
     statuses: {
-      uploading: 'កំពុង Upload',
+      uploading: 'កំពុងផ្ទុកឡើង',
       processing: 'កំពុងដំណើរការ',
       completed: 'បានបញ្ចប់',
       error: 'មានបញ្ហា',

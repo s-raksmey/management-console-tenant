@@ -1,7 +1,6 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import { format } from "date-fns";
 import {
   AlertCircle,
   CalendarDays,
@@ -27,6 +26,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAdminLocale, type AdminLocale } from "@/hooks/useAdminLocale";
 
 type ProfileForm = {
   name: string;
@@ -70,16 +70,95 @@ function getRoleBadgeColor(role?: string | null) {
   }
 }
 
-function formatJoinedDate(value?: string | null) {
-  if (!value) return "Not available";
+const profileCopy = {
+  en: {
+    notAvailable: "Not available",
+    user: "User",
+    noEmail: "No email",
+    roleFallback: "USER",
+    profileError: "Profile Error",
+    passwordError: "Password Error",
+    validationError: "Validation Error",
+    signInAgain: "You need to sign in again.",
+    nameEmailRequired: "Name and email are required.",
+    profileUpdated: "Profile Updated",
+    profileUpdateFailed: "Failed to update profile.",
+    passwordMinLength: "New password must be at least 8 characters.",
+    passwordMismatch: "New passwords do not match.",
+    passwordUpdated: "Password Updated",
+    passwordUpdateFailed: "Failed to update password.",
+    title: "Profile",
+    description: "Manage your account details and password.",
+    role: "Role",
+    status: "Status",
+    joined: "Joined",
+    active: "Active",
+    inactive: "Inactive",
+    accountDetails: "Account Details",
+    accountDetailsDescription: "Name and email shown in the admin.",
+    name: "Name",
+    email: "Email",
+    saveChanges: "Save Changes",
+    password: "Password",
+    passwordDescription: "Update your sign-in password.",
+    currentPassword: "Current Password",
+    newPassword: "New Password",
+    confirmPassword: "Confirm Password",
+    updatePassword: "Update Password",
+  },
+  km: {
+    notAvailable: "មិនមាន",
+    user: "អ្នកប្រើ",
+    noEmail: "គ្មានអ៊ីមែល",
+    roleFallback: "អ្នកប្រើ",
+    profileError: "បញ្ហាប្រវត្តិរូប",
+    passwordError: "បញ្ហាពាក្យសម្ងាត់",
+    validationError: "បញ្ហាពិនិត្យទិន្នន័យ",
+    signInAgain: "អ្នកត្រូវចូលប្រើម្តងទៀត។",
+    nameEmailRequired: "ត្រូវបញ្ចូលឈ្មោះ និងអ៊ីមែល។",
+    profileUpdated: "បានកែប្រែប្រវត្តិរូប",
+    profileUpdateFailed: "កែប្រែប្រវត្តិរូបមិនបានសម្រេច។",
+    passwordMinLength: "ពាក្យសម្ងាត់ថ្មីត្រូវមានយ៉ាងហោចណាស់ 8 តួអក្សរ។",
+    passwordMismatch: "ពាក្យសម្ងាត់ថ្មីមិនដូចគ្នាទេ។",
+    passwordUpdated: "បានកែប្រែពាក្យសម្ងាត់",
+    passwordUpdateFailed: "កែប្រែពាក្យសម្ងាត់មិនបានសម្រេច។",
+    title: "ប្រវត្តិរូប",
+    description: "គ្រប់គ្រងព័ត៌មានគណនី និងពាក្យសម្ងាត់របស់អ្នក។",
+    role: "តួនាទី",
+    status: "ស្ថានភាព",
+    joined: "បានចូលរួម",
+    active: "សកម្ម",
+    inactive: "អសកម្ម",
+    accountDetails: "ព័ត៌មានគណនី",
+    accountDetailsDescription: "ឈ្មោះ និងអ៊ីមែលដែលបង្ហាញក្នុងផ្នែកគ្រប់គ្រង។",
+    name: "ឈ្មោះ",
+    email: "អ៊ីមែល",
+    saveChanges: "រក្សាទុកការកែប្រែ",
+    password: "ពាក្យសម្ងាត់",
+    passwordDescription: "កែប្រែពាក្យសម្ងាត់សម្រាប់ចូលប្រើ។",
+    currentPassword: "ពាក្យសម្ងាត់បច្ចុប្បន្ន",
+    newPassword: "ពាក្យសម្ងាត់ថ្មី",
+    confirmPassword: "បញ្ជាក់ពាក្យសម្ងាត់",
+    updatePassword: "កែប្រែពាក្យសម្ងាត់",
+  },
+} as const;
+
+function formatJoinedDate(value: string | null | undefined, locale: AdminLocale, fallback: string) {
+  if (!value) return fallback;
 
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Not available";
+  if (Number.isNaN(date.getTime())) return fallback;
 
-  return format(date, "MMM d, yyyy");
+  return new Intl.DateTimeFormat(locale === "km" ? "km-KH" : "en", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
 }
 
 export default function ProfilePage() {
+  const { locale } = useAdminLocale();
+  const copy = profileCopy[locale];
   const { user, refreshUser } = useAuth();
   const { getUserById, updateUserProfile, changePassword, loading, error } =
     useUserManagement();
@@ -135,7 +214,7 @@ export default function ProfilePage() {
     event.preventDefault();
 
     if (!user?.id) {
-      showError("Profile Error", "You need to sign in again.");
+      showError(copy.profileError, copy.signInAgain);
       return;
     }
 
@@ -143,7 +222,7 @@ export default function ProfilePage() {
     const email = profileForm.email.trim();
 
     if (!name || !email) {
-      showError("Validation Error", "Name and email are required.");
+      showError(copy.validationError, copy.nameEmailRequired);
       return;
     }
 
@@ -162,11 +241,11 @@ export default function ProfilePage() {
           email: result.user.email,
         });
         await refreshUser();
-        showSuccess("Profile Updated", result.message);
+        showSuccess(copy.profileUpdated, locale === "en" ? result.message : copy.profileUpdated);
       } else {
         showError(
-          "Profile Error",
-          result?.message || "Failed to update profile.",
+          copy.profileError,
+          locale === "en" ? result?.message || copy.profileUpdateFailed : copy.profileUpdateFailed,
         );
       }
     } finally {
@@ -178,20 +257,20 @@ export default function ProfilePage() {
     event.preventDefault();
 
     if (!user?.id) {
-      showError("Password Error", "You need to sign in again.");
+      showError(copy.passwordError, copy.signInAgain);
       return;
     }
 
     if (passwordForm.newPassword.length < 8) {
       showError(
-        "Validation Error",
-        "New password must be at least 8 characters.",
+        copy.validationError,
+        copy.passwordMinLength,
       );
       return;
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      showError("Validation Error", "New passwords do not match.");
+      showError(copy.validationError, copy.passwordMismatch);
       return;
     }
 
@@ -205,11 +284,11 @@ export default function ProfilePage() {
 
       if (result?.success) {
         setPasswordForm(emptyPasswordForm);
-        showSuccess("Password Updated", result.message);
+        showSuccess(copy.passwordUpdated, locale === "en" ? result.message : copy.passwordUpdated);
       } else {
         showError(
-          "Password Error",
-          result?.message || "Failed to update password.",
+          copy.passwordError,
+          locale === "en" ? result?.message || copy.passwordUpdateFailed : copy.passwordUpdateFailed,
         );
       }
     } finally {
@@ -221,16 +300,16 @@ export default function ProfilePage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-950">Profile</h1>
+          <h1 className="text-3xl font-bold text-slate-950">{copy.title}</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Manage your account details and password.
+            {copy.description}
           </p>
         </div>
         <Badge
           variant="secondary"
           className={`w-fit px-3 py-1 ${getRoleBadgeColor(activeProfile?.role)}`}
         >
-          {activeProfile?.role ?? "USER"}
+          {activeProfile?.role ?? copy.roleFallback}
         </Badge>
       </div>
 
@@ -251,33 +330,33 @@ export default function ProfilePage() {
               </AvatarFallback>
             </Avatar>
             <h2 className="mt-4 text-xl font-semibold text-slate-950">
-              {activeProfile?.name ?? "User"}
+              {activeProfile?.name ?? copy.user}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
-              {activeProfile?.email ?? "No email"}
+              {activeProfile?.email ?? copy.noEmail}
             </p>
           </div>
 
           <div className="mt-6 space-y-3 border-t border-slate-100 pt-6">
             <div className="flex items-center gap-3 text-sm">
               <Shield className="h-4 w-4 text-slate-500" />
-              <span className="text-slate-500">Role</span>
+              <span className="text-slate-500">{copy.role}</span>
               <span className="ml-auto font-medium text-slate-900">
-                {activeProfile?.role ?? "USER"}
+                {activeProfile?.role ?? copy.roleFallback}
               </span>
             </div>
             <div className="flex items-center gap-3 text-sm">
               <Mail className="h-4 w-4 text-slate-500" />
-              <span className="text-slate-500">Status</span>
+              <span className="text-slate-500">{copy.status}</span>
               <span className="ml-auto font-medium text-slate-900">
-                {activeProfile?.isActive ? "Active" : "Inactive"}
+                {activeProfile?.isActive ? copy.active : copy.inactive}
               </span>
             </div>
             <div className="flex items-center gap-3 text-sm">
               <CalendarDays className="h-4 w-4 text-slate-500" />
-              <span className="text-slate-500">Joined</span>
+              <span className="text-slate-500">{copy.joined}</span>
               <span className="ml-auto font-medium text-slate-900">
-                {formatJoinedDate(profile?.createdAt)}
+                {formatJoinedDate(profile?.createdAt, locale, copy.notAvailable)}
               </span>
             </div>
           </div>
@@ -291,9 +370,9 @@ export default function ProfilePage() {
                   <UserRound className="h-5 w-5" />
                 </div>
                 <div>
-                  <CardTitle>Account Details</CardTitle>
+                  <CardTitle>{copy.accountDetails}</CardTitle>
                   <CardDescription>
-                    Name and email shown in the admin.
+                    {copy.accountDetailsDescription}
                   </CardDescription>
                 </div>
               </div>
@@ -302,7 +381,7 @@ export default function ProfilePage() {
               <form onSubmit={handleProfileSubmit} className="space-y-5">
                 <div className="grid gap-5 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="profile-name">Name</Label>
+                    <Label htmlFor="profile-name">{copy.name}</Label>
                     <Input
                       id="profile-name"
                       value={profileForm.name}
@@ -316,7 +395,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="profile-email">Email</Label>
+                    <Label htmlFor="profile-email">{copy.email}</Label>
                     <Input
                       id="profile-email"
                       type="email"
@@ -341,7 +420,7 @@ export default function ProfilePage() {
                     ) : (
                       <Save className="mr-2 h-4 w-4" />
                     )}
-                    Save Changes
+                    {copy.saveChanges}
                   </Button>
                 </div>
               </form>
@@ -355,9 +434,9 @@ export default function ProfilePage() {
                   <KeyRound className="h-5 w-5" />
                 </div>
                 <div>
-                  <CardTitle>Password</CardTitle>
+                  <CardTitle>{copy.password}</CardTitle>
                   <CardDescription>
-                    Update your sign-in password.
+                    {copy.passwordDescription}
                   </CardDescription>
                 </div>
               </div>
@@ -366,7 +445,7 @@ export default function ProfilePage() {
               <form onSubmit={handlePasswordSubmit} className="space-y-5">
                 <div className="grid gap-5 md:grid-cols-3">
                   <div className="space-y-2">
-                    <Label htmlFor="current-password">Current Password</Label>
+                    <Label htmlFor="current-password">{copy.currentPassword}</Label>
                     <Input
                       id="current-password"
                       type="password"
@@ -381,7 +460,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="new-password">New Password</Label>
+                    <Label htmlFor="new-password">{copy.newPassword}</Label>
                     <Input
                       id="new-password"
                       type="password"
@@ -396,7 +475,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="confirm-password">Confirm Password</Label>
+                    <Label htmlFor="confirm-password">{copy.confirmPassword}</Label>
                     <Input
                       id="confirm-password"
                       type="password"
@@ -427,7 +506,7 @@ export default function ProfilePage() {
                     ) : (
                       <KeyRound className="mr-2 h-4 w-4" />
                     )}
-                    Update Password
+                    {copy.updatePassword}
                   </Button>
                 </div>
               </form>

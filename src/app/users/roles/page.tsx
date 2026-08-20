@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { RolePermissionService } from "@/services/role-permissions.gql";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 type ManagedRole = "SUPER_ADMIN" | "ADMIN" | "EDITOR" | "AUTHOR";
 type PermissionGroup = {
@@ -23,108 +24,286 @@ type PermissionGroup = {
 
 const roles: ManagedRole[] = ["SUPER_ADMIN", "ADMIN", "EDITOR", "AUTHOR"];
 
-const roleDescriptions: Record<ManagedRole, string> = {
-  SUPER_ADMIN: "Platform role for tenant governance, system operations, and global access.",
-  ADMIN: "Tenant owner role with team, content, settings, and publishing control.",
-  EDITOR: "Editorial role for reviewing, publishing, and improving content.",
-  AUTHOR: "Writing role for drafting and maintaining owned content.",
-};
+const rolePageCopy = {
+  en: {
+    accessDenied: "Access denied: Insufficient permissions",
+    updateFailed: "Failed to update role permission.",
+    eyebrow: "Role Management",
+    title: "Role Permissions",
+    superAdminDescription: "Review each tenant role and adjust permission switches.",
+    tenantAdminDescription: "Review what each tenant role can do. Permission switches are read-only for tenant admins.",
+    roles: (count: number) => `${count} roles`,
+    groups: (count: number) => `${count} groups`,
+    enabled: (count: number) => `${count} enabled`,
+    editable: "Editable",
+    viewOnly: "View only",
+    enabledPermissions: "Enabled permissions",
+    permission: "Permission",
+    enable: "Enable",
+    disable: "Disable",
+    ariaToggle: (action: string, permission: string, role: string) => `${action} ${permission} for ${role}`,
+    roleNames: {
+      SUPER_ADMIN: "Super Admin",
+      ADMIN: "Admin",
+      EDITOR: "Editor",
+      AUTHOR: "Author",
+    },
+    roleDescriptions: {
+      SUPER_ADMIN: "Platform role for tenant governance, system operations, and global access.",
+      ADMIN: "Tenant owner role with team, content, settings, and publishing control.",
+      EDITOR: "Editorial role for reviewing, publishing, and improving content.",
+      AUTHOR: "Writing role for drafting and maintaining owned content.",
+    },
+    groupsCopy: {
+      users: { title: "Users", description: "Team access and role governance." },
+      articles: { title: "Articles", description: "Content creation, editing, and publishing." },
+      editorial: { title: "Editorial", description: "Review queue and article promotion controls." },
+      structure: { title: "Structure", description: "Category, topic, and site organization." },
+      system: { title: "System", description: "Settings, logs, and platform operations." },
+      carousel: { title: "Carousel", description: "Public hero slide management." },
+      ads: { title: "Ads", description: "Sponsored placements and public ad operations." },
+      media: { title: "Media", description: "Uploaded files and image library." },
+    },
+    permissions: {
+      CREATE_USER: ["Create users", "Invite or create tenant users."],
+      UPDATE_USER: ["Update users", "Edit user profile and account details."],
+      DELETE_USER: ["Delete users", "Remove or deactivate users."],
+      VIEW_ALL_USERS: ["View users", "See users in management views."],
+      MANAGE_USER_ROLES: ["Manage roles", "Change role assignments and permissions."],
+      MANAGE_USERS: ["Review requests", "Approve or reject account requests."],
+      CREATE_ARTICLE: ["Create articles", "Create drafts and submissions."],
+      VIEW_ALL_ARTICLES: ["All articles", "See articles from every author."],
+      UPDATE_OWN_ARTICLE: ["Edit own articles", "Update articles created by the user."],
+      UPDATE_ANY_ARTICLE: ["Edit any article", "Update articles from any author."],
+      DELETE_OWN_ARTICLE: ["Delete own articles", "Delete own draft content."],
+      DELETE_ANY_ARTICLE: ["Delete any article", "Delete any article in the tenant."],
+      PUBLISH_ARTICLE: ["Publish articles", "Move approved content to published."],
+      UNPUBLISH_ARTICLE: ["Unpublish articles", "Return published content to draft."],
+      PREVIEW_ARTICLE: ["Preview articles", "Preview content before publication."],
+      REVIEW_ARTICLES: ["Review articles", "Access the review queue."],
+      APPROVE_ARTICLES: ["Approve articles", "Approve submitted content."],
+      REJECT_ARTICLES: ["Reject articles", "Reject submitted content."],
+      SET_FEATURED: ["Set featured", "Feature articles publicly."],
+      SET_BREAKING_NEWS: ["Set breaking news", "Mark content as breaking news."],
+      SET_EDITORS_PICK: ["Set editor picks", "Mark articles as editor picks."],
+      LIST_CATEGORIES: ["List categories", "View all categories and topics."],
+      CREATE_CATEGORY: ["Create categories", "Add new categories."],
+      UPDATE_CATEGORY: ["Update categories", "Edit category details."],
+      DELETE_CATEGORY: ["Delete categories", "Remove categories."],
+      CREATE_TOPIC: ["Create topics", "Add sub-categories/topics."],
+      UPDATE_TOPIC: ["Update topics", "Edit topic details."],
+      DELETE_TOPIC: ["Delete topics", "Remove topics."],
+      VIEW_SETTINGS: ["View settings", "Read configuration values."],
+      UPDATE_SETTINGS: ["Update settings", "Change configuration values."],
+      VIEW_ANALYTICS: ["View analytics", "Open dashboard and performance charts."],
+      VIEW_AUDIT_LOGS: ["View audit logs", "Inspect system activity."],
+      SYSTEM_ADMINISTRATION: ["System administration", "Access platform administration tools."],
+      CREATE_CAROUSEL: ["Create slides", "Create public carousel slides."],
+      UPDATE_CAROUSEL: ["Update slides", "Edit carousel slides and placements."],
+      DELETE_CAROUSEL: ["Delete slides", "Remove carousel slides."],
+      VIEW_ADS: ["View ads", "Open ads management and review ad performance."],
+      CREATE_ADS: ["Create ads", "Create sponsored placements for public pages."],
+      UPDATE_ADS: ["Update ads", "Edit ad creative, targeting, status, and schedule."],
+      DELETE_ADS: ["Archive ads", "Archive ads that should no longer be shown."],
+      VIEW_MEDIA: ["View media", "Open and browse uploaded media."],
+      MANAGE_MEDIA: ["Manage media", "Upload, update, and remove media files."],
+    },
+  },
+  km: {
+    accessDenied: "គ្មានសិទ្ធិ៖ សិទ្ធិមិនគ្រប់គ្រាន់",
+    updateFailed: "មិនអាចកែសិទ្ធិតួនាទីបានទេ។",
+    eyebrow: "គ្រប់គ្រងតួនាទី",
+    title: "សិទ្ធិតួនាទី",
+    superAdminDescription: "ពិនិត្យតួនាទីគេហទំព័រនីមួយៗ និងកែប៊ូតុងបើក/បិទសិទ្ធិ។",
+    tenantAdminDescription: "ពិនិត្យថាតួនាទីគេហទំព័រនីមួយៗអាចធ្វើអ្វីបាន។ ប៊ូតុងបើក/បិទសិទ្ធិអាចមើលបានតែប៉ុណ្ណោះសម្រាប់អ្នកគ្រប់គ្រងគេហទំព័រ។",
+    roles: (count: number) => `${count} តួនាទី`,
+    groups: (count: number) => `${count} ក្រុម`,
+    enabled: (count: number) => `${count} បានបើក`,
+    editable: "អាចកែបាន",
+    viewOnly: "មើលប៉ុណ្ណោះ",
+    enabledPermissions: "សិទ្ធិបានបើក",
+    permission: "សិទ្ធិ",
+    enable: "បើក",
+    disable: "បិទ",
+    ariaToggle: (action: string, permission: string, role: string) => `${action} ${permission} សម្រាប់ ${role}`,
+    roleNames: {
+      SUPER_ADMIN: "អ្នកគ្រប់គ្រងកំពូល",
+      ADMIN: "អ្នកគ្រប់គ្រង",
+      EDITOR: "អ្នកកែសម្រួល",
+      AUTHOR: "អ្នកនិពន្ធ",
+    },
+    roleDescriptions: {
+      SUPER_ADMIN: "តួនាទីវេទិកាសម្រាប់គ្រប់គ្រងគេហទំព័រ ប្រតិបត្តិការប្រព័ន្ធ និងការចូលទូទាំងប្រព័ន្ធ។",
+      ADMIN: "តួនាទីម្ចាស់គេហទំព័រសម្រាប់គ្រប់គ្រងក្រុម មាតិកា ការកំណត់ និងការផ្សព្វផ្សាយ។",
+      EDITOR: "តួនាទីវិចារណករ សម្រាប់ពិនិត្យ ផ្សព្វផ្សាយ និងកែលម្អមាតិកា។",
+      AUTHOR: "តួនាទីអ្នកនិពន្ធ សម្រាប់សរសេរព្រាង និងថែទាំមាតិកាផ្ទាល់ខ្លួន។",
+    },
+    groupsCopy: {
+      users: { title: "អ្នកប្រើ", description: "ការចូលប្រើរបស់ក្រុម និងការគ្រប់គ្រងតួនាទី។" },
+      articles: { title: "អត្ថបទ", description: "ការបង្កើត កែសម្រួល និងផ្សព្វផ្សាយមាតិកា។" },
+      editorial: { title: "វិចារណកិច្ច", description: "ជួរពិនិត្យ និងការលើកស្ទួយអត្ថបទ។" },
+      structure: { title: "រចនាសម្ព័ន្ធ", description: "ការរៀបចំប្រភេទ ប្រធានបទ និងគេហទំព័រ។" },
+      system: { title: "ប្រព័ន្ធ", description: "ការកំណត់ កំណត់ហេតុ និងប្រតិបត្តិការវេទិកា។" },
+      carousel: { title: "ការ៉ូសែល", description: "គ្រប់គ្រងស្លាយមុខសាធារណៈ។" },
+      ads: { title: "ពាណិជ្ជកម្ម", description: "ទីតាំងដែលបានឧបត្ថម្ភ និងប្រតិបត្តិការពាណិជ្ជកម្មសាធារណៈ។" },
+      media: { title: "មេឌៀ", description: "ឯកសារបានផ្ទុកឡើង និងបណ្ណាល័យរូបភាព។" },
+    },
+    permissions: {
+      CREATE_USER: ["បង្កើតអ្នកប្រើ", "អញ្ជើញ ឬបង្កើតអ្នកប្រើគេហទំព័រ។"],
+      UPDATE_USER: ["កែអ្នកប្រើ", "កែប្រវត្តិរូប និងព័ត៌មានគណនីអ្នកប្រើ។"],
+      DELETE_USER: ["លុបអ្នកប្រើ", "លុប ឬបិទអ្នកប្រើ។"],
+      VIEW_ALL_USERS: ["មើលអ្នកប្រើ", "មើលអ្នកប្រើក្នុងទិដ្ឋភាពគ្រប់គ្រង។"],
+      MANAGE_USER_ROLES: ["គ្រប់គ្រងតួនាទី", "ប្តូរការផ្តល់តួនាទី និងសិទ្ធិ។"],
+      MANAGE_USERS: ["ពិនិត្យសំណើ", "អនុម័ត ឬបដិសេធសំណើគណនី។"],
+      CREATE_ARTICLE: ["បង្កើតអត្ថបទ", "បង្កើតព្រាង និងការដាក់ស្នើ។"],
+      VIEW_ALL_ARTICLES: ["អត្ថបទទាំងអស់", "មើលអត្ថបទពីអ្នកនិពន្ធទាំងអស់។"],
+      UPDATE_OWN_ARTICLE: ["កែអត្ថបទខ្លួនឯង", "កែអត្ថបទដែលអ្នកប្រើបានបង្កើត។"],
+      UPDATE_ANY_ARTICLE: ["កែអត្ថបទណាមួយ", "កែអត្ថបទពីអ្នកនិពន្ធណាមួយ។"],
+      DELETE_OWN_ARTICLE: ["លុបអត្ថបទខ្លួនឯង", "លុបមាតិកាព្រាងផ្ទាល់ខ្លួន។"],
+      DELETE_ANY_ARTICLE: ["លុបអត្ថបទណាមួយ", "លុបអត្ថបទណាមួយក្នុងគេហទំព័រ។"],
+      PUBLISH_ARTICLE: ["ផ្សព្វផ្សាយអត្ថបទ", "ផ្លាស់ទីមាតិកាដែលបានអនុម័តទៅស្ថានភាពផ្សព្វផ្សាយ។"],
+      UNPUBLISH_ARTICLE: ["ដកការផ្សព្វផ្សាយ", "ត្រឡប់មាតិកាដែលបានផ្សព្វផ្សាយទៅព្រាង។"],
+      PREVIEW_ARTICLE: ["មើលអត្ថបទជាមុន", "មើលមាតិកាមុនផ្សព្វផ្សាយ។"],
+      REVIEW_ARTICLES: ["ពិនិត្យអត្ថបទ", "ចូលទៅជួរពិនិត្យ។"],
+      APPROVE_ARTICLES: ["អនុម័តអត្ថបទ", "អនុម័តមាតិកាដែលបានដាក់ស្នើ។"],
+      REJECT_ARTICLES: ["បដិសេធអត្ថបទ", "បដិសេធមាតិកាដែលបានដាក់ស្នើ។"],
+      SET_FEATURED: ["កំណត់ជាពិសេស", "ដាក់អត្ថបទជាអត្ថបទពិសេសសាធារណៈ។"],
+      SET_BREAKING_NEWS: ["កំណត់ជាព័ត៌មានទាន់ហេតុការណ៍", "សម្គាល់មាតិកាជាព័ត៌មានទាន់ហេតុការណ៍។"],
+      SET_EDITORS_PICK: ["កំណត់ជាជម្រើសអ្នកកែសម្រួល", "សម្គាល់អត្ថបទជាជម្រើសអ្នកកែសម្រួល។"],
+      LIST_CATEGORIES: ["បញ្ជីប្រភេទ", "មើលប្រភេទ និងប្រធានបទទាំងអស់។"],
+      CREATE_CATEGORY: ["បង្កើតប្រភេទ", "បន្ថែមប្រភេទថ្មី។"],
+      UPDATE_CATEGORY: ["កែប្រភេទ", "កែព័ត៌មានប្រភេទ។"],
+      DELETE_CATEGORY: ["លុបប្រភេទ", "លុបប្រភេទ។"],
+      CREATE_TOPIC: ["បង្កើតប្រធានបទ", "បន្ថែមប្រភេទរង ឬប្រធានបទ។"],
+      UPDATE_TOPIC: ["កែប្រធានបទ", "កែព័ត៌មានប្រធានបទ។"],
+      DELETE_TOPIC: ["លុបប្រធានបទ", "លុបប្រធានបទ។"],
+      VIEW_SETTINGS: ["មើលការកំណត់", "អានតម្លៃការកំណត់រចនាសម្ព័ន្ធ។"],
+      UPDATE_SETTINGS: ["កែការកំណត់", "ប្តូរតម្លៃការកំណត់រចនាសម្ព័ន្ធ។"],
+      VIEW_ANALYTICS: ["មើលវិភាគទិន្នន័យ", "បើកផ្ទាំងគ្រប់គ្រង និងក្រាហ្វប្រសិទ្ធភាព។"],
+      VIEW_AUDIT_LOGS: ["មើលកំណត់ហេតុសវនកម្ម", "ពិនិត្យសកម្មភាពប្រព័ន្ធ។"],
+      SYSTEM_ADMINISTRATION: ["គ្រប់គ្រងប្រព័ន្ធ", "ចូលឧបករណ៍គ្រប់គ្រងវេទិកា។"],
+      CREATE_CAROUSEL: ["បង្កើតស្លាយ", "បង្កើតស្លាយការ៉ូសែលសាធារណៈ។"],
+      UPDATE_CAROUSEL: ["កែស្លាយ", "កែស្លាយការ៉ូសែល និងទីតាំងបង្ហាញ។"],
+      DELETE_CAROUSEL: ["លុបស្លាយ", "លុបស្លាយការ៉ូសែល។"],
+      VIEW_ADS: ["មើលពាណិជ្ជកម្ម", "បើកការគ្រប់គ្រងពាណិជ្ជកម្ម និងពិនិត្យប្រសិទ្ធភាព។"],
+      CREATE_ADS: ["បង្កើតពាណិជ្ជកម្ម", "បង្កើតទីតាំងដែលបានឧបត្ថម្ភសម្រាប់ទំព័រសាធារណៈ។"],
+      UPDATE_ADS: ["កែពាណិជ្ជកម្ម", "កែមាតិកាផ្សាយ ការកំណត់គោលដៅ ស្ថានភាព និងកាលវិភាគ។"],
+      DELETE_ADS: ["ដាក់ពាណិជ្ជកម្មក្នុងប័ណ្ណសារ", "ដាក់ពាណិជ្ជកម្មដែលមិនគួរបង្ហាញទៀតក្នុងប័ណ្ណសារ។"],
+      VIEW_MEDIA: ["មើលមេឌៀ", "បើក និងរកមើលមេឌៀដែលបានផ្ទុកឡើង។"],
+      MANAGE_MEDIA: ["គ្រប់គ្រងមេឌៀ", "ផ្ទុកឡើង កែ និងលុបឯកសារមេឌៀ។"],
+    },
+  },
+} as const;
 
-const permissionGroups: PermissionGroup[] = [
-  {
-    title: "Users",
-    description: "Team access and role governance.",
-    permissions: [
-      { key: Permission.CREATE_USER, label: "Create users", description: "Invite or create tenant users." },
-      { key: Permission.UPDATE_USER, label: "Update users", description: "Edit user profile and account details." },
-      { key: Permission.DELETE_USER, label: "Delete users", description: "Remove or deactivate users." },
-      { key: Permission.VIEW_ALL_USERS, label: "View users", description: "See users in management views." },
-      { key: Permission.MANAGE_USER_ROLES, label: "Manage roles", description: "Change role assignments and permissions." },
-      { key: Permission.MANAGE_USERS, label: "Review requests", description: "Approve or reject account requests." },
-    ],
-  },
-  {
-    title: "Articles",
-    description: "Content creation, editing, and publishing.",
-    excludedRoles: ["SUPER_ADMIN"],
-    permissions: [
-      { key: Permission.CREATE_ARTICLE, label: "Create articles", description: "Create drafts and submissions." },
-      { key: Permission.VIEW_ALL_ARTICLES, label: "All articles", description: "See articles from every author." },
-      { key: Permission.UPDATE_OWN_ARTICLE, label: "Edit own articles", description: "Update articles created by the user." },
-      { key: Permission.UPDATE_ANY_ARTICLE, label: "Edit any article", description: "Update articles from any author." },
-      { key: Permission.DELETE_OWN_ARTICLE, label: "Delete own articles", description: "Delete own draft content." },
-      { key: Permission.DELETE_ANY_ARTICLE, label: "Delete any article", description: "Delete any article in the tenant." },
-      { key: Permission.PUBLISH_ARTICLE, label: "Publish articles", description: "Move approved content to published." },
-      { key: Permission.UNPUBLISH_ARTICLE, label: "Unpublish articles", description: "Return published content to draft." },
-      { key: Permission.PREVIEW_ARTICLE, label: "Preview articles", description: "Preview content before publication." },
-    ],
-  },
-  {
-    title: "Editorial",
-    description: "Review queue and article promotion controls.",
-    excludedRoles: ["SUPER_ADMIN"],
-    permissions: [
-      { key: Permission.REVIEW_ARTICLES, label: "Review articles", description: "Access the review queue." },
-      { key: Permission.APPROVE_ARTICLES, label: "Approve articles", description: "Approve submitted content." },
-      { key: Permission.REJECT_ARTICLES, label: "Reject articles", description: "Reject submitted content." },
-      { key: Permission.SET_FEATURED, label: "Set featured", description: "Feature articles publicly." },
-      { key: Permission.SET_BREAKING_NEWS, label: "Set breaking news", description: "Mark content as breaking news." },
-      { key: Permission.SET_EDITORS_PICK, label: "Set editor picks", description: "Mark articles as editor picks." },
-    ],
-  },
-  {
-    title: "Structure",
-    description: "Category, topic, and site organization.",
-    excludedRoles: ["SUPER_ADMIN"],
-    permissions: [
-      { key: Permission.LIST_CATEGORIES, label: "List categories", description: "View all categories and topics." },
-      { key: Permission.CREATE_CATEGORY, label: "Create categories", description: "Add new categories." },
-      { key: Permission.UPDATE_CATEGORY, label: "Update categories", description: "Edit category details." },
-      { key: Permission.DELETE_CATEGORY, label: "Delete categories", description: "Remove categories." },
-      { key: Permission.CREATE_TOPIC, label: "Create topics", description: "Add sub-categories/topics." },
-      { key: Permission.UPDATE_TOPIC, label: "Update topics", description: "Edit topic details." },
-      { key: Permission.DELETE_TOPIC, label: "Delete topics", description: "Remove topics." },
-    ],
-  },
-  {
-    title: "System",
-    description: "Settings, logs, and platform operations.",
-    permissions: [
-      { key: Permission.VIEW_SETTINGS, label: "View settings", description: "Read configuration values." },
-      { key: Permission.UPDATE_SETTINGS, label: "Update settings", description: "Change configuration values." },
-      { key: Permission.VIEW_ANALYTICS, label: "View analytics", description: "Open dashboard and performance charts." },
-      { key: Permission.VIEW_AUDIT_LOGS, label: "View audit logs", description: "Inspect system activity." },
-      { key: Permission.SYSTEM_ADMINISTRATION, label: "System administration", description: "Access platform administration tools." },
-    ],
-  },
-  {
-    title: "Carousel",
-    description: "Public hero slide management.",
-    permissions: [
-      { key: Permission.CREATE_CAROUSEL, label: "Create slides", description: "Create public carousel slides." },
-      { key: Permission.UPDATE_CAROUSEL, label: "Update slides", description: "Edit carousel slides and placements." },
-      { key: Permission.DELETE_CAROUSEL, label: "Delete slides", description: "Remove carousel slides." },
-    ],
-  },
-  {
-    title: "Ads",
-    description: "Sponsored placements and public ad operations.",
-    permissions: [
-      { key: Permission.VIEW_ADS, label: "View ads", description: "Open ads management and review ad performance." },
-      { key: Permission.CREATE_ADS, label: "Create ads", description: "Create sponsored placements for public pages." },
-      { key: Permission.UPDATE_ADS, label: "Update ads", description: "Edit ad creative, targeting, status, and schedule." },
-      { key: Permission.DELETE_ADS, label: "Archive ads", description: "Archive ads that should no longer be shown." },
-    ],
-  },
-  {
-    title: "Media",
-    description: "Uploaded files and image library.",
-    permissions: [
-      { key: Permission.VIEW_MEDIA, label: "View media", description: "Open and browse uploaded media." },
-      { key: Permission.MANAGE_MEDIA, label: "Manage media", description: "Upload, update, and remove media files." },
-    ],
-  },
-];
+function getPermissionGroups(copy: typeof rolePageCopy.en | typeof rolePageCopy.km): PermissionGroup[] {
+  const permission = (key: keyof typeof copy.permissions) => ({
+    key: Permission[key],
+    label: copy.permissions[key][0],
+    description: copy.permissions[key][1],
+  });
+
+  return [
+    {
+      title: copy.groupsCopy.users.title,
+      description: copy.groupsCopy.users.description,
+      permissions: [
+        permission("CREATE_USER"),
+        permission("UPDATE_USER"),
+        permission("DELETE_USER"),
+        permission("VIEW_ALL_USERS"),
+        permission("MANAGE_USER_ROLES"),
+        permission("MANAGE_USERS"),
+      ],
+    },
+    {
+      title: copy.groupsCopy.articles.title,
+      description: copy.groupsCopy.articles.description,
+      excludedRoles: ["SUPER_ADMIN"],
+      permissions: [
+        permission("CREATE_ARTICLE"),
+        permission("VIEW_ALL_ARTICLES"),
+        permission("UPDATE_OWN_ARTICLE"),
+        permission("UPDATE_ANY_ARTICLE"),
+        permission("DELETE_OWN_ARTICLE"),
+        permission("DELETE_ANY_ARTICLE"),
+        permission("PUBLISH_ARTICLE"),
+        permission("UNPUBLISH_ARTICLE"),
+        permission("PREVIEW_ARTICLE"),
+      ],
+    },
+    {
+      title: copy.groupsCopy.editorial.title,
+      description: copy.groupsCopy.editorial.description,
+      excludedRoles: ["SUPER_ADMIN"],
+      permissions: [
+        permission("REVIEW_ARTICLES"),
+        permission("APPROVE_ARTICLES"),
+        permission("REJECT_ARTICLES"),
+        permission("SET_FEATURED"),
+        permission("SET_BREAKING_NEWS"),
+        permission("SET_EDITORS_PICK"),
+      ],
+    },
+    {
+      title: copy.groupsCopy.structure.title,
+      description: copy.groupsCopy.structure.description,
+      excludedRoles: ["SUPER_ADMIN"],
+      permissions: [
+        permission("LIST_CATEGORIES"),
+        permission("CREATE_CATEGORY"),
+        permission("UPDATE_CATEGORY"),
+        permission("DELETE_CATEGORY"),
+        permission("CREATE_TOPIC"),
+        permission("UPDATE_TOPIC"),
+        permission("DELETE_TOPIC"),
+      ],
+    },
+    {
+      title: copy.groupsCopy.system.title,
+      description: copy.groupsCopy.system.description,
+      permissions: [
+        permission("VIEW_SETTINGS"),
+        permission("UPDATE_SETTINGS"),
+        permission("VIEW_ANALYTICS"),
+        permission("VIEW_AUDIT_LOGS"),
+        permission("SYSTEM_ADMINISTRATION"),
+      ],
+    },
+    {
+      title: copy.groupsCopy.carousel.title,
+      description: copy.groupsCopy.carousel.description,
+      permissions: [
+        permission("CREATE_CAROUSEL"),
+        permission("UPDATE_CAROUSEL"),
+        permission("DELETE_CAROUSEL"),
+      ],
+    },
+    {
+      title: copy.groupsCopy.ads.title,
+      description: copy.groupsCopy.ads.description,
+      permissions: [
+        permission("VIEW_ADS"),
+        permission("CREATE_ADS"),
+        permission("UPDATE_ADS"),
+        permission("DELETE_ADS"),
+      ],
+    },
+    {
+      title: copy.groupsCopy.media.title,
+      description: copy.groupsCopy.media.description,
+      permissions: [
+        permission("VIEW_MEDIA"),
+        permission("MANAGE_MEDIA"),
+      ],
+    },
+  ];
+}
+
+const tenantContentPermissions = new Set<Permission>(
+  getPermissionGroups(rolePageCopy.en)
+    .filter((group) => group.excludedRoles?.includes("SUPER_ADMIN"))
+    .flatMap((group) => group.permissions.map((permission) => permission.key)),
+);
 
 const defaultRolePermissions: Record<ManagedRole, Permission[]> = {
   SUPER_ADMIN: [
@@ -223,12 +402,6 @@ const defaultRolePermissions: Record<ManagedRole, Permission[]> = {
   ],
 };
 
-const tenantContentPermissions = new Set<Permission>(
-  permissionGroups
-    .filter((group) => group.excludedRoles?.includes("SUPER_ADMIN"))
-    .flatMap((group) => group.permissions.map((permission) => permission.key)),
-);
-
 function normalizeRolePermissionsForUi(
   permissions: Record<ManagedRole, Permission[]>,
 ): Record<ManagedRole, Permission[]> {
@@ -241,6 +414,9 @@ function normalizeRolePermissionsForUi(
 }
 
 export default function RoleManagementPage() {
+  const { locale } = useAdminLocale();
+  const copy = rolePageCopy[locale];
+  const permissionGroups = useMemo(() => getPermissionGroups(copy), [copy]);
   const { user, rolePermissions: authRolePermissions, refreshRolePermissions } = useAuth();
   const { hasPermission, isLoading: permissionsLoading } = usePermissions();
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
@@ -290,7 +466,7 @@ export default function RoleManagementPage() {
       }));
       await refreshRolePermissions();
     } catch (error: any) {
-      setError(error?.response?.errors?.[0]?.message || "Failed to update role permission.");
+      setError(locale === "en" ? error?.response?.errors?.[0]?.message || copy.updateFailed : copy.updateFailed);
     } finally {
       setSavingPermission(null);
     }
@@ -300,7 +476,7 @@ export default function RoleManagementPage() {
     <>
       {!permissionsLoading && !canViewRoleManagement ? (
         <div className="text-sm text-red-600">
-          Access denied: Insufficient permissions
+          {copy.accessDenied}
         </div>
       ) : (
       <div className="mx-auto w-full max-w-7xl space-y-6">
@@ -309,27 +485,27 @@ export default function RoleManagementPage() {
             <div>
               <div className="flex items-center gap-2 text-sm font-semibold uppercase text-blue-600">
                 <Shield className="h-4 w-4" />
-                Role Management
+                {copy.eyebrow}
               </div>
-              <CardTitle className="mt-2 text-3xl">Role Permissions</CardTitle>
+              <CardTitle className="mt-2 text-3xl">{copy.title}</CardTitle>
               <CardDescription className="mt-2">
                 {isSuperAdmin
-                  ? "Review each tenant role and adjust permission switches."
-                  : "Review what each tenant role can do. Permission switches are read-only for tenant admins."}
+                  ? copy.superAdminDescription
+                  : copy.tenantAdminDescription}
               </CardDescription>
             </div>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <Badge variant="outline" className="justify-center px-3 py-2">
-                {roles.length} roles
+                {copy.roles(roles.length)}
               </Badge>
               <Badge variant="outline" className="justify-center px-3 py-2">
-                {permissionGroups.length} groups
+                {copy.groups(permissionGroups.length)}
               </Badge>
               <Badge variant="outline" className="justify-center px-3 py-2">
-                {permissionCount} enabled
+                {copy.enabled(permissionCount)}
               </Badge>
               <Badge variant={isSuperAdmin ? "default" : "secondary"} className="justify-center px-3 py-2">
-                {isSuperAdmin ? "Editable" : "View only"}
+                {isSuperAdmin ? copy.editable : copy.viewOnly}
               </Badge>
             </div>
           </CardHeader>
@@ -340,19 +516,13 @@ export default function RoleManagementPage() {
             <Card key={role}>
               <CardHeader>
                 <CardTitle>
-                  {role === "SUPER_ADMIN"
-                    ? "Super Admin"
-                    : role === "ADMIN"
-                      ? "Admin"
-                      : role === "EDITOR"
-                        ? "Editor"
-                        : "Author"}
+                  {copy.roleNames[role]}
                 </CardTitle>
-                <CardDescription>{roleDescriptions[role]}</CardDescription>
+                <CardDescription>{copy.roleDescriptions[role]}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center justify-between rounded-md border bg-slate-50 px-3 py-2">
-                  <span className="text-sm text-slate-600">Enabled permissions</span>
+                  <span className="text-sm text-slate-600">{copy.enabledPermissions}</span>
                   <span className="text-xl font-bold text-slate-950">{rolePermissions[role].length}</span>
                 </div>
               </CardContent>
@@ -390,7 +560,7 @@ export default function RoleManagementPage() {
                   <table className="w-full min-w-[860px] text-sm">
                     <thead>
                       <tr className="border-b text-left text-xs font-semibold uppercase text-slate-500">
-                        <th className="py-3 pr-4">Permission</th>
+                        <th className="py-3 pr-4">{copy.permission}</th>
                         {visibleRoles.map((role) => (
                           <th key={role} className="w-36 px-4 py-3 text-center">
                             {role}
@@ -420,7 +590,7 @@ export default function RoleManagementPage() {
                                     enabled ? "border-blue-600 bg-blue-600" : "border-slate-300 bg-slate-200",
                                     isSuperAdmin ? "cursor-pointer" : "cursor-not-allowed opacity-80",
                                   ].join(" ")}
-                                  aria-label={`${enabled ? "Disable" : "Enable"} ${permission.label} for ${role}`}
+                                  aria-label={copy.ariaToggle(enabled ? copy.disable : copy.enable, permission.label, copy.roleNames[role])}
                                 >
                                   <span
                                     className={[

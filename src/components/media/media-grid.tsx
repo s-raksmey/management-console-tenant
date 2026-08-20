@@ -55,14 +55,20 @@ const mediaGridCopy = {
     deleteDescription: 'Are you sure you want to delete this file? This action cannot be undone.',
     deleteConfirm: 'Delete',
     cancel: 'Cancel',
+    viewFile: 'View file',
+    downloadFile: 'Download file',
+    editFile: 'Edit file',
   },
   km: {
     emptyTitle: 'រកមិនឃើញឯកសារ',
-    emptyDescription: 'Upload ឯកសារមួយចំនួនដើម្បីចាប់ផ្តើម។',
+    emptyDescription: 'ផ្ទុកឯកសារខ្លះដើម្បីចាប់ផ្តើម។',
     deleteTitle: 'លុបឯកសារ?',
     deleteDescription: 'តើអ្នកប្រាកដថាចង់លុបឯកសារនេះមែនទេ? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។',
     deleteConfirm: 'លុប',
     cancel: 'បោះបង់',
+    viewFile: 'មើលឯកសារ',
+    downloadFile: 'ទាញយកឯកសារ',
+    editFile: 'កែឯកសារ',
   },
 } as const;
 
@@ -155,6 +161,7 @@ export function MediaGrid({
                   <Button
                     size="sm"
                     variant="secondary"
+                    aria-label={copy.viewFile}
                     onClick={(e) => {
                       e.stopPropagation();
                       window.open(file.url, '_blank');
@@ -165,6 +172,7 @@ export function MediaGrid({
                   <Button
                     size="sm"
                     variant="secondary"
+                    aria-label={copy.downloadFile}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDownload(file);
@@ -176,6 +184,7 @@ export function MediaGrid({
                     <Button
                       size="sm"
                       variant="secondary"
+                      aria-label={copy.editFile}
                       onClick={(e) => {
                         e.stopPropagation();
                         onFileEdit(file);
@@ -188,6 +197,7 @@ export function MediaGrid({
                     <Button
                       size="sm"
                       variant="destructive"
+                      aria-label={copy.deleteConfirm}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDeleteClick(file);
@@ -235,7 +245,7 @@ export function MediaGrid({
                 )}
 
                 <p className="text-xs text-slate-400">
-                  {new Date(file.uploadedAt).toLocaleDateString()}
+                  {new Date(file.uploadedAt).toLocaleDateString(locale === 'km' ? 'km-KH' : undefined)}
                 </p>
               </div>
             </div>

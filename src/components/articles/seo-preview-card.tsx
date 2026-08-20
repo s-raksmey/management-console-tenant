@@ -68,11 +68,11 @@ export function SeoPreviewCard({
   const { locale } = useAdminLocale();
   const copy = locale === "km"
     ? {
-        articleTitle: "Title អត្ថបទ",
-        excerpt: "Excerpt អត្ថបទនឹងបង្ហាញទីនេះសម្រាប់ search results និង shared links។",
-        heading: "SEO Preview",
-        copyUrl: "ចម្លង article URL",
-        openUrl: "បើក article URL",
+        articleTitle: "ចំណងជើងអត្ថបទ",
+        excerpt: "សេចក្ដីសង្ខេបអត្ថបទនឹងបង្ហាញទីនេះសម្រាប់លទ្ធផលស្វែងរក និងតំណដែលបានចែករំលែក។",
+        heading: "មើលជាមុន SEO",
+        copyUrl: "ចម្លង URL អត្ថបទ",
+        openUrl: "បើក URL អត្ថបទ",
       }
     : {
         articleTitle: "Article title",

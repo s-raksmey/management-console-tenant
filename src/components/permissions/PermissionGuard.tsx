@@ -3,6 +3,7 @@
 
 import React from "react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 /**
  * Permission definitions matching the backend
@@ -288,6 +289,21 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   showError = false,
 }) => {
   const { user, isLoading, permissionsReady, rolePermissions } = useAuth();
+  const { locale } = useAdminLocale();
+  const copy = {
+    en: {
+      authRequired: "Authentication required",
+      requiredRole: (rolesList: string) => `Access denied: Required role ${rolesList}`,
+      insufficientPermissions: "Access denied: Insufficient permissions",
+      or: " or ",
+    },
+    km: {
+      authRequired: "ត្រូវការចូលប្រើ",
+      requiredRole: (rolesList: string) => `គ្មានសិទ្ធិ៖ ត្រូវការតួនាទី ${rolesList}`,
+      insufficientPermissions: "គ្មានសិទ្ធិ៖ សិទ្ធិមិនគ្រប់គ្រាន់",
+      or: " ឬ ",
+    },
+  }[locale];
 
   // Show loading state
   if (isLoading || (user && !permissionsReady)) {
@@ -298,7 +314,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
   if (!user) {
     if (showError) {
       return (
-        <div className="text-red-600 text-sm">Authentication required</div>
+        <div className="text-red-600 text-sm">{copy.authRequired}</div>
       );
     }
     return <>{fallback}</>;
@@ -313,7 +329,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
       if (showError) {
         return (
           <div className="text-red-600 text-sm">
-            Access denied: Required role {roles.join(" or ")}
+            {copy.requiredRole(roles.join(copy.or))}
           </div>
         );
       }
@@ -341,7 +357,7 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
       if (showError) {
         return (
           <div className="text-red-600 text-sm">
-            Access denied: Insufficient permissions
+            {copy.insufficientPermissions}
           </div>
         );
       }

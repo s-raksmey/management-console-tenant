@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { usePermissions } from '@/hooks/usePermissions';
 import { Permission, PermissionGuard } from '@/components/permissions/PermissionGuard';
 import { useToastHelpers } from '@/components/ui/toast';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 import { getApprovalNotification, getRejectionNotification } from '@/utils/workflowNotifications';
 import { format } from 'date-fns';
 import { 
@@ -23,7 +24,78 @@ import {
 } from 'lucide-react';
 import type { Article } from '@/types/article';
 
+const reviewCopy = {
+  en: {
+    confirm: 'Confirm',
+    revisionPending: 'Revision Pending',
+    revisionApproved: 'Revision Approved',
+    revisionRejected: 'Revision Rejected',
+    revisionEnd: 'Revision End',
+    revisionStatus: (status: string) => `Revision ${status}`,
+    failedLoadTitle: 'Failed to load articles',
+    refreshTryAgain: 'Please refresh the page to try again',
+    failedApproveTitle: 'Failed to approve article',
+    tryAgain: 'Please try again',
+    failedRejectTitle: 'Failed to reject article',
+    loading: 'Loading review queue...',
+    title: 'Review Queue',
+    description: 'Articles awaiting editorial review and approval',
+    pendingCount: (count: number) => `${count} article${count !== 1 ? 's' : ''} pending review`,
+    loadError: 'Failed to load articles. Please refresh the page.',
+    emptyTitle: 'No articles in review',
+    emptyDescription: 'All articles have been reviewed. New submissions will appear here.',
+    breakingNews: 'Breaking News',
+    breakingRequestPending: 'Breaking Request: Pending',
+    revisionNote: 'Revision note:',
+    unknownAuthor: 'Unknown Author',
+    submitted: 'Submitted',
+    edit: 'Edit',
+    approve: 'Approve',
+    reject: 'Reject',
+    approveTitle: 'Approve Article?',
+    approveDescription: (title: string) => `Approve "${title}" and publish it?`,
+    rejectTitle: 'Reject Article?',
+    rejectDescription: (title: string) => `Reject "${title}" and return it from review?`,
+    cancel: 'Cancel',
+  },
+  km: {
+    confirm: 'បញ្ជាក់',
+    revisionPending: 'ការកែសម្រួលកំពុងរង់ចាំ',
+    revisionApproved: 'ការកែសម្រួលបានអនុម័ត',
+    revisionRejected: 'ការកែសម្រួលត្រូវបានបដិសេធ',
+    revisionEnd: 'ការកែសម្រួលបានបញ្ចប់',
+    revisionStatus: (status: string) => `ការកែសម្រួល ${status}`,
+    failedLoadTitle: 'ផ្ទុកអត្ថបទមិនបានសម្រេច',
+    refreshTryAgain: 'សូមធ្វើឱ្យទំព័រថ្មី ហើយព្យាយាមម្តងទៀត',
+    failedApproveTitle: 'អនុម័តអត្ថបទមិនបានសម្រេច',
+    tryAgain: 'សូមព្យាយាមម្តងទៀត',
+    failedRejectTitle: 'បដិសេធអត្ថបទមិនបានសម្រេច',
+    loading: 'កំពុងផ្ទុកជួរត្រួតពិនិត្យ...',
+    title: 'ជួរត្រួតពិនិត្យ',
+    description: 'អត្ថបទដែលកំពុងរង់ចាំការត្រួតពិនិត្យ និងអនុម័តដោយអ្នកកែសម្រួល',
+    pendingCount: (count: number) => `${count} អត្ថបទកំពុងរង់ចាំការត្រួតពិនិត្យ`,
+    loadError: 'ផ្ទុកអត្ថបទមិនបានសម្រេច។ សូមធ្វើឱ្យទំព័រថ្មី។',
+    emptyTitle: 'មិនមានអត្ថបទសម្រាប់ត្រួតពិនិត្យ',
+    emptyDescription: 'អត្ថបទទាំងអស់ត្រូវបានត្រួតពិនិត្យរួចហើយ។ អត្ថបទថ្មីនឹងបង្ហាញនៅទីនេះ។',
+    breakingNews: 'ព័ត៌មានទាន់ហេតុការណ៍',
+    breakingRequestPending: 'សំណើព័ត៌មានទាន់ហេតុការណ៍៖ កំពុងរង់ចាំ',
+    revisionNote: 'កំណត់ចំណាំកែសម្រួល៖',
+    unknownAuthor: 'មិនស្គាល់អ្នកនិពន្ធ',
+    submitted: 'បានដាក់ស្នើ',
+    edit: 'កែសម្រួល',
+    approve: 'អនុម័ត',
+    reject: 'បដិសេធ',
+    approveTitle: 'អនុម័តអត្ថបទ?',
+    approveDescription: (title: string) => `អនុម័ត "${title}" ហើយផ្សព្វផ្សាយ?`,
+    rejectTitle: 'បដិសេធអត្ថបទ?',
+    rejectDescription: (title: string) => `បដិសេធ "${title}" ហើយត្រឡប់ចេញពីការត្រួតពិនិត្យ?`,
+    cancel: 'បោះបង់',
+  },
+} as const;
+
 export default function ReviewQueuePage() {
+  const { locale } = useAdminLocale();
+  const copy = reviewCopy[locale];
   const [articles, setArticles] = useState<Article[]>([]);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
   
@@ -45,7 +117,7 @@ export default function ReviewQueuePage() {
     open: false,
     title: '',
     description: '',
-    confirmText: 'Confirm',
+    confirmText: copy.confirm,
     onConfirm: () => {},
   });
 
@@ -54,15 +126,15 @@ export default function ReviewQueuePage() {
 
     switch (status) {
       case 'PENDING':
-        return <Badge variant="outline" className="text-xs bg-purple-50 border-purple-200">📝 Revision Pending</Badge>;
+        return <Badge variant="outline" className="text-xs bg-purple-50 border-purple-200">📝 {copy.revisionPending}</Badge>;
       case 'APPROVED':
-        return <Badge variant="outline" className="text-xs bg-green-50 border-green-200">✅ Revision Approved</Badge>;
+        return <Badge variant="outline" className="text-xs bg-green-50 border-green-200">✅ {copy.revisionApproved}</Badge>;
       case 'REJECTED':
-        return <Badge variant="outline" className="text-xs bg-red-50 border-red-200">❌ Revision Rejected</Badge>;
+        return <Badge variant="outline" className="text-xs bg-red-50 border-red-200">❌ {copy.revisionRejected}</Badge>;
       case 'CONSUMED':
-        return <Badge variant="outline" className="text-xs bg-slate-50 border-slate-200">✔ Revision End</Badge>;
+        return <Badge variant="outline" className="text-xs bg-slate-50 border-slate-200">✔ {copy.revisionEnd}</Badge>;
       default:
-        return <Badge variant="outline" className="text-xs bg-slate-50 border-slate-200">📝 Revision {status}</Badge>;
+        return <Badge variant="outline" className="text-xs bg-slate-50 border-slate-200">📝 {copy.revisionStatus(status)}</Badge>;
     }
   };
 
@@ -95,7 +167,7 @@ export default function ReviewQueuePage() {
       }
     } catch (error) {
       console.error('Failed to load review articles:', error);
-      showError('Failed to load articles', 'Please refresh the page to try again');
+      showError(copy.failedLoadTitle, copy.refreshTryAgain);
     }
   };
 
@@ -147,14 +219,14 @@ export default function ReviewQueuePage() {
         notifyAuthor: true,
       });
       
-      const notification = getApprovalNotification();
+      const notification = getApprovalNotification(locale);
       showSuccess(notification.title, notification.message);
       
       // Remove from list
       setArticles(prev => prev.filter(article => article.id !== articleId));
     } catch (error) {
       console.error('Failed to approve article:', error);
-      showError('Failed to approve article', 'Please try again');
+      showError(copy.failedApproveTitle, copy.tryAgain);
     } finally {
       setProcessingIds(prev => {
         const newSet = new Set(prev);
@@ -175,14 +247,14 @@ export default function ReviewQueuePage() {
         notifyAuthor: true,
       });
       
-      const notification = getRejectionNotification();
+      const notification = getRejectionNotification(locale);
       showSuccess(notification.title, notification.message);
       
       // Remove from list
       setArticles(prev => prev.filter(article => article.id !== articleId));
     } catch (error) {
       console.error('Failed to reject article:', error);
-      showError('Failed to reject article', 'Please try again');
+      showError(copy.failedRejectTitle, copy.tryAgain);
     } finally {
       setProcessingIds(prev => {
         const newSet = new Set(prev);
@@ -214,7 +286,7 @@ export default function ReviewQueuePage() {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Loading review queue...</p>
+          <p className="text-gray-600">{copy.loading}</p>
         </div>
       </div>
     );
@@ -225,19 +297,19 @@ export default function ReviewQueuePage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Review Queue</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{copy.title}</h1>
             <p className="text-gray-600 mt-2">
-              Articles awaiting editorial review and approval
+              {copy.description}
             </p>
           </div>
           <div className="text-sm text-gray-500">
-            {articles.length} article{articles.length !== 1 ? 's' : ''} pending review
+            {copy.pendingCount(articles.length)}
           </div>
         </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">Failed to load articles. Please refresh the page.</p>
+            <p className="text-red-800">{copy.loadError}</p>
           </div>
         )}
 
@@ -245,9 +317,9 @@ export default function ReviewQueuePage() {
         {articles.length === 0 && !loading && !error && (
           <div className="text-center py-12">
             <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No articles in review</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">{copy.emptyTitle}</h3>
             <p className="text-gray-600">
-              All articles have been reviewed. New submissions will appear here.
+              {copy.emptyDescription}
             </p>
           </div>
         )}
@@ -267,12 +339,12 @@ export default function ReviewQueuePage() {
                     <StatusBadge status={article.status} />
                     {article.isBreaking && (
                       <span className="bg-red-100 text-red-800 text-xs font-medium px-2.5 py-0.5 rounded">
-                        Breaking News
+                        {copy.breakingNews}
                       </span>
                     )}
                     {getRevisionBadgeForArticle(article)}
                     {article.breakingNewsRequestStatus === 'PENDING' && (
-                      <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">🔔 Breaking Request: Pending</Badge>
+                      <Badge variant="outline" className="text-xs bg-yellow-50 border-yellow-200">🔔 {copy.breakingRequestPending}</Badge>
                     )}
                   </div>
 
@@ -283,18 +355,18 @@ export default function ReviewQueuePage() {
                   )}
                   {revisionRequestStatusById[article.id] === 'PENDING' && revisionRequestNoteById[article.id] && (
                     <p className="text-xs text-gray-500 mb-4">
-                      Revision note: {revisionRequestNoteById[article.id]}
+                      {copy.revisionNote} {revisionRequestNoteById[article.id]}
                     </p>
                   )}
 
                   <div className="flex items-center space-x-6 text-sm text-gray-500">
                     <div className="flex items-center space-x-1">
                       <User className="w-4 h-4" />
-                      <span>{article.authorName || 'Unknown Author'}</span>
+                      <span>{article.authorName || copy.unknownAuthor}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Calendar className="w-4 h-4" />
-                      <span>Submitted {format(new Date(article.createdAt), 'MMM d, yyyy')}</span>
+                      <span>{copy.submitted} {format(new Date(article.createdAt), 'MMM d, yyyy')}</span>
                     </div>
                     {article.category && (
                       <div className="flex items-center space-x-1">
@@ -310,7 +382,7 @@ export default function ReviewQueuePage() {
                     <Link href={`/articles/${article.id}/edit`}>
                       <Button variant="outline" size="sm">
                         <Edit className="w-4 h-4 mr-1" />
-                        Edit
+                        {copy.edit}
                       </Button>
                     </Link>
                   )}
@@ -319,9 +391,9 @@ export default function ReviewQueuePage() {
                     <Button
                       onClick={() =>
                         requestReviewAction({
-                          title: 'Approve Article?',
-                          description: `Approve "${article.title}" and publish it?`,
-                          confirmText: 'Approve',
+                          title: copy.approveTitle,
+                          description: copy.approveDescription(article.title),
+                          confirmText: copy.approve,
                           onConfirm: () => handleApprove(article.id),
                         })
                       }
@@ -334,7 +406,7 @@ export default function ReviewQueuePage() {
                       ) : (
                         <CheckCircle className="w-4 h-4 mr-1" />
                       )}
-                      Approve
+                      {copy.approve}
                     </Button>
                   )}
 
@@ -342,9 +414,9 @@ export default function ReviewQueuePage() {
                     <Button
                       onClick={() =>
                         requestReviewAction({
-                          title: 'Reject Article?',
-                          description: `Reject "${article.title}" and return it from review?`,
-                          confirmText: 'Reject',
+                          title: copy.rejectTitle,
+                          description: copy.rejectDescription(article.title),
+                          confirmText: copy.reject,
                           variant: 'destructive',
                           onConfirm: () => handleReject(article.id),
                         })
@@ -359,7 +431,7 @@ export default function ReviewQueuePage() {
                       ) : (
                         <XCircle className="w-4 h-4 mr-1" />
                       )}
-                      Reject
+                      {copy.reject}
                     </Button>
                   )}
                 </div>
@@ -375,7 +447,7 @@ export default function ReviewQueuePage() {
           title={confirmation.title}
           description={confirmation.description}
           confirmText={confirmation.confirmText}
-          cancelText="Cancel"
+          cancelText={copy.cancel}
           variant={confirmation.variant}
           onConfirm={() => {
             void confirmation.onConfirm();

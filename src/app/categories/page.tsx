@@ -140,7 +140,12 @@ const categoryCopy = {
     topicsToCreate: "Topics to be created",
     noSubCategoriesAdded: "No sub-categories added yet.",
     subCategoriesFor: (name: string) => `Sub-Categories for ${name}`,
+    topicManagementDescription: "Maintain the topic labels shown in the public navigation and article paths.",
     addNewTopic: "Add New Topic",
+    englishTopicPlaceholder: "e.g. Markets, Economy, Companies...",
+    khmerTopicPlaceholder: "ទីផ្សារ",
+    topicSlugPlaceholder: "e.g. markets, economy, companies...",
+    subCategoryCount: (count: number) => `${count} sub-categor${count === 1 ? "y" : "ies"}`,
     noSubCategoriesYet: "No sub-categories yet.",
     edit: "Edit",
     allCategories: "All Categories",
@@ -159,72 +164,77 @@ const categoryCopy = {
     warning: "ព្រមាន",
     success: "ជោគជ័យ",
     validationError: "ទិន្នន័យមិនត្រឹមត្រូវ",
-    loadCategoriesFailed: "មិនអាចផ្ទុក categories បានទេ",
-    loadTopicsFailed: "មិនអាចផ្ទុក topics បានទេ",
-    topicTitleRequired: "ត្រូវការ title របស់ topic",
-    topicSlugRequired: "ត្រូវការ slug របស់ topic",
-    topicSlugUnique: "Slug របស់ topic ត្រូវតែមិនស្ទួន",
-    topicAdded: "បានបន្ថែម topic ទៅក្នុងបញ្ជី",
+    loadCategoriesFailed: "មិនអាចផ្ទុកប្រភេទបានទេ",
+    loadTopicsFailed: "មិនអាចផ្ទុកប្រធានបទបានទេ",
+    topicTitleRequired: "ត្រូវការចំណងជើងប្រធានបទ",
+    topicSlugRequired: "ត្រូវការស្លាក URL របស់ប្រធានបទ",
+    topicSlugUnique: "ស្លាក URL របស់ប្រធានបទត្រូវតែមិនស្ទួន",
+    topicAdded: "បានបន្ថែមប្រធានបទទៅក្នុងបញ្ជី",
     nameRequired: "ត្រូវការឈ្មោះ",
-    slugRequired: "ត្រូវការ slug",
-    saveCategoryFirst: "សូមរក្សាទុក category ជាមុនសិន",
-    updateCategoryTitle: "កែ Category?",
-    createCategoryTitle: "បង្កើត Category?",
+    slugRequired: "ត្រូវការស្លាក URL",
+    saveCategoryFirst: "សូមរក្សាទុកប្រភេទជាមុនសិន",
+    updateCategoryTitle: "កែប្រភេទ?",
+    createCategoryTitle: "បង្កើតប្រភេទ?",
     saveChangesTo: (name: string) => `រក្សាទុកការកែប្រែ "${name}"?`,
     createCategoryDescription: (name: string, count: number) =>
-      `បង្កើត "${name}"${count > 0 ? ` ជាមួយ sub-categories ${count}` : ""}?`,
-    updateCategory: "កែ Category",
-    createCategory: "បង្កើត Category",
-    updateSubCategoryTitle: "កែ Sub-Category?",
-    createSubCategoryTitle: "បង្កើត Sub-Category?",
+      `បង្កើត "${name}"${count > 0 ? ` ជាមួយប្រភេទរង ${count}` : ""}?`,
+    updateCategory: "កែប្រភេទ",
+    createCategory: "បង្កើតប្រភេទ",
+    updateSubCategoryTitle: "កែប្រភេទរង?",
+    createSubCategoryTitle: "បង្កើតប្រភេទរង?",
     createTopicUnder: (title: string, category: string) => `បង្កើត "${title}" ក្រោម "${category}"?`,
-    updateTopic: "កែ Topic",
-    createTopic: "បង្កើត Topic",
-    deleteSubCategoryTitle: "លុប Sub-Category?",
+    updateTopic: "កែប្រធានបទ",
+    createTopic: "បង្កើតប្រធានបទ",
+    deleteSubCategoryTitle: "លុបប្រភេទរង?",
     deleteDescription: (name: string) => `លុប "${name}"? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`,
-    deleteTopic: "លុប Topic",
-    deleteCategoryTitle: "លុប Category?",
-    deleteCategory: "លុប Category",
-    categoryUpdated: "បានកែ category ដោយជោគជ័យ",
-    categoryCreated: "បានបង្កើត category ដោយជោគជ័យ",
-    failedCreateTopic: (title: string) => `មិនអាចបង្កើត topic: ${title}`,
-    createdTopicsFor: (count: number, name: string) => `បានបង្កើត topics ${count} សម្រាប់ ${name}`,
-    saveCategoryFailed: "មិនអាចរក្សាទុក category បានទេ",
-    topicUpdated: "បានកែ topic ដោយជោគជ័យ",
-    topicCreated: "បានបង្កើត topic ដោយជោគជ័យ",
-    saveTopicFailed: "មិនអាចរក្សាទុក topic បានទេ",
-    topicDeleted: "បានលុប topic ដោយជោគជ័យ",
-    deleteTopicFailed: "មិនអាចលុប topic បានទេ",
-    categoryDeleted: "បានលុប category ដោយជោគជ័យ",
-    deleteCategoryFailed: "មិនអាចលុប category បានទេ",
-    pageTitle: "គ្រប់គ្រង Category",
-    pageDescription: "បង្កើត categories ពីរភាសា និងរៀបចំ sub-categories។",
-    editCategory: "កែ Category",
-    editTopic: "កែ Topic",
+    deleteTopic: "លុបប្រធានបទ",
+    deleteCategoryTitle: "លុបប្រភេទ?",
+    deleteCategory: "លុបប្រភេទ",
+    categoryUpdated: "បានកែប្រភេទដោយជោគជ័យ",
+    categoryCreated: "បានបង្កើតប្រភេទដោយជោគជ័យ",
+    failedCreateTopic: (title: string) => `មិនអាចបង្កើតប្រធានបទ: ${title}`,
+    createdTopicsFor: (count: number, name: string) => `បានបង្កើតប្រធានបទ ${count} សម្រាប់ ${name}`,
+    saveCategoryFailed: "មិនអាចរក្សាទុកប្រភេទបានទេ",
+    topicUpdated: "បានកែប្រធានបទដោយជោគជ័យ",
+    topicCreated: "បានបង្កើតប្រធានបទដោយជោគជ័យ",
+    saveTopicFailed: "មិនអាចរក្សាទុកប្រធានបទបានទេ",
+    topicDeleted: "បានលុបប្រធានបទដោយជោគជ័យ",
+    deleteTopicFailed: "មិនអាចលុបប្រធានបទបានទេ",
+    categoryDeleted: "បានលុបប្រភេទដោយជោគជ័យ",
+    deleteCategoryFailed: "មិនអាចលុបប្រភេទបានទេ",
+    pageTitle: "គ្រប់គ្រងប្រភេទ",
+    pageDescription: "បង្កើតប្រភេទពីរភាសា និងរៀបចំប្រភេទរង។",
+    editCategory: "កែប្រភេទ",
+    editTopic: "កែប្រធានបទ",
     editing: (name: string) => `កំពុងកែ ${name}`,
-    formDescription: "បន្ថែម English និង Khmer labels សម្រាប់ public website។",
-    englishName: "ឈ្មោះ English",
-    khmerName: "ឈ្មោះ Khmer",
-    slug: "Slug",
-    subCategories: "Sub-Categories",
-    optionalTopics: "Topics ជាជម្រើសអាចបង្កើតជាមួយ category នេះបាន។",
-    addTopic: "បន្ថែម Topic",
-    englishTitle: "Title English",
-    khmerTitle: "Title Khmer",
-    topicSlug: "Topic Slug",
+    formDescription: "បន្ថែមស្លាកអង់គ្លេស និងខ្មែរសម្រាប់គេហទំព័រសាធារណៈ។",
+    englishName: "ឈ្មោះអង់គ្លេស",
+    khmerName: "ឈ្មោះខ្មែរ",
+    slug: "ស្លាក URL",
+    subCategories: "ប្រភេទរង",
+    optionalTopics: "ប្រធានបទជាជម្រើសអាចបង្កើតជាមួយប្រភេទនេះបាន។",
+    addTopic: "បន្ថែមប្រធានបទ",
+    englishTitle: "ចំណងជើងអង់គ្លេស",
+    khmerTitle: "ចំណងជើងខ្មែរ",
+    topicSlug: "ស្លាក URL ប្រធានបទ",
     addToList: "បន្ថែមទៅបញ្ជី",
-    topicsToCreate: "Topics ដែលនឹងបង្កើត",
-    noSubCategoriesAdded: "មិនទាន់មាន sub-categories។",
-    subCategoriesFor: (name: string) => `Sub-Categories សម្រាប់ ${name}`,
-    addNewTopic: "បន្ថែម Topic ថ្មី",
-    noSubCategoriesYet: "មិនទាន់មាន sub-categories។",
+    topicsToCreate: "ប្រធានបទដែលនឹងបង្កើត",
+    noSubCategoriesAdded: "មិនទាន់មានប្រភេទរង។",
+    subCategoriesFor: (name: string) => `ប្រភេទរងសម្រាប់ ${name}`,
+    topicManagementDescription: "គ្រប់គ្រងស្លាកប្រធានបទដែលបង្ហាញក្នុងមឺនុយសាធារណៈ និងផ្លូវអត្ថបទ។",
+    addNewTopic: "បន្ថែមប្រធានបទថ្មី",
+    englishTopicPlaceholder: "ឧ. Markets, Economy, Companies...",
+    khmerTopicPlaceholder: "ទីផ្សារ",
+    topicSlugPlaceholder: "ឧ. markets, economy, companies...",
+    subCategoryCount: (count: number) => `ប្រភេទរង ${count}`,
+    noSubCategoriesYet: "មិនទាន់មានប្រភេទរង។",
     edit: "កែ",
-    allCategories: "Categories ទាំងអស់",
-    noCategoriesFound: "រកមិនឃើញ categories។",
-    categoriesFound: (count: number) => `រកឃើញ categories ${count}`,
-    noCategoriesYet: "មិនទាន់មាន categories។",
+    allCategories: "ប្រភេទទាំងអស់",
+    noCategoriesFound: "រកមិនឃើញប្រភេទ។",
+    categoriesFound: (count: number) => `រកឃើញប្រភេទ ${count}`,
+    noCategoriesYet: "មិនទាន់មានប្រភេទ។",
     created: "បានបង្កើត",
-    editManageTopics: "កែ និងគ្រប់គ្រង Topics",
+    editManageTopics: "កែ និងគ្រប់គ្រងប្រធានបទ",
     delete: "លុប",
     loading: "កំពុងផ្ទុក...",
   },
@@ -859,7 +869,7 @@ export default function CategoriesPage() {
                           onChange={(e) =>
                             handleTopicTitleChange(e.target.value)
                           }
-                          placeholder="e.g. Markets, Economy, Companies..."
+                  placeholder={copy.englishTopicPlaceholder}
                           className="h-8"
                         />
                       </div>
@@ -875,7 +885,7 @@ export default function CategoriesPage() {
                               titleKhmer: e.target.value,
                             }))
                           }
-                          placeholder="ទីផ្សារ"
+                          placeholder={copy.khmerTopicPlaceholder}
                           className="h-8"
                         />
                       </div>
@@ -891,7 +901,7 @@ export default function CategoriesPage() {
                               slug: e.target.value,
                             }))
                           }
-                          placeholder="e.g. markets, economy, companies..."
+                          placeholder={copy.topicSlugPlaceholder}
                           className="h-8"
                         />
                       </div>
@@ -1009,8 +1019,7 @@ export default function CategoriesPage() {
               </PermissionGuard>
             </CardTitle>
             <CardDescription className="mt-1">
-              Maintain the topic labels shown in the public navigation and
-              article paths.
+              {copy.topicManagementDescription}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 px-6 py-5">
@@ -1029,7 +1038,7 @@ export default function CategoriesPage() {
                       <Input
                         value={topicFormData.title}
                         onChange={(e) => handleTopicTitleChange(e.target.value)}
-                        placeholder="e.g. Markets, Economy, Companies..."
+                        placeholder={copy.englishTopicPlaceholder}
                       />
                     </div>
                     <div className="space-y-2">
@@ -1044,7 +1053,7 @@ export default function CategoriesPage() {
                             titleKhmer: e.target.value,
                           }))
                         }
-                        placeholder="ទីផ្សារ"
+                        placeholder={copy.khmerTopicPlaceholder}
                       />
                     </div>
                     <div className="space-y-2">
@@ -1059,7 +1068,7 @@ export default function CategoriesPage() {
                             slug: e.target.value,
                           }))
                         }
-                        placeholder="e.g. markets, economy, companies..."
+                        placeholder={copy.topicSlugPlaceholder}
                       />
                     </div>
                   </div>
@@ -1095,7 +1104,7 @@ export default function CategoriesPage() {
             ) : (
               <div className="space-y-2">
                 <p className="mb-3 text-sm font-medium text-slate-700">
-                  {topics.length} sub-categor{topics.length === 1 ? "y" : "ies"}
+                  {copy.subCategoryCount(topics.length)}
                 </p>
                 {topics.map((topic) => (
                   <div
@@ -1189,7 +1198,7 @@ export default function CategoriesPage() {
                     </div>
                     <div className="text-xs text-slate-500">
                       {copy.created}{" "}
-                      {new Date(category.createdAt).toLocaleDateString()}
+                      {new Date(category.createdAt).toLocaleDateString(locale === "km" ? "km-KH" : undefined)}
                     </div>
                   </div>
                   <div className="flex shrink-0 items-center gap-2">

@@ -64,13 +64,13 @@ const chartCopy = {
     viewsByCategoryDescription: "Public article views grouped by category.",
   },
   km: {
-    charts: "Charts",
-    loadingCharts: "កំពុងផ្ទុកទិន្នន័យ chart...",
-    dataUnavailable: "មិនមានទិន្នន័យ chart សម្រាប់ផ្ទាំងគ្រប់គ្រង។",
-    noAnalytics: "មិនមានទិន្នន័យ analytics។",
-    noChartData: "មិនទាន់មានទិន្នន័យ chart។",
+    charts: "ក្រាហ្វ",
+    loadingCharts: "កំពុងផ្ទុកទិន្នន័យក្រាហ្វ...",
+    dataUnavailable: "មិនមានទិន្នន័យក្រាហ្វសម្រាប់ផ្ទាំងគ្រប់គ្រង។",
+    noAnalytics: "មិនមានទិន្នន័យវិភាគ។",
+    noChartData: "មិនទាន់មានទិន្នន័យក្រាហ្វ។",
     noMonthlyActivity: "មិនទាន់មានសកម្មភាពប្រចាំខែ។",
-    noTenantActivity: "មិនទាន់មានសកម្មភាព tenant។",
+    noTenantActivity: "មិនទាន់មានសកម្មភាពគេហទំព័រ។",
     created: "បានបង្កើត",
     published: "បានផ្សព្វផ្សាយ",
     createdTitle: (value: number) => `${value} បានបង្កើត`,
@@ -78,30 +78,30 @@ const chartCopy = {
     articles: "អត្ថបទ",
     users: "អ្នកប្រើ",
     sites: "គេហទំព័រ",
-    views: "views",
+    views: "ចំនួនមើល",
     items: "ធាតុ",
-    tenants: "Tenants",
+    tenants: "គេហទំព័រ",
     platformUsers: "អ្នកប្រើវេទិកា",
-    auditEvents: "Audit Events",
-    drafts: "Drafts",
-    platformCharts: "Charts វេទិកា",
-    tenantCharts: "Charts Tenant",
+    auditEvents: "កំណត់ត្រាសវនកម្ម",
+    drafts: "ព្រាង",
+    platformCharts: "ក្រាហ្វវេទិកា",
+    tenantCharts: "ក្រាហ្វគេហទំព័រ",
     platformDescription:
-      "ទិដ្ឋភាព super admin សម្រាប់ tenants, public sites, អ្នកប្រើវេទិកា និងសកម្មភាព។",
+      "ទិដ្ឋភាពអ្នកគ្រប់គ្រងកំពូលសម្រាប់គេហទំព័រ គេហទំព័រសាធារណៈ អ្នកប្រើវេទិកា និងសកម្មភាព។",
     tenantDescription: (tenantName?: string | null) =>
-      `ទិដ្ឋភាព tenant សម្រាប់ ${tenantName || "គេហទំព័រនេះ"} លើមាតិកា អ្នកប្រើ និង performance សាធារណៈ។`,
-    tenantActivity: "សកម្មភាព Tenant",
-    tenantActivityDescription: "បរិមាណអត្ថបទ និងសមាជិកសកម្មតាម tenant។",
+      `ទិដ្ឋភាពគេហទំព័រសម្រាប់ ${tenantName || "គេហទំព័រនេះ"} លើមាតិកា អ្នកប្រើ និងប្រសិទ្ធភាពសាធារណៈ។`,
+    tenantActivity: "សកម្មភាពគេហទំព័រ",
+    tenantActivityDescription: "បរិមាណអត្ថបទ និងសមាជិកសកម្មតាមគេហទំព័រ។",
     platformRoles: "តួនាទីវេទិកា",
-    platformRolesDescription: "Super admins និង tenant admins ប៉ុណ្ណោះ។",
-    contentTimeline: "Timeline មាតិកា",
+    platformRolesDescription: "អ្នកគ្រប់គ្រងកំពូល និងអ្នកគ្រប់គ្រងគេហទំព័រប៉ុណ្ណោះ។",
+    contentTimeline: "ពេលវេលាមាតិកា",
     timelineDescription: "អត្ថបទបានបង្កើត និងបានផ្សព្វផ្សាយក្នុង 6 ខែចុងក្រោយ។",
     articleStatus: "ស្ថានភាពអត្ថបទ",
-    articleStatusDescription: "Draft, review, published និង archived content សម្រាប់ tenant នេះ។",
-    tenantRoles: "តួនាទី Tenant",
-    tenantRolesDescription: "សមាជិកសកម្មតាមតួនាទី tenant។",
-    viewsByCategory: "Views តាម Category",
-    viewsByCategoryDescription: "Views អត្ថបទសាធារណៈតាម category។",
+    articleStatusDescription: "មាតិកាព្រាង រង់ចាំពិនិត្យ បានផ្សព្វផ្សាយ និងបានដាក់ប័ណ្ណសារសម្រាប់គេហទំព័រនេះ។",
+    tenantRoles: "តួនាទីគេហទំព័រ",
+    tenantRolesDescription: "សមាជិកសកម្មតាមតួនាទីគេហទំព័រ។",
+    viewsByCategory: "ចំនួនមើលតាមប្រភេទ",
+    viewsByCategoryDescription: "ចំនួនមើលអត្ថបទសាធារណៈតាមប្រភេទ។",
   },
 };
 
@@ -157,11 +157,14 @@ function HorizontalBars({
   points,
   valueLabel = "items",
   emptyLabel,
+  locale,
 }: {
   points: DashboardChartPoint[];
   valueLabel?: string;
   emptyLabel: string;
+  locale: string;
 }) {
+  const numberLocale = locale === "km" ? "km-KH" : undefined;
   const maxValue = maxPointValue(points);
   const visiblePoints = points.filter(
     (point) => point.value > 0 || (point.secondaryValue ?? 0) > 0,
@@ -183,7 +186,7 @@ function HorizontalBars({
                 {formatLabel(point.label)}
               </span>
               <span className="text-slate-500">
-                {point.value.toLocaleString()} {valueLabel}
+                {point.value.toLocaleString(numberLocale)} {valueLabel}
               </span>
             </div>
             <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
@@ -303,10 +306,13 @@ function TenantActivity({
 function SummaryStrip({
   analytics,
   copy,
+  locale,
 }: {
   analytics: DashboardAnalytics;
   copy: typeof chartCopy.en;
+  locale: string;
 }) {
+  const numberLocale = locale === "km" ? "km-KH" : undefined;
   const isPlatform = analytics.scope === "PLATFORM";
   const items = isPlatform
     ? [
@@ -363,7 +369,7 @@ function SummaryStrip({
           <div key={item.label} className="rounded-md border bg-slate-50 p-3">
             <Icon className="h-4 w-4 text-blue-600" />
             <p className="mt-2 text-2xl font-bold text-slate-950">
-              {item.value.toLocaleString()}
+              {item.value.toLocaleString(numberLocale)}
             </p>
             <p className="text-xs text-slate-500">{item.label}</p>
           </div>
@@ -422,7 +428,7 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <SummaryStrip analytics={analytics} copy={copy} />
+          <SummaryStrip analytics={analytics} copy={copy} locale={locale} />
         </CardContent>
       </Card>
 
@@ -448,7 +454,7 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <HorizontalBars points={analytics.userRoles} valueLabel={copy.users} emptyLabel={copy.noChartData} />
+                <HorizontalBars points={analytics.userRoles} valueLabel={copy.users} emptyLabel={copy.noChartData} locale={locale} />
               </CardContent>
             </Card>
             <Card>
@@ -484,7 +490,7 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <HorizontalBars points={analytics.articleStatus} valueLabel={copy.articles} emptyLabel={copy.noChartData} />
+              <HorizontalBars points={analytics.articleStatus} valueLabel={copy.articles} emptyLabel={copy.noChartData} locale={locale} />
             </CardContent>
           </Card>
           <Card>
@@ -495,7 +501,7 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <HorizontalBars points={analytics.userRoles} valueLabel={copy.users} emptyLabel={copy.noChartData} />
+              <HorizontalBars points={analytics.userRoles} valueLabel={copy.users} emptyLabel={copy.noChartData} locale={locale} />
             </CardContent>
           </Card>
           <Card>
@@ -527,7 +533,7 @@ export function DashboardCharts({ analytics, loading }: DashboardChartsProps) {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <HorizontalBars points={analytics.categoryViews} valueLabel={copy.views} emptyLabel={copy.noChartData} />
+              <HorizontalBars points={analytics.categoryViews} valueLabel={copy.views} emptyLabel={copy.noChartData} locale={locale} />
             </CardContent>
           </Card>
         </div>

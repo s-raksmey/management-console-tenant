@@ -32,8 +32,148 @@ import { useToastHelpers } from '@/components/ui/toast';
 import { PermissionGuard, Permission } from '@/components/permissions/PermissionGuard';
 import { AuditService } from '@/services/audit.gql';
 import type { AuditLog, AuditLogFilters } from '@/types/audit';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
+
+const auditCopy = {
+  en: {
+    title: 'Audit Logs',
+    description: 'Track all system activities and user actions',
+    refresh: 'Refresh',
+    exporting: 'Exporting...',
+    exportCsv: 'Export CSV',
+    loadFailedTitle: 'Audit Logs Failed',
+    loadFailedDescription: 'Unable to load audit logs.',
+    exportReadyTitle: 'Export Ready',
+    exportReadyDescription: 'Audit logs CSV has been downloaded.',
+    exportFailedTitle: 'Export Failed',
+    exportFailedDescription: 'Unable to export audit logs.',
+    totalLogs: 'Total Logs',
+    today: 'Today',
+    uniqueUsers: 'Unique Users',
+    thisHour: 'This Hour',
+    searchPlaceholder: 'Search by user, resource, or IP address...',
+    allActions: 'All Actions',
+    allResources: 'All Resources',
+    actions: {
+      USER_LOGIN: 'User Login',
+      USER_LOGOUT: 'User Logout',
+      USER_CREATED: 'User Created',
+      USER_UPDATED: 'User Updated',
+      USER_DELETED: 'User Deleted',
+      USER_ROLE_CHANGED: 'User Role Changed',
+      PASSWORD_CHANGED: 'Password Changed',
+      ARTICLE_CREATED: 'Article Created',
+      ARTICLE_UPDATED: 'Article Updated',
+      ARTICLE_PUBLISHED: 'Article Published',
+      ARTICLE_DELETED: 'Article Deleted',
+      ARTICLE_FEATURED: 'Article Featured',
+      ARTICLE_APPROVED: 'Article Approved',
+      ARTICLE_REJECTED: 'Article Rejected',
+      CATEGORY_CREATED: 'Category Created',
+      CATEGORY_UPDATED: 'Category Updated',
+      SETTING_UPDATED: 'Setting Updated',
+      PERMISSION_DENIED: 'Permission Denied',
+    },
+    resources: {
+      User: 'Users',
+      Article: 'Articles',
+      Category: 'Categories',
+      Setting: 'Settings',
+      USER: 'User',
+      ARTICLE: 'Article',
+      CATEGORY: 'Category',
+      SETTINGS: 'Settings',
+      MEDIA: 'Media',
+    },
+    table: {
+      timestamp: 'Timestamp',
+      user: 'User',
+      action: 'Action',
+      resource: 'Resource',
+      ipAddress: 'IP Address',
+      details: 'Details',
+    },
+    loading: 'Loading audit logs...',
+    empty: 'No audit logs found',
+    emptyDescription: 'Try adjusting your filters or search criteria',
+    system: 'System',
+    viewDetails: 'View Details',
+    showing: (start: number, end: number, total: number) => `Showing ${start} to ${end} of ${total} results`,
+    previous: 'Previous',
+    next: 'Next',
+  },
+  km: {
+    title: 'កំណត់ហេតុសវនកម្ម',
+    description: 'តាមដានសកម្មភាពប្រព័ន្ធ និងសកម្មភាពអ្នកប្រើទាំងអស់',
+    refresh: 'ធ្វើបច្ចុប្បន្នភាព',
+    exporting: 'កំពុងនាំចេញ...',
+    exportCsv: 'នាំចេញ CSV',
+    loadFailedTitle: 'ផ្ទុកកំណត់ហេតុសវនកម្មមិនបាន',
+    loadFailedDescription: 'មិនអាចផ្ទុកកំណត់ហេតុសវនកម្មបានទេ។',
+    exportReadyTitle: 'ឯកសារនាំចេញរួចរាល់',
+    exportReadyDescription: 'បានទាញយកឯកសារ CSV កំណត់ហេតុសវនកម្ម។',
+    exportFailedTitle: 'នាំចេញមិនបានសម្រេច',
+    exportFailedDescription: 'មិនអាចនាំចេញកំណត់ហេតុសវនកម្មបានទេ។',
+    totalLogs: 'កំណត់ហេតុសរុប',
+    today: 'ថ្ងៃនេះ',
+    uniqueUsers: 'អ្នកប្រើមិនស្ទួន',
+    thisHour: 'ម៉ោងនេះ',
+    searchPlaceholder: 'ស្វែងរកតាមអ្នកប្រើ ធនធាន ឬ IP address...',
+    allActions: 'សកម្មភាពទាំងអស់',
+    allResources: 'ធនធានទាំងអស់',
+    actions: {
+      USER_LOGIN: 'អ្នកប្រើចូលប្រើ',
+      USER_LOGOUT: 'អ្នកប្រើចេញ',
+      USER_CREATED: 'បានបង្កើតអ្នកប្រើ',
+      USER_UPDATED: 'បានកែប្រែអ្នកប្រើ',
+      USER_DELETED: 'បានលុបអ្នកប្រើ',
+      USER_ROLE_CHANGED: 'បានប្តូរតួនាទីអ្នកប្រើ',
+      PASSWORD_CHANGED: 'បានប្តូរពាក្យសម្ងាត់',
+      ARTICLE_CREATED: 'បានបង្កើតអត្ថបទ',
+      ARTICLE_UPDATED: 'បានកែប្រែអត្ថបទ',
+      ARTICLE_PUBLISHED: 'បានផ្សព្វផ្សាយអត្ថបទ',
+      ARTICLE_DELETED: 'បានលុបអត្ថបទ',
+      ARTICLE_FEATURED: 'បានដាក់អត្ថបទពិសេស',
+      ARTICLE_APPROVED: 'បានអនុម័តអត្ថបទ',
+      ARTICLE_REJECTED: 'បានបដិសេធអត្ថបទ',
+      CATEGORY_CREATED: 'បានបង្កើតប្រភេទ',
+      CATEGORY_UPDATED: 'បានកែប្រែប្រភេទ',
+      SETTING_UPDATED: 'បានកែប្រែការកំណត់',
+      PERMISSION_DENIED: 'បានបដិសេធសិទ្ធិ',
+    },
+    resources: {
+      User: 'អ្នកប្រើ',
+      Article: 'អត្ថបទ',
+      Category: 'ប្រភេទ',
+      Setting: 'ការកំណត់',
+      USER: 'អ្នកប្រើ',
+      ARTICLE: 'អត្ថបទ',
+      CATEGORY: 'ប្រភេទ',
+      SETTINGS: 'ការកំណត់',
+      MEDIA: 'មេឌៀ',
+    },
+    table: {
+      timestamp: 'ពេលវេលា',
+      user: 'អ្នកប្រើ',
+      action: 'សកម្មភាព',
+      resource: 'ធនធាន',
+      ipAddress: 'អាសយដ្ឋាន IP',
+      details: 'ព័ត៌មានលម្អិត',
+    },
+    loading: 'កំពុងផ្ទុកកំណត់ហេតុសវនកម្ម...',
+    empty: 'រកមិនឃើញកំណត់ហេតុសវនកម្ម',
+    emptyDescription: 'សូមកែចម្រោះ ឬលក្ខខណ្ឌស្វែងរករបស់អ្នក',
+    system: 'ប្រព័ន្ធ',
+    viewDetails: 'មើលព័ត៌មានលម្អិត',
+    showing: (start: number, end: number, total: number) => `បង្ហាញ ${start} ដល់ ${end} ក្នុងចំណោម ${total} លទ្ធផល`,
+    previous: 'មុន',
+    next: 'បន្ទាប់',
+  },
+} as const;
 
 export default function AuditLogsPage() {
+  const { locale } = useAdminLocale();
+  const copy = auditCopy[locale];
   const { showSuccess, showError } = useToastHelpers();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +207,7 @@ export default function AuditLogsPage() {
       setTotalCount(result.totalCount);
     } catch (error) {
       console.error('Error fetching audit logs:', error);
-      showError('Audit Logs Failed', 'Unable to load audit logs.');
+      showError(copy.loadFailedTitle, copy.loadFailedDescription);
     } finally {
       setLoading(false);
     }
@@ -102,10 +242,10 @@ export default function AuditLogsPage() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      showSuccess('Export Ready', 'Audit logs CSV has been downloaded.');
+      showSuccess(copy.exportReadyTitle, copy.exportReadyDescription);
     } catch (error) {
       console.error('Error exporting audit logs:', error);
-      showError('Export Failed', 'Unable to export audit logs.');
+      showError(copy.exportFailedTitle, copy.exportFailedDescription);
     } finally {
       setIsExporting(false);
     }
@@ -134,7 +274,7 @@ export default function AuditLogsPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
+    return new Intl.DateTimeFormat(locale === 'km' ? 'km-KH' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -145,6 +285,7 @@ export default function AuditLogsPage() {
   };
 
   const totalPages = Math.ceil(totalCount / pageSize);
+  const numberLocale = locale === 'km' ? 'km-KH' : undefined;
 
   return (
     <PermissionGuard permissions={[Permission.VIEW_AUDIT_LOGS]} showError>
@@ -154,10 +295,10 @@ export default function AuditLogsPage() {
           <div>
             <h1 className="text-3xl font-bold text-slate-900 flex items-center gap-2">
               <Shield className="h-8 w-8 text-blue-600" />
-              Audit Logs
+              {copy.title}
             </h1>
             <p className="mt-2 text-slate-600">
-              Track all system activities and user actions
+              {copy.description}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -167,14 +308,14 @@ export default function AuditLogsPage() {
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Refresh
+              {copy.refresh}
             </Button>
             <Button
               onClick={handleExport}
               disabled={isExporting || logs.length === 0}
             >
               <Download className="h-4 w-4 mr-2" />
-              {isExporting ? 'Exporting...' : 'Export CSV'}
+              {isExporting ? copy.exporting : copy.exportCsv}
             </Button>
           </div>
         </div>
@@ -184,8 +325,8 @@ export default function AuditLogsPage() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">Total Logs</p>
-                <p className="text-2xl font-bold text-slate-900">{totalCount.toLocaleString()}</p>
+                <p className="text-sm font-medium text-slate-600">{copy.totalLogs}</p>
+                <p className="text-2xl font-bold text-slate-900">{totalCount.toLocaleString(numberLocale)}</p>
               </div>
               <div className="h-12 w-12 rounded-lg bg-blue-100 flex items-center justify-center">
                 <FileText className="h-6 w-6 text-blue-600" />
@@ -195,7 +336,7 @@ export default function AuditLogsPage() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">Today</p>
+                <p className="text-sm font-medium text-slate-600">{copy.today}</p>
                 <p className="text-2xl font-bold text-slate-900">
                   {logs.filter(log => 
                     new Date(log.createdAt).toDateString() === new Date().toDateString()
@@ -210,7 +351,7 @@ export default function AuditLogsPage() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">Unique Users</p>
+                <p className="text-sm font-medium text-slate-600">{copy.uniqueUsers}</p>
                 <p className="text-2xl font-bold text-slate-900">
                   {new Set(logs.map(log => log.userId)).size}
                 </p>
@@ -223,7 +364,7 @@ export default function AuditLogsPage() {
           <Card className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">This Hour</p>
+                <p className="text-sm font-medium text-slate-600">{copy.thisHour}</p>
                 <p className="text-2xl font-bold text-slate-900">
                   {logs.filter(log => {
                     const logDate = new Date(log.createdAt);
@@ -247,7 +388,7 @@ export default function AuditLogsPage() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <Input
-                  placeholder="Search by user, resource, or IP address..."
+                  placeholder={copy.searchPlaceholder}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -257,40 +398,25 @@ export default function AuditLogsPage() {
             </div>
             <Select value={selectedAction} onValueChange={setSelectedAction}>
               <SelectTrigger>
-                <SelectValue placeholder="All Actions" />
+                <SelectValue placeholder={copy.allActions} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Actions</SelectItem>
-                <SelectItem value="USER_LOGIN">User Login</SelectItem>
-                <SelectItem value="USER_LOGOUT">User Logout</SelectItem>
-                <SelectItem value="USER_CREATED">User Created</SelectItem>
-                <SelectItem value="USER_UPDATED">User Updated</SelectItem>
-                <SelectItem value="USER_DELETED">User Deleted</SelectItem>
-                <SelectItem value="USER_ROLE_CHANGED">User Role Changed</SelectItem>
-                <SelectItem value="PASSWORD_CHANGED">Password Changed</SelectItem>
-                <SelectItem value="ARTICLE_CREATED">Article Created</SelectItem>
-                <SelectItem value="ARTICLE_UPDATED">Article Updated</SelectItem>
-                <SelectItem value="ARTICLE_PUBLISHED">Article Published</SelectItem>
-                <SelectItem value="ARTICLE_DELETED">Article Deleted</SelectItem>
-                <SelectItem value="ARTICLE_FEATURED">Article Featured</SelectItem>
-                <SelectItem value="ARTICLE_APPROVED">Article Approved</SelectItem>
-                <SelectItem value="ARTICLE_REJECTED">Article Rejected</SelectItem>
-                <SelectItem value="CATEGORY_CREATED">Category Created</SelectItem>
-                <SelectItem value="CATEGORY_UPDATED">Category Updated</SelectItem>
-                <SelectItem value="SETTING_UPDATED">Setting Updated</SelectItem>
-                <SelectItem value="PERMISSION_DENIED">Permission Denied</SelectItem>
+                <SelectItem value="all">{copy.allActions}</SelectItem>
+                {(Object.keys(copy.actions) as Array<keyof typeof copy.actions>).map((action) => (
+                  <SelectItem key={action} value={action}>{copy.actions[action]}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Select value={selectedResourceType} onValueChange={setSelectedResourceType}>
               <SelectTrigger>
-                <SelectValue placeholder="All Resources" />
+                <SelectValue placeholder={copy.allResources} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Resources</SelectItem>
-                <SelectItem value="User">Users</SelectItem>
-                <SelectItem value="Article">Articles</SelectItem>
-                <SelectItem value="Category">Categories</SelectItem>
-                <SelectItem value="Setting">Settings</SelectItem>
+                <SelectItem value="all">{copy.allResources}</SelectItem>
+                <SelectItem value="User">{copy.resources.User}</SelectItem>
+                <SelectItem value="Article">{copy.resources.Article}</SelectItem>
+                <SelectItem value="Category">{copy.resources.Category}</SelectItem>
+                <SelectItem value="Setting">{copy.resources.Setting}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -303,22 +429,22 @@ export default function AuditLogsPage() {
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                    Timestamp
+                    {copy.table.timestamp}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                    User
+                    {copy.table.user}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                    Action
+                    {copy.table.action}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                    Resource
+                    {copy.table.resource}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                    IP Address
+                    {copy.table.ipAddress}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
-                    Details
+                    {copy.table.details}
                   </th>
                 </tr>
               </thead>
@@ -328,7 +454,7 @@ export default function AuditLogsPage() {
                     <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="flex items-center justify-center gap-2 text-slate-500">
                         <RefreshCw className="h-5 w-5 animate-spin" />
-                        <span>Loading audit logs...</span>
+                        <span>{copy.loading}</span>
                       </div>
                     </td>
                   </tr>
@@ -336,9 +462,9 @@ export default function AuditLogsPage() {
                   <tr>
                     <td colSpan={6} className="px-6 py-12 text-center">
                       <Shield className="h-12 w-12 text-slate-300 mx-auto mb-3" />
-                      <p className="text-slate-600 font-medium">No audit logs found</p>
+                      <p className="text-slate-600 font-medium">{copy.empty}</p>
                       <p className="text-sm text-slate-500 mt-1">
-                        Try adjusting your filters or search criteria
+                        {copy.emptyDescription}
                       </p>
                     </td>
                   </tr>
@@ -355,14 +481,14 @@ export default function AuditLogsPage() {
                         <div className="flex items-center gap-2">
                           <User className="h-4 w-4 text-slate-400" />
                           <div>
-                            <p className="text-sm font-medium text-slate-900">{log.userEmail || 'System'}</p>
+                            <p className="text-sm font-medium text-slate-900">{log.userEmail || copy.system}</p>
                             <p className="text-xs text-slate-500">{log.userId || '-'}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Badge className={getActionBadgeColor(log.action)}>
-                          {log.action.replace(/_/g, ' ')}
+                          {copy.actions[log.action as keyof typeof copy.actions] ?? log.action.replace(/_/g, ' ')}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
@@ -374,7 +500,7 @@ export default function AuditLogsPage() {
                                 <p className="text-sm font-medium text-slate-900">
                                   {log.resourceName || (log.resourceId ? `[ID: ${log.resourceId.substring(0, 8)}]` : '-')}
                                 </p>
-                                <p className="text-xs text-slate-500">{log.resourceType}</p>
+                                <p className="text-xs text-slate-500">{copy.resources[log.resourceType as keyof typeof copy.resources] ?? log.resourceType}</p>
                               </>
                             ) : (
                               <p className="text-sm text-slate-500">-</p>
@@ -398,7 +524,7 @@ export default function AuditLogsPage() {
                             <Monitor className="h-4 w-4 text-slate-400" />
                             <details className="cursor-pointer">
                               <summary className="text-sm text-blue-600 hover:text-blue-700">
-                                View Details
+                                {copy.viewDetails}
                               </summary>
                               <div className="mt-2 bg-slate-50 rounded p-2 text-xs font-mono text-slate-700 max-w-xs overflow-auto">
                                 {JSON.stringify(log.details, null, 2)}
@@ -420,7 +546,7 @@ export default function AuditLogsPage() {
           {!loading && logs.length > 0 && (
             <div className="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
               <div className="text-sm text-slate-600">
-                Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} results
+                {copy.showing(((currentPage - 1) * pageSize) + 1, Math.min(currentPage * pageSize, totalCount), totalCount)}
               </div>
               <div className="flex items-center gap-2">
                 <Button
@@ -429,7 +555,7 @@ export default function AuditLogsPage() {
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                 >
-                  Previous
+                  {copy.previous}
                 </Button>
                 <div className="flex items-center gap-1">
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
@@ -461,7 +587,7 @@ export default function AuditLogsPage() {
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                 >
-                  Next
+                  {copy.next}
                 </Button>
               </div>
             </div>

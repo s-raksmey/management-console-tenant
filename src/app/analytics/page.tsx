@@ -15,8 +15,44 @@ import { getSelectedTenantId, setSelectedTenantId } from "@/services/graphql-cli
 import { Tenant, TenantService } from "@/services/tenant.gql";
 import { useAuth } from "@/contexts/AuthContext";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
+
+const analyticsCopy = {
+  en: {
+    loadAnalyticsFailed: "Failed to load analytics.",
+    noActiveTenants: "No active tenants are available for analytics.",
+    loadTenantsFailed: "Failed to load tenants.",
+    platformAnalytics: "Platform Analytics",
+    tenantAnalytics: "Tenant Analytics",
+    title: "Analytics",
+    platformDescription: "Track platform-wide tenants, users, content, and operational activity.",
+    tenantDescription: (name: string) => `Track content, users, and public performance for ${name}.`,
+    fallbackTenant: "this tenant website",
+    loadingTenants: "Loading tenants...",
+    selectTenant: "Select tenant",
+    tenantView: "Tenant View",
+    refresh: "Refresh",
+  },
+  km: {
+    loadAnalyticsFailed: "ផ្ទុកទិន្នន័យវិភាគមិនបានសម្រេច។",
+    noActiveTenants: "មិនមានគេហទំព័រសកម្មសម្រាប់វិភាគទេ។",
+    loadTenantsFailed: "ផ្ទុកគេហទំព័រមិនបានសម្រេច។",
+    platformAnalytics: "វិភាគវេទិកា",
+    tenantAnalytics: "វិភាគគេហទំព័រ",
+    title: "វិភាគ",
+    platformDescription: "តាមដានគេហទំព័រ អ្នកប្រើ មាតិកា និងសកម្មភាពប្រតិបត្តិការទូទាំងវេទិកា។",
+    tenantDescription: (name: string) => `តាមដានមាតិកា អ្នកប្រើ និងប្រសិទ្ធភាពសាធារណៈសម្រាប់ ${name}។`,
+    fallbackTenant: "គេហទំព័រនេះ",
+    loadingTenants: "កំពុងផ្ទុកគេហទំព័រ...",
+    selectTenant: "ជ្រើសគេហទំព័រ",
+    tenantView: "ទិដ្ឋភាពគេហទំព័រ",
+    refresh: "ធ្វើបច្ចុប្បន្នភាព",
+  },
+} as const;
 
 export default function AnalyticsPage() {
+  const { locale } = useAdminLocale();
+  const copy = analyticsCopy[locale];
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
@@ -37,7 +73,7 @@ export default function AnalyticsPage() {
       setAnalytics(data);
     } catch (err) {
       console.error("Failed to load analytics:", err);
-      setError(err instanceof Error ? err.message : "Failed to load analytics.");
+      setError(locale === "en" && err instanceof Error ? err.message : copy.loadAnalyticsFailed);
       setAnalytics(null);
     } finally {
       setLoading(false);
@@ -75,13 +111,13 @@ export default function AnalyticsPage() {
           await loadAnalytics(nextTenant.id);
         } else {
           setAnalytics(null);
-          setError("No active tenants are available for analytics.");
+          setError(copy.noActiveTenants);
           setLoading(false);
         }
       } catch (err) {
         console.error("Failed to load tenants for analytics:", err);
         if (!mounted) return;
-        setError(err instanceof Error ? err.message : "Failed to load tenants.");
+        setError(locale === "en" && err instanceof Error ? err.message : copy.loadTenantsFailed);
         setLoading(false);
       } finally {
         if (mounted) setLoadingTenants(false);
@@ -118,18 +154,16 @@ export default function AnalyticsPage() {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-              {isPlatform ? "Platform Analytics" : "Tenant Analytics"}
+              {isPlatform ? copy.platformAnalytics : copy.tenantAnalytics}
             </p>
             <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold text-slate-950 sm:text-3xl">
               <BarChart3 className="h-6 w-6 shrink-0 text-blue-600 sm:h-7 sm:w-7" />
-              Analytics
+              {copy.title}
             </h1>
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
               {isPlatform
-                ? "Track platform-wide tenants, users, content, and operational activity."
-                : `Track content, users, and public performance for ${
-                    analytics?.tenantName || "this tenant website"
-                  }.`}
+                ? copy.platformDescription
+                : copy.tenantDescription(analytics?.tenantName || copy.fallbackTenant)}
             </p>
           </div>
 
@@ -143,7 +177,7 @@ export default function AnalyticsPage() {
                 <SelectTrigger className="w-full bg-white sm:w-[240px]">
                   <SelectValue
                     placeholder={
-                      loadingTenants ? "Loading tenants..." : "Select tenant"
+                      loadingTenants ? copy.loadingTenants : copy.selectTenant
                     }
                   />
                 </SelectTrigger>
@@ -157,7 +191,7 @@ export default function AnalyticsPage() {
               </Select>
             ) : analytics ? (
               <Badge variant="outline" className="bg-white">
-                {analytics.tenantName || "Tenant View"}
+                {analytics.tenantName || copy.tenantView}
               </Badge>
             ) : null}
             {isSuperAdmin && selectedTenant && (
@@ -176,7 +210,7 @@ export default function AnalyticsPage() {
               ) : (
                 <RefreshCw className="mr-2 h-4 w-4" />
               )}
-              Refresh
+              {copy.refresh}
             </Button>
           </div>
         </div>

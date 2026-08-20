@@ -8,6 +8,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToastHelpers } from "@/components/ui/toast";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 type Comment = {
   id: string;
@@ -37,7 +38,88 @@ const M_REPLY = `mutation ReplyToArticleComment($input: ArticleCommentReplyInput
 const M_DELETE_COMMENT = `mutation DeleteArticleComment($id: ID!) { deleteArticleComment(id: $id) { success message } }`;
 const M_DELETE_REPLY = `mutation DeleteArticleCommentReply($id: ID!) { deleteArticleCommentReply(id: $id) { success message } }`;
 
+const commentsCopy = {
+  en: {
+    delete: "Delete",
+    commentDeleteFallback: "The comment could not be deleted.",
+    commentDeleted: "Comment Deleted",
+    commentDeletedDescription: "The comment and its replies were removed.",
+    replyDeleteFallback: "The reply could not be deleted.",
+    replyDeleted: "Reply Deleted",
+    replyDeletedDescription: "The reply was removed.",
+    deleteFailed: "Delete Failed",
+    commentDeleteFailed: "Failed to delete comment.",
+    replyDeleteFailed: "Failed to delete reply.",
+    deleteCommentTitle: "Delete Comment?",
+    deleteCommentDescription: (title: string) =>
+      `Delete this comment on "${title}" and all replies? This action cannot be undone.`,
+    deleteComment: "Delete Comment",
+    deleteReplyTitle: "Delete Reply?",
+    deleteReplyDescription: (name: string) =>
+      `Delete this reply from ${name}? This action cannot be undone.`,
+    deleteReply: "Delete Reply",
+    accessDenied: "Access denied: Review permission required.",
+    eyebrow: "Reader Activity",
+    title: "Article Comments",
+    description: "See which signed-in readers and anonymous visitors commented on each article.",
+    loading: "Loading comments...",
+    empty: "No comments yet.",
+    anonymous: "Anonymous",
+    googleReader: "Google reader",
+    collapse: "Collapse",
+    manage: "Manage",
+    hideReplies: "Hide replies",
+    replyCount: (count: number) => `${count} ${count === 1 ? "reply" : "replies"}`,
+    tenant: "Website",
+    reader: "Reader",
+    to: "to",
+    replyPlaceholder: "Reply as tenant...",
+    reply: "Reply",
+    deleting: "Deleting...",
+  },
+  km: {
+    delete: "លុប",
+    commentDeleteFallback: "មិនអាចលុបមតិនេះបានទេ។",
+    commentDeleted: "បានលុបមតិ",
+    commentDeletedDescription: "បានលុបមតិ និងការឆ្លើយតបទាំងអស់។",
+    replyDeleteFallback: "មិនអាចលុបការឆ្លើយតបនេះបានទេ។",
+    replyDeleted: "បានលុបការឆ្លើយតប",
+    replyDeletedDescription: "បានលុបការឆ្លើយតប។",
+    deleteFailed: "លុបមិនបានសម្រេច",
+    commentDeleteFailed: "លុបមតិមិនបានសម្រេច។",
+    replyDeleteFailed: "លុបការឆ្លើយតបមិនបានសម្រេច។",
+    deleteCommentTitle: "លុបមតិ?",
+    deleteCommentDescription: (title: string) =>
+      `លុបមតិនេះលើ "${title}" និងការឆ្លើយតបទាំងអស់? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`,
+    deleteComment: "លុបមតិ",
+    deleteReplyTitle: "លុបការឆ្លើយតប?",
+    deleteReplyDescription: (name: string) =>
+      `លុបការឆ្លើយតបនេះពី ${name}? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`,
+    deleteReply: "លុបការឆ្លើយតប",
+    accessDenied: "គ្មានសិទ្ធិ៖ ត្រូវការសិទ្ធិត្រួតពិនិត្យ។",
+    eyebrow: "សកម្មភាពអ្នកអាន",
+    title: "មតិយោបល់លើអត្ថបទ",
+    description: "មើលអ្នកអានដែលបានចូលប្រើ និងភ្ញៀវអនាមិកដែលបានបញ្ចេញមតិលើអត្ថបទនីមួយៗ។",
+    loading: "កំពុងផ្ទុកមតិយោបល់...",
+    empty: "មិនទាន់មានមតិយោបល់ទេ។",
+    anonymous: "អនាមិក",
+    googleReader: "អ្នកអាន Google",
+    collapse: "បង្រួម",
+    manage: "គ្រប់គ្រង",
+    hideReplies: "លាក់ការឆ្លើយតប",
+    replyCount: (count: number) => `${count} ការឆ្លើយតប`,
+    tenant: "គេហទំព័រ",
+    reader: "អ្នកអាន",
+    to: "ទៅកាន់",
+    replyPlaceholder: "ឆ្លើយតបក្នុងនាមគេហទំព័រ...",
+    reply: "ឆ្លើយតប",
+    deleting: "កំពុងលុប...",
+  },
+} as const;
+
 export default function CommentsPage() {
+  const { locale } = useAdminLocale();
+  const copy = commentsCopy[locale];
   const { showSuccess, showError } = useToastHelpers();
   const { hasPermission, isSuperAdmin, isLoading: permissionsLoading } = usePermissions();
   const canReview = isSuperAdmin || hasPermission(Permission.REVIEW_ARTICLES);
@@ -58,7 +140,7 @@ export default function CommentsPage() {
     open: false,
     title: "",
     description: "",
-    confirmText: "Delete",
+    confirmText: copy.delete,
     onConfirm: () => {},
   });
 
@@ -104,13 +186,13 @@ export default function CommentsPage() {
         deleteArticleComment: { success: boolean; message?: string | null };
       }>(M_DELETE_COMMENT, { id: commentId });
       if (!response.deleteArticleComment.success) {
-        throw new Error(response.deleteArticleComment.message || "The comment could not be deleted.");
+        throw new Error(response.deleteArticleComment.message || copy.commentDeleteFallback);
       }
       setComments((current) => current.filter((comment) => comment.id !== commentId));
-      showSuccess("Comment Deleted", response.deleteArticleComment.message || "The comment and its replies were removed.");
+      showSuccess(copy.commentDeleted, locale === "en" ? response.deleteArticleComment.message || copy.commentDeletedDescription : copy.commentDeletedDescription);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to delete comment.";
-      showError("Delete Failed", message);
+      const message = locale === "en" && err instanceof Error ? err.message : copy.commentDeleteFailed;
+      showError(copy.deleteFailed, message);
       throw err;
     } finally {
       setDeletingId(null);
@@ -124,7 +206,7 @@ export default function CommentsPage() {
         deleteArticleCommentReply: { success: boolean; message?: string | null };
       }>(M_DELETE_REPLY, { id: replyId });
       if (!response.deleteArticleCommentReply.success) {
-        throw new Error(response.deleteArticleCommentReply.message || "The reply could not be deleted.");
+        throw new Error(response.deleteArticleCommentReply.message || copy.replyDeleteFallback);
       }
       setComments((current) =>
         current.map((comment) =>
@@ -133,10 +215,10 @@ export default function CommentsPage() {
           : comment,
         ),
       );
-      showSuccess("Reply Deleted", response.deleteArticleCommentReply.message || "The reply was removed.");
+      showSuccess(copy.replyDeleted, locale === "en" ? response.deleteArticleCommentReply.message || copy.replyDeletedDescription : copy.replyDeletedDescription);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Failed to delete reply.";
-      showError("Delete Failed", message);
+      const message = locale === "en" && err instanceof Error ? err.message : copy.replyDeleteFailed;
+      showError(copy.deleteFailed, message);
       throw err;
     } finally {
       setDeletingId(null);
@@ -144,7 +226,7 @@ export default function CommentsPage() {
   };
 
   const formatDate = (value: string) =>
-    new Intl.DateTimeFormat("en", {
+    new Intl.DateTimeFormat(locale === "km" ? "km-KH" : "en", {
       month: "short",
       day: "numeric",
       hour: "numeric",
@@ -157,9 +239,9 @@ export default function CommentsPage() {
   const requestDeleteComment = (comment: Comment) => {
     setDeleteDialog({
       open: true,
-      title: "Delete Comment?",
-      description: `Delete this comment on "${comment.article.title}" and all replies? This action cannot be undone.`,
-      confirmText: "Delete Comment",
+      title: copy.deleteCommentTitle,
+      description: copy.deleteCommentDescription(comment.article.title),
+      confirmText: copy.deleteComment,
       onConfirm: () => deleteComment(comment.id),
     });
   };
@@ -167,24 +249,24 @@ export default function CommentsPage() {
   const requestDeleteReply = (comment: Comment, reply: CommentReply) => {
     setDeleteDialog({
       open: true,
-      title: "Delete Reply?",
-      description: `Delete this reply from ${reply.author?.name ?? reply.publicReader?.name ?? reply.authorName}? This action cannot be undone.`,
-      confirmText: "Delete Reply",
+      title: copy.deleteReplyTitle,
+      description: copy.deleteReplyDescription(reply.author?.name ?? reply.publicReader?.name ?? reply.authorName),
+      confirmText: copy.deleteReply,
       onConfirm: () => deleteReply(comment.id, reply.id),
     });
   };
 
-  if (!permissionsLoading && !canReview) return <div className="text-sm text-red-600">Access denied: Review permission required.</div>;
+  if (!permissionsLoading && !canReview) return <div className="text-sm text-red-600">{copy.accessDenied}</div>;
 
   return (
     <div className="space-y-5">
       <header className="border-b border-slate-200 pb-5 dark:border-slate-800">
-        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-blue-700 dark:text-blue-300"><MessageSquare className="h-4 w-4" />Reader Activity</div>
-        <h1 className="text-3xl font-bold text-slate-950 dark:text-white">Article Comments</h1>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">See which signed-in readers and anonymous visitors commented on each article.</p>
+        <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-blue-700 dark:text-blue-300"><MessageSquare className="h-4 w-4" />{copy.eyebrow}</div>
+        <h1 className="text-3xl font-bold text-slate-950 dark:text-white">{copy.title}</h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{copy.description}</p>
       </header>
       <section className="overflow-hidden rounded-lg border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900/40">
-        {loading ? <div className="flex items-center justify-center py-16 text-sm text-slate-500 dark:text-slate-400"><Loader2 className="mr-2 h-5 w-5 animate-spin" />Loading comments...</div> : comments.length === 0 ? <p className="py-16 text-center text-sm text-slate-500 dark:text-slate-400">No comments yet.</p> : (
+        {loading ? <div className="flex items-center justify-center py-16 text-sm text-slate-500 dark:text-slate-400"><Loader2 className="mr-2 h-5 w-5 animate-spin" />{copy.loading}</div> : comments.length === 0 ? <p className="py-16 text-center text-sm text-slate-500 dark:text-slate-400">{copy.empty}</p> : (
           <div className="divide-y divide-slate-100 dark:divide-slate-800">{comments.map((comment) => {
             const replies = comment.replies ?? [];
             const repliesOpen = openReplies[comment.id] ?? false;
@@ -196,8 +278,8 @@ export default function CommentsPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <strong className="text-sm text-slate-900 dark:text-white">{comment.publicReader?.name ?? "Anonymous"}</strong>
-                    {comment.publicReader ? <Badge variant="success">Google reader</Badge> : <Badge variant="secondary">Anonymous</Badge>}
+                    <strong className="text-sm text-slate-900 dark:text-white">{comment.publicReader?.name ?? copy.anonymous}</strong>
+                    {comment.publicReader ? <Badge variant="success">{copy.googleReader}</Badge> : <Badge variant="secondary">{copy.anonymous}</Badge>}
                     {comment.publicReader && <span className="truncate text-xs text-slate-400">{comment.publicReader.email}</span>}
                     <time className="text-xs text-slate-400">{formatDate(comment.createdAt)}</time>
                   </div>
@@ -215,7 +297,7 @@ export default function CommentsPage() {
                       className="inline-flex items-center gap-1 rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-white dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
                     >
                       <ChevronDown className={`h-3.5 w-3.5 transition-transform ${expanded ? "rotate-180" : ""}`} />
-                      {expanded ? "Collapse" : "Manage"}
+                      {expanded ? copy.collapse : copy.manage}
                     </button>
                     {replies.length > 0 && (
                       <button
@@ -230,7 +312,7 @@ export default function CommentsPage() {
                         aria-expanded={repliesOpen}
                       >
                         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${repliesOpen ? "rotate-180" : ""}`} />
-                        {repliesOpen ? "Hide replies" : `${replies.length} ${replies.length === 1 ? "reply" : "replies"}`}
+                        {repliesOpen ? copy.hideReplies : copy.replyCount(replies.length)}
                       </button>
                     )}
                     <button
@@ -240,7 +322,7 @@ export default function CommentsPage() {
                       className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 dark:border-red-500/30 dark:text-red-300 dark:hover:bg-red-500/10"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                      Delete
+                      {copy.delete}
                     </button>
                   </div>
 
@@ -250,8 +332,8 @@ export default function CommentsPage() {
                         <div key={reply.id} className="border-l-2 border-blue-200 pl-3 dark:border-blue-400/40">
                           <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
                             <strong className="text-slate-800 dark:text-slate-100">{reply.author?.name ?? reply.publicReader?.name ?? reply.authorName}</strong>
-                            <Badge variant="secondary">{reply.author ? "Tenant" : reply.publicReader ? "Reader" : "Anonymous"}</Badge>
-                            {reply.parentReply && <span>to {reply.parentReply.authorName}</span>}
+                            <Badge variant="secondary">{reply.author ? copy.tenant : reply.publicReader ? copy.reader : copy.anonymous}</Badge>
+                            {reply.parentReply && <span>{copy.to} {reply.parentReply.authorName}</span>}
                             <time>{formatDate(reply.createdAt)}</time>
                             <button
                               type="button"
@@ -260,7 +342,7 @@ export default function CommentsPage() {
                               className="inline-flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-500 disabled:opacity-60 dark:text-red-300 dark:hover:text-red-200"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
-                              Delete
+                              {copy.delete}
                             </button>
                           </div>
                           <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-slate-700 dark:text-slate-200">{reply.content}</p>
@@ -275,7 +357,7 @@ export default function CommentsPage() {
                         rows={2}
                         value={replyDrafts[comment.id] ?? ""}
                         onChange={(event) => setReplyDrafts((current) => ({ ...current, [comment.id]: event.target.value }))}
-                        placeholder="Reply as tenant..."
+                        placeholder={copy.replyPlaceholder}
                         className="w-full resize-y rounded-md border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 dark:border-slate-700 dark:bg-slate-950 dark:text-white"
                       />
                       <div className="mt-2 flex justify-end">
@@ -286,7 +368,7 @@ export default function CommentsPage() {
                           className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {replyingId === comment.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                          Reply
+                          {copy.reply}
                         </button>
                       </div>
                     </div>
@@ -303,7 +385,7 @@ export default function CommentsPage() {
         title={deleteDialog.title}
         description={deleteDialog.description}
         confirmText={deleteDialog.confirmText}
-        pendingText="Deleting..."
+        pendingText={copy.deleting}
         variant="destructive"
         onConfirm={() => {
           void deleteDialog.onConfirm();

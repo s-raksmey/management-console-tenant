@@ -5,6 +5,7 @@ import React from 'react';
 import { LucideIcon } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface StatCardProps {
   title: string;
@@ -29,6 +30,9 @@ export const StatCard: React.FC<StatCardProps> = ({
   loading = false,
   className
 }) => {
+  const { locale } = useAdminLocale();
+  const numberLocale = locale === 'km' ? 'km-KH' : undefined;
+
   if (loading) {
     return (
       <Card className={cn("relative overflow-hidden", className)}>
@@ -79,7 +83,7 @@ export const StatCard: React.FC<StatCardProps> = ({
         
         <div className="space-y-2">
           <p className="text-3xl font-bold text-gray-900 dark:text-slate-50">
-            {typeof value === 'number' ? value.toLocaleString() : value}
+            {typeof value === 'number' ? value.toLocaleString(numberLocale) : value}
           </p>
           
           {change && (

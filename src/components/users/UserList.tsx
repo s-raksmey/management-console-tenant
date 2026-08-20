@@ -132,22 +132,28 @@ const userListCopy = {
     deleteUserTitle: 'Delete User?',
     deleteUserDescription: (name: string) =>
       `This will permanently delete ${name}. This action cannot be undone.`,
+    roleLabel: {
+      SUPER_ADMIN: 'Super admin',
+      ADMIN: 'Tenant admin',
+      EDITOR: 'Editor',
+      AUTHOR: 'Author',
+    },
   },
   km: {
     loadingUsers: 'កំពុងផ្ទុកអ្នកប្រើ...',
     errorTitle: 'មានបញ្ហាក្នុងការផ្ទុកអ្នកប្រើ',
     title: 'គ្រប់គ្រងអ្នកប្រើ',
-    superAdminDescription: 'គ្រប់គ្រង super admin របស់វេទិកាប៉ុណ្ណោះ។',
-    tenantDescription: 'គ្រប់គ្រង admin, editor និង author របស់ tenant នេះ។',
+    superAdminDescription: 'គ្រប់គ្រងអ្នកគ្រប់គ្រងកំពូលរបស់វេទិកាប៉ុណ្ណោះ។',
+    tenantDescription: 'គ្រប់គ្រងអ្នកគ្រប់គ្រង អ្នកកែសម្រួល និងអ្នកនិពន្ធរបស់គេហទំព័រនេះ។',
     createUser: 'បង្កើតអ្នកប្រើ',
     filter: 'តម្រង',
     searchPlaceholder: 'ស្វែងរកឈ្មោះ ឬអ៊ីមែល',
-    superAdmins: 'Super admins',
+    superAdmins: 'អ្នកគ្រប់គ្រងកំពូល',
     allRoles: 'តួនាទីទាំងអស់',
-    tenantAdmins: 'Tenant admins',
-    tenantAdmin: 'Tenant admin',
-    editor: 'Editor',
-    author: 'Author',
+    tenantAdmins: 'អ្នកគ្រប់គ្រងគេហទំព័រ',
+    tenantAdmin: 'អ្នកគ្រប់គ្រងគេហទំព័រ',
+    editor: 'អ្នកកែសម្រួល',
+    author: 'អ្នកនិពន្ធ',
     allStatus: 'ស្ថានភាពទាំងអស់',
     active: 'សកម្ម',
     inactive: 'អសកម្ម',
@@ -164,18 +170,18 @@ const userListCopy = {
     previous: 'មុន',
     next: 'បន្ទាប់',
     editUser: 'កែអ្នកប្រើ',
-    makeTenantAdmin: 'កំណត់ជា Tenant Admin',
-    makeEditor: 'កំណត់ជា Editor',
-    makeAuthor: 'កំណត់ជា Author',
+    makeTenantAdmin: 'កំណត់ជាអ្នកគ្រប់គ្រងគេហទំព័រ',
+    makeEditor: 'កំណត់ជាអ្នកកែសម្រួល',
+    makeAuthor: 'កំណត់ជាអ្នកនិពន្ធ',
     showQrAgain: 'បង្ហាញ QR ម្តងទៀត',
     deactivate: 'បិទ',
     activate: 'បើក',
     deleteUser: 'លុបអ្នកប្រើ',
     confirm: 'បញ្ជាក់',
     changeRole: 'ប្តូរតួនាទី',
-    resetTwoFactor: 'កំណត់ Two-Factor ឡើងវិញ',
+    resetTwoFactor: 'កំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញ',
     roleUpdateBlockedTitle: 'បានរារាំងការប្តូរតួនាទី',
-    roleUpdateBlockedDescription: 'អ្នកប្រើ tenant មិនអាចត្រូវបានដំឡើងជា super admin បានទេ។',
+    roleUpdateBlockedDescription: 'អ្នកប្រើគេហទំព័រមិនអាចត្រូវបានដំឡើងជាអ្នកគ្រប់គ្រងកំពូលបានទេ។',
     roleUpdatedTitle: 'បានប្តូរតួនាទី',
     roleUpdatedDescription: (role: string) => `បានប្តូរតួនាទីអ្នកប្រើទៅជា ${role}។`,
     roleUpdateFailedTitle: 'ប្តូរតួនាទីមិនបាន',
@@ -188,13 +194,13 @@ const userListCopy = {
     userDeletedDescription: 'បានលុបអ្នកប្រើ។',
     deleteFailedTitle: 'លុបមិនបាន',
     deleteFailedDescription: 'មិនអាចលុបអ្នកប្រើបានទេ។',
-    twoFactorResetTitle: 'បានកំណត់ Two-Factor ឡើងវិញ',
-    twoFactorResetDescription: 'បានកំណត់ Two-Factor setup ឡើងវិញ។',
-    twoFactorResetFailedTitle: 'កំណត់ Two-Factor ឡើងវិញមិនបាន',
-    twoFactorResetFailedDescription: 'មិនអាចកំណត់ Two-Factor setup ឡើងវិញបានទេ។',
-    makeTenantAdminTitle: 'កំណត់ជា Tenant Admin?',
-    makeEditorTitle: 'កំណត់ជា Editor?',
-    makeAuthorTitle: 'កំណត់ជា Author?',
+    twoFactorResetTitle: 'បានកំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញ',
+    twoFactorResetDescription: 'បានកំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញ។',
+    twoFactorResetFailedTitle: 'កំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញមិនបាន',
+    twoFactorResetFailedDescription: 'មិនអាចកំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញបានទេ។',
+    makeTenantAdminTitle: 'កំណត់ជាអ្នកគ្រប់គ្រងគេហទំព័រ?',
+    makeEditorTitle: 'កំណត់ជាអ្នកកែសម្រួល?',
+    makeAuthorTitle: 'កំណត់ជាអ្នកនិពន្ធ?',
     roleConfirmDescription: (name: string, role: string) => `${name} នឹងទទួលសិទ្ធិជា ${role}។`,
     showQrAgainTitle: 'បង្ហាញ QR ម្តងទៀត?',
     showQrAgainDescription: (name: string) =>
@@ -206,6 +212,12 @@ const userListCopy = {
     deleteUserTitle: 'លុបអ្នកប្រើ?',
     deleteUserDescription: (name: string) =>
       `វានឹងលុប ${name} ជាអចិន្ត្រៃយ៍។ សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`,
+    roleLabel: {
+      SUPER_ADMIN: 'Super admin',
+      ADMIN: 'អ្នកគ្រប់គ្រងគេហទំព័រ',
+      EDITOR: 'អ្នកកែសម្រួល',
+      AUTHOR: 'អ្នកនិពន្ធ',
+    },
   },
 };
 
@@ -355,7 +367,7 @@ export const UserList: React.FC<UserListProps> = () => {
     if (result?.success) {
       showSuccess(
         copy.roleUpdatedTitle,
-        locale === 'en' && result.message ? result.message : copy.roleUpdatedDescription(newRole),
+        locale === 'en' && result.message ? result.message : copy.roleUpdatedDescription(copy.roleLabel[newRole]),
       );
       void fetchUsers(currentPage);
     } else {
@@ -479,6 +491,7 @@ export const UserList: React.FC<UserListProps> = () => {
     setCurrentPage(1);
   };
   const getUserDisplayName = (user: User) => user.name || user.email;
+  const getRoleLabel = (role: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR') => copy.roleLabel[role];
 
   if (loading && users.length === 0) {
     return (
@@ -623,7 +636,7 @@ export const UserList: React.FC<UserListProps> = () => {
                   <TableCell>
                     <Badge variant={getRoleBadgeVariant(user.role) as any} className="gap-1">
                       {getRoleIcon(user.role)}
-                      {user.role}
+                      {getRoleLabel(user.role)}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -637,7 +650,7 @@ export const UserList: React.FC<UserListProps> = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {new Date(user.createdAt).toLocaleDateString()}
+                    {new Date(user.createdAt).toLocaleDateString(locale === 'km' ? 'km-KH' : undefined)}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>

@@ -37,12 +37,15 @@ const loginCopy = {
     verificationFailed: 'Verification failed',
     noAccount: 'Do not have an account?',
     createAccount: 'Create one here',
+    qrAlt: 'Two-factor setup QR code',
+    showPassword: 'Show password',
+    hidePassword: 'Hide password',
   },
   km: {
     verifyTitle: 'ផ្ទៀងផ្ទាត់ការចូល',
     welcomeTitle: 'សូមស្វាគមន៍ត្រឡប់មកវិញ',
-    setupDescription: 'ស្កេន QR code ម្តង រួចបញ្ចូលលេខកូដ ៦ ខ្ទង់។',
-    verifyDescription: 'បញ្ចូលលេខកូដ ៦ ខ្ទង់ពីកម្មវិធី authenticator របស់អ្នក។',
+    setupDescription: 'ស្កេនកូដ QR ម្តង រួចបញ្ចូលលេខកូដ ៦ ខ្ទង់។',
+    verifyDescription: 'បញ្ចូលលេខកូដ ៦ ខ្ទង់ពីកម្មវិធីផ្ទៀងផ្ទាត់របស់អ្នក។',
     signInDescription: 'ចូលទៅកាន់គណនីគ្រប់គ្រងរបស់អ្នក',
     verificationCode: 'លេខកូដផ្ទៀងផ្ទាត់',
     manualSetupKey: 'លេខកូដដំឡើងដោយដៃ',
@@ -58,10 +61,13 @@ const loginCopy = {
     missingFields: 'សូមបំពេញព័ត៌មានទាំងអស់',
     loginFailed: 'ការចូលបានបរាជ័យ',
     unexpectedError: 'មានបញ្ហាមិនបានរំពឹងទុក',
-    codeError: 'បញ្ចូលលេខកូដ ៦ ខ្ទង់ពីកម្មវិធី authenticator របស់អ្នក',
+    codeError: 'បញ្ចូលលេខកូដ ៦ ខ្ទង់ពីកម្មវិធីផ្ទៀងផ្ទាត់របស់អ្នក',
     verificationFailed: 'ការផ្ទៀងផ្ទាត់បានបរាជ័យ',
     noAccount: 'មិនទាន់មានគណនី?',
     createAccount: 'បង្កើតគណនីនៅទីនេះ',
+    qrAlt: 'កូដ QR សម្រាប់ដំឡើងការផ្ទៀងផ្ទាត់ពីរជាន់',
+    showPassword: 'បង្ហាញពាក្យសម្ងាត់',
+    hidePassword: 'លាក់ពាក្យសម្ងាត់',
   },
 };
 
@@ -195,7 +201,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, locale = 'en' }: Logi
                 <div className="flex flex-col items-center gap-3">
                   <img
                     src={twoFactorState.setup.qrCodeUrl}
-                    alt="Two-factor setup QR code"
+                    alt={copy.qrAlt}
                     className="h-48 w-48 rounded-md border border-white bg-white p-2 shadow-sm"
                   />
                   <div className="w-full rounded-md bg-white p-3 text-center">
@@ -313,6 +319,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister, locale = 'en' }: Logi
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? copy.hidePassword : copy.showPassword}
                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
                 disabled={isLoading}
               >

@@ -57,6 +57,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Progress } from '@radix-ui/react-progress';
 import { useTenant } from '@/contexts/TenantContext';
 import { useStableLoading } from '@/hooks/useStableLoading';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface SystemHealth {
   uptime: number;
@@ -127,7 +128,200 @@ interface DashboardStats {
   }>;
 }
 
+const adminDashboardCopy = {
+  en: {
+    tenant: 'អង្គភាព',
+    unknown: 'Unknown',
+    uncategorized: 'Uncategorized',
+    system: 'System',
+    systemCategory: 'System',
+    activityFallback: (type: string) => `${type} activity`,
+    byUser: (name: string) => `by ${name}`,
+    loadingDashboard: 'Loading dashboard',
+    dashboardTitle: (tenantName: string) => `${tenantName} Dashboard`,
+    adminDescription: 'Manage content, users, settings, and public website configuration',
+    refresh: 'Refresh',
+    settings: 'Settings',
+    loadError: 'Error loading dashboard data:',
+    responseTime: 'Response Time',
+    totalUsers: 'Total Users',
+    publishedArticles: 'Published Articles',
+    live: 'Live',
+    activeConnections: 'Active Connections',
+    userManagement: 'User Management',
+    userManagementDescription: 'Tenant users by role and management tools',
+    manageUsers: 'Manage Users',
+    admins: 'Admins',
+    editors: 'Editors',
+    authors: 'Authors',
+    manage: 'Manage',
+    websiteAnalytics: 'Website Analytics',
+    websiteAnalyticsDescription: 'Content performance and approval metrics',
+    published: 'Published',
+    view: 'View',
+    pendingReview: 'Pending Review',
+    review: 'Review',
+    drafts: 'Drafts',
+    edit: 'Edit',
+    approvalRate: 'Approval Rate',
+    analytics: 'Analytics',
+    systemHealth: 'System Health',
+    systemHealthDescription: 'Real-time system monitoring',
+    uptime: 'Uptime',
+    memory: 'Memory',
+    cpu: 'CPU',
+    responseTimeLabel: 'Response Time:',
+    connections: 'Connections:',
+    systemActivity: 'System Activity',
+    systemActivityDescription: 'Recent tenant activity',
+    noRecentActivity: 'No recent activity',
+    viewAuditLogs: 'View Audit Logs',
+    accessDenied: 'Access Denied',
+    accessDeniedDescription: "You don't have permission to access this dashboard.",
+    currentRole: (role: string) => `Current role: ${role}`,
+    editorDashboard: 'Editor Dashboard',
+    editorDescription: 'Content management and editorial control',
+    total: 'Total',
+    articlesReviewed: 'Articles Reviewed',
+    approved: 'Approved',
+    pending: 'Pending',
+    clear: 'Clear',
+    featured: 'Featured',
+    mainContentComing: 'Main content sections coming...',
+    sidebarContentComing: 'Sidebar content coming...',
+    authorDashboard: 'Author Dashboard',
+    authorDescription: 'Content creation and personal analytics',
+    newArticle: 'New Article',
+    draft: 'Draft',
+    myArticles: 'My Articles',
+    inReview: 'In Review',
+    myRecentArticles: 'My Recent Articles',
+    myRecentDescription: 'Your latest articles and their status',
+    createArticle: 'Create Article',
+    views: (count: number) => `${count} views`,
+    noArticlesYet: 'No articles yet',
+    createFirstArticle: 'Create Your First Article',
+    writingAnalytics: 'Writing Analytics',
+    writingAnalyticsDescription: 'Your content performance and writing metrics',
+    totalViews: 'Total Views',
+    avgRating: 'Avg Rating',
+    comments: 'Comments',
+    writingGoals: 'Writing Goals',
+    writingGoalsDescription: 'Track your writing progress',
+    monthlyArticles: 'Monthly Articles',
+    wordsThisWeek: 'Words This Week',
+    streak: 'Streak:',
+    days: (count: number) => `${count} days`,
+    bestMonth: 'Best Month:',
+    articlesCount: (count: number) => `${count} articles`,
+    recentActivity: 'Recent Activity',
+    recentWritingActivity: 'Your recent writing activity',
+    statusLabel: {
+      published: 'published',
+      draft: 'draft',
+      pending: 'pending',
+      rejected: 'rejected',
+    },
+  },
+  km: {
+    tenant: 'Tenant',
+    unknown: 'មិនស្គាល់',
+    uncategorized: 'មិនមានប្រភេទ',
+    system: 'ប្រព័ន្ធ',
+    systemCategory: 'ប្រព័ន្ធ',
+    activityFallback: (type: string) => `សកម្មភាព ${type}`,
+    byUser: (name: string) => `ដោយ ${name}`,
+    loadingDashboard: 'កំពុងផ្ទុកផ្ទាំងគ្រប់គ្រង',
+    dashboardTitle: (tenantName: string) => `ផ្ទាំងគ្រប់គ្រង ${tenantName}`,
+    adminDescription: 'គ្រប់គ្រងមាតិកា អ្នកប្រើ ការកំណត់ និងការរៀបចំគេហទំព័រសាធារណៈ',
+    refresh: 'ធ្វើបច្ចុប្បន្នភាព',
+    settings: 'ការកំណត់',
+    loadError: 'មានបញ្ហាផ្ទុកទិន្នន័យផ្ទាំងគ្រប់គ្រង៖',
+    responseTime: 'ពេលឆ្លើយតប',
+    totalUsers: 'អ្នកប្រើសរុប',
+    publishedArticles: 'អត្ថបទដែលបានផ្សព្វផ្សាយ',
+    live: 'កំពុងដំណើរការ',
+    activeConnections: 'ការតភ្ជាប់សកម្ម',
+    userManagement: 'គ្រប់គ្រងអ្នកប្រើ',
+    userManagementDescription: 'អ្នកប្រើតាមតួនាទី និងឧបករណ៍គ្រប់គ្រង',
+    manageUsers: 'គ្រប់គ្រងអ្នកប្រើ',
+    admins: 'អ្នកគ្រប់គ្រង',
+    editors: 'អ្នកកែសម្រួល',
+    authors: 'អ្នកនិពន្ធ',
+    manage: 'គ្រប់គ្រង',
+    websiteAnalytics: 'វិភាគគេហទំព័រ',
+    websiteAnalyticsDescription: 'ប្រសិទ្ធភាពមាតិកា និងរង្វាស់អនុម័ត',
+    published: 'បានផ្សព្វផ្សាយ',
+    view: 'មើល',
+    pendingReview: 'កំពុងរង់ចាំត្រួតពិនិត្យ',
+    review: 'ត្រួតពិនិត្យ',
+    drafts: 'ព្រាង',
+    edit: 'កែសម្រួល',
+    approvalRate: 'អត្រាអនុម័ត',
+    analytics: 'វិភាគ',
+    systemHealth: 'សុខភាពប្រព័ន្ធ',
+    systemHealthDescription: 'ការតាមដានប្រព័ន្ធពេលវេលាជាក់ស្តែង',
+    uptime: 'ពេលដំណើរការ',
+    memory: 'Memory',
+    cpu: 'CPU',
+    responseTimeLabel: 'ពេលឆ្លើយតប៖',
+    connections: 'ការតភ្ជាប់៖',
+    systemActivity: 'សកម្មភាពប្រព័ន្ធ',
+    systemActivityDescription: 'សកម្មភាពអង្គភាពថ្មីៗ',
+    noRecentActivity: 'មិនទាន់មានសកម្មភាពថ្មីៗទេ',
+    viewAuditLogs: 'មើលកំណត់ហេតុសវនកម្ម',
+    accessDenied: 'គ្មានសិទ្ធិចូល',
+    accessDeniedDescription: 'អ្នកមិនមានសិទ្ធិចូលប្រើផ្ទាំងគ្រប់គ្រងនេះទេ។',
+    currentRole: (role: string) => `តួនាទីបច្ចុប្បន្ន៖ ${role}`,
+    editorDashboard: 'ផ្ទាំងគ្រប់គ្រងអ្នកកែសម្រួល',
+    editorDescription: 'គ្រប់គ្រងមាតិកា និងការត្រួតពិនិត្យវិចារណកិច្ច',
+    total: 'សរុប',
+    articlesReviewed: 'អត្ថបទបានត្រួតពិនិត្យ',
+    approved: 'បានអនុម័ត',
+    pending: 'កំពុងរង់ចាំ',
+    clear: 'ទំនេរ',
+    featured: 'ពិសេស',
+    mainContentComing: 'ផ្នែកមាតិកាចម្បងនឹងមកដល់...',
+    sidebarContentComing: 'មាតិកា sidebar នឹងមកដល់...',
+    authorDashboard: 'ផ្ទាំងគ្រប់គ្រងអ្នកនិពន្ធ',
+    authorDescription: 'ការបង្កើតមាតិកា និងការវិភាគផ្ទាល់ខ្លួន',
+    newArticle: 'អត្ថបទថ្មី',
+    draft: 'ព្រាង',
+    myArticles: 'អត្ថបទរបស់ខ្ញុំ',
+    inReview: 'កំពុងត្រួតពិនិត្យ',
+    myRecentArticles: 'អត្ថបទថ្មីៗរបស់ខ្ញុំ',
+    myRecentDescription: 'អត្ថបទថ្មីៗរបស់អ្នក និងស្ថានភាពរបស់វា',
+    createArticle: 'បង្កើតអត្ថបទ',
+    views: (count: number) => `${count} ដងមើល`,
+    noArticlesYet: 'មិនទាន់មានអត្ថបទទេ',
+    createFirstArticle: 'បង្កើតអត្ថបទដំបូងរបស់អ្នក',
+    writingAnalytics: 'វិភាគការសរសេរ',
+    writingAnalyticsDescription: 'ប្រសិទ្ធភាពមាតិកា និងរង្វាស់ការសរសេររបស់អ្នក',
+    totalViews: 'ចំនួនមើលសរុប',
+    avgRating: 'ពិន្ទុមធ្យម',
+    comments: 'មតិយោបល់',
+    writingGoals: 'គោលដៅសរសេរ',
+    writingGoalsDescription: 'តាមដានវឌ្ឍនភាពការសរសេររបស់អ្នក',
+    monthlyArticles: 'អត្ថបទប្រចាំខែ',
+    wordsThisWeek: 'ពាក្យសប្តាហ៍នេះ',
+    streak: 'ថ្ងៃជាប់គ្នា៖',
+    days: (count: number) => `${count} ថ្ងៃ`,
+    bestMonth: 'ខែល្អបំផុត៖',
+    articlesCount: (count: number) => `${count} អត្ថបទ`,
+    recentActivity: 'សកម្មភាពថ្មីៗ',
+    recentWritingActivity: 'សកម្មភាពសរសេរថ្មីៗរបស់អ្នក',
+    statusLabel: {
+      published: 'បានផ្សព្វផ្សាយ',
+      draft: 'ព្រាង',
+      pending: 'កំពុងរង់ចាំ',
+      rejected: 'បានបដិសេធ',
+    },
+  },
+} as const;
+
 export const AdminDashboard: React.FC = () => {
+  const { locale } = useAdminLocale();
+  const copy = adminDashboardCopy[locale];
   const { activeTenant } = useTenant();
   const { getUserStats, getBasicStats, getUserActivity, loading: userLoading, error: userError } = useUserManagement();
   const { getArticles, loading: articlesLoading, error: articlesError } = useArticles();
@@ -148,7 +342,7 @@ export const AdminDashboard: React.FC = () => {
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const tenantName = activeTenant?.name || 'Tenant';
+  const tenantName = activeTenant?.name || copy.tenant;
 
   const loadDashboardData = async () => {
     try {
@@ -266,10 +460,10 @@ export const AdminDashboard: React.FC = () => {
         pendingQueue: (reviewData?.articles || []).map((article: any) => ({
           id: article.id,
           title: article.title,
-          author: article.authorName || 'Unknown',
+          author: article.authorName || copy.unknown,
           submittedAt: article.createdAt,
           priority: 'medium' as const,
-          category: article.category?.name || 'Uncategorized'
+          category: article.category?.name || copy.uncategorized
         })),
         recentReviews: []
       };
@@ -282,12 +476,12 @@ export const AdminDashboard: React.FC = () => {
         const transformedActivity: ActivityItem[] = activityData.map(activity => ({
           id: activity.id,
           type: activity.activityType.toLowerCase() as any,
-          title: activity.details?.title || `${activity.activityType} activity`,
-          description: activity.details?.description || `by ${activity.user?.name || 'System'}`,
+          title: activity.details?.title || copy.activityFallback(activity.activityType),
+          description: activity.details?.description || copy.byUser(activity.user?.name || copy.system),
           user: activity.user ? { name: activity.user.name } : undefined,
           timestamp: activity.timestamp,
           metadata: {
-            category: 'System'
+            category: copy.systemCategory
           }
         }));
         setSystemActivity(transformedActivity);
@@ -323,7 +517,7 @@ export const AdminDashboard: React.FC = () => {
       <div
         className="min-h-screen bg-slate-50 dark:bg-slate-950"
         aria-busy="true"
-        aria-label="Loading dashboard"
+        aria-label={copy.loadingDashboard}
       />
     );
   }
@@ -350,10 +544,10 @@ export const AdminDashboard: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-slate-100 flex items-center gap-2">
               <Shield className="h-6 w-6 text-red-600" />
-              {tenantName} Dashboard
+              {copy.dashboardTitle(tenantName)}
             </h1>
             <p className="text-gray-600 dark:text-slate-400 text-sm">
-              Manage content, users, settings, and public website configuration
+              {copy.adminDescription}
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -365,13 +559,13 @@ export const AdminDashboard: React.FC = () => {
               className="border-gray-300 hover:border-gray-400"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
+              {copy.refresh}
             </Button>
             {hasPermission(Permission.VIEW_SETTINGS) && (
               <Link href="/settings">
                 <Button size="sm" className="bg-red-600 hover:bg-red-700">
                   <Settings className="h-4 w-4 mr-2" />
-                  Settings
+                  {copy.settings}
                 </Button>
               </Link>
             )}
@@ -384,7 +578,7 @@ export const AdminDashboard: React.FC = () => {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-red-800">
                 <AlertTriangle className="h-5 w-5" />
-                <span className="text-sm">Error loading dashboard data: {error}</span>
+                <span className="text-sm">{copy.loadError} {error}</span>
               </div>
             </CardContent>
           </Card>
@@ -419,7 +613,7 @@ export const AdminDashboard: React.FC = () => {
                     <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                       {systemHealth?.responseTime || 45}ms
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-slate-400">Response Time</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">{copy.responseTime}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -439,7 +633,7 @@ export const AdminDashboard: React.FC = () => {
                     <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                       {dashboardStats?.totalUsers?.toLocaleString() || 0}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-slate-400">Total Users</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">{copy.totalUsers}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -459,7 +653,7 @@ export const AdminDashboard: React.FC = () => {
                     <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                       {dashboardStats?.totalArticles?.toLocaleString() || 0}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-slate-400">Published Articles</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">{copy.publishedArticles}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -475,14 +669,14 @@ export const AdminDashboard: React.FC = () => {
                       variant={(systemHealth?.activeConnections ?? 0) > 100 ? "default" : "secondary"} 
                       className="text-xs"
                     >
-                      Live
+                      {copy.live}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900 dark:text-slate-100">
                       {systemHealth?.activeConnections?.toLocaleString() || 0}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-slate-400">Active Connections</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">{copy.activeConnections}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -501,15 +695,15 @@ export const AdminDashboard: React.FC = () => {
                   <div>
                     <CardTitle className="text-lg font-semibold flex items-center gap-2">
                       <Users className="h-5 w-5 text-red-600" />
-                      User Management
+                      {copy.userManagement}
                     </CardTitle>
-                    <CardDescription>Tenant users by role and management tools</CardDescription>
+                    <CardDescription>{copy.userManagementDescription}</CardDescription>
                   </div>
                   {hasPermission(Permission.VIEW_ALL_USERS) && (
                     <Link href="/users">
                       <Button variant="outline" size="sm">
                         <UserPlus className="h-4 w-4 mr-2" />
-                        Manage Users
+                        {copy.manageUsers}
                       </Button>
                     </Link>
                   )}
@@ -529,33 +723,33 @@ export const AdminDashboard: React.FC = () => {
                     <div className="text-center p-4 bg-red-50 rounded-lg border border-red-100 dark:border-red-500/20 dark:bg-red-500/10">
                       <Shield className="h-8 w-8 mx-auto mb-2 text-red-600" />
                       <p className="text-xl font-bold text-red-900 dark:text-red-300">{userStats.usersByRole.admin}</p>
-                      <p className="text-xs text-red-700 dark:text-red-300">Admins</p>
+                      <p className="text-xs text-red-700 dark:text-red-300">{copy.admins}</p>
                       {hasPermission(Permission.MANAGE_USER_ROLES) && (
                         <Button size="sm" variant="ghost" className="mt-2 text-xs">
                           <Lock className="h-3 w-3 mr-1" />
-                          Manage
+                          {copy.manage}
                         </Button>
                       )}
                     </div>
                     <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-100 dark:border-blue-500/20 dark:bg-blue-500/10">
                       <CheckCircle className="h-8 w-8 mx-auto mb-2 text-blue-600" />
                       <p className="text-xl font-bold text-blue-900 dark:text-blue-300">{userStats.usersByRole.editor}</p>
-                      <p className="text-xs text-blue-700 dark:text-blue-300">Editors</p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">{copy.editors}</p>
                       {hasPermission(Permission.MANAGE_USER_ROLES) && (
                         <Button size="sm" variant="ghost" className="mt-2 text-xs">
                           <FileEdit className="h-3 w-3 mr-1" />
-                          Manage
+                          {copy.manage}
                         </Button>
                       )}
                     </div>
                     <div className="text-center p-4 bg-green-50 rounded-lg border border-green-100 dark:border-green-500/20 dark:bg-green-500/10">
                       <FileText className="h-8 w-8 mx-auto mb-2 text-green-600" />
                       <p className="text-xl font-bold text-green-900 dark:text-green-300">{userStats.usersByRole.author}</p>
-                      <p className="text-xs text-green-700 dark:text-green-300">Authors</p>
+                      <p className="text-xs text-green-700 dark:text-green-300">{copy.authors}</p>
                       {hasPermission(Permission.MANAGE_USER_ROLES) && (
                         <Button size="sm" variant="ghost" className="mt-2 text-xs">
                           <Newspaper className="h-3 w-3 mr-1" />
-                          Manage
+                          {copy.manage}
                         </Button>
                       )}
                     </div>
@@ -569,9 +763,9 @@ export const AdminDashboard: React.FC = () => {
               <CardHeader>
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-red-600" />
-                  Website Analytics
+                  {copy.websiteAnalytics}
                 </CardTitle>
-                <CardDescription>Content performance and approval metrics</CardDescription>
+                <CardDescription>{copy.websiteAnalyticsDescription}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -580,11 +774,11 @@ export const AdminDashboard: React.FC = () => {
                     <p className="text-lg font-bold text-green-900 dark:text-green-300">
                       {dashboardStats?.publishedArticles || 0}
                     </p>
-                    <p className="text-xs text-green-700 dark:text-green-300">Published</p>
+                    <p className="text-xs text-green-700 dark:text-green-300">{copy.published}</p>
                     {hasPermission(Permission.PUBLISH_ARTICLE) && (
                       <Button size="sm" variant="ghost" className="mt-1 text-xs">
                         <Eye className="h-3 w-3 mr-1" />
-                        View
+                        {copy.view}
                       </Button>
                     )}
                   </div>
@@ -593,11 +787,11 @@ export const AdminDashboard: React.FC = () => {
                     <p className="text-lg font-bold text-yellow-900 dark:text-amber-300">
                       {dashboardStats?.pendingReviews || 0}
                     </p>
-                    <p className="text-xs text-yellow-700 dark:text-amber-300">Pending Review</p>
+                    <p className="text-xs text-yellow-700 dark:text-amber-300">{copy.pendingReview}</p>
                     {hasPermission(Permission.REVIEW_ARTICLES) && (
                       <Button size="sm" variant="ghost" className="mt-1 text-xs">
                         <CheckCircle className="h-3 w-3 mr-1" />
-                        Review
+                        {copy.review}
                       </Button>
                     )}
                   </div>
@@ -606,11 +800,11 @@ export const AdminDashboard: React.FC = () => {
                     <p className="text-lg font-bold text-gray-900 dark:text-slate-100">
                       {dashboardStats?.draftArticles || 0}
                     </p>
-                    <p className="text-xs text-gray-700 dark:text-slate-300">Drafts</p>
+                    <p className="text-xs text-gray-700 dark:text-slate-300">{copy.drafts}</p>
                     {hasPermission(Permission.UPDATE_ANY_ARTICLE) && (
                       <Button size="sm" variant="ghost" className="mt-1 text-xs">
                         <FileEdit className="h-3 w-3 mr-1" />
-                        Edit
+                        {copy.edit}
                       </Button>
                     )}
                   </div>
@@ -619,11 +813,11 @@ export const AdminDashboard: React.FC = () => {
                     <p className="text-lg font-bold text-blue-900 dark:text-blue-300">
                       {dashboardStats?.approvalRate || 0}%
                     </p>
-                    <p className="text-xs text-blue-700 dark:text-blue-300">Approval Rate</p>
+                    <p className="text-xs text-blue-700 dark:text-blue-300">{copy.approvalRate}</p>
                     {hasPermission(Permission.VIEW_AUDIT_LOGS) && (
                       <Button size="sm" variant="ghost" className="mt-1 text-xs">
                         <BarChart3 className="h-3 w-3 mr-1" />
-                        Analytics
+                        {copy.analytics}
                       </Button>
                     )}
                   </div>
@@ -639,9 +833,9 @@ export const AdminDashboard: React.FC = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <Server className="h-5 w-5 text-red-600" />
-                  System Health
+                  {copy.systemHealth}
                 </CardTitle>
-                <CardDescription>Real-time system monitoring</CardDescription>
+                <CardDescription>{copy.systemHealthDescription}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {!systemHealth ? (
@@ -654,14 +848,14 @@ export const AdminDashboard: React.FC = () => {
                   <>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span>Uptime</span>
+                        <span>{copy.uptime}</span>
                         <span className="font-medium">{systemHealth.uptime.toFixed(1)}%</span>
                       </div>
                       <Progress value={systemHealth.uptime} className="h-2" />
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span>Memory</span>
+                        <span>{copy.memory}</span>
                         <span className="font-medium">{systemHealth.memoryUsage}%</span>
                       </div>
                       <Progress 
@@ -671,7 +865,7 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                     <div>
                       <div className="flex justify-between text-sm mb-1">
-                        <span>CPU</span>
+                        <span>{copy.cpu}</span>
                         <span className="font-medium">{systemHealth.cpuUsage}%</span>
                       </div>
                       <Progress 
@@ -681,18 +875,18 @@ export const AdminDashboard: React.FC = () => {
                     </div>
                     <div className="pt-2 border-t text-xs text-gray-500 dark:text-slate-400 space-y-1">
                       <div className="flex justify-between">
-                        <span>Response Time:</span>
+                        <span>{copy.responseTimeLabel}</span>
                         <span>{systemHealth.responseTime}ms</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Connections:</span>
+                        <span>{copy.connections}</span>
                         <span>{systemHealth.activeConnections.toLocaleString()}</span>
                       </div>
                     </div>
                     {hasPermission(Permission.SYSTEM_ADMINISTRATION) && (
                       <Button size="sm" variant="outline" className="w-full mt-3">
                         <Settings className="h-4 w-4 mr-2" />
-                        Settings
+                        {copy.settings}
                       </Button>
                     )}
                   </>
@@ -704,9 +898,9 @@ export const AdminDashboard: React.FC = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <Activity className="h-5 w-5 text-red-600" />
-                  System Activity
+                  {copy.systemActivity}
                 </CardTitle>
-                <CardDescription>Recent tenant activity</CardDescription>
+                <CardDescription>{copy.systemActivityDescription}</CardDescription>
               </CardHeader>
               <CardContent>
                 {loading ? (
@@ -736,7 +930,7 @@ export const AdminDashboard: React.FC = () => {
                             {activity.description}
                           </p>
                           <p className="text-gray-400 dark:text-slate-500 text-xs">
-                            {new Date(activity.timestamp).toLocaleDateString()}
+                            {new Date(activity.timestamp).toLocaleDateString(locale === "km" ? "km-KH" : undefined)}
                           </p>
                         </div>
                       </div>
@@ -744,13 +938,13 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500 dark:text-slate-400 text-center py-4">
-                    No recent activity
+                    {copy.noRecentActivity}
                   </p>
                 )}
                 {hasPermission(Permission.VIEW_AUDIT_LOGS) && (
                   <Button size="sm" variant="outline" className="w-full mt-4">
                     <Eye className="h-4 w-4 mr-2" />
-                    View Audit Logs
+                    {copy.viewAuditLogs}
                   </Button>
                 )}
               </CardContent>
@@ -770,20 +964,20 @@ export const AdminDashboard: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <CheckCircle className="h-6 w-6 text-blue-600" />
-              Editor Dashboard
+              {copy.editorDashboard}
             </h1>
-            <p className="text-gray-600 text-sm">Content management and editorial control</p>
+            <p className="text-gray-600 text-sm">{copy.editorDescription}</p>
           </div>
           <div className="flex items-center gap-3">
             <Button onClick={handleRefresh} disabled={refreshing} variant="outline" size="sm">
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
+              {copy.refresh}
             </Button>
             {hasPermission(Permission.REVIEW_ARTICLES) && (
               <Link href="/articles/review">
                 <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                   <Search className="h-4 w-4 mr-2" />
-                  Review Queue
+                  {copy.review}
                 </Button>
               </Link>
             )}
@@ -796,7 +990,7 @@ export const AdminDashboard: React.FC = () => {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-red-800">
                 <AlertTriangle className="h-5 w-5" />
-                <span className="text-sm">Error loading dashboard data: {error}</span>
+                <span className="text-sm">{copy.loadError} {error}</span>
               </div>
             </CardContent>
           </Card>
@@ -824,14 +1018,14 @@ export const AdminDashboard: React.FC = () => {
                       <CheckCircle className="h-5 w-5 text-blue-600" />
                     </div>
                     <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                      Total
+                      {copy.total}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">
                       {dashboardStats?.articlesReviewed || 0}
                     </p>
-                    <p className="text-sm text-gray-600">Articles Reviewed</p>
+                    <p className="text-sm text-gray-600">{copy.articlesReviewed}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -844,14 +1038,14 @@ export const AdminDashboard: React.FC = () => {
                       <CheckSquare className="h-5 w-5 text-green-600" />
                     </div>
                     <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
-                      Approved
+                      {copy.approved}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">
                       {dashboardStats?.articlesApproved || 0}
                     </p>
-                    <p className="text-sm text-gray-600">Approved</p>
+                    <p className="text-sm text-gray-600">{copy.approved}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -867,14 +1061,14 @@ export const AdminDashboard: React.FC = () => {
                       variant={(dashboardStats?.pendingReviews ?? 0) > 0 ? "default" : "secondary"} 
                       className="text-xs"
                     >
-                      {(dashboardStats?.pendingReviews ?? 0) > 0 ? 'Pending' : 'Clear'}
+                      {(dashboardStats?.pendingReviews ?? 0) > 0 ? copy.pending : copy.clear}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">
                       {dashboardStats?.pendingReviews || 0}
                     </p>
-                    <p className="text-sm text-gray-600">Pending Review</p>
+                    <p className="text-sm text-gray-600">{copy.pendingReview}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -887,14 +1081,14 @@ export const AdminDashboard: React.FC = () => {
                       <Star className="h-5 w-5 text-purple-600" />
                     </div>
                     <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800">
-                      Featured
+                      {copy.featured}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">
                       {dashboardStats?.featuredArticles || 0}
                     </p>
-                    <p className="text-sm text-gray-600">Featured</p>
+                    <p className="text-sm text-gray-600">{copy.featured}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -907,14 +1101,14 @@ export const AdminDashboard: React.FC = () => {
           <div className="lg:col-span-2 space-y-6">
             <Card>
               <CardContent className="p-6 text-center">
-                <p className="text-gray-500">Main content sections coming...</p>
+                <p className="text-gray-500">{copy.mainContentComing}</p>
               </CardContent>
             </Card>
           </div>
           <div className="space-y-6">
             <Card>
               <CardContent className="p-6 text-center">
-                <p className="text-gray-500">Sidebar content coming...</p>
+                <p className="text-gray-500">{copy.sidebarContentComing}</p>
               </CardContent>
             </Card>
           </div>
@@ -932,20 +1126,20 @@ export const AdminDashboard: React.FC = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
               <FileText className="h-6 w-6 text-green-600" />
-              Author Dashboard
+              {copy.authorDashboard}
             </h1>
-            <p className="text-gray-600 text-sm">Content creation and personal analytics</p>
+            <p className="text-gray-600 text-sm">{copy.authorDescription}</p>
           </div>
           <div className="flex items-center gap-3">
             <Button onClick={handleRefresh} disabled={refreshing} variant="outline" size="sm">
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
+              {copy.refresh}
             </Button>
             {hasPermission(Permission.CREATE_ARTICLE) && (
               <Link href="/articles/create">
                 <Button size="sm" className="bg-green-600 hover:bg-green-700">
                   <Plus className="h-4 w-4 mr-2" />
-                  New Article
+                  {copy.newArticle}
                 </Button>
               </Link>
             )}
@@ -958,7 +1152,7 @@ export const AdminDashboard: React.FC = () => {
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-red-800">
                 <AlertTriangle className="h-5 w-5" />
-                <span className="text-sm">Error loading dashboard data: {error}</span>
+                <span className="text-sm">{copy.loadError} {error}</span>
               </div>
             </CardContent>
           </Card>
@@ -986,14 +1180,14 @@ export const AdminDashboard: React.FC = () => {
                       <FileText className="h-5 w-5 text-green-600" />
                     </div>
                     <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
-                      Total
+                      {copy.total}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">
                       {(dashboardStats?.myArticles || 0)}
                     </p>
-                    <p className="text-sm text-gray-600">My Articles</p>
+                    <p className="text-sm text-gray-600">{copy.myArticles}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -1006,14 +1200,14 @@ export const AdminDashboard: React.FC = () => {
                       <Globe className="h-5 w-5 text-blue-600" />
                     </div>
                     <Badge variant="secondary" className="text-xs bg-blue-100 text-blue-800">
-                      Live
+                      {copy.live}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">
                       {dashboardStats?.myPublishedArticles || 0}
                     </p>
-                    <p className="text-sm text-gray-600">Published</p>
+                    <p className="text-sm text-gray-600">{copy.published}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -1026,14 +1220,14 @@ export const AdminDashboard: React.FC = () => {
                       <Edit className="h-5 w-5 text-yellow-600" />
                     </div>
                     <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800">
-                      Draft
+                      {copy.draft}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">
                       {dashboardStats?.myDraftArticles || 0}
                     </p>
-                    <p className="text-sm text-gray-600">Drafts</p>
+                    <p className="text-sm text-gray-600">{copy.drafts}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -1049,14 +1243,14 @@ export const AdminDashboard: React.FC = () => {
                       variant={(dashboardStats?.myPendingArticles ?? 0) > 0 ? "default" : "secondary"} 
                       className="text-xs"
                     >
-                      {(dashboardStats?.myPendingArticles ?? 0) > 0 ? 'Pending' : 'Clear'}
+                      {(dashboardStats?.myPendingArticles ?? 0) > 0 ? copy.pending : copy.clear}
                     </Badge>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-gray-900">
                       {dashboardStats?.myPendingArticles || 0}
                     </p>
-                    <p className="text-sm text-gray-600">In Review</p>
+                    <p className="text-sm text-gray-600">{copy.inReview}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -1075,15 +1269,15 @@ export const AdminDashboard: React.FC = () => {
                   <div>
                     <CardTitle className="text-lg font-semibold flex items-center gap-2">
                       <FileText className="h-5 w-5 text-green-600" />
-                      My Recent Articles
+                      {copy.myRecentArticles}
                     </CardTitle>
-                    <CardDescription>Your latest articles and their status</CardDescription>
+                    <CardDescription>{copy.myRecentDescription}</CardDescription>
                   </div>
                   {hasPermission(Permission.CREATE_ARTICLE) && (
                     <Link href="/articles/create">
                       <Button variant="outline" size="sm">
                         <Plus className="h-4 w-4 mr-2" />
-                        Create Article
+                        {copy.createArticle}
                       </Button>
                     </Link>
                   )}
@@ -1115,9 +1309,9 @@ export const AdminDashboard: React.FC = () => {
                         <div className="flex-1 min-w-0">
                           <h3 className="font-medium text-gray-900 truncate">{article.title}</h3>
                           <div className="flex items-center gap-4 text-sm text-gray-500 mt-1">
-                            <span className="capitalize">{article.status}</span>
-                            <span>{new Date(article.updatedAt).toLocaleDateString()}</span>
-                            {article.views && <span>{article.views} views</span>}
+                            <span className="capitalize">{copy.statusLabel[article.status]}</span>
+                            <span>{new Date(article.updatedAt).toLocaleDateString(locale === "km" ? "km-KH" : undefined)}</span>
+                            {article.views && <span>{copy.views(article.views)}</span>}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1129,7 +1323,7 @@ export const AdminDashboard: React.FC = () => {
                             }
                             className="text-xs"
                           >
-                            {article.status}
+                            {copy.statusLabel[article.status]}
                           </Badge>
                           {hasPermission(Permission.UPDATE_OWN_ARTICLE) && (
                             <Link href={`/articles/${article.id}/edit`}>
@@ -1145,12 +1339,12 @@ export const AdminDashboard: React.FC = () => {
                 ) : (
                   <div className="text-center py-8">
                     <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p className="text-gray-500 mb-4">No articles yet</p>
+                    <p className="text-gray-500 mb-4">{copy.noArticlesYet}</p>
                     {hasPermission(Permission.CREATE_ARTICLE) && (
                       <Link href="/articles/create">
                         <Button>
                           <Plus className="h-4 w-4 mr-2" />
-                          Create Your First Article
+                          {copy.createFirstArticle}
                         </Button>
                       </Link>
                     )}
@@ -1164,9 +1358,9 @@ export const AdminDashboard: React.FC = () => {
               <CardHeader>
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-green-600" />
-                  Writing Analytics
+                  {copy.writingAnalytics}
                 </CardTitle>
-                <CardDescription>Your content performance and writing metrics</CardDescription>
+                <CardDescription>{copy.writingAnalyticsDescription}</CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1175,28 +1369,28 @@ export const AdminDashboard: React.FC = () => {
                     <p className="text-lg font-bold text-green-900">
                       {dashboardStats?.totalViews?.toLocaleString() || 0}
                     </p>
-                    <p className="text-xs text-green-700">Total Views</p>
+                    <p className="text-xs text-green-700">{copy.totalViews}</p>
                   </div>
                   <div className="text-center p-4 bg-blue-50 rounded-lg">
                     <ThumbsUp className="h-6 w-6 mx-auto mb-2 text-blue-600" />
                     <p className="text-lg font-bold text-blue-900">
                       {dashboardStats?.averageRating?.toFixed(1) || '0.0'}
                     </p>
-                    <p className="text-xs text-blue-700">Avg Rating</p>
+                    <p className="text-xs text-blue-700">{copy.avgRating}</p>
                   </div>
                   <div className="text-center p-4 bg-purple-50 rounded-lg">
                     <MessageCircle className="h-6 w-6 mx-auto mb-2 text-purple-600" />
                     <p className="text-lg font-bold text-purple-900">
                       {dashboardStats?.totalComments || 0}
                     </p>
-                    <p className="text-xs text-purple-700">Comments</p>
+                    <p className="text-xs text-purple-700">{copy.comments}</p>
                   </div>
                   <div className="text-center p-4 bg-orange-50 rounded-lg">
                     <Award className="h-6 w-6 mx-auto mb-2 text-orange-600" />
                     <p className="text-lg font-bold text-orange-900">
                       {dashboardStats?.approvalRate || 0}%
                     </p>
-                    <p className="text-xs text-orange-700">Approval Rate</p>
+                    <p className="text-xs text-orange-700">{copy.approvalRate}</p>
                   </div>
                 </div>
               </CardContent>
@@ -1210,21 +1404,21 @@ export const AdminDashboard: React.FC = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <Target className="h-5 w-5 text-green-600" />
-                  Writing Goals
+                  {copy.writingGoals}
                 </CardTitle>
-                <CardDescription>Track your writing progress</CardDescription>
+                <CardDescription>{copy.writingGoalsDescription}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>Monthly Articles</span>
+                    <span>{copy.monthlyArticles}</span>
                     <span className="font-medium">{dashboardStats?.monthlyArticles || 0}/10</span>
                   </div>
                   <Progress value={(dashboardStats?.monthlyArticles || 0) * 10} className="h-2" />
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span>Words This Week</span>
+                    <span>{copy.wordsThisWeek}</span>
                     <span className="font-medium">{dashboardStats?.weeklyWords?.toLocaleString() || 0}/5000</span>
                   </div>
                   <Progress 
@@ -1234,12 +1428,12 @@ export const AdminDashboard: React.FC = () => {
                 </div>
                 <div className="pt-2 border-t text-xs text-gray-500 space-y-1">
                   <div className="flex justify-between">
-                    <span>Streak:</span>
-                    <span>{dashboardStats?.writingStreak || 0} days</span>
+                    <span>{copy.streak}</span>
+                    <span>{copy.days(dashboardStats?.writingStreak || 0)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Best Month:</span>
-                    <span>{dashboardStats?.bestMonth || 0} articles</span>
+                    <span>{copy.bestMonth}</span>
+                    <span>{copy.articlesCount(dashboardStats?.bestMonth || 0)}</span>
                   </div>
                 </div>
               </CardContent>
@@ -1250,9 +1444,9 @@ export const AdminDashboard: React.FC = () => {
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <Activity className="h-5 w-5 text-green-600" />
-                  Recent Activity
+                  {copy.recentActivity}
                 </CardTitle>
-                <CardDescription>Your recent writing activity</CardDescription>
+                <CardDescription>{copy.recentWritingActivity}</CardDescription>
               </CardHeader>
               <CardContent>
                 {loading ? (
@@ -1282,7 +1476,7 @@ export const AdminDashboard: React.FC = () => {
                             {activity.description}
                           </p>
                           <p className="text-gray-400 text-xs">
-                            {new Date(activity.timestamp).toLocaleDateString()}
+                            {new Date(activity.timestamp).toLocaleDateString(locale === "km" ? "km-KH" : undefined)}
                           </p>
                         </div>
                       </div>
@@ -1290,7 +1484,7 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 ) : (
                   <p className="text-sm text-gray-500 text-center py-4">
-                    No recent activity
+                    {copy.noRecentActivity}
                   </p>
                 )}
               </CardContent>
@@ -1307,9 +1501,9 @@ export const AdminDashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto p-6 space-y-8">
         <div className="text-center py-20">
           <Lock className="h-16 w-16 mx-auto mb-4 text-gray-400 dark:text-slate-500" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100 mb-2">Access Denied</h2>
-          <p className="text-gray-600 dark:text-slate-400">You don't have permission to access this dashboard.</p>
-          <p className="text-gray-500 dark:text-slate-500 text-sm mt-2">Current role: {userRole || 'Unknown'}</p>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-slate-100 mb-2">{copy.accessDenied}</h2>
+          <p className="text-gray-600 dark:text-slate-400">{copy.accessDeniedDescription}</p>
+          <p className="text-gray-500 dark:text-slate-500 text-sm mt-2">{copy.currentRole(userRole || copy.unknown)}</p>
         </div>
       </div>
     </div>

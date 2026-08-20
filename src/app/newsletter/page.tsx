@@ -75,13 +75,13 @@ const newsletterCopy = {
     emptySubscribers: "No subscribers match this view.",
   },
   km: {
-    sendSuccess: (count: number) => `បានដំណើរការ digest សម្រាប់ subscriber សកម្ម ${count} នាក់។`,
-    sendFailed: "មិនអាចផ្ញើ digest បានទេ។ សូមពិនិត្យមាតិកា និងការកំណត់ email។",
-    accessDenied: "គ្មានសិទ្ធិ៖ ត្រូវការសិទ្ធិ Settings។",
+    sendSuccess: (count: number) => `បានដំណើរការសង្ខេបសម្រាប់អ្នកជាវសកម្ម ${count} នាក់។`,
+    sendFailed: "មិនអាចផ្ញើសង្ខេបបានទេ។ សូមពិនិត្យមាតិកា និងការកំណត់អ៊ីមែល។",
+    accessDenied: "គ្មានសិទ្ធិ៖ ត្រូវការសិទ្ធិការកំណត់។",
     audience: "អ្នកអាន",
-    title: "Subscriber ព្រឹត្តិបត្រ",
-    description: "Export subscriber សកម្មសម្រាប់ដំណើរការផ្ញើព្រឹត្តិបត្រ។",
-    exportCsv: "Export CSV",
+    title: "អ្នកជាវព្រឹត្តិបត្រ",
+    description: "នាំចេញអ្នកជាវសកម្មសម្រាប់ដំណើរការផ្ញើព្រឹត្តិបត្រ។",
+    exportCsv: "នាំចេញ CSV",
     activeCurrentView: "សកម្មក្នុងទិដ្ឋភាពនេះ",
     statuses: {
       ACTIVE: "សកម្ម",
@@ -89,17 +89,17 @@ const newsletterCopy = {
       UNSUBSCRIBED: "បានឈប់ជាវ",
       ALL: "ស្ថានភាពទាំងអស់",
     },
-    sendDigestTitle: "ផ្ញើ Newsletter Digest",
-    sendDigestDescription: "ផ្ញើទៅ subscriber សកម្មដែលបានបញ្ជាក់ និងភ្ជាប់ link ឈប់ជាវដែលមាន token។",
-    subjectPlaceholder: "ចំណងជើង Digest",
-    bodyPlaceholder: "មាតិកា Digest",
+    sendDigestTitle: "ផ្ញើសង្ខេបព្រឹត្តិបត្រ",
+    sendDigestDescription: "ផ្ញើទៅអ្នកជាវសកម្មដែលបានបញ្ជាក់ និងភ្ជាប់តំណឈប់ជាវដែលមាន token។",
+    subjectPlaceholder: "ចំណងជើងសង្ខេប",
+    bodyPlaceholder: "មាតិកាសង្ខេប",
     sending: "កំពុងផ្ញើ...",
-    sendDigest: "ផ្ញើ Digest",
+    sendDigest: "ផ្ញើសង្ខេប",
     recentSends: "ការផ្ញើថ្មីៗ",
-    noDigests: "មិនទាន់មាន digest ដែលបានផ្ញើទេ។",
+    noDigests: "មិនទាន់មានសង្ខេបដែលបានផ្ញើទេ។",
     recipients: (count: number) => `${count} អ្នកទទួល`,
-    loadingSubscribers: "កំពុង Load subscribers...",
-    emptySubscribers: "គ្មាន subscriber ត្រូវនឹងទិដ្ឋភាពនេះទេ។",
+    loadingSubscribers: "កំពុងផ្ទុកអ្នកជាវ...",
+    emptySubscribers: "គ្មានអ្នកជាវត្រូវនឹងទិដ្ឋភាពនេះទេ។",
   },
 } as const;
 
@@ -198,7 +198,7 @@ export default function NewsletterPage() {
           <textarea rows={7} value={digest.body} onChange={(event) => setDigest({ ...digest, body: event.target.value })} placeholder={copy.bodyPlaceholder} className="rounded-md border border-slate-200 px-3 py-2 text-sm" />
           <div className="flex flex-wrap items-center gap-3"><Button onClick={() => void sendDigest()} disabled={!canSend || sending || digest.subject.trim().length < 3 || digest.body.trim().length < 10}><Send className="h-4 w-4" />{sending ? copy.sending : copy.sendDigest}</Button>{message && <p className="text-sm text-slate-600">{message}</p>}</div>
         </div>
-        <div><h2 className="font-semibold text-slate-950">{copy.recentSends}</h2><div className="mt-3 space-y-2">{deliveries.length === 0 ? <p className="text-sm text-slate-500">{copy.noDigests}</p> : deliveries.slice(0, 6).map((delivery) => <div key={delivery.id} className="rounded-md border border-slate-100 p-3"><p className="truncate text-sm font-medium text-slate-900">{delivery.subject}</p><p className="mt-1 text-xs text-slate-500">{copy.recipients(delivery.recipientCount)} / {new Date(delivery.createdAt).toLocaleString()}</p></div>)}</div></div>
+        <div><h2 className="font-semibold text-slate-950">{copy.recentSends}</h2><div className="mt-3 space-y-2">{deliveries.length === 0 ? <p className="text-sm text-slate-500">{copy.noDigests}</p> : deliveries.slice(0, 6).map((delivery) => <div key={delivery.id} className="rounded-md border border-slate-100 p-3"><p className="truncate text-sm font-medium text-slate-900">{delivery.subject}</p><p className="mt-1 text-xs text-slate-500">{copy.recipients(delivery.recipientCount)} / {new Date(delivery.createdAt).toLocaleString(locale === "km" ? "km-KH" : undefined)}</p></div>)}</div></div>
       </section>
       <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
         {loading ? <div className="flex items-center justify-center py-16 text-sm text-slate-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" />{copy.loadingSubscribers}</div> : subscribers.length === 0 ? <p className="py-16 text-center text-sm text-slate-500">{copy.emptySubscribers}</p> : (
@@ -206,7 +206,7 @@ export default function NewsletterPage() {
             <div key={subscriber.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">{subscriber.email}</p>
               <Badge variant={subscriber.status === "ACTIVE" ? "success" : subscriber.status === "PENDING" ? "warning" : "secondary"}>{copy.statuses[subscriber.status]}</Badge>
-              <time className="text-xs text-slate-400">{new Date(subscriber.createdAt).toLocaleDateString()}</time>
+              <time className="text-xs text-slate-400">{new Date(subscriber.createdAt).toLocaleDateString(locale === "km" ? "km-KH" : undefined)}</time>
             </div>
           ))}</div>
         )}

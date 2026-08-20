@@ -98,44 +98,44 @@ export default function SuperAdminDashboard() {
     ? {
         eyebrow: "ផ្ទាំងគ្រប់គ្រង",
         title: "ផ្ទាំងគ្រប់គ្រងប្រព័ន្ធ",
-        description: "តាមដាន tenant websites, អ្នកប្រើវេទិកា, system logs និង settings។",
-        manageTenants: "គ្រប់គ្រង Tenants",
-        activeTenants: "Tenants សកម្ម",
+        description: "តាមដានគេហទំព័រ អ្នកប្រើវេទិកា កំណត់ហេតុប្រព័ន្ធ និងការកំណត់។",
+        manageTenants: "គ្រប់គ្រងគេហទំព័រ",
+        activeTenants: "គេហទំព័រសកម្ម",
         platformUsers: "អ្នកប្រើវេទិកា",
         publicSites: "គេហទំព័រសាធារណៈ",
         recentLogs: "កំណត់ត្រាថ្មីៗ",
         actions: [
           {
-            title: "គ្រប់គ្រង Tenants",
-            description: "បង្កើតគេហទំព័រ គ្រប់គ្រង domains និងកំណត់ tenant admins។",
+            title: "គ្រប់គ្រងគេហទំព័រ",
+            description: "បង្កើតគេហទំព័រ គ្រប់គ្រងដែន និងកំណត់អ្នកគ្រប់គ្រងគេហទំព័រ។",
           },
           {
             title: "គ្រប់គ្រងអ្នកប្រើ",
             description: "ពិនិត្យអ្នកប្រើវេទិកា និងគ្រប់គ្រងសិទ្ធិចូលប្រើ។",
           },
           {
-            title: "Logs",
-            description: "ពិនិត្យសកម្មភាព audit ទូទាំងវេទិកា។",
+            title: "កំណត់ហេតុ",
+            description: "ពិនិត្យសកម្មភាពសវនកម្មទូទាំងវេទិកា។",
           },
           {
-            title: "Analytics",
-            description: "ពិនិត្យ charts និង performance trends របស់វេទិកា។",
+            title: "វិភាគទិន្នន័យ",
+            description: "ពិនិត្យក្រាហ្វ និងនិន្នាការប្រសិទ្ធភាពរបស់វេទិកា។",
           },
           {
-            title: "Settings",
-            description: "គ្រប់គ្រង configuration របស់វេទិកា។",
+            title: "ការកំណត់",
+            description: "គ្រប់គ្រងការកំណត់រចនាសម្ព័ន្ធរបស់វេទិកា។",
           },
         ],
-        recentTenants: "Tenants ថ្មីៗ",
+        recentTenants: "គេហទំព័រថ្មីៗ",
         tenantStatusSummary: (active: number, suspended: number) =>
           `សកម្ម: ${active} | ផ្អាក: ${suspended}`,
-        loadingTenants: "កំពុងផ្ទុក tenants...",
+        loadingTenants: "កំពុងផ្ទុកគេហទំព័រ...",
         open: "បើក",
-        noTenants: "មិនទាន់មាន tenant ត្រូវបានបង្កើត។",
+        noTenants: "មិនទាន់មានគេហទំព័រត្រូវបានបង្កើត។",
         recentLogsTitle: "កំណត់ត្រាថ្មីៗ",
-        recentLogsDescription: "សកម្មភាពវេទិកាចុងក្រោយពី audit logs។",
-        loadingLogs: "កំពុងផ្ទុក logs...",
-        noLogs: "រកមិនឃើញ audit logs។",
+        recentLogsDescription: "សកម្មភាពវេទិកាចុងក្រោយពីកំណត់ហេតុសវនកម្ម។",
+        loadingLogs: "កំពុងផ្ទុកកំណត់ហេតុ...",
+        noLogs: "រកមិនឃើញកំណត់ហេតុសវនកម្ម។",
         systemEvent: "ព្រឹត្តិការណ៍ប្រព័ន្ធ",
         system: "ប្រព័ន្ធ",
       }
@@ -376,7 +376,7 @@ export default function SuperAdminDashboard() {
                       </Badge>
                       <span className="flex items-center text-xs text-slate-500 dark:text-slate-400">
                         <Clock className="mr-1 h-3 w-3" />
-                        {new Date(log.createdAt).toLocaleDateString()}
+                        {new Date(log.createdAt).toLocaleDateString(locale === "km" ? "km-KH" : undefined)}
                       </span>
                     </div>
                     <p className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">

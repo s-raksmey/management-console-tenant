@@ -41,9 +41,9 @@ const settingsCategoryCopy = {
     saveAll: 'Save All',
   },
   km: {
-    saveFailed: 'មិនអាចរក្សាទុក setting បានទេ',
-    noSettingsFound: 'រកមិនឃើញ Settings',
-    noSettingsDescription: (category: string) => `មិនមាន settings សម្រាប់ category ${category}។`,
+    saveFailed: 'មិនអាចរក្សាទុកការកំណត់បានទេ',
+    noSettingsFound: 'រកមិនឃើញការកំណត់',
+    noSettingsDescription: (category: string) => `មិនមានការកំណត់សម្រាប់ប្រភេទ ${category}។`,
     unsavedChanges: (count: number) => `${count} ការកែប្រែមិនទាន់រក្សាទុក`,
     errors: (count: number) => `${count} បញ្ហា`,
     reviewSection: 'ពិនិត្យផ្នែកនេះមុនបន្ត។',

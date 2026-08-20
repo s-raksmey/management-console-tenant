@@ -40,6 +40,7 @@ const loginPageCopy = {
     darkMode: "Dark mode",
     lightMode: "Light mode",
     language: "Language",
+    loading: "Loading...",
     capabilities: [
       {
         title: "Editorial control",
@@ -63,7 +64,7 @@ const loginPageCopy = {
     badge: "ប្រតិបត្តិការព័ត៌មានមានសុវត្ថិភាព",
     headline: "ផ្ទាំងគ្រប់គ្រង",
     description:
-      "កន្លែងធ្វើការសម្រាប់ប្រតិបត្តិការព័ត៌មាន ការគ្រប់គ្រង tenant និងសុវត្ថិភាពប្រព័ន្ធ។",
+      "កន្លែងធ្វើការសម្រាប់ប្រតិបត្តិការព័ត៌មាន ការគ្រប់គ្រងអង្គភាព និងសុវត្ថិភាពប្រព័ន្ធ។",
     statusOnline: "វេទិកាកំពុងដំណើរការ",
     auditEnabled: "បានបើកកំណត់ហេតុសវនកម្ម",
     authorized: "សម្រាប់អ្នកមានសិទ្ធិចូលប៉ុណ្ណោះ",
@@ -73,24 +74,25 @@ const loginPageCopy = {
       "ចូលទៅកាន់កន្លែងធ្វើការព័ត៌មានដោយប្រើគណនីគ្រប់គ្រងដែលមានសិទ្ធិ។",
     signInButton: "ចូល",
     protection:
-      "ការពារដោយ secure cookies, session ខ្លី និងការផ្ទៀងផ្ទាត់ពីរជាន់។",
+      "ការពារដោយឃុកគីសុវត្ថិភាព វគ្គចូលប្រើខ្លី និងការផ្ទៀងផ្ទាត់ពីរជាន់។",
     darkMode: "ផ្ទៃងងឹត",
     lightMode: "ផ្ទៃភ្លឺ",
     language: "ភាសា",
+    loading: "កំពុងផ្ទុក...",
     capabilities: [
       {
         title: "ការគ្រប់គ្រងមាតិកា",
-        detail: "ពិនិត្យអត្ថបទ ស្ថានភាពផ្សព្វផ្សាយ carousel និងមេឌៀ។",
+        detail: "ពិនិត្យអត្ថបទ ស្ថានភាពផ្សព្វផ្សាយ រឿងរំកិល និងមេឌៀ។",
         icon: FileText,
       },
       {
-        title: "ប្រតិបត្តិការ tenant",
-        detail: "គ្រប់គ្រង tenant ការចូលប្រើរបស់ក្រុម តួនាទី និងការកំណត់។",
+        title: "ប្រតិបត្តិការអង្គភាព",
+        detail: "គ្រប់គ្រងអង្គភាព ការចូលប្រើរបស់ក្រុម តួនាទី និងការកំណត់។",
         icon: Users,
       },
       {
         title: "ការចូលមានសុវត្ថិភាព",
-        detail: "ការពារ session ការផ្ទៀងផ្ទាត់ពីរជាន់ និងកំណត់ហេតុសវនកម្ម។",
+        detail: "ការពារវគ្គចូលប្រើ ការផ្ទៀងផ្ទាត់ពីរជាន់ និងកំណត់ហេតុសវនកម្ម។",
         icon: ShieldCheck,
       },
     ],
@@ -138,7 +140,7 @@ export default function LoginPage() {
       <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-100">
         <div className="text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-sky-300" />
-          <p className="text-sm text-slate-300">Loading...</p>
+          <p className="text-sm text-slate-300">{copy.loading}</p>
         </div>
       </div>
     );

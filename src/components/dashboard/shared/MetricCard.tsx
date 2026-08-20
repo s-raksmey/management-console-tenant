@@ -6,6 +6,7 @@ import { LucideIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface MetricCardProps {
   title: string;
@@ -36,6 +37,10 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   className,
   children
 }) => {
+  const { locale } = useAdminLocale();
+  const numberLocale = locale === 'km' ? 'km-KH' : undefined;
+  const progressLabel = locale === 'km' ? 'វឌ្ឍនភាព' : 'Progress';
+
   if (loading) {
     return (
       <Card className={cn("", className)}>
@@ -89,7 +94,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   };
 
   const progressValue = maxValue ? (value / maxValue) * 100 : target ? (value / target) * 100 : 0;
-  const displayValue = typeof value === 'number' ? value.toLocaleString() : value;
+  const displayValue = typeof value === 'number' ? value.toLocaleString(numberLocale) : value;
 
   return (
     <Card className={cn("transition-colors duration-200 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600", className)}>
@@ -122,7 +127,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
             )}
             {target && (
               <span className="text-sm text-gray-400 dark:text-slate-500">
-                / {target.toLocaleString()}
+                / {target.toLocaleString(numberLocale)}
               </span>
             )}
           </div>
@@ -134,7 +139,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
                 className="h-2"
               />
               <div className="flex justify-between text-xs text-gray-500 dark:text-slate-400">
-                <span>Progress</span>
+                <span>{progressLabel}</span>
                 <span>{Math.round(progressValue)}%</span>
               </div>
             </div>

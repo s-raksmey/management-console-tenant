@@ -5,6 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
 
 import { cn } from "@/lib/utils"
+import { useAdminLocale } from "@/hooks/useAdminLocale"
 
 const Sheet = React.forwardRef<
   HTMLDivElement,
@@ -60,19 +61,24 @@ Sheet.displayName = "Sheet"
 const SheetClose = React.forwardRef<
   HTMLButtonElement,
   React.ButtonHTMLAttributes<HTMLButtonElement>
->(({ className, ...props }, ref) => (
-  <button
-    ref={ref}
-    className={cn(
-      "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 disabled:pointer-events-none",
-      className
-    )}
-    {...props}
-  >
-    <X className="h-4 w-4" />
-    <span className="sr-only">Close</span>
-  </button>
-))
+>(({ className, ...props }, ref) => {
+  const { locale } = useAdminLocale()
+  const closeLabel = locale === "km" ? "បិទ" : "Close"
+
+  return (
+    <button
+      ref={ref}
+      className={cn(
+        "absolute right-4 top-4 rounded-sm opacity-70 ring-offset-white transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-slate-950 focus:ring-offset-2 disabled:pointer-events-none",
+        className
+      )}
+      {...props}
+    >
+      <X className="h-4 w-4" />
+      <span className="sr-only">{closeLabel}</span>
+    </button>
+  )
+})
 SheetClose.displayName = "SheetClose"
 
 const SheetContent = React.forwardRef<

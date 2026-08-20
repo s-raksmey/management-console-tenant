@@ -84,12 +84,12 @@ const getNavigation = (
     },
     km: {
       dashboard: "ផ្ទាំងសង្ខេប",
-      tenantManagement: "គ្រប់គ្រង Tenant",
+      tenantManagement: "គ្រប់គ្រងគេហទំព័រ",
       userManagement: "គ្រប់គ្រងអ្នកប្រើ",
       roleManagement: "គ្រប់គ្រងតួនាទី",
       analytics: "វិភាគទិន្នន័យ",
       media: "មេឌៀ",
-      carousel: "Carousel",
+      carousel: "ការ៉ូសែល",
       ads: "ពាណិជ្ជកម្ម",
       logs: "កំណត់ហេតុ",
       settings: "ការកំណត់",
@@ -367,6 +367,8 @@ export function MobileNavTrigger({
 }: {
   onOpenChange: (open: boolean) => void;
 }) {
+  const { locale } = useAdminLocale();
+
   return (
     <Button
       variant="outline"
@@ -375,7 +377,7 @@ export function MobileNavTrigger({
       onClick={() => onOpenChange(true)}
     >
       <Menu className="h-4 w-4" />
-      <span className="sr-only">Open navigation menu</span>
+      <span className="sr-only">{locale === "km" ? "បើកម៉ឺនុយរុករក" : "Open navigation menu"}</span>
     </Button>
   );
 }

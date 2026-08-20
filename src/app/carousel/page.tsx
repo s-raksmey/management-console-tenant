@@ -24,6 +24,7 @@ import { Permission } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tenant, TenantService } from "@/services/tenant.gql";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 const CAROUSEL_ACCESS_PERMISSIONS = [
   Permission.CREATE_CAROUSEL,
@@ -31,7 +32,94 @@ const CAROUSEL_ACCESS_PERMISSIONS = [
   Permission.DELETE_CAROUSEL,
 ];
 
+const carouselListCopy = {
+  en: {
+    error: "Error",
+    success: "Success",
+    loadTenantFailed: "Failed to load tenant options.",
+    loadSlidesFailed: "Failed to load carousel slides",
+    deleted: "Carousel slide deleted.",
+    deleteFailed: "Failed to delete carousel slide",
+    accessDenied: "Access denied: Insufficient permissions",
+    title: "Public Carousel",
+    description: "Manage hero slides for the homepage, category pages, and sub-category pages.",
+    newSlide: "New Slide",
+    selectTenant: "Select Tenant",
+    selectTenantDescription:
+      "Super admin carousel changes are applied to the selected tenant public website.",
+    selectTenantPlaceholder: "Select tenant",
+    allSlides: "All Slides",
+    slidesConfigured: (count: number) => `${count} slides configured`,
+    loadingSlides: "Loading slides...",
+    empty: "No carousel slides yet",
+    createFirst: "Create First Slide",
+    active: "Active",
+    inactive: "Inactive",
+    order: (order: number) => `Order ${order}`,
+    standard: "Standard",
+    wide: "Wide",
+    image: "Image",
+    video: (provider?: string | null) => `Video${provider ? `: ${provider}` : ""}`,
+    homepage: "Homepage",
+    category: (slug?: string | null) => `Category: ${slug}`,
+    topic: (category?: string | null, topic?: string | null) => `Sub-category: ${category}/${topic}`,
+    khmer: "Khmer",
+    createdBy: (name: string) => `Created by ${name}`,
+    createdUnknown: "Created by unknown user",
+    edit: "Edit",
+    delete: "Delete",
+    deleteTitle: "Delete Carousel Slide?",
+    deleteDescription: (title?: string) =>
+      `Delete "${title ?? "this slide"}"? This action cannot be undone.`,
+    deleteConfirm: "Delete Slide",
+    cancel: "Cancel",
+  },
+  km: {
+    error: "បញ្ហា",
+    success: "ជោគជ័យ",
+    loadTenantFailed: "មិនអាចផ្ទុកជម្រើសគេហទំព័របានទេ។",
+    loadSlidesFailed: "មិនអាចផ្ទុកស្លាយការ៉ូសែលបានទេ",
+    deleted: "បានលុបស្លាយការ៉ូសែល។",
+    deleteFailed: "លុបស្លាយការ៉ូសែលមិនបាន",
+    accessDenied: "គ្មានសិទ្ធិ៖ សិទ្ធិមិនគ្រប់គ្រាន់",
+    title: "ការ៉ូសែលសាធារណៈ",
+    description: "គ្រប់គ្រងស្លាយមុខសម្រាប់ទំព័រដើម ទំព័រប្រភេទ និងទំព័រប្រធានបទរង។",
+    newSlide: "ស្លាយថ្មី",
+    selectTenant: "ជ្រើសគេហទំព័រ",
+    selectTenantDescription:
+      "ការកែការ៉ូសែលរបស់អ្នកគ្រប់គ្រងកំពូលនឹងអនុវត្តលើគេហទំព័រសាធារណៈដែលបានជ្រើស។",
+    selectTenantPlaceholder: "ជ្រើសគេហទំព័រ",
+    allSlides: "ស្លាយទាំងអស់",
+    slidesConfigured: (count: number) => `បានកំណត់ស្លាយ ${count}`,
+    loadingSlides: "កំពុងផ្ទុកស្លាយ...",
+    empty: "មិនទាន់មានស្លាយការ៉ូសែល",
+    createFirst: "បង្កើតស្លាយដំបូង",
+    active: "សកម្ម",
+    inactive: "មិនសកម្ម",
+    order: (order: number) => `លំដាប់ ${order}`,
+    standard: "ស្តង់ដារ",
+    wide: "ធំ",
+    image: "រូបភាព",
+    video: (provider?: string | null) => `វីដេអូ${provider ? `: ${provider}` : ""}`,
+    homepage: "ទំព័រដើម",
+    category: (slug?: string | null) => `ប្រភេទ៖ ${slug}`,
+    topic: (category?: string | null, topic?: string | null) => `ប្រធានបទរង៖ ${category}/${topic}`,
+    khmer: "ខ្មែរ",
+    createdBy: (name: string) => `បង្កើតដោយ ${name}`,
+    createdUnknown: "មិនស្គាល់អ្នកបង្កើត",
+    edit: "កែ",
+    delete: "លុប",
+    deleteTitle: "លុបស្លាយការ៉ូសែល?",
+    deleteDescription: (title?: string) =>
+      `លុប "${title ?? "ស្លាយនេះ"}"? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`,
+    deleteConfirm: "លុបស្លាយ",
+    cancel: "បោះបង់",
+  },
+} as const;
+
 export default function CarouselListPage() {
+  const { locale } = useAdminLocale();
+  const copy = carouselListCopy[locale];
   const { user } = useAuth();
   const { hasAnyPermission, isLoading: permissionsLoading } = usePermissions();
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
@@ -63,7 +151,7 @@ export default function CarouselListPage() {
         setTenants(activeItems);
         setSelectedTenantId((current) => current || activeItems[0]?.id || "");
       } catch {
-        showErrorRef.current("Error", "Failed to load tenant options.");
+        showErrorRef.current(copy.error, copy.loadTenantFailed);
       }
     };
 
@@ -99,9 +187,10 @@ export default function CarouselListPage() {
       );
     } catch (error: any) {
       showErrorRef.current(
-        "Error",
-        error?.response?.errors?.[0]?.message ||
-          "Failed to load carousel slides",
+        copy.error,
+        locale === "en"
+          ? error?.response?.errors?.[0]?.message || copy.loadSlidesFailed
+          : copy.loadSlidesFailed,
       );
     } finally {
       setLoading(false);
@@ -135,13 +224,14 @@ export default function CarouselListPage() {
         setSlides((current) =>
           current.filter((slide) => slide.id !== deleteTarget.id),
         );
-        showSuccess("Success", "Carousel slide deleted.");
+        showSuccess(copy.success, copy.deleted);
       }
     } catch (error: any) {
       showError(
-        "Error",
-        error?.response?.errors?.[0]?.message ||
-          "Failed to delete carousel slide",
+        copy.error,
+        locale === "en"
+          ? error?.response?.errors?.[0]?.message || copy.deleteFailed
+          : copy.deleteFailed,
       );
     } finally {
       setDeleteTarget(null);
@@ -152,23 +242,22 @@ export default function CarouselListPage() {
     <>
       {!permissionsLoading && !canAccessCarousel ? (
         <div className="text-sm text-red-600">
-          Access denied: Insufficient permissions
+          {copy.accessDenied}
         </div>
       ) : (
       <div className="space-y-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-slate-950">Public Carousel</h1>
+          <h1 className="text-3xl font-bold text-slate-950">{copy.title}</h1>
           <p className="mt-2 text-sm text-slate-600">
-            Manage hero slides for the homepage, category pages, and
-            sub-category pages.
+            {copy.description}
           </p>
         </div>
         {(isSuperAdmin || hasAnyPermission([Permission.CREATE_CAROUSEL])) && (
           <Button asChild>
             <Link href="/carousel/new">
               <Plus className="mr-2 h-4 w-4" />
-              New Slide
+              {copy.newSlide}
             </Link>
           </Button>
         )}
@@ -177,9 +266,9 @@ export default function CarouselListPage() {
       {isSuperAdmin && (
         <Card>
           <CardHeader>
-            <CardTitle>Select Tenant</CardTitle>
+            <CardTitle>{copy.selectTenant}</CardTitle>
             <CardDescription>
-              Super admin carousel changes are applied to the selected tenant public website.
+              {copy.selectTenantDescription}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -188,7 +277,7 @@ export default function CarouselListPage() {
               onChange={(event) => setSelectedTenantId(event.target.value)}
               className="flex h-10 w-full max-w-md rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
             >
-              <option value="">Select tenant</option>
+              <option value="">{copy.selectTenantPlaceholder}</option>
               {tenants.map((tenant) => (
                 <option key={tenant.id} value={tenant.id}>
                   {tenant.name} /{tenant.slug}
@@ -201,26 +290,26 @@ export default function CarouselListPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle>All Slides</CardTitle>
-          <CardDescription>{slides.length} slides configured</CardDescription>
+          <CardTitle>{copy.allSlides}</CardTitle>
+          <CardDescription>{copy.slidesConfigured(slides.length)}</CardDescription>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-16 text-slate-500">
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Loading slides...
+              {copy.loadingSlides}
             </div>
           ) : slides.length === 0 ? (
             <div className="rounded-lg border border-dashed border-slate-300 py-16 text-center">
               <ImageIcon className="mx-auto h-10 w-10 text-slate-400" />
               <p className="mt-3 text-sm font-medium text-slate-700">
-                No carousel slides yet
+                {copy.empty}
               </p>
               {(isSuperAdmin || hasAnyPermission([Permission.CREATE_CAROUSEL])) && (
                 <Button asChild className="mt-4">
                   <Link href="/carousel/new">
                     <Plus className="mr-2 h-4 w-4" />
-                    Create First Slide
+                    {copy.createFirst}
                   </Link>
                 </Button>
               )}
@@ -257,26 +346,26 @@ export default function CarouselListPage() {
                   <div className="min-w-0">
                     <div className="mb-2 flex flex-wrap items-center gap-2">
                       <Badge variant={slide.isActive ? "success" : "secondary"}>
-                        {slide.isActive ? "Active" : "Inactive"}
+                        {slide.isActive ? copy.active : copy.inactive}
                       </Badge>
-                      <Badge variant="outline">Order {slide.sortOrder}</Badge>
+                      <Badge variant="outline">{copy.order(slide.sortOrder)}</Badge>
                       <Badge variant="outline">
-                        {slide.size === "STANDARD" ? "Standard" : "Wide"}
+                        {slide.size === "STANDARD" ? copy.standard : copy.wide}
                       </Badge>
                       <Badge variant="outline">
                         {slide.mediaType === "VIDEO"
-                          ? `Video${slide.videoProvider ? `: ${slide.videoProvider}` : ""}`
-                          : "Image"}
+                          ? copy.video(slide.videoProvider)
+                          : copy.image}
                       </Badge>
                       <Badge variant="outline">
                         {slide.placement === "HOME"
-                          ? "Homepage"
+                          ? copy.homepage
                           : slide.placement === "CATEGORY"
-                            ? `Category: ${slide.categorySlug}`
-                            : `Sub-category: ${slide.categorySlug}/${slide.topicSlug}`}
+                            ? copy.category(slide.categorySlug)
+                            : copy.topic(slide.categorySlug, slide.topicSlug)}
                       </Badge>
                       {slide.titleKhmer && (
-                        <Badge variant="outline">Khmer</Badge>
+                        <Badge variant="outline">{copy.khmer}</Badge>
                       )}
                     </div>
                     <h3 className="truncate text-base font-semibold text-slate-950">
@@ -289,8 +378,8 @@ export default function CarouselListPage() {
                     )}
                     <p className="mt-2 text-xs text-slate-500">
                       {slide.createdBy
-                        ? `Created by ${slide.createdBy.name}`
-                        : "Created by unknown user"}
+                        ? copy.createdBy(slide.createdBy.name)
+                        : copy.createdUnknown}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 lg:flex-col lg:items-stretch lg:justify-center">
@@ -298,7 +387,7 @@ export default function CarouselListPage() {
                       <Button type="button" variant="outline" size="sm" asChild>
                         <Link href={`/carousel/${slide.id}/edit?tenantId=${slide.tenantId}`}>
                           <Edit className="mr-2 h-4 w-4" />
-                          Edit
+                          {copy.edit}
                         </Link>
                       </Button>
                     )}
@@ -311,7 +400,7 @@ export default function CarouselListPage() {
                         onClick={() => setDeleteTarget(slide)}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {copy.delete}
                       </Button>
                     )}
                   </div>
@@ -325,10 +414,10 @@ export default function CarouselListPage() {
       <ConfirmationDialog
         open={!!deleteTarget}
         onOpenChange={(open) => !open && setDeleteTarget(null)}
-        title="Delete Carousel Slide?"
-        description={`Delete "${deleteTarget?.title ?? "this slide"}"? This action cannot be undone.`}
-        confirmText="Delete Slide"
-        cancelText="Cancel"
+        title={copy.deleteTitle}
+        description={copy.deleteDescription(deleteTarget?.title)}
+        confirmText={copy.deleteConfirm}
+        cancelText={copy.cancel}
         variant="destructive"
         onConfirm={() => {
           void confirmDelete();

@@ -159,94 +159,194 @@ const tenantsCopy = {
     author: "Author",
     password: "Password",
     passwordPlaceholder: "Required for new users",
+    siteDisabled: "Site Disabled",
+    users: "Users",
+    connection: "Connection",
+    publicSite: "Public Site",
+    adminSite: "Admin Site",
+    notSet: "Not set",
+    openPublic: "Open public",
+    openAdmin: "Open admin",
+    tenantAdminCount: (count: number) => `${count} tenant admin${count !== 1 ? "s" : ""}`,
+    cancelEdit: "Cancel Edit",
+    editTenant: "Edit Tenant",
+    archive: "Archive",
+    restore: "Restore",
+    publicWebsiteEnvironment: "Public Website Environment",
+    envHint: "Tenant ID is stable. The slug can change when the tenant name changes, so it is not required in the public website env.",
+    tenantId: "Tenant ID",
+    tenantSlug: "Tenant slug",
+    publicWebsiteEnvironmentLabel: "Public website environment",
+    currentSlug: "Current slug",
+    copyEnv: "Copy Env",
+    tenantUsersTitle: "Tenant Users",
+    usersInTenant: (count: number, tenantName: string) => `${count} user${count !== 1 ? "s" : ""} in ${tenantName}`,
+    addUser: "Add User",
+    noUsersAssigned: "No users are assigned to this tenant yet.",
+    tableUser: "User",
+    tableEmail: "Email",
+    tenantRole: "Tenant Role",
+    platformRole: "Platform Role",
+    status: "Status",
+    twoFactor: "Two-Factor",
+    created: "Created",
+    accountActive: "Account Active",
+    accountInactive: "Account Inactive",
+    membershipInactive: "Membership Inactive",
+    enabled: "Enabled",
+    needsSetup: "Needs Setup",
+    showQrAgain: "Show QR Again",
+    primaryLocale: "Primary Locale",
+    enableTenantSite: "Enable this tenant public/admin site",
+    statusLabels: {
+      ACTIVE: "Active",
+      SUSPENDED: "Suspended",
+      ARCHIVED: "Archived",
+    },
+    roleLabels: {
+      SUPER_ADMIN: "Super Admin",
+      ADMIN: "Admin",
+      EDITOR: "Editor",
+      AUTHOR: "Author",
+    },
   },
   km: {
     confirm: "បញ្ជាក់",
     cancel: "បោះបង់",
     copied: "បានចម្លង",
-    copiedDescription: (label: string) => `បានចម្លង ${label} ទៅ clipboard។`,
+    copiedDescription: (label: string) => `បានចម្លង ${label} ទៅក្តារតម្បៀតខ្ទាស់។`,
     copyFailed: "ចម្លងមិនបាន",
     copyFailedDescription: (label: string) => `មិនអាចចម្លង ${label} បានទេ។`,
     error: "បញ្ហា",
     validationError: "ទិន្នន័យមិនត្រឹមត្រូវ",
-    loadFailed: "មិនអាចផ្ទុក tenants បានទេ។",
-    tenantNameRequired: "ត្រូវការឈ្មោះ tenant។",
-    createTenantTitle: "បង្កើតគេហទំព័រ Tenant?",
-    createTenantDescription: (name: string) => `បង្កើតគេហទំព័រ tenant "${name}"?`,
-    createTenant: "បង្កើត Tenant",
-    tenantCreated: "បានបង្កើត Tenant",
+    loadFailed: "មិនអាចផ្ទុកគេហទំព័របានទេ។",
+    tenantNameRequired: "ត្រូវការឈ្មោះគេហទំព័រ។",
+    createTenantTitle: "បង្កើតគេហទំព័រថ្មី?",
+    createTenantDescription: (name: string) => `បង្កើតគេហទំព័រ "${name}"?`,
+    createTenant: "បង្កើតគេហទំព័រ",
+    tenantCreated: "បានបង្កើតគេហទំព័រ",
     tenantCreatedDescription: (name: string) => `${name} រួចរាល់ហើយ។`,
-    createTenantFailed: "មិនអាចបង្កើត tenant បានទេ។",
-    tenantUserRequired: "ត្រូវការ tenant, ឈ្មោះ និងអ៊ីមែល។",
-    createTenantUserTitle: "បង្កើតអ្នកប្រើ Tenant?",
+    createTenantFailed: "មិនអាចបង្កើតគេហទំព័របានទេ។",
+    tenantUserRequired: "ត្រូវការគេហទំព័រ ឈ្មោះ និងអ៊ីមែល។",
+    createTenantUserTitle: "បង្កើតអ្នកប្រើគេហទំព័រ?",
     createTenantUserDescription: (name: string, role?: string | null) =>
-      `បង្កើត ${name} ជា tenant ${role?.toLowerCase()}?`,
+      `បង្កើត ${name} ជាអ្នកប្រើគេហទំព័រតួនាទី ${role?.toLowerCase()}?`,
     createUser: "បង្កើតអ្នកប្រើ",
-    tenantUserCreated: "បានបង្កើតអ្នកប្រើ Tenant",
-    tenantUserCreatedDescription: "អ្នកប្រើអាចចូលប្រើ tenant នេះបានហើយ។",
-    createTenantUserFailed: "មិនអាចបង្កើតអ្នកប្រើ tenant បានទេ។",
-    resetTwoFactorTitle: "កំណត់ Two-Factor ឡើងវិញ?",
+    tenantUserCreated: "បានបង្កើតអ្នកប្រើគេហទំព័រ",
+    tenantUserCreatedDescription: "អ្នកប្រើអាចចូលប្រើគេហទំព័រនេះបានហើយ។",
+    createTenantUserFailed: "មិនអាចបង្កើតអ្នកប្រើគេហទំព័របានទេ។",
+    resetTwoFactorTitle: "កំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញ?",
     resetTwoFactorDescription: (name: string) =>
-      `កំណត់ Two-Factor setup សម្រាប់ "${name}" ឡើងវិញ? ពួកគេត្រូវស្កេន QR ថ្មីនៅពេលចូលលើកក្រោយ។`,
-    resetTwoFactor: "កំណត់ Two-Factor ឡើងវិញ",
-    resetTwoFactorFailed: "មិនអាចកំណត់ Two-Factor setup ឡើងវិញបានទេ។",
-    resetTwoFactorSuccess: "បានកំណត់ Two-Factor ឡើងវិញ",
-    saveTenantTitle: "រក្សាទុកការកែ Tenant?",
-    saveTenantDescription: (name: string) => `រក្សាទុកការកែប្រែ tenant "${name}"?`,
-    saveTenant: "រក្សាទុក Tenant",
-    tenantUpdated: "បានកែ Tenant",
+      `កំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានសម្រាប់ "${name}" ឡើងវិញ? ពួកគេត្រូវស្កេន QR ថ្មីនៅពេលចូលលើកក្រោយ។`,
+    resetTwoFactor: "កំណត់ពីរជំហានឡើងវិញ",
+    resetTwoFactorFailed: "មិនអាចកំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញបានទេ។",
+    resetTwoFactorSuccess: "បានកំណត់ពីរជំហានឡើងវិញ",
+    saveTenantTitle: "រក្សាទុកការកែគេហទំព័រ?",
+    saveTenantDescription: (name: string) => `រក្សាទុកការកែប្រែគេហទំព័រ "${name}"?`,
+    saveTenant: "រក្សាទុកគេហទំព័រ",
+    tenantUpdated: "បានកែគេហទំព័រ",
     tenantUpdatedDescription: (name: string) => `${name} ត្រូវបានកែប្រែហើយ។`,
-    updateTenantFailed: "មិនអាចកែ tenant បានទេ។",
-    archiveTenantTitle: "Archive Tenant?",
-    restoreTenantTitle: "Restore Tenant?",
-    archiveTenantDescription: (name: string) => `Archive "${name}"?`,
-    restoreTenantDescription: (name: string) => `Restore "${name}"?`,
-    archiveTenant: "Archive Tenant",
-    restoreTenant: "Restore Tenant",
-    tenantArchived: "បាន Archive Tenant",
-    tenantRestored: "បាន Restore Tenant",
-    tenantArchivedDescription: (name: string) => `${name} ត្រូវបានលាក់ពី public/admin access។`,
+    updateTenantFailed: "មិនអាចកែគេហទំព័របានទេ។",
+    archiveTenantTitle: "ដាក់គេហទំព័រក្នុងប័ណ្ណសារ?",
+    restoreTenantTitle: "ស្ដារគេហទំព័រ?",
+    archiveTenantDescription: (name: string) => `ដាក់ "${name}" ក្នុងប័ណ្ណសារ?`,
+    restoreTenantDescription: (name: string) => `ស្ដារ "${name}"?`,
+    archiveTenant: "ដាក់ក្នុងប័ណ្ណសារ",
+    restoreTenant: "ស្ដារគេហទំព័រ",
+    tenantArchived: "បានដាក់គេហទំព័រក្នុងប័ណ្ណសារ",
+    tenantRestored: "បានស្ដារគេហទំព័រ",
+    tenantArchivedDescription: (name: string) => `${name} ត្រូវបានលាក់ពីការចូលប្រើសាធារណៈ និងផ្នែកគ្រប់គ្រង។`,
     tenantRestoredDescription: (name: string) => `${name} សកម្មឡើងវិញ។`,
-    tenantLifecycleFailed: (action: string) => `មិនអាច ${action} tenant បានទេ។`,
-    archiveAction: "archive",
-    restoreAction: "restore",
-    eyebrowSuper: "គ្រប់គ្រង Tenant",
-    eyebrowTenant: "គ្រប់គ្រង Website",
-    titleSuper: "គេហទំព័រ Tenant",
+    tenantLifecycleFailed: (action: string) => `មិនអាច${action}គេហទំព័របានទេ។`,
+    archiveAction: "ដាក់ក្នុងប័ណ្ណសារ",
+    restoreAction: "ស្ដារ",
+    eyebrowSuper: "គ្រប់គ្រងគេហទំព័រ",
+    eyebrowTenant: "គ្រប់គ្រងគេហទំព័រ",
+    titleSuper: "គេហទំព័រទាំងអស់",
     titleTenant: "គេហទំព័របច្ចុប្បន្ន",
-    descriptionSuper: "បង្កើតគេហទំព័រ tenant ពិនិត្យអ្នកប្រើ និងគ្រប់គ្រង tenant ទាំងអស់ពីកន្លែងតែមួយ។",
-    descriptionTenant: "គ្រប់គ្រង tenant admin website និង public website identity។",
-    createTenantWebsite: "បង្កើតគេហទំព័រ Tenant",
-    newSite: "Admin និង public site ថ្មី",
-    activeTenants: "Tenants សកម្ម",
-    tenantUsers: "អ្នកប្រើ Tenant",
-    activeSites: "Sites សកម្ម",
-    archived: "Archived",
-    tenants: "Tenants",
-    website: "Website",
-    tenantsConfigured: (count: number) => `បានកំណត់ ${count} tenant website`,
-    websiteDescription: "កែឈ្មោះ URLs locale និង active state របស់ tenant នេះ",
+    descriptionSuper: "បង្កើតគេហទំព័រ ពិនិត្យអ្នកប្រើ និងគ្រប់គ្រងគេហទំព័រទាំងអស់ពីកន្លែងតែមួយ។",
+    descriptionTenant: "គ្រប់គ្រងអត្តសញ្ញាណគេហទំព័រផ្នែកគ្រប់គ្រង និងគេហទំព័រសាធារណៈនេះ។",
+    createTenantWebsite: "បង្កើតគេហទំព័រ",
+    newSite: "គេហទំព័រផ្នែកគ្រប់គ្រង និងសាធារណៈថ្មី",
+    activeTenants: "គេហទំព័រសកម្ម",
+    tenantUsers: "អ្នកប្រើគេហទំព័រ",
+    activeSites: "តំបន់បណ្តាញសកម្ម",
+    archived: "បានដាក់ប័ណ្ណសារ",
+    tenants: "គេហទំព័រ",
+    website: "គេហទំព័រ",
+    tenantsConfigured: (count: number) => `បានកំណត់គេហទំព័រ ${count}`,
+    websiteDescription: "កែឈ្មោះ URL ភាសាចម្បង និងស្ថានភាពសកម្មរបស់គេហទំព័រនេះ",
     refresh: "ផ្ទុកឡើងវិញ",
-    loadingTenants: "កំពុងផ្ទុក tenants...",
-    noTenants: "មិនទាន់មាន tenants។",
-    createTenantDialogDescription: "បង្កើត tenant admin និង public website ស្អាត។ មាតិកាចាប់ផ្តើមទទេ។",
-    tenantName: "ឈ្មោះ Tenant",
-    slug: "Slug",
+    loadingTenants: "កំពុងផ្ទុកគេហទំព័រ...",
+    noTenants: "មិនទាន់មានគេហទំព័រ។",
+    createTenantDialogDescription: "បង្កើតគេហទំព័រផ្នែកគ្រប់គ្រង និងសាធារណៈថ្មី។ មាតិកាចាប់ផ្តើមទទេ។",
+    tenantName: "ឈ្មោះគេហទំព័រ",
+    slug: "ស្លាក URL",
     formDescription: "ពណ៌នា",
-    publicUrl: "Public URL",
-    adminUrl: "Admin URL",
-    createTenantUser: "បង្កើតអ្នកប្រើ Tenant",
-    createTenantUserDialogDescription: "បង្កើតអ្នកប្រើដោយផ្ទាល់ក្នុង tenant នេះ និងជ្រើសតួនាទី។",
-    tenant: "Tenant",
-    selectFromTenantUsers: "ជ្រើសពីផ្ទាំង Users របស់ tenant",
+    publicUrl: "URL សាធារណៈ",
+    adminUrl: "URL ផ្នែកគ្រប់គ្រង",
+    createTenantUser: "បង្កើតអ្នកប្រើគេហទំព័រ",
+    createTenantUserDialogDescription: "បង្កើតអ្នកប្រើដោយផ្ទាល់ក្នុងគេហទំព័រនេះ និងជ្រើសតួនាទី។",
+    tenant: "គេហទំព័រ",
+    selectFromTenantUsers: "ជ្រើសពីផ្ទាំងអ្នកប្រើរបស់គេហទំព័រ",
     name: "ឈ្មោះ",
     email: "អ៊ីមែល",
     role: "តួនាទី",
-    admin: "Admin",
-    editor: "Editor",
-    author: "Author",
+    admin: "អ្នកគ្រប់គ្រង",
+    editor: "អ្នកកែសម្រួល",
+    author: "អ្នកនិពន្ធ",
     password: "ពាក្យសម្ងាត់",
     passwordPlaceholder: "ត្រូវការសម្រាប់អ្នកប្រើថ្មី",
+    siteDisabled: "គេហទំព័របានបិទ",
+    users: "អ្នកប្រើ",
+    connection: "ការតភ្ជាប់",
+    publicSite: "គេហទំព័រសាធារណៈ",
+    adminSite: "គេហទំព័រផ្នែកគ្រប់គ្រង",
+    notSet: "មិនទាន់កំណត់",
+    openPublic: "បើកផ្នែកសាធារណៈ",
+    openAdmin: "បើកផ្នែកគ្រប់គ្រង",
+    tenantAdminCount: (count: number) => `${count} អ្នកគ្រប់គ្រងគេហទំព័រ`,
+    cancelEdit: "បោះបង់ការកែ",
+    editTenant: "កែគេហទំព័រ",
+    archive: "ដាក់ប័ណ្ណសារ",
+    restore: "ស្ដារ",
+    publicWebsiteEnvironment: "បរិស្ថានគេហទំព័រសាធារណៈ",
+    envHint: "លេខសម្គាល់គេហទំព័រមានស្ថិរភាព។ ស្លាក URL អាចផ្លាស់ប្តូរពេលឈ្មោះគេហទំព័រផ្លាស់ប្តូរ ដូច្នេះវាមិនចាំបាច់នៅក្នុងការកំណត់បរិស្ថានរបស់គេហទំព័រសាធារណៈទេ។",
+    tenantId: "លេខសម្គាល់គេហទំព័រ",
+    tenantSlug: "ស្លាក URL គេហទំព័រ",
+    publicWebsiteEnvironmentLabel: "បរិស្ថានគេហទំព័រសាធារណៈ",
+    currentSlug: "ស្លាក URL បច្ចុប្បន្ន",
+    copyEnv: "ចម្លងការកំណត់បរិស្ថាន",
+    tenantUsersTitle: "អ្នកប្រើគេហទំព័រ",
+    usersInTenant: (count: number, tenantName: string) => `${count} អ្នកប្រើ ក្នុង ${tenantName}`,
+    addUser: "បន្ថែមអ្នកប្រើ",
+    noUsersAssigned: "មិនទាន់មានអ្នកប្រើត្រូវបានផ្តល់ទៅគេហទំព័រនេះទេ។",
+    tableUser: "អ្នកប្រើ",
+    tableEmail: "អ៊ីមែល",
+    tenantRole: "តួនាទីគេហទំព័រ",
+    platformRole: "តួនាទីវេទិកា",
+    status: "ស្ថានភាព",
+    twoFactor: "ពីរជំហាន",
+    created: "បានបង្កើត",
+    accountActive: "គណនីសកម្ម",
+    accountInactive: "គណនីអសកម្ម",
+    membershipInactive: "សមាជិកភាពអសកម្ម",
+    enabled: "បានបើក",
+    needsSetup: "ត្រូវការកំណត់",
+    showQrAgain: "បង្ហាញ QR ម្តងទៀត",
+    primaryLocale: "ភាសាចម្បង",
+    enableTenantSite: "បើកគេហទំព័រសាធារណៈ និងផ្នែកគ្រប់គ្រងនេះ",
+    statusLabels: {
+      ACTIVE: "សកម្ម",
+      SUSPENDED: "បានផ្អាក",
+      ARCHIVED: "បានដាក់ប័ណ្ណសារ",
+    },
+    roleLabels: {
+      SUPER_ADMIN: "អ្នកគ្រប់គ្រងកំពូល",
+      ADMIN: "អ្នកគ្រប់គ្រង",
+      EDITOR: "អ្នកកែសម្រួល",
+      AUTHOR: "អ្នកនិពន្ធ",
+    },
   },
 };
 
@@ -754,10 +854,10 @@ export default function TenantsPage() {
                             {tenant.name}
                           </h2>
                           <Badge variant={statusBadgeVariant(tenant.status) as any}>
-                            {tenant.status}
+                            {copy.statusLabels[tenant.status]}
                           </Badge>
                           {site?.isActive === false && (
-                            <Badge variant="secondary">Site Disabled</Badge>
+                            <Badge variant="secondary">{copy.siteDisabled}</Badge>
                           )}
                         </div>
                         <p className="mt-1 text-sm text-slate-500">/{tenant.slug}</p>
@@ -779,7 +879,7 @@ export default function TenantsPage() {
                             }
                           >
                             <Users className="mr-2 h-4 w-4" />
-                            Users
+                            {copy.users}
                             <Badge variant="secondary" className="ml-2">
                               {tenantMemberships.length}
                             </Badge>
@@ -795,7 +895,7 @@ export default function TenantsPage() {
                             }
                           >
                             <Server className="mr-2 h-4 w-4" />
-                            Connection
+                            {copy.connection}
                             <ChevronDown
                               className={`ml-1 h-4 w-4 transition-transform ${
                                 isConnectionExpanded ? "rotate-180" : ""
@@ -808,10 +908,10 @@ export default function TenantsPage() {
                       <div className="grid gap-3 sm:grid-cols-2">
                         <div className="rounded-md border bg-slate-50 p-3">
                           <p className="text-xs font-semibold uppercase text-slate-500">
-                            Public Site
+                            {copy.publicSite}
                           </p>
                           <p className="mt-2 truncate text-sm font-medium text-slate-900">
-                            {site?.publicBaseUrl || "Not set"}
+                            {site?.publicBaseUrl || copy.notSet}
                           </p>
                           {site?.publicBaseUrl && (
                             <Button
@@ -823,17 +923,17 @@ export default function TenantsPage() {
                                 window.open(site.publicBaseUrl ?? undefined, "_blank", "noreferrer")
                               }
                             >
-                              Open public
+                              {copy.openPublic}
                               <ExternalLink className="ml-1 h-3.5 w-3.5" />
                             </Button>
                           )}
                         </div>
                         <div className="rounded-md border bg-slate-50 p-3">
                           <p className="text-xs font-semibold uppercase text-slate-500">
-                            Admin Site
+                            {copy.adminSite}
                           </p>
                           <p className="mt-2 truncate text-sm font-medium text-slate-900">
-                            {site?.adminBaseUrl || "Not set"}
+                            {site?.adminBaseUrl || copy.notSet}
                           </p>
                           {site?.adminBaseUrl && (
                             <Button
@@ -845,7 +945,7 @@ export default function TenantsPage() {
                                 window.open(site.adminBaseUrl ?? undefined, "_blank", "noreferrer")
                               }
                             >
-                              Open admin
+                              {copy.openAdmin}
                               <ExternalLink className="ml-1 h-3.5 w-3.5" />
                             </Button>
                           )}
@@ -855,7 +955,7 @@ export default function TenantsPage() {
                       <div className="flex flex-col gap-2 xl:items-end">
                         <div className="mb-1 text-sm text-slate-600">
                           <span className="font-medium text-slate-950">{adminCount}</span>{" "}
-                          tenant admin{adminCount !== 1 ? "s" : ""}
+                          {copy.tenantAdminCount(adminCount).replace(String(adminCount), "")}
                         </div>
                         <Button
                           type="button"
@@ -864,7 +964,7 @@ export default function TenantsPage() {
                           onClick={() => (isEditing ? cancelTenantEdit() : startTenantEdit(tenant))}
                         >
                           {isEditing ? <X className="mr-2 h-4 w-4" /> : <Edit2 className="mr-2 h-4 w-4" />}
-                          {isEditing ? "Cancel Edit" : "Edit Tenant"}
+                          {isEditing ? copy.cancelEdit : copy.editTenant}
                         </Button>
                         {isSuperAdmin && tenant.status !== "ARCHIVED" && (
                           <Button
@@ -880,7 +980,7 @@ export default function TenantsPage() {
                             ) : (
                               <Archive className="mr-2 h-4 w-4" />
                             )}
-                            Archive
+                            {copy.archive}
                           </Button>
                         )}
                         {isSuperAdmin && tenant.status === "ARCHIVED" && (
@@ -896,7 +996,7 @@ export default function TenantsPage() {
                             ) : (
                               <RotateCcw className="mr-2 h-4 w-4" />
                             )}
-                            Restore
+                            {copy.restore}
                           </Button>
                         )}
                       </div>
@@ -906,18 +1006,18 @@ export default function TenantsPage() {
                       <div className="grid gap-3 rounded-md border bg-slate-50 p-4 lg:grid-cols-[minmax(0,1fr)_220px]">
                         <div>
                           <p className="text-xs font-semibold uppercase text-slate-500">
-                            Public Website Environment
+                            {copy.publicWebsiteEnvironment}
                           </p>
                           <pre className="mt-2 overflow-x-auto rounded-md border bg-white p-3 text-xs leading-5 text-slate-700">
                             {buildPublicEnv(tenant)}
                           </pre>
                           <p className="mt-2 text-xs leading-5 text-slate-500">
-                            Tenant ID is stable. The slug can change when the tenant name changes, so it is not required in the public website env.
+                            {copy.envHint}
                           </p>
                           <div className="mt-3 grid gap-2 sm:grid-cols-2">
                             <button
                               type="button"
-                              onClick={() => copyTenantValue("Tenant ID", tenant.id)}
+                              onClick={() => copyTenantValue(copy.tenantId, tenant.id)}
                               className="flex items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
                             >
                               <span className="truncate">ID: {tenant.id}</span>
@@ -925,10 +1025,10 @@ export default function TenantsPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => copyTenantValue("Tenant slug", tenant.slug)}
+                              onClick={() => copyTenantValue(copy.tenantSlug, tenant.slug)}
                               className="flex items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
                             >
-                              <span className="truncate">Current slug: {tenant.slug}</span>
+                              <span className="truncate">{copy.currentSlug}: {tenant.slug}</span>
                               <Copy className="h-3.5 w-3.5 flex-shrink-0" />
                             </button>
                           </div>
@@ -939,11 +1039,11 @@ export default function TenantsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() =>
-                              copyTenantValue("Public website environment", buildPublicEnv(tenant))
+                              copyTenantValue(copy.publicWebsiteEnvironmentLabel, buildPublicEnv(tenant))
                             }
                           >
                             <Copy className="mr-2 h-4 w-4" />
-                            Copy Env
+                            {copy.copyEnv}
                           </Button>
                         </div>
                       </div>
@@ -955,10 +1055,10 @@ export default function TenantsPage() {
                           <div>
                             <h3 className="flex items-center gap-2 font-semibold text-slate-950">
                               <Users className="h-4 w-4 text-blue-600" />
-                              Tenant Users
+                              {copy.tenantUsersTitle}
                             </h3>
                             <p className="text-sm text-slate-500">
-                              {tenantMemberships.length} user{tenantMemberships.length !== 1 ? "s" : ""} in {tenant.name}
+                              {copy.usersInTenant(tenantMemberships.length, tenant.name)}
                             </p>
                           </div>
                           <div className="flex flex-wrap items-center gap-2">
@@ -972,7 +1072,7 @@ export default function TenantsPage() {
                                 onClick={() => openCreateTenantUser(tenant)}
                               >
                                 <UserPlus className="mr-2 h-4 w-4" />
-                                Add User
+                                {copy.addUser}
                               </Button>
                             )}
                           </div>
@@ -980,20 +1080,20 @@ export default function TenantsPage() {
 
                         {tenantMemberships.length === 0 ? (
                           <div className="p-6 text-center text-sm text-slate-500">
-                            No users are assigned to this tenant yet.
+                            {copy.noUsersAssigned}
                           </div>
                         ) : (
                           <div className="overflow-x-auto">
                             <table className="w-full min-w-[760px] text-sm">
                               <thead>
                                 <tr className="border-b text-left text-xs font-semibold uppercase text-slate-500">
-                                  <th className="px-4 py-3">User</th>
-                                  <th className="px-4 py-3">Email</th>
-                                  <th className="px-4 py-3">Tenant Role</th>
-                                  <th className="px-4 py-3">Platform Role</th>
-                                  <th className="px-4 py-3">Status</th>
-                                  <th className="px-4 py-3">Two-Factor</th>
-                                  <th className="px-4 py-3">Created</th>
+                                  <th className="px-4 py-3">{copy.tableUser}</th>
+                                  <th className="px-4 py-3">{copy.tableEmail}</th>
+                                  <th className="px-4 py-3">{copy.tenantRole}</th>
+                                  <th className="px-4 py-3">{copy.platformRole}</th>
+                                  <th className="px-4 py-3">{copy.status}</th>
+                                  <th className="px-4 py-3">{copy.twoFactor}</th>
+                                  <th className="px-4 py-3">{copy.created}</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -1014,19 +1114,19 @@ export default function TenantsPage() {
                                     <td className="px-4 py-3">
                                       <Badge variant="secondary" className="gap-1">
                                         <Shield className="h-3 w-3" />
-                                        {membership.role}
+                                        {copy.roleLabels[membership.role as keyof typeof copy.roleLabels] ?? membership.role}
                                       </Badge>
                                     </td>
                                     <td className="px-4 py-3">
-                                      <Badge variant="outline">{membership.user.role}</Badge>
+                                      <Badge variant="outline">{copy.roleLabels[membership.user.role as keyof typeof copy.roleLabels] ?? membership.user.role}</Badge>
                                     </td>
                                     <td className="px-4 py-3">
                                       <div className="flex flex-wrap gap-1">
                                         <Badge variant={membership.user.isActive ? "default" : "secondary"}>
-                                          {membership.user.isActive ? "Account Active" : "Account Inactive"}
+                                          {membership.user.isActive ? copy.accountActive : copy.accountInactive}
                                         </Badge>
                                         {!membership.isActive && (
-                                          <Badge variant="secondary">Membership Inactive</Badge>
+                                          <Badge variant="secondary">{copy.membershipInactive}</Badge>
                                         )}
                                       </div>
                                     </td>
@@ -1036,7 +1136,7 @@ export default function TenantsPage() {
                                           variant={membership.user.twoFactorEnabled ? "outline" : "secondary"}
                                           className="w-fit"
                                         >
-                                          {membership.user.twoFactorEnabled ? "Enabled" : "Needs Setup"}
+                                          {membership.user.twoFactorEnabled ? copy.enabled : copy.needsSetup}
                                         </Badge>
                                         <Button
                                           type="button"
@@ -1051,12 +1151,12 @@ export default function TenantsPage() {
                                           ) : (
                                             <KeyRound className="mr-2 h-3.5 w-3.5" />
                                           )}
-                                          Show QR Again
+                                          {copy.showQrAgain}
                                         </Button>
                                       </div>
                                     </td>
                                     <td className="px-4 py-3 text-slate-600">
-                                      {new Date(membership.user.createdAt).toLocaleDateString()}
+                                      {new Date(membership.user.createdAt).toLocaleDateString(locale === "km" ? "km-KH" : undefined)}
                                     </td>
                                   </tr>
                                 ))}
@@ -1071,7 +1171,7 @@ export default function TenantsPage() {
                       <form className="rounded-md border bg-slate-50 p-4" onSubmit={updateTenant}>
                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-name-${tenant.id}`}>Tenant Name</Label>
+                            <Label htmlFor={`edit-name-${tenant.id}`}>{copy.tenantName}</Label>
                             <Input
                               id={`edit-name-${tenant.id}`}
                               value={editTenantForm.name ?? ""}
@@ -1087,7 +1187,7 @@ export default function TenantsPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-slug-${tenant.id}`}>Slug</Label>
+                            <Label htmlFor={`edit-slug-${tenant.id}`}>{copy.slug}</Label>
                             <Input
                               id={`edit-slug-${tenant.id}`}
                               value={editTenantForm.slug ?? ""}
@@ -1100,7 +1200,7 @@ export default function TenantsPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-status-${tenant.id}`}>Status</Label>
+                            <Label htmlFor={`edit-status-${tenant.id}`}>{copy.status}</Label>
                             <select
                               id={`edit-status-${tenant.id}`}
                               value={editTenantForm.status ?? "ACTIVE"}
@@ -1114,13 +1214,13 @@ export default function TenantsPage() {
                             >
                               {tenantStatuses.map((status) => (
                                 <option key={status} value={status}>
-                                  {status}
+                                  {copy.statusLabels[status]}
                                 </option>
                               ))}
                             </select>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-public-${tenant.id}`}>Public URL</Label>
+                            <Label htmlFor={`edit-public-${tenant.id}`}>{copy.publicUrl}</Label>
                             <Input
                               id={`edit-public-${tenant.id}`}
                               value={editTenantForm.publicBaseUrl ?? ""}
@@ -1133,7 +1233,7 @@ export default function TenantsPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-admin-${tenant.id}`}>Admin URL</Label>
+                            <Label htmlFor={`edit-admin-${tenant.id}`}>{copy.adminUrl}</Label>
                             <Input
                               id={`edit-admin-${tenant.id}`}
                               value={editTenantForm.adminBaseUrl ?? ""}
@@ -1146,7 +1246,7 @@ export default function TenantsPage() {
                             />
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor={`edit-locale-${tenant.id}`}>Primary Locale</Label>
+                            <Label htmlFor={`edit-locale-${tenant.id}`}>{copy.primaryLocale}</Label>
                             <Input
                               id={`edit-locale-${tenant.id}`}
                               value={editTenantForm.primaryLocale ?? "en"}
@@ -1161,7 +1261,7 @@ export default function TenantsPage() {
                         </div>
 
                         <div className="mt-4 space-y-2">
-                          <Label htmlFor={`edit-description-${tenant.id}`}>Description</Label>
+                          <Label htmlFor={`edit-description-${tenant.id}`}>{copy.formDescription}</Label>
                           <Textarea
                             id={`edit-description-${tenant.id}`}
                             value={editTenantForm.description ?? ""}
@@ -1186,12 +1286,12 @@ export default function TenantsPage() {
                             }
                             className="h-4 w-4 rounded border-slate-300"
                           />
-                          Enable this tenant public/admin site
+                          {copy.enableTenantSite}
                         </label>
 
                         <div className="mt-4 flex justify-end gap-2">
                           <Button type="button" variant="outline" onClick={cancelTenantEdit}>
-                            Cancel
+                            {copy.cancel}
                           </Button>
                           <Button type="submit" disabled={savingEdit}>
                             {savingEdit ? (
@@ -1199,7 +1299,7 @@ export default function TenantsPage() {
                             ) : (
                               <Check className="mr-2 h-4 w-4" />
                             )}
-                            Save Tenant
+                            {copy.saveTenant}
                           </Button>
                         </div>
                       </form>

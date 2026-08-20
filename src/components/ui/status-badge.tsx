@@ -3,6 +3,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { ArticleStatus } from '@/types/article';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface StatusBadgeProps {
   status: ArticleStatus;
@@ -32,13 +33,40 @@ const statusConfig = {
   }
 };
 
+const localizedStatusConfig = {
+  en: statusConfig,
+  km: {
+    DRAFT: {
+      label: 'ព្រាង',
+      className: statusConfig.DRAFT.className,
+      description: 'អត្ថបទកំពុងសរសេរ',
+    },
+    REVIEW: {
+      label: 'កំពុងត្រួតពិនិត្យ',
+      className: statusConfig.REVIEW.className,
+      description: 'បានផ្ញើទៅក្រុមកែសម្រួលត្រួតពិនិត្យ',
+    },
+    PUBLISHED: {
+      label: 'បានផ្សព្វផ្សាយ',
+      className: statusConfig.PUBLISHED.className,
+      description: 'កំពុងបង្ហាញជាសាធារណៈឱ្យអ្នកអានមើល',
+    },
+    ARCHIVED: {
+      label: 'បានដាក់ប័ណ្ណសារ',
+      className: statusConfig.ARCHIVED.className,
+      description: 'លែងសកម្ម',
+    },
+  },
+} as const;
+
 export function StatusBadge({ status, className = '' }: StatusBadgeProps) {
-  const config = statusConfig[status];
+  const { locale } = useAdminLocale();
+  const config = localizedStatusConfig[locale][status];
   
   if (!config) {
     return (
       <Badge className={`bg-gray-100 text-gray-800 ${className}`}>
-        Unknown
+        {locale === 'km' ? 'មិនស្គាល់' : 'Unknown'}
       </Badge>
     );
   }

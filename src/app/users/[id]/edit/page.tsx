@@ -70,24 +70,24 @@ const editUserCopy = {
     resetTwoFactor: 'Reset Two-Factor',
   },
   km: {
-    superAdmin: 'Super Admin',
-    tenantAdmin: 'Tenant Admin',
-    editor: 'Editor',
-    author: 'Author',
+    superAdmin: 'អ្នកគ្រប់គ្រងកំពូល',
+    tenantAdmin: 'អ្នកគ្រប់គ្រងគេហទំព័រ',
+    editor: 'អ្នកកែសម្រួល',
+    author: 'អ្នកនិពន្ធ',
     roleUpdateBlockedTitle: 'បានរារាំងការប្តូរតួនាទី',
-    roleUpdateBlockedDescription: 'អ្នកប្រើ tenant មិនអាចត្រូវបានដំឡើងជា super admin បានទេ។',
+    roleUpdateBlockedDescription: 'អ្នកប្រើគេហទំព័រមិនអាចត្រូវបានដំឡើងជាអ្នកគ្រប់គ្រងកំពូលបានទេ។',
     updateFailedTitle: 'កែប្រែមិនបាន',
-    updateProfileFailed: 'មិនអាចកែប្រែ profile អ្នកប្រើបានទេ។',
+    updateProfileFailed: 'មិនអាចកែប្រែប្រវត្តិរូបអ្នកប្រើបានទេ។',
     roleUpdateFailedTitle: 'ប្តូរតួនាទីមិនបាន',
     roleUpdateFailedDescription: 'មិនអាចប្តូរតួនាទីអ្នកប្រើបានទេ។',
     statusUpdateFailedTitle: 'កែប្រែស្ថានភាពមិនបាន',
     statusUpdateFailedDescription: 'មិនអាចកែប្រែស្ថានភាពអ្នកប្រើបានទេ។',
     userUpdatedTitle: 'បានកែប្រែអ្នកប្រើ',
     userUpdatedDescription: 'បានរក្សាទុកព័ត៌មានអ្នកប្រើ។',
-    twoFactorResetFailedTitle: 'កំណត់ Two-Factor ឡើងវិញមិនបាន',
-    twoFactorResetFailedDescription: 'មិនអាចកំណត់ Two-Factor setup ឡើងវិញបានទេ។',
-    twoFactorResetTitle: 'បានកំណត់ Two-Factor ឡើងវិញ',
-    twoFactorResetDescription: 'បានកំណត់ Two-Factor setup ឡើងវិញ។',
+    twoFactorResetFailedTitle: 'កំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញមិនបាន',
+    twoFactorResetFailedDescription: 'មិនអាចកំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញបានទេ។',
+    twoFactorResetTitle: 'បានកំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញ',
+    twoFactorResetDescription: 'បានកំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញ។',
     loadingUser: 'កំពុងផ្ទុកអ្នកប្រើ...',
     backToUsers: 'ត្រឡប់ទៅអ្នកប្រើ',
     userNotFound: 'រកមិនឃើញអ្នកប្រើ',
@@ -99,22 +99,22 @@ const editUserCopy = {
     email: 'អ៊ីមែល',
     emailPlaceholder: 'បញ្ចូលអ៊ីមែល',
     role: 'តួនាទី',
-    superAdminHelp: 'ការគ្រប់គ្រងអ្នកប្រើវេទិកាកែតែគណនី super admin ប៉ុណ្ណោះ។',
-    permissionHelp: 'អ្នកអាចកែ profile ប៉ុន្តែការប្តូរតួនាទីត្រូវការសិទ្ធិគ្រប់គ្រងតួនាទី។',
+    superAdminHelp: 'ការគ្រប់គ្រងអ្នកប្រើវេទិកាកែតែគណនីអ្នកគ្រប់គ្រងកំពូលប៉ុណ្ណោះ។',
+    permissionHelp: 'អ្នកអាចកែប្រវត្តិរូប ប៉ុន្តែការប្តូរតួនាទីត្រូវការសិទ្ធិគ្រប់គ្រងតួនាទី។',
     status: 'ស្ថានភាព',
     active: 'សកម្ម',
     inactive: 'អសកម្ម',
     cancel: 'បោះបង់',
     saveUser: 'រក្សាទុកអ្នកប្រើ',
     accountCreated: 'បានបង្កើតគណនី',
-    twoFactorSetup: 'Two-factor setup',
+    twoFactorSetup: 'ការផ្ទៀងផ្ទាត់ពីរជំហាន',
     twoFactorEnabled: 'បានបើក។ កំណត់ឡើងវិញដើម្បីបង្ហាញ QR ថ្មីនៅពេលចូលលើកក្រោយ។',
-    twoFactorNeedsSetup: 'ត្រូវ setup។ QR code នឹងបង្ហាញនៅពេលចូលលើកក្រោយ។',
+    twoFactorNeedsSetup: 'ត្រូវការកំណត់។ QR code នឹងបង្ហាញនៅពេលចូលលើកក្រោយ។',
     showQrAgain: 'បង្ហាញ QR ម្តងទៀត',
     showQrAgainTitle: 'បង្ហាញ QR ម្តងទៀត?',
     showQrAgainDescription: (name: string) =>
-      `${name} ត្រូវស្កេន Two-Factor QR code ថ្មីនៅពេលចូលលើកក្រោយ។`,
-    resetTwoFactor: 'កំណត់ Two-Factor ឡើងវិញ',
+      `${name} ត្រូវស្កេន QR code ពីរជំហានថ្មីនៅពេលចូលលើកក្រោយ។`,
+    resetTwoFactor: 'កំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញ',
   },
 };
 
@@ -327,7 +327,7 @@ export default function EditUserPage() {
               </div>
               <Badge variant="outline" className="w-fit gap-1">
                 <ShieldCheck className="h-3.5 w-3.5" />
-                {user.role}
+                {roleOptions.find((option) => option.value === user.role)?.label ?? user.role}
               </Badge>
             </div>
           </CardHeader>
@@ -425,7 +425,7 @@ export default function EditUserPage() {
               <div>
                 <p className="font-medium text-slate-950">{copy.accountCreated}</p>
                 <p className="text-sm text-slate-500">
-                  {new Date(user.createdAt).toLocaleDateString()}
+                  {new Date(user.createdAt).toLocaleDateString(locale === 'km' ? 'km-KH' : undefined)}
                 </p>
               </div>
             </div>

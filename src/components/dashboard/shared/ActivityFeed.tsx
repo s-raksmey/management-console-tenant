@@ -6,6 +6,7 @@ import { LucideIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 export interface ActivityItem {
   id: string;
@@ -43,6 +44,28 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
   showViewAll = false,
   onViewAll
 }) => {
+  const { locale } = useAdminLocale();
+  const copy = {
+    en: {
+      viewAll: 'View all',
+      noRecentActivity: 'No recent activity',
+      byUser: (name: string) => `by ${name}`,
+      justNow: 'Just now',
+      minutesAgo: (count: number) => `${count}m ago`,
+      hoursAgo: (count: number) => `${count}h ago`,
+      daysAgo: (count: number) => `${count}d ago`,
+    },
+    km: {
+      viewAll: 'មើលទាំងអស់',
+      noRecentActivity: 'មិនទាន់មានសកម្មភាពថ្មីៗទេ',
+      byUser: (name: string) => `ដោយ ${name}`,
+      justNow: 'ទើបតែឥឡូវ',
+      minutesAgo: (count: number) => `${count} នាទីមុន`,
+      hoursAgo: (count: number) => `${count} ម៉ោងមុន`,
+      daysAgo: (count: number) => `${count} ថ្ងៃមុន`,
+    },
+  }[locale];
+
   if (loading) {
     return (
       <Card className={cn("", className)}>
@@ -108,10 +131,10 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
     const time = new Date(timestamp);
     const diffInMinutes = Math.floor((now.getTime() - time.getTime()) / (1000 * 60));
     
-    if (diffInMinutes < 1) return 'Just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-    return `${Math.floor(diffInMinutes / 1440)}d ago`;
+    if (diffInMinutes < 1) return copy.justNow;
+    if (diffInMinutes < 60) return copy.minutesAgo(diffInMinutes);
+    if (diffInMinutes < 1440) return copy.hoursAgo(Math.floor(diffInMinutes / 60));
+    return copy.daysAgo(Math.floor(diffInMinutes / 1440));
   };
 
   const displayActivities = activities.slice(0, maxItems);
@@ -128,7 +151,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
               onClick={onViewAll}
               className="text-sm text-blue-600 hover:text-blue-800 font-medium dark:text-blue-300 dark:hover:text-blue-200"
             >
-              View all
+              {copy.viewAll}
             </button>
           )}
         </div>
@@ -137,7 +160,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
       <CardContent className="pt-0">
         {displayActivities.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-slate-400">
-            <p>No recent activity</p>
+            <p>{copy.noRecentActivity}</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -174,7 +197,7 @@ export const ActivityFeed: React.FC<ActivityFeedProps> = ({
                         <div className="flex items-center space-x-2 mt-2">
                           {activity.user && (
                             <span className="text-xs text-gray-500 dark:text-slate-400">
-                              by {activity.user.name}
+                              {copy.byUser(activity.user.name)}
                             </span>
                           )}
                           {activity.metadata?.category && (

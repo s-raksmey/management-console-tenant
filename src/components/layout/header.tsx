@@ -83,6 +83,18 @@ const headerCopy = {
     profile: "Profile",
     settings: "Settings",
     signOut: "Sign out",
+    managementConsole: "Management Console",
+    from: (name: string) => `From: ${name}`,
+    notificationLabels: {
+      submission: "Submission",
+      accountRequest: "New Account Request",
+      approved: "Approved",
+      rejected: "Rejected",
+      revision: "Revision",
+      archived: "Archived",
+      draft: "Draft",
+      update: "Update",
+    },
     newCount: (count: number) => `${count} new`,
   },
   km: {
@@ -110,6 +122,18 @@ const headerCopy = {
     profile: "ប្រវត្តិរូប",
     settings: "ការកំណត់",
     signOut: "ចេញ",
+    managementConsole: "ផ្ទាំងគ្រប់គ្រង",
+    from: (name: string) => `ពី៖ ${name}`,
+    notificationLabels: {
+      submission: "ការដាក់ស្នើ",
+      accountRequest: "សំណើគណនីថ្មី",
+      approved: "បានអនុម័ត",
+      rejected: "បានបដិសេធ",
+      revision: "ការកែសម្រួល",
+      archived: "បានដាក់ប័ណ្ណសារ",
+      draft: "ព្រាង",
+      update: "បច្ចុប្បន្នភាព",
+    },
     newCount: (count: number) => `${count} ថ្មី`,
   },
 };
@@ -135,7 +159,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
   const brandName =
-    user?.role === "SUPER_ADMIN" ? "Management Console" : activeTenant?.name || "Pulse News";
+    user?.role === "SUPER_ADMIN" ? copy.managementConsole : activeTenant?.name || "Pulse News";
   const brandInitials = brandName
     .split(" ")
     .filter(Boolean)
@@ -174,69 +198,69 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
     switch (type) {
       case "SUBMISSION":
         return {
-          label: "Submission",
+          label: copy.notificationLabels.submission,
           accent: "bg-blue-100 text-blue-700",
           icon: Send,
         };
       case "ACCOUNT_REQUEST":
         return {
-          label: "New Account Request",
+          label: copy.notificationLabels.accountRequest,
           accent: "bg-indigo-100 text-indigo-700",
           icon: UserPlus,
         };
       case "APPROVAL":
       case "PUBLICATION":
         return {
-          label: "Approved",
+          label: copy.notificationLabels.approved,
           accent: "bg-green-100 text-green-700",
           icon: CheckCircle,
         };
       case "REJECTION":
         return {
-          label: "Rejected",
+          label: copy.notificationLabels.rejected,
           accent: "bg-red-100 text-red-700",
           icon: XCircle,
         };
       case "REVISION_REQUESTED":
         return {
-          label: "Revision",
+          label: copy.notificationLabels.revision,
           accent: "bg-purple-100 text-purple-700",
           icon: FileText,
         };
       case "REVISION_APPROVED":
         return {
-          label: "Revision",
+          label: copy.notificationLabels.revision,
           accent: "bg-green-100 text-green-700",
           icon: CheckCircle,
         };
       case "REVISION_REJECTED":
         return {
-          label: "Revision",
+          label: copy.notificationLabels.revision,
           accent: "bg-red-100 text-red-700",
           icon: XCircle,
         };
       case "REVISION_CONSUMED":
         return {
-          label: "Revision",
+          label: copy.notificationLabels.revision,
           accent: "bg-slate-100 text-slate-700",
           icon: Archive,
         };
       case "UNPUBLICATION":
       case "ARCHIVE":
         return {
-          label: "Archived",
+          label: copy.notificationLabels.archived,
           accent: "bg-slate-100 text-slate-700",
           icon: Archive,
         };
       case "DRAFT_SAVED":
         return {
-          label: "Draft",
+          label: copy.notificationLabels.draft,
           accent: "bg-amber-100 text-amber-700",
           icon: FileText,
         };
       default:
         return {
-          label: "Update",
+          label: copy.notificationLabels.update,
           accent: "bg-slate-100 text-slate-700",
           icon: FileText,
         };
@@ -269,10 +293,10 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const getNotificationFromLabel = (notification: NotificationRecord) => {
     const fromUser = notification.fromUser;
     if (fromUser?.name && fromUser.name.trim()) {
-      return `From: ${fromUser.name.trim()}`;
+      return copy.from(fromUser.name.trim());
     }
     if (fromUser?.email && fromUser.email.trim()) {
-      return `From: ${fromUser.email.trim()}`;
+      return copy.from(fromUser.email.trim());
     }
 
     if (!notification.metadata || typeof notification.metadata !== "object") {
@@ -284,11 +308,11 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
     const fromUserEmail = metadata.fromUserEmail;
 
     if (typeof fromUserName === "string" && fromUserName.trim()) {
-      return `From: ${fromUserName.trim()}`;
+      return copy.from(fromUserName.trim());
     }
 
     if (typeof fromUserEmail === "string" && fromUserEmail.trim()) {
-      return `From: ${fromUserEmail.trim()}`;
+      return copy.from(fromUserEmail.trim());
     }
 
     return null;

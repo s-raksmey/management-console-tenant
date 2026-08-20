@@ -24,10 +24,137 @@ import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 const PAGE_SIZE = 10;
 
+const myArticlesCopy = {
+  en: {
+    confirm: "Confirm",
+    loadError: "Error loading articles:",
+    loading: "Loading your articles...",
+    title: "My Articles",
+    description: "Manage your personal articles",
+    autoUpdating: "Auto-updating every 10s",
+    pauseUpdates: "Pause Updates",
+    resumeUpdates: "Resume Updates",
+    newArticle: "New Article",
+    status: "Status",
+    all: "All",
+    draft: "Draft",
+    review: "Review",
+    published: "Published",
+    archived: "Archived",
+    emptySignedIn: "No articles found. Create your first article!",
+    emptySignedOut: "Please log in to view your articles.",
+    edit: "Edit",
+    submitForReview: "Submit for Review",
+    submitForReviewTitle: "Submit for Review?",
+    submitForReviewDescription: (title: string) => `Submit "${title}" to the review queue?`,
+    submit: "Submit",
+    publish: "Publish",
+    publishTitle: "Publish Article?",
+    publishDescription: (title: string) => `Publish "${title}" now?`,
+    sendBack: "Send Back",
+    sendBackToDraft: "Send Back to Draft",
+    sendBackTitle: "Send Back to Draft?",
+    sendBackDescription: (title: string) => `Move "${title}" back to draft?`,
+    archive: "Archive",
+    archiveTitle: "Archive Article?",
+    archiveDescription: (title: string) => `Archive "${title}"?`,
+    share: "Share",
+    delete: "Delete",
+    deleteTitle: "Delete Article?",
+    deleteDescription: (title: string) => `Delete "${title}"? This action cannot be undone.`,
+    deleteArticle: "Delete Article",
+    uncategorized: "Uncategorized",
+    breaking: "Breaking",
+    revision: (status: string) => `Revision ${status.toLowerCase()}`,
+    revisionRequested: "Revision Requested",
+    revisionApproved: "Revision Approved",
+    revisionRejected: "Revision Rejected",
+    revisionEnd: "Revision End",
+    updated: "Updated",
+    category: "Category",
+    actions: "Actions",
+    showing: (start: number, end: number, total: number) => `Showing ${start}-${end} of ${total} articles`,
+    previous: "Previous",
+    pageOf: (page: number, total: number) => `Page ${page} of ${total}`,
+    next: "Next",
+    cancel: "Cancel",
+    noServerResponse: "No response from server. Please try again.",
+    updateStatusFailedTitle: "Failed to update status",
+    updateStatusFailedMessage: "Failed to update status. Please try again or contact support",
+  },
+  km: {
+    confirm: "បញ្ជាក់",
+    loadError: "មានបញ្ហាផ្ទុកអត្ថបទ៖",
+    loading: "កំពុងផ្ទុកអត្ថបទរបស់អ្នក...",
+    title: "អត្ថបទរបស់ខ្ញុំ",
+    description: "គ្រប់គ្រងអត្ថបទផ្ទាល់ខ្លួនរបស់អ្នក",
+    autoUpdating: "ធ្វើបច្ចុប្បន្នភាពស្វ័យប្រវត្តិរៀងរាល់ 10 វិនាទី",
+    pauseUpdates: "ផ្អាកបច្ចុប្បន្នភាព",
+    resumeUpdates: "បន្តបច្ចុប្បន្នភាព",
+    newArticle: "អត្ថបទថ្មី",
+    status: "ស្ថានភាព",
+    all: "ទាំងអស់",
+    draft: "ព្រាង",
+    review: "ត្រួតពិនិត្យ",
+    published: "បានផ្សព្វផ្សាយ",
+    archived: "បានដាក់ប័ណ្ណសារ",
+    emptySignedIn: "រកមិនឃើញអត្ថបទ។ បង្កើតអត្ថបទដំបូងរបស់អ្នក!",
+    emptySignedOut: "សូមចូលប្រើ ដើម្បីមើលអត្ថបទរបស់អ្នក។",
+    edit: "កែសម្រួល",
+    submitForReview: "ផ្ញើទៅត្រួតពិនិត្យ",
+    submitForReviewTitle: "ផ្ញើទៅត្រួតពិនិត្យ?",
+    submitForReviewDescription: (title: string) => `ផ្ញើ "${title}" ទៅជួរត្រួតពិនិត្យ?`,
+    submit: "ផ្ញើ",
+    publish: "ផ្សព្វផ្សាយ",
+    publishTitle: "ផ្សព្វផ្សាយអត្ថបទ?",
+    publishDescription: (title: string) => `ផ្សព្វផ្សាយ "${title}" ឥឡូវនេះ?`,
+    sendBack: "ផ្ញើត្រឡប់",
+    sendBackToDraft: "ផ្ញើត្រឡប់ទៅព្រាង",
+    sendBackTitle: "ផ្ញើត្រឡប់ទៅព្រាង?",
+    sendBackDescription: (title: string) => `ផ្លាស់ទី "${title}" ត្រឡប់ទៅព្រាង?`,
+    archive: "ដាក់ប័ណ្ណសារ",
+    archiveTitle: "ដាក់អត្ថបទក្នុងប័ណ្ណសារ?",
+    archiveDescription: (title: string) => `ដាក់ "${title}" ក្នុងប័ណ្ណសារ?`,
+    share: "ចែករំលែក",
+    delete: "លុប",
+    deleteTitle: "លុបអត្ថបទ?",
+    deleteDescription: (title: string) => `លុប "${title}"? សកម្មភាពនេះមិនអាចត្រឡប់វិញបានទេ។`,
+    deleteArticle: "លុបអត្ថបទ",
+    uncategorized: "មិនមានប្រភេទ",
+    breaking: "ទាន់ហេតុការណ៍",
+    revision: (status: string) => `ការកែសម្រួល ${status.toLowerCase()}`,
+    revisionRequested: "បានស្នើកែសម្រួល",
+    revisionApproved: "ការកែសម្រួលបានអនុម័ត",
+    revisionRejected: "ការកែសម្រួលត្រូវបានបដិសេធ",
+    revisionEnd: "ការកែសម្រួលបានបញ្ចប់",
+    updated: "បានធ្វើបច្ចុប្បន្នភាព",
+    category: "ប្រភេទ",
+    actions: "សកម្មភាព",
+    showing: (start: number, end: number, total: number) => `បង្ហាញ ${start}-${end} ក្នុងចំណោម ${total} អត្ថបទ`,
+    previous: "មុន",
+    pageOf: (page: number, total: number) => `ទំព័រ ${page} ក្នុងចំណោម ${total}`,
+    next: "បន្ទាប់",
+    cancel: "បោះបង់",
+    noServerResponse: "មិនមានការឆ្លើយតបពីម៉ាស៊ីនមេ។ សូមព្យាយាមម្តងទៀត។",
+    updateStatusFailedTitle: "ធ្វើបច្ចុប្បន្នភាពស្ថានភាពមិនបានសម្រេច",
+    updateStatusFailedMessage: "ធ្វើបច្ចុប្បន្នភាពស្ថានភាពមិនបានសម្រេច។ សូមព្យាយាមម្តងទៀត ឬទាក់ទងផ្នែកជំនួយ។",
+  },
+} as const;
+
+const statusCopyKeys: Record<ArticleStatus, "draft" | "review" | "published" | "archived"> = {
+  DRAFT: "draft",
+  REVIEW: "review",
+  PUBLISHED: "published",
+  ARCHIVED: "archived",
+};
+
 export default function MyArticlesPage() {
+  const { locale } = useAdminLocale();
+  const copy = myArticlesCopy[locale];
   const [articles, setArticles] = useState<Article[]>([]);
   const [previousArticles, setPreviousArticles] = useState<Article[]>([]);
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | undefined>();
@@ -45,7 +172,7 @@ export default function MyArticlesPage() {
     open: false,
     title: "",
     description: "",
-    confirmText: "Confirm",
+    confirmText: copy.confirm,
     onConfirm: () => {},
   });
   const [shareArticle, setShareArticle] = useState<Article | null>(null);
@@ -122,7 +249,8 @@ export default function MyArticlesPage() {
               const notification = getStatusChangeNotification(
                 oldArticle.status,
                 newArticle.status,
-                userRole || 'AUTHOR'
+                userRole || 'AUTHOR',
+                locale,
               );
               
               if (notification) {
@@ -186,7 +314,7 @@ export default function MyArticlesPage() {
         : await setArticleStatus(articleId, newStatus);
       
       if (!result) {
-        throw new Error('No response from server. Please try again.');
+        throw new Error(copy.noServerResponse);
       }
       
       // Show notification for status change
@@ -194,7 +322,8 @@ export default function MyArticlesPage() {
         const notification = getStatusChangeNotification(
           oldStatus,
           newStatus,
-          userRole || 'AUTHOR'
+          userRole || 'AUTHOR',
+          locale,
         );
         
         if (notification) {
@@ -211,8 +340,8 @@ export default function MyArticlesPage() {
       loadMyArticles(); // Reload articles after status change
     } catch (error) {
       console.error('❌ Error updating article status:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to update status. Please try again or contact support';
-      showError('Failed to update status', errorMessage);
+      const errorMessage = locale === "en" && error instanceof Error ? error.message : copy.updateStatusFailedMessage;
+      showError(copy.updateStatusFailedTitle, errorMessage);
     }
   };
 
@@ -260,7 +389,7 @@ export default function MyArticlesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg">Loading your articles...</div>
+        <div className="text-lg">{copy.loading}</div>
       </div>
     );
   }
@@ -268,7 +397,7 @@ export default function MyArticlesPage() {
   if (error) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-red-600">Error loading articles: {error}</div>
+        <div className="text-lg text-red-600">{copy.loadError} {error}</div>
       </div>
     );
   }
@@ -278,15 +407,15 @@ export default function MyArticlesPage() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-3xl font-bold tracking-tight">My Articles</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{copy.title}</h1>
           <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-4">
             <p className="text-muted-foreground">
-              Manage your personal articles
+              {copy.description}
             </p>
             {isPolling && (
               <div className="flex items-center space-x-1 text-sm text-green-600">
                 <RefreshCw className="w-3 h-3 animate-spin" />
-                <span>Auto-updating every 10s</span>
+                <span>{copy.autoUpdating}</span>
               </div>
             )}
           </div>
@@ -297,13 +426,13 @@ export default function MyArticlesPage() {
             size="sm"
             onClick={() => setIsPolling(!isPolling)}
           >
-            {isPolling ? 'Pause Updates' : 'Resume Updates'}
+            {isPolling ? copy.pauseUpdates : copy.resumeUpdates}
           </Button>
           {hasPermission(Permission.CREATE_ARTICLE) && (
             <Link href="/articles/new">
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
-                New Article
+                {copy.newArticle}
               </Button>
             </Link>
           )}
@@ -315,24 +444,24 @@ export default function MyArticlesPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline">
-              Status: {statusFilter || 'All'}
+              {copy.status}: {statusFilter ? copy[statusCopyKeys[statusFilter]] : copy.all}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem onClick={() => setStatusFilter(undefined)}>
-              All
+              {copy.all}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('DRAFT')}>
-              Draft
+              {copy.draft}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('REVIEW')}>
-              Review
+              {copy.review}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('PUBLISHED')}>
-              Published
+              {copy.published}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setStatusFilter('ARCHIVED')}>
-              Archived
+              {copy.archived}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -342,7 +471,7 @@ export default function MyArticlesPage() {
       <div className="space-y-3 md:hidden">
         {articles.length === 0 ? (
           <div className="rounded-lg border bg-white p-8 text-center text-muted-foreground">
-            {user?.id ? 'No articles found. Create your first article!' : 'Please log in to view your articles.'}
+            {user?.id ? copy.emptySignedIn : copy.emptySignedOut}
           </div>
         ) : (
           paginatedArticles.map((article) => (
@@ -360,7 +489,7 @@ export default function MyArticlesPage() {
                       <DropdownMenuItem asChild>
                         <Link href={`/articles/${article.id}/edit`}>
                           <Edit className="mr-2 h-4 w-4" />
-                          Edit
+                          {copy.edit}
                         </Link>
                       </DropdownMenuItem>
                     )}
@@ -368,15 +497,15 @@ export default function MyArticlesPage() {
                       <DropdownMenuItem
                         onClick={() =>
                           requestAction({
-                            title: "Submit for Review?",
-                            description: `Submit "${article.title}" to the review queue?`,
-                            confirmText: "Submit",
+                            title: copy.submitForReviewTitle,
+                            description: copy.submitForReviewDescription(article.title),
+                            confirmText: copy.submit,
                             onConfirm: () => handleStatusChange(article.id, 'REVIEW'),
                           })
                         }
                         disabled={mutationLoading}
                       >
-                        Submit for Review
+                        {copy.submitForReview}
                       </DropdownMenuItem>
                     )}
                     {article.status === 'REVIEW' && hasPermission(Permission.REVIEW_ARTICLES) && (
@@ -384,28 +513,28 @@ export default function MyArticlesPage() {
                         <DropdownMenuItem
                           onClick={() =>
                             requestAction({
-                              title: "Publish Article?",
-                              description: `Publish "${article.title}" now?`,
-                              confirmText: "Publish",
+                              title: copy.publishTitle,
+                              description: copy.publishDescription(article.title),
+                              confirmText: copy.publish,
                               onConfirm: () => handleStatusChange(article.id, 'PUBLISHED'),
                             })
                           }
                           disabled={mutationLoading}
                         >
-                          Publish
+                          {copy.publish}
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           onClick={() =>
                             requestAction({
-                              title: "Send Back to Draft?",
-                              description: `Move "${article.title}" back to draft?`,
-                              confirmText: "Send Back",
+                              title: copy.sendBackTitle,
+                              description: copy.sendBackDescription(article.title),
+                              confirmText: copy.sendBack,
                               onConfirm: () => handleStatusChange(article.id, 'DRAFT'),
                             })
                           }
                           disabled={mutationLoading}
                         >
-                          Send Back to Draft
+                          {copy.sendBackToDraft}
                         </DropdownMenuItem>
                       </>
                     )}
@@ -413,31 +542,31 @@ export default function MyArticlesPage() {
                       <DropdownMenuItem
                         onClick={() =>
                           requestAction({
-                            title: "Archive Article?",
-                            description: `Archive "${article.title}"?`,
-                            confirmText: "Archive",
+                            title: copy.archiveTitle,
+                            description: copy.archiveDescription(article.title),
+                            confirmText: copy.archive,
                             variant: "destructive",
                             onConfirm: () => handleStatusChange(article.id, 'ARCHIVED'),
                           })
                         }
                         disabled={mutationLoading}
                       >
-                        Archive
+                        {copy.archive}
                       </DropdownMenuItem>
                     )}
                     {article.status === 'PUBLISHED' && (
                       <DropdownMenuItem onClick={() => setShareArticle(article)}>
                         <Share2 className="mr-2 h-4 w-4" />
-                        Share
+                        {copy.share}
                       </DropdownMenuItem>
                     )}
                     {hasPermission(Permission.DELETE_OWN_ARTICLE) && (
                       <DropdownMenuItem
                         onClick={() =>
                           requestAction({
-                            title: "Delete Article?",
-                            description: `Delete "${article.title}"? This action cannot be undone.`,
-                            confirmText: "Delete Article",
+                            title: copy.deleteTitle,
+                            description: copy.deleteDescription(article.title),
+                            confirmText: copy.deleteArticle,
                             variant: "destructive",
                             onConfirm: () => handleDelete(article.id),
                           })
@@ -446,7 +575,7 @@ export default function MyArticlesPage() {
                         className="text-red-600"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Delete
+                        {copy.delete}
                       </DropdownMenuItem>
                     )}
                   </DropdownMenuContent>
@@ -472,20 +601,20 @@ export default function MyArticlesPage() {
                 <div className="flex flex-wrap gap-2">
                   <span
                     className="max-w-full truncate rounded-full bg-muted px-2.5 py-1 text-xs font-medium"
-                    title={article.category?.name || 'Uncategorized'}
+                    title={article.category?.name || copy.uncategorized}
                   >
-                    {article.category?.name || 'Uncategorized'}
+                    {article.category?.name || copy.uncategorized}
                   </span>
-                  {article.isBreaking && <Badge variant="destructive" className="text-xs">Breaking</Badge>}
+                  {article.isBreaking && <Badge variant="destructive" className="text-xs">{copy.breaking}</Badge>}
                   {revisionRequestStatusById[article.id] && (
                     <Badge variant="outline" className="text-xs">
-                      Revision {revisionRequestStatusById[article.id].toLowerCase()}
+                      {copy.revision(revisionRequestStatusById[article.id])}
                     </Badge>
                   )}
                 </div>
 
                 <div className="flex items-center justify-between border-t pt-3 text-xs text-muted-foreground">
-                  <span>Updated</span>
+                  <span>{copy.updated}</span>
                   <span className="font-semibold text-foreground">
                     {format(new Date(article.updatedAt), 'MMM d, yyyy')}
                   </span>
@@ -509,18 +638,18 @@ export default function MyArticlesPage() {
             </colgroup>
             <thead className="border-b bg-muted/50">
               <tr>
-                <th className="text-left p-4 font-medium">Title</th>
-                <th className="text-left p-4 font-medium">Status</th>
-                <th className="text-left p-4 font-medium">Category</th>
-                <th className="text-left p-4 font-medium">Updated</th>
-                <th className="text-right p-4 font-medium">Actions</th>
+                <th className="text-left p-4 font-medium">{copy.title}</th>
+                <th className="text-left p-4 font-medium">{copy.status}</th>
+                <th className="text-left p-4 font-medium">{copy.category}</th>
+                <th className="text-left p-4 font-medium">{copy.updated}</th>
+                <th className="text-right p-4 font-medium">{copy.actions}</th>
               </tr>
             </thead>
             <tbody>
               {articles.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="text-center p-8 text-muted-foreground">
-                    {user?.id ? 'No articles found. Create your first article!' : 'Please log in to view your articles.'}
+                    {user?.id ? copy.emptySignedIn : copy.emptySignedOut}
                   </td>
                 </tr>
               ) : (
@@ -546,24 +675,24 @@ export default function MyArticlesPage() {
                       <div className="flex gap-2 flex-wrap">
                         <StatusBadge status={article.status} />
                         {article.isBreaking && (
-                          <Badge variant="destructive" className="text-xs">Breaking</Badge>
+                          <Badge variant="destructive" className="text-xs">{copy.breaking}</Badge>
                         )}
                         {revisionRequestStatusById[article.id] === 'PENDING' && (
-                          <Badge variant="outline" className="bg-purple-50 border-purple-200">📝 Revision Requested</Badge>
+                          <Badge variant="outline" className="bg-purple-50 border-purple-200">📝 {copy.revisionRequested}</Badge>
                         )}
                         {revisionRequestStatusById[article.id] === 'APPROVED' && (
-                          <Badge variant="outline" className="bg-green-50 border-green-200">✅ Revision Approved</Badge>
+                          <Badge variant="outline" className="bg-green-50 border-green-200">✅ {copy.revisionApproved}</Badge>
                         )}
                         {revisionRequestStatusById[article.id] === 'REJECTED' && (
-                          <Badge variant="outline" className="bg-red-50 border-red-200">❌ Revision Rejected</Badge>
+                          <Badge variant="outline" className="bg-red-50 border-red-200">❌ {copy.revisionRejected}</Badge>
                         )}
                         {revisionRequestStatusById[article.id] === 'CONSUMED' && (
-                          <Badge variant="outline" className="bg-slate-50 border-slate-200">✔ Revision End</Badge>
+                          <Badge variant="outline" className="bg-slate-50 border-slate-200">✔ {copy.revisionEnd}</Badge>
                         )}
                       </div>
                     </td>
-                    <td className="truncate p-4 align-middle" title={article.category?.name || 'Uncategorized'}>
-                      {article.category?.name || 'Uncategorized'}
+                    <td className="truncate p-4 align-middle" title={article.category?.name || copy.uncategorized}>
+                      {article.category?.name || copy.uncategorized}
                     </td>
                     <td className="whitespace-nowrap p-4 text-sm text-muted-foreground align-middle">
                       {format(new Date(article.updatedAt), 'MMM d, yyyy')}
@@ -580,7 +709,7 @@ export default function MyArticlesPage() {
                             <DropdownMenuItem asChild>
                               <Link href={`/articles/${article.id}/edit`}>
                                 <Edit className="mr-2 h-4 w-4" />
-                                Edit
+                                {copy.edit}
                               </Link>
                             </DropdownMenuItem>
                           )}
@@ -588,15 +717,15 @@ export default function MyArticlesPage() {
                             <DropdownMenuItem 
                               onClick={() =>
                                 requestAction({
-                                  title: "Submit for Review?",
-                                  description: `Submit "${article.title}" to the review queue?`,
-                                  confirmText: "Submit",
+                                  title: copy.submitForReviewTitle,
+                                  description: copy.submitForReviewDescription(article.title),
+                                  confirmText: copy.submit,
                                   onConfirm: () => handleStatusChange(article.id, 'REVIEW'),
                                 })
                               }
                               disabled={mutationLoading}
                             >
-                              Submit for Review
+                              {copy.submitForReview}
                             </DropdownMenuItem>
                           )}
                           {article.status === 'REVIEW' && hasPermission && hasPermission(Permission.REVIEW_ARTICLES) && (
@@ -604,28 +733,28 @@ export default function MyArticlesPage() {
                               <DropdownMenuItem 
                                 onClick={() =>
                                   requestAction({
-                                    title: "Publish Article?",
-                                    description: `Publish "${article.title}" now?`,
-                                    confirmText: "Publish",
+                                    title: copy.publishTitle,
+                                    description: copy.publishDescription(article.title),
+                                    confirmText: copy.publish,
                                     onConfirm: () => handleStatusChange(article.id, 'PUBLISHED'),
                                   })
                                 }
                                 disabled={mutationLoading}
                               >
-                                Publish
+                                {copy.publish}
                               </DropdownMenuItem>
                               <DropdownMenuItem 
                                 onClick={() =>
                                   requestAction({
-                                    title: "Send Back to Draft?",
-                                    description: `Move "${article.title}" back to draft?`,
-                                    confirmText: "Send Back",
+                                    title: copy.sendBackTitle,
+                                    description: copy.sendBackDescription(article.title),
+                                    confirmText: copy.sendBack,
                                     onConfirm: () => handleStatusChange(article.id, 'DRAFT'),
                                   })
                                 }
                                 disabled={mutationLoading}
                               >
-                                Send Back to Draft
+                                {copy.sendBackToDraft}
                               </DropdownMenuItem>
                             </>
                           )}
@@ -633,31 +762,31 @@ export default function MyArticlesPage() {
                             <DropdownMenuItem 
                               onClick={() =>
                                 requestAction({
-                                  title: "Archive Article?",
-                                  description: `Archive "${article.title}"?`,
-                                  confirmText: "Archive",
+                                  title: copy.archiveTitle,
+                                  description: copy.archiveDescription(article.title),
+                                  confirmText: copy.archive,
                                   variant: "destructive",
                                   onConfirm: () => handleStatusChange(article.id, 'ARCHIVED'),
                                 })
                               }
                               disabled={mutationLoading}
                             >
-                              Archive
+                              {copy.archive}
                             </DropdownMenuItem>
                           )}
                           {article.status === 'PUBLISHED' && (
                             <DropdownMenuItem onClick={() => setShareArticle(article)}>
                               <Share2 className="mr-2 h-4 w-4" />
-                              Share
+                              {copy.share}
                             </DropdownMenuItem>
                           )}
                           {hasPermission(Permission.DELETE_OWN_ARTICLE) && (
                             <DropdownMenuItem 
                               onClick={() =>
                                 requestAction({
-                                  title: "Delete Article?",
-                                  description: `Delete "${article.title}"? This action cannot be undone.`,
-                                  confirmText: "Delete Article",
+                                  title: copy.deleteTitle,
+                                  description: copy.deleteDescription(article.title),
+                                  confirmText: copy.deleteArticle,
                                   variant: "destructive",
                                   onConfirm: () => handleDelete(article.id),
                                 })
@@ -666,7 +795,7 @@ export default function MyArticlesPage() {
                               className="text-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
+                              {copy.delete}
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
@@ -682,7 +811,7 @@ export default function MyArticlesPage() {
       {articles.length > 0 && (
         <div className="flex flex-col gap-3 rounded-lg border bg-white px-4 py-3 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <div>
-            Showing {startItem}-{endItem} of {articles.length} articles
+            {copy.showing(startItem, endItem, articles.length)}
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -692,10 +821,10 @@ export default function MyArticlesPage() {
               onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
               disabled={safeCurrentPage === 1 || loading}
             >
-              Previous
+              {copy.previous}
             </Button>
             <span className="min-w-20 text-center text-xs font-medium">
-              Page {safeCurrentPage} of {totalPages}
+              {copy.pageOf(safeCurrentPage, totalPages)}
             </span>
             <Button
               type="button"
@@ -704,7 +833,7 @@ export default function MyArticlesPage() {
               onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
               disabled={safeCurrentPage === totalPages || loading}
             >
-              Next
+              {copy.next}
             </Button>
           </div>
         </div>
@@ -717,7 +846,7 @@ export default function MyArticlesPage() {
         title={confirmation.title}
         description={confirmation.description}
         confirmText={confirmation.confirmText}
-        cancelText="Cancel"
+        cancelText={copy.cancel}
         variant={confirmation.variant}
         onConfirm={() => {
           void confirmation.onConfirm();
