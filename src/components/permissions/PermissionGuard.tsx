@@ -77,7 +77,7 @@ export enum Permission {
 /**
  * Role-based permission matrix (matching backend)
  */
-const ROLE_PERMISSIONS: Record<string, Permission[]> = {
+export const DEFAULT_ROLE_PERMISSIONS: Record<string, Permission[]> = {
   SUPER_ADMIN: [
     Permission.CREATE_USER,
     Permission.UPDATE_USER,
@@ -90,13 +90,6 @@ const ROLE_PERMISSIONS: Record<string, Permission[]> = {
     Permission.VIEW_ANALYTICS,
     Permission.VIEW_AUDIT_LOGS,
     Permission.SYSTEM_ADMINISTRATION,
-    Permission.CREATE_CAROUSEL,
-    Permission.UPDATE_CAROUSEL,
-    Permission.DELETE_CAROUSEL,
-    Permission.VIEW_ADS,
-    Permission.CREATE_ADS,
-    Permission.UPDATE_ADS,
-    Permission.DELETE_ADS,
     Permission.VIEW_MEDIA,
     Permission.MANAGE_MEDIA,
   ],
@@ -196,7 +189,7 @@ export const hasPermission = (
   const rolePermissions =
     dynamicRolePermissions !== null
       ? dynamicRolePermissions[normalizedRole] || []
-      : ROLE_PERMISSIONS[normalizedRole] || [];
+      : DEFAULT_ROLE_PERMISSIONS[normalizedRole] || [];
   return rolePermissions.includes(permission);
 };
 
@@ -239,7 +232,7 @@ const roleHasPermission = (
     rolePermissions[normalizedRole] ||
     (dynamicRolePermissions !== null
       ? dynamicRolePermissions[normalizedRole] || []
-      : ROLE_PERMISSIONS[normalizedRole] || []);
+      : DEFAULT_ROLE_PERMISSIONS[normalizedRole] || []);
 
   return permissions.includes(permission);
 };

@@ -40,16 +40,12 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     '/users',
     '/analytics',
     '/media',
-    '/carousel',
     '/audit',
     '/settings',
     '/profile',
   ];
   const isSuperAdminRouteAllowed = superAdminAllowedRoutes.some((route) =>
     route === '/' ? pathname === route : pathname === route || pathname.startsWith(`${route}/`)
-  ) || (
-    (pathname === '/ads' || pathname.startsWith('/ads/')) &&
-    hasPermission(Permission.VIEW_ADS)
   );
 
   useEffect(() => {

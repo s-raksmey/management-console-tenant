@@ -272,6 +272,7 @@ function getPermissionGroups(copy: typeof rolePageCopy.en | typeof rolePageCopy.
     {
       title: copy.groupsCopy.carousel.title,
       description: copy.groupsCopy.carousel.description,
+      excludedRoles: ["SUPER_ADMIN"],
       permissions: [
         permission("CREATE_CAROUSEL"),
         permission("UPDATE_CAROUSEL"),
@@ -281,6 +282,7 @@ function getPermissionGroups(copy: typeof rolePageCopy.en | typeof rolePageCopy.
     {
       title: copy.groupsCopy.ads.title,
       description: copy.groupsCopy.ads.description,
+      excludedRoles: ["SUPER_ADMIN"],
       permissions: [
         permission("VIEW_ADS"),
         permission("CREATE_ADS"),
@@ -318,13 +320,6 @@ const defaultRolePermissions: Record<ManagedRole, Permission[]> = {
     Permission.VIEW_ANALYTICS,
     Permission.VIEW_AUDIT_LOGS,
     Permission.SYSTEM_ADMINISTRATION,
-    Permission.CREATE_CAROUSEL,
-    Permission.UPDATE_CAROUSEL,
-    Permission.DELETE_CAROUSEL,
-    Permission.VIEW_ADS,
-    Permission.CREATE_ADS,
-    Permission.UPDATE_ADS,
-    Permission.DELETE_ADS,
     Permission.VIEW_MEDIA,
     Permission.MANAGE_MEDIA,
   ],

@@ -220,26 +220,6 @@ export const getNavigationItems = (
         permissions: [Permission.VIEW_MEDIA, Permission.MANAGE_MEDIA],
       },
       {
-        name: copy.carousel,
-        href: "/carousel",
-        icon: Image,
-        badge: null,
-        description: copy.publicHeroSlides,
-        permissions: [
-          Permission.CREATE_CAROUSEL,
-          Permission.UPDATE_CAROUSEL,
-          Permission.DELETE_CAROUSEL,
-        ],
-      },
-      {
-        name: copy.ads,
-        href: "/ads",
-        icon: Megaphone,
-        badge: null,
-        description: copy.sponsoredPlacements,
-        permissions: [Permission.VIEW_ADS],
-      },
-      {
         name: copy.logs,
         href: "/audit",
         icon: Archive,
