@@ -18,10 +18,7 @@ interface UserCreateModalProps {
 
 const createUserCopy = {
   en: {
-    mainTenantRole: 'Main Tenant Role',
     tenantRole: 'Sub-tenant Role',
-    superAdmin: 'Super Admin',
-    tenantAdmin: 'Sub-tenant Admin',
     admin: 'Admin',
     editor: 'Editor',
     author: 'Author',
@@ -44,10 +41,7 @@ const createUserCopy = {
     hidePassword: 'Hide password',
   },
   km: {
-    mainTenantRole: 'តួនាទីអ្នកជួលមេ',
     tenantRole: 'តួនាទីគេហទំព័រ',
-    superAdmin: 'អ្នកគ្រប់គ្រងកំពូល',
-    tenantAdmin: 'អ្នកគ្រប់គ្រងគេហទំព័រ',
     admin: 'អ្នកគ្រប់គ្រង',
     editor: 'អ្នកកែសម្រួល',
     author: 'អ្នកនិពន្ធ',
@@ -78,20 +72,14 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
   const { hasPermission } = usePermissions();
   const canAssignSuperAdmin = user?.role === 'SUPER_ADMIN';
   const canManageRoles = hasPermission(Permission.MANAGE_USER_ROLES);
-  const roleLabel = canAssignSuperAdmin ? copy.mainTenantRole : copy.tenantRole;
-  const defaultRole: AssignableUserRole = canAssignSuperAdmin ? 'ADMIN' : 'AUTHOR';
-  const roleOptions: Array<{ value: AssignableUserRole; label: string }> = canAssignSuperAdmin
+  const defaultRole: AssignableUserRole = canAssignSuperAdmin ? 'SUPER_ADMIN' : 'AUTHOR';
+  const roleOptions: Array<{ value: AssignableUserRole; label: string }> = canManageRoles
     ? [
-        { value: 'SUPER_ADMIN', label: copy.superAdmin },
-        { value: 'ADMIN', label: copy.tenantAdmin },
+        { value: 'ADMIN', label: copy.admin },
+        { value: 'EDITOR', label: copy.editor },
+        { value: 'AUTHOR', label: copy.author },
       ]
-    : canManageRoles
-      ? [
-          { value: 'ADMIN', label: copy.admin },
-          { value: 'EDITOR', label: copy.editor },
-          { value: 'AUTHOR', label: copy.author },
-        ]
-      : [{ value: defaultRole, label: defaultRole === 'ADMIN' ? copy.admin : copy.author }];
+    : [{ value: 'AUTHOR', label: copy.author }];
   const [formData, setFormData] = useState<CreateUserInput>({
     name: '',
     email: '',
@@ -115,7 +103,10 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
     setError(null);
 
     try {
-      const result = await UserService.createUser(formData);
+      const result = await UserService.createUser({
+        ...formData,
+        role: canAssignSuperAdmin ? 'SUPER_ADMIN' : formData.role,
+      });
       
       if (result.success) {
         // Reset form
@@ -242,25 +233,26 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
             </div>
           </div>
 
-          {/* Role Field */}
-          <div>
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-              {roleLabel}
-            </label>
-            <select
-              id="role"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value as AssignableUserRole })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={loading || !canManageRoles}
-            >
-              {roleOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
+          {!canAssignSuperAdmin && (
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
+                {copy.tenantRole}
+              </label>
+              <select
+                id="role"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value as AssignableUserRole })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={loading || !canManageRoles}
+              >
+                {roleOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Account Status */}
           <div className="flex items-center">

@@ -54,25 +54,51 @@ const auditCopy = {
     searchPlaceholder: 'Search by user, resource, or IP address...',
     allActions: 'All Actions',
     allResources: 'All Resources',
+    allStatuses: 'All Statuses',
+    succeeded: 'Succeeded',
+    failed: 'Failed',
     actions: {
       USER_LOGIN: 'User Login',
       USER_LOGOUT: 'User Logout',
+      USER_REGISTRATION: 'User Registration',
       USER_CREATED: 'User Created',
       USER_UPDATED: 'User Updated',
       USER_DELETED: 'User Deleted',
       USER_ROLE_CHANGED: 'User Role Changed',
+      USER_STATUS_CHANGED: 'User Status Changed',
       PASSWORD_CHANGED: 'Password Changed',
+      TWO_FACTOR_RESET: 'Two-factor Reset',
       ARTICLE_CREATED: 'Article Created',
       ARTICLE_UPDATED: 'Article Updated',
       ARTICLE_PUBLISHED: 'Article Published',
+      ARTICLE_UNPUBLISHED: 'Article Unpublished',
+      ARTICLE_STATUS_CHANGED: 'Article Status Changed',
       ARTICLE_DELETED: 'Article Deleted',
       ARTICLE_FEATURED: 'Article Featured',
+      ARTICLE_UNFEATURED: 'Article Unfeatured',
+      ARTICLE_BREAKING_SET: 'Breaking News Set',
+      ARTICLE_BREAKING_UNSET: 'Breaking News Removed',
+      ARTICLE_EDITORS_PICK_SET: "Editor's Pick Set",
+      ARTICLE_EDITORS_PICK_UNSET: "Editor's Pick Removed",
+      ARTICLE_SUBMITTED_FOR_REVIEW: 'Article Submitted for Review',
       ARTICLE_APPROVED: 'Article Approved',
       ARTICLE_REJECTED: 'Article Rejected',
+      REVISION_REQUESTED: 'Revision Requested',
+      REVISION_APPROVED: 'Revision Approved',
+      REVISION_REJECTED: 'Revision Rejected',
+      BREAKING_NEWS_REQUESTED: 'Breaking News Requested',
+      BREAKING_NEWS_APPROVED: 'Breaking News Approved',
+      BREAKING_NEWS_REJECTED: 'Breaking News Rejected',
       CATEGORY_CREATED: 'Category Created',
       CATEGORY_UPDATED: 'Category Updated',
+      CATEGORY_DELETED: 'Category Deleted',
       SETTING_UPDATED: 'Setting Updated',
+      SETTINGS_BULK_UPDATED: 'Settings Bulk Updated',
       PERMISSION_DENIED: 'Permission Denied',
+      UNAUTHORIZED_ACCESS_ATTEMPT: 'Unauthorized Access Attempt',
+      SUSPICIOUS_ACTIVITY: 'Suspicious Activity',
+      PAGE_VIEW: 'Page Viewed',
+      UI_INTERACTION: 'UI Interaction',
     },
     resources: {
       User: 'Users',
@@ -84,6 +110,8 @@ const auditCopy = {
       CATEGORY: 'Category',
       SETTINGS: 'Settings',
       MEDIA: 'Media',
+      Page: 'Page',
+      UI: 'Interface',
     },
     table: {
       timestamp: 'Timestamp',
@@ -92,6 +120,7 @@ const auditCopy = {
       resource: 'Resource',
       ipAddress: 'IP Address',
       details: 'Details',
+      status: 'Status',
     },
     loading: 'Loading audit logs...',
     empty: 'No audit logs found',
@@ -121,25 +150,51 @@ const auditCopy = {
     searchPlaceholder: 'ស្វែងរកតាមអ្នកប្រើ ធនធាន ឬ IP address...',
     allActions: 'សកម្មភាពទាំងអស់',
     allResources: 'ធនធានទាំងអស់',
+    allStatuses: 'ស្ថានភាពទាំងអស់',
+    succeeded: 'បានជោគជ័យ',
+    failed: 'បរាជ័យ',
     actions: {
       USER_LOGIN: 'អ្នកប្រើចូលប្រើ',
       USER_LOGOUT: 'អ្នកប្រើចេញ',
+      USER_REGISTRATION: 'ការចុះឈ្មោះអ្នកប្រើ',
       USER_CREATED: 'បានបង្កើតអ្នកប្រើ',
       USER_UPDATED: 'បានកែប្រែអ្នកប្រើ',
       USER_DELETED: 'បានលុបអ្នកប្រើ',
       USER_ROLE_CHANGED: 'បានប្តូរតួនាទីអ្នកប្រើ',
+      USER_STATUS_CHANGED: 'បានប្តូរស្ថានភាពអ្នកប្រើ',
       PASSWORD_CHANGED: 'បានប្តូរពាក្យសម្ងាត់',
+      TWO_FACTOR_RESET: 'បានកំណត់ការផ្ទៀងផ្ទាត់ពីរជំហានឡើងវិញ',
       ARTICLE_CREATED: 'បានបង្កើតអត្ថបទ',
       ARTICLE_UPDATED: 'បានកែប្រែអត្ថបទ',
       ARTICLE_PUBLISHED: 'បានផ្សព្វផ្សាយអត្ថបទ',
+      ARTICLE_UNPUBLISHED: 'បានដកការផ្សព្វផ្សាយអត្ថបទ',
+      ARTICLE_STATUS_CHANGED: 'បានប្តូរស្ថានភាពអត្ថបទ',
       ARTICLE_DELETED: 'បានលុបអត្ថបទ',
       ARTICLE_FEATURED: 'បានដាក់អត្ថបទពិសេស',
+      ARTICLE_UNFEATURED: 'បានដកអត្ថបទពិសេស',
+      ARTICLE_BREAKING_SET: 'បានដាក់ព័ត៌មានបន្ទាន់',
+      ARTICLE_BREAKING_UNSET: 'បានដកព័ត៌មានបន្ទាន់',
+      ARTICLE_EDITORS_PICK_SET: 'បានដាក់ជាជម្រើសអ្នកនិពន្ធ',
+      ARTICLE_EDITORS_PICK_UNSET: 'បានដកជម្រើសអ្នកនិពន្ធ',
+      ARTICLE_SUBMITTED_FOR_REVIEW: 'បានដាក់អត្ថបទឱ្យពិនិត្យ',
       ARTICLE_APPROVED: 'បានអនុម័តអត្ថបទ',
       ARTICLE_REJECTED: 'បានបដិសេធអត្ថបទ',
+      REVISION_REQUESTED: 'បានស្នើកែសម្រួល',
+      REVISION_APPROVED: 'បានអនុម័តការកែសម្រួល',
+      REVISION_REJECTED: 'បានបដិសេធការកែសម្រួល',
+      BREAKING_NEWS_REQUESTED: 'បានស្នើព័ត៌មានបន្ទាន់',
+      BREAKING_NEWS_APPROVED: 'បានអនុម័តព័ត៌មានបន្ទាន់',
+      BREAKING_NEWS_REJECTED: 'បានបដិសេធព័ត៌មានបន្ទាន់',
       CATEGORY_CREATED: 'បានបង្កើតប្រភេទ',
       CATEGORY_UPDATED: 'បានកែប្រែប្រភេទ',
+      CATEGORY_DELETED: 'បានលុបប្រភេទ',
       SETTING_UPDATED: 'បានកែប្រែការកំណត់',
+      SETTINGS_BULK_UPDATED: 'បានកែការកំណត់ជាក្រុម',
       PERMISSION_DENIED: 'បានបដិសេធសិទ្ធិ',
+      UNAUTHORIZED_ACCESS_ATTEMPT: 'ការប៉ុនប៉ងចូលដោយគ្មានសិទ្ធិ',
+      SUSPICIOUS_ACTIVITY: 'សកម្មភាពគួរឱ្យសង្ស័យ',
+      PAGE_VIEW: 'បានមើលទំព័រ',
+      UI_INTERACTION: 'អន្តរកម្មលើផ្ទាំងប្រើប្រាស់',
     },
     resources: {
       User: 'អ្នកប្រើ',
@@ -151,6 +206,8 @@ const auditCopy = {
       CATEGORY: 'ប្រភេទ',
       SETTINGS: 'ការកំណត់',
       MEDIA: 'មេឌៀ',
+      Page: 'ទំព័រ',
+      UI: 'ផ្ទាំងប្រើប្រាស់',
     },
     table: {
       timestamp: 'ពេលវេលា',
@@ -159,6 +216,7 @@ const auditCopy = {
       resource: 'ធនធាន',
       ipAddress: 'អាសយដ្ឋាន IP',
       details: 'ព័ត៌មានលម្អិត',
+      status: 'ស្ថានភាព',
     },
     loading: 'កំពុងផ្ទុកកំណត់ហេតុសវនកម្ម...',
     empty: 'រកមិនឃើញកំណត់ហេតុសវនកម្ម',
@@ -183,6 +241,7 @@ export default function AuditLogsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedAction, setSelectedAction] = useState<string>('all');
   const [selectedResourceType, setSelectedResourceType] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [isExporting, setIsExporting] = useState(false);
 
@@ -194,6 +253,7 @@ export default function AuditLogsPage() {
       if (searchQuery) filters.search = searchQuery;
       if (selectedAction !== 'all') filters.action = selectedAction;
       if (selectedResourceType !== 'all') filters.resourceType = selectedResourceType;
+      if (selectedStatus !== 'all') filters.success = selectedStatus === 'success';
       if (dateRange.start) filters.startDate = dateRange.start;
       if (dateRange.end) filters.endDate = dateRange.end;
 
@@ -215,7 +275,7 @@ export default function AuditLogsPage() {
 
   useEffect(() => {
     fetchAuditLogs();
-  }, [currentPage, selectedAction, selectedResourceType]);
+  }, [currentPage, selectedAction, selectedResourceType, selectedStatus]);
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -230,6 +290,7 @@ export default function AuditLogsPage() {
       if (searchQuery) filters.search = searchQuery;
       if (selectedAction !== 'all') filters.action = selectedAction;
       if (selectedResourceType !== 'all') filters.resourceType = selectedResourceType;
+      if (selectedStatus !== 'all') filters.success = selectedStatus === 'success';
       if (dateRange.start) filters.startDate = dateRange.start;
       if (dateRange.end) filters.endDate = dateRange.end;
 
@@ -304,6 +365,7 @@ export default function AuditLogsPage() {
           <div className="flex items-center gap-3">
             <Button
               variant="outline"
+              className="shadow-none"
               onClick={fetchAuditLogs}
               disabled={loading}
             >
@@ -311,6 +373,7 @@ export default function AuditLogsPage() {
               {copy.refresh}
             </Button>
             <Button
+              className="shadow-none"
               onClick={handleExport}
               disabled={isExporting || logs.length === 0}
             >
@@ -383,7 +446,7 @@ export default function AuditLogsPage() {
 
         {/* Filters */}
         <Card className="p-6">
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-5">
             <div className="md:col-span-2">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -397,7 +460,7 @@ export default function AuditLogsPage() {
               </div>
             </div>
             <Select value={selectedAction} onValueChange={setSelectedAction}>
-              <SelectTrigger>
+              <SelectTrigger className="shadow-none">
                 <SelectValue placeholder={copy.allActions} />
               </SelectTrigger>
               <SelectContent>
@@ -408,7 +471,7 @@ export default function AuditLogsPage() {
               </SelectContent>
             </Select>
             <Select value={selectedResourceType} onValueChange={setSelectedResourceType}>
-              <SelectTrigger>
+              <SelectTrigger className="shadow-none">
                 <SelectValue placeholder={copy.allResources} />
               </SelectTrigger>
               <SelectContent>
@@ -417,6 +480,18 @@ export default function AuditLogsPage() {
                 <SelectItem value="Article">{copy.resources.Article}</SelectItem>
                 <SelectItem value="Category">{copy.resources.Category}</SelectItem>
                 <SelectItem value="Setting">{copy.resources.Setting}</SelectItem>
+                <SelectItem value="Page">{copy.resources.Page}</SelectItem>
+                <SelectItem value="UI">{copy.resources.UI}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="shadow-none">
+                <SelectValue placeholder={copy.allStatuses} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{copy.allStatuses}</SelectItem>
+                <SelectItem value="success">{copy.succeeded}</SelectItem>
+                <SelectItem value="failed">{copy.failed}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -438,6 +513,9 @@ export default function AuditLogsPage() {
                     {copy.table.action}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
+                    {copy.table.status}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
                     {copy.table.resource}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-slate-600 uppercase tracking-wider">
@@ -451,7 +529,7 @@ export default function AuditLogsPage() {
               <tbody className="bg-white divide-y divide-slate-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex items-center justify-center gap-2 text-slate-500">
                         <RefreshCw className="h-5 w-5 animate-spin" />
                         <span>{copy.loading}</span>
@@ -460,7 +538,7 @@ export default function AuditLogsPage() {
                   </tr>
                 ) : logs.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center">
+                    <td colSpan={7} className="px-6 py-12 text-center">
                       <Shield className="h-12 w-12 text-slate-300 mx-auto mb-3" />
                       <p className="text-slate-600 font-medium">{copy.empty}</p>
                       <p className="text-sm text-slate-500 mt-1">
@@ -489,6 +567,11 @@ export default function AuditLogsPage() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Badge className={getActionBadgeColor(log.action)}>
                           {copy.actions[log.action as keyof typeof copy.actions] ?? log.action.replace(/_/g, ' ')}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge variant={log.success ? "success" : "destructive"}>
+                          {log.success ? copy.succeeded : copy.failed}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
@@ -552,6 +635,7 @@ export default function AuditLogsPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="shadow-none"
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                 >
@@ -574,6 +658,7 @@ export default function AuditLogsPage() {
                         key={pageNumber}
                         variant={currentPage === pageNumber ? "default" : "outline"}
                         size="sm"
+                        className="shadow-none"
                         onClick={() => setCurrentPage(pageNumber)}
                       >
                         {pageNumber}
@@ -584,6 +669,7 @@ export default function AuditLogsPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="shadow-none"
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                 >

@@ -5,6 +5,7 @@ import { Check, Loader2, Shield, SlidersHorizontal } from "lucide-react";
 import { Permission } from "@/components/permissions/PermissionGuard";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePermissions } from "@/hooks/usePermissions";
 import { RolePermissionService } from "@/services/role-permissions.gql";
@@ -41,6 +42,11 @@ const rolePageCopy = {
     permission: "Permission",
     enable: "Enable",
     disable: "Disable",
+    cancel: "Cancel",
+    enablePermissionTitle: "Enable permission?",
+    disablePermissionTitle: "Disable permission?",
+    permissionConfirmation: (action: string, permission: string, role: string) =>
+      `${action} “${permission}” for ${role}? This changes access for every user with this role.`,
     ariaToggle: (action: string, permission: string, role: string) => `${action} ${permission} for ${role}`,
     roleNames: {
       SUPER_ADMIN: "Super Admin",
@@ -125,6 +131,11 @@ const rolePageCopy = {
     permission: "សិទ្ធិ",
     enable: "បើក",
     disable: "បិទ",
+    cancel: "បោះបង់",
+    enablePermissionTitle: "បើកសិទ្ធិ?",
+    disablePermissionTitle: "បិទសិទ្ធិ?",
+    permissionConfirmation: (action: string, permission: string, role: string) =>
+      `${action} “${permission}” សម្រាប់ ${role}? វានឹងផ្លាស់ប្តូរសិទ្ធិរបស់អ្នកប្រើទាំងអស់ដែលមានតួនាទីនេះ។`,
     ariaToggle: (action: string, permission: string, role: string) => `${action} ${permission} សម្រាប់ ${role}`,
     roleNames: {
       SUPER_ADMIN: "អ្នកគ្រប់គ្រងកំពូល",
@@ -418,6 +429,12 @@ export default function RoleManagementPage() {
   const canViewRoleManagement =
     isSuperAdmin || hasPermission(Permission.MANAGE_USER_ROLES);
   const [savingPermission, setSavingPermission] = useState<string | null>(null);
+  const [permissionConfirmation, setPermissionConfirmation] = useState<{
+    role: ManagedRole;
+    permission: Permission;
+    permissionLabel: string;
+    enabled: boolean;
+  } | null>(null);
   const [error, setError] = useState("");
   const [rolePermissions, setRolePermissions] =
     useState<Record<ManagedRole, Permission[]>>(defaultRolePermissions);
@@ -440,10 +457,9 @@ export default function RoleManagementPage() {
     [rolePermissions],
   );
 
-  const togglePermission = async (role: ManagedRole, permission: Permission) => {
+  const updatePermission = async (role: ManagedRole, permission: Permission, enabled: boolean) => {
     if (!isSuperAdmin) return;
 
-    const enabled = !rolePermissions[role].includes(permission);
     const savingKey = `${role}:${permission}`;
     setSavingPermission(savingKey);
     setError("");
@@ -476,7 +492,7 @@ export default function RoleManagementPage() {
       ) : (
       <div className="mx-auto w-full max-w-7xl space-y-6">
         <Card>
-          <CardHeader className="gap-4 md:flex-row md:items-center md:justify-between">
+          <CardHeader className="flex flex-col gap-5">
             <div>
               <div className="flex items-center gap-2 text-sm font-semibold uppercase text-blue-600">
                 <Shield className="h-4 w-4" />
@@ -508,14 +524,14 @@ export default function RoleManagementPage() {
 
         <div className="grid gap-4 md:grid-cols-4">
           {roles.map((role) => (
-            <Card key={role}>
-              <CardHeader>
+            <Card key={role} className="flex h-full flex-col">
+              <CardHeader className="flex-1">
                 <CardTitle>
                   {copy.roleNames[role]}
                 </CardTitle>
                 <CardDescription>{copy.roleDescriptions[role]}</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="mt-auto">
                 <div className="flex items-center justify-between rounded-md border bg-slate-50 px-3 py-2">
                   <span className="text-sm text-slate-600">{copy.enabledPermissions}</span>
                   <span className="text-xl font-bold text-slate-950">{rolePermissions[role].length}</span>
@@ -579,7 +595,14 @@ export default function RoleManagementPage() {
                                 <button
                                   type="button"
                                   disabled={!isSuperAdmin || Boolean(savingPermission)}
-                                  onClick={() => void togglePermission(role, permission.key)}
+                                  onClick={() =>
+                                    setPermissionConfirmation({
+                                      role,
+                                      permission: permission.key,
+                                      permissionLabel: permission.label,
+                                      enabled: !enabled,
+                                    })
+                                  }
                                   className={[
                                     "mx-auto flex h-7 w-12 items-center rounded-full border p-0.5 transition",
                                     enabled ? "border-blue-600 bg-blue-600" : "border-slate-300 bg-slate-200",
@@ -615,6 +638,33 @@ export default function RoleManagementPage() {
         </div>
       </div>
       )}
+      <ConfirmationDialog
+        open={Boolean(permissionConfirmation)}
+        onOpenChange={(open) => {
+          if (!open) setPermissionConfirmation(null);
+        }}
+        title={permissionConfirmation?.enabled ? copy.enablePermissionTitle : copy.disablePermissionTitle}
+        description={
+          permissionConfirmation
+            ? copy.permissionConfirmation(
+                permissionConfirmation.enabled ? copy.enable : copy.disable,
+                permissionConfirmation.permissionLabel,
+                copy.roleNames[permissionConfirmation.role],
+              )
+            : ""
+        }
+        confirmText={permissionConfirmation?.enabled ? copy.enable : copy.disable}
+        cancelText={copy.cancel}
+        variant={permissionConfirmation?.enabled ? "default" : "destructive"}
+        onConfirm={async () => {
+          if (!permissionConfirmation) return;
+          await updatePermission(
+            permissionConfirmation.role,
+            permissionConfirmation.permission,
+            permissionConfirmation.enabled,
+          );
+        }}
+      />
     </>
   );
 }

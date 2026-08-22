@@ -14,7 +14,10 @@ export type NotificationTypeValue =
   | "REVISION_APPROVED"
   | "REVISION_REJECTED"
   | "REVISION_CONSUMED"
-  | "ACCOUNT_REQUEST";
+  | "ACCOUNT_REQUEST"
+  | "USER_ACTIVITY"
+  | "SECURITY_ALERT"
+  | "SYSTEM_ALERT";
 
 export type NotificationRecord = {
   id: string;

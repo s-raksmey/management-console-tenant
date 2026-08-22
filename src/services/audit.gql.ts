@@ -60,6 +60,34 @@ const GET_AUDIT_LOG_QUERY = gql`
 // ============================================================================
 
 export class AuditService {
+  static async trackPageView(path: string, title?: string): Promise<void> {
+    const client = getAuthenticatedGqlClient();
+    await client.request(
+      gql`
+        mutation TrackPageView($path: String!, $title: String) {
+          trackPageView(path: $path, title: $title)
+        }
+      `,
+      { path, title }
+    );
+  }
+
+  static async trackUserInteraction(
+    path: string,
+    element: string,
+    label?: string
+  ): Promise<void> {
+    const client = getAuthenticatedGqlClient();
+    await client.request(
+      gql`
+        mutation TrackUserInteraction($path: String!, $element: String!, $label: String) {
+          trackUserInteraction(path: $path, element: $element, label: $label)
+        }
+      `,
+      { path, element, label }
+    );
+  }
+
   /**
    * List audit logs with pagination and filters
    */
@@ -76,6 +104,7 @@ export class AuditService {
           eventType: filters?.action,
           resourceType: filters?.resourceType,
           resourceId: filters?.resourceId,
+          success: filters?.success,
           startDate: filters?.startDate,
           endDate: filters?.endDate,
           limit: take,
@@ -102,7 +131,7 @@ export class AuditService {
         }
 
         if (!resourceName && log.details) {
-          resourceName = log.details.resourceName || log.details.name;
+          resourceName = log.details.resourceName || log.details.name || log.details.title || log.details.label;
         }
 
         if (!resourceType && log.details) {
@@ -218,11 +247,12 @@ export class AuditService {
       const result = await this.listAuditLogs(0, 10000, filters);
       
       // Convert to CSV
-      const headers = ['Date', 'User', 'Event Type', 'Resource Type', 'Resource', 'IP Address'];
+      const headers = ['Date', 'User', 'Event Type', 'Status', 'Resource Type', 'Resource', 'IP Address'];
       const rows = result.logs.map(log => [
         new Date(log.createdAt).toLocaleString(),
         log.userEmail || 'System',
         log.action.replace(/_/g, ' '),
+        log.success ? 'Success' : 'Failed',
         log.resourceType || '-',
         log.resourceName || log.resourceId || '-',
         log.ipAddress || '-',

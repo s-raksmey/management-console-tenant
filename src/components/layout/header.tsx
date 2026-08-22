@@ -18,6 +18,7 @@ import {
   FileText,
   Archive,
   UserPlus,
+  ShieldAlert,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -84,6 +85,9 @@ const headerCopy = {
     notificationLabels: {
       submission: "Submission",
       accountRequest: "New Account Request",
+      userActivity: "User Activity",
+      securityAlert: "Security Alert",
+      systemAlert: "System Alert",
       approved: "Approved",
       rejected: "Rejected",
       revision: "Revision",
@@ -120,6 +124,9 @@ const headerCopy = {
     notificationLabels: {
       submission: "ការដាក់ស្នើ",
       accountRequest: "សំណើគណនីថ្មី",
+      userActivity: "សកម្មភាពអ្នកប្រើ",
+      securityAlert: "ការជូនដំណឹងសុវត្ថិភាព",
+      systemAlert: "ការជូនដំណឹងប្រព័ន្ធ",
       approved: "បានអនុម័ត",
       rejected: "បានបដិសេធ",
       revision: "ការកែសម្រួល",
@@ -203,6 +210,24 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
           accent: "bg-indigo-100 text-indigo-700",
           icon: UserPlus,
         };
+      case "USER_ACTIVITY":
+        return {
+          label: copy.notificationLabels.userActivity,
+          accent: "bg-blue-100 text-blue-700",
+          icon: UserPlus,
+        };
+      case "SECURITY_ALERT":
+        return {
+          label: copy.notificationLabels.securityAlert,
+          accent: "bg-red-100 text-red-700",
+          icon: ShieldAlert,
+        };
+      case "SYSTEM_ALERT":
+        return {
+          label: copy.notificationLabels.systemAlert,
+          accent: "bg-amber-100 text-amber-700",
+          icon: Settings,
+        };
       case "APPROVAL":
       case "PUBLICATION":
         return {
@@ -266,8 +291,17 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
     if (notification.type === "SUBMISSION") {
       return "/review";
     }
-    if (notification.type === "ACCOUNT_REQUEST") {
+    if (
+      notification.type === "ACCOUNT_REQUEST" ||
+      notification.type === "USER_ACTIVITY"
+    ) {
       return "/users";
+    }
+    if (notification.type === "SYSTEM_ALERT") {
+      return "/settings";
+    }
+    if (notification.type === "SECURITY_ALERT") {
+      return "/audit";
     }
     if (
       notification.type === "REVISION_REQUESTED" ||

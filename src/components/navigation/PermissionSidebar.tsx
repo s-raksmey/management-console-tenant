@@ -164,7 +164,13 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
             className="mt-1 space-y-1"
           >
             {item.children?.map((child) => {
-              const childIsActive = pathname === child.href || pathname.startsWith(child.href + '/');
+              const matchingChildHref = item.children
+                ?.filter(
+                  (candidate) =>
+                    pathname === candidate.href || pathname.startsWith(candidate.href + '/'),
+                )
+                .sort((left, right) => right.href.length - left.href.length)[0]?.href;
+              const childIsActive = child.href === matchingChildHref;
               return (
                 <NavigationItemComponent
                   key={child.href}
@@ -302,8 +308,14 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
       <nav className="sidebar-scrollbar flex-1 overflow-y-auto overflow-x-hidden p-4 [scrollbar-color:#334155_transparent] [scrollbar-width:thin]">
         <div className="space-y-2">
           {navigationItems.map((item) => {
-            const isActive = pathname === item.href || 
-              (item.href !== '/' && pathname.startsWith(item.href));
+            const activeHref = navigationItems
+              .filter(
+                (candidate) =>
+                  pathname === candidate.href ||
+                  (candidate.href !== '/' && pathname.startsWith(candidate.href + '/')),
+              )
+              .sort((left, right) => right.href.length - left.href.length)[0]?.href;
+            const isActive = item.href === activeHref;
             
             return (
               <NavigationItemComponent

@@ -68,9 +68,7 @@ const userListCopy = {
     createUser: 'Create User',
     filter: 'Filter',
     searchPlaceholder: 'Search name or email',
-    superAdmins: 'Super admins',
     allRoles: 'All roles',
-    tenantAdmins: 'Sub-tenant admins',
     tenantAdmin: 'Sub-tenant admin',
     editor: 'Editor',
     author: 'Author',
@@ -148,9 +146,7 @@ const userListCopy = {
     createUser: 'បង្កើតអ្នកប្រើ',
     filter: 'តម្រង',
     searchPlaceholder: 'ស្វែងរកឈ្មោះ ឬអ៊ីមែល',
-    superAdmins: 'អ្នកគ្រប់គ្រងកំពូល',
     allRoles: 'តួនាទីទាំងអស់',
-    tenantAdmins: 'អ្នកគ្រប់គ្រងគេហទំព័រ',
     tenantAdmin: 'អ្នកគ្រប់គ្រងគេហទំព័រ',
     editor: 'អ្នកកែសម្រួល',
     author: 'អ្នកនិពន្ធ',
@@ -474,16 +470,6 @@ export const UserList: React.FC<UserListProps> = () => {
 
   const totalPages = Math.ceil(totalCount / pageSize);
   const hasActiveFilters = Boolean(searchTerm) || statusFilter !== 'ALL' || (!isSuperAdmin && roleFilter !== 'ALL');
-  const roleScopeLabel = isSuperAdmin
-    ? copy.superAdmins
-    : roleFilter === 'ALL'
-      ? copy.allRoles
-      : roleFilter === 'ADMIN'
-        ? copy.tenantAdmins
-        : roleFilter === 'EDITOR'
-          ? copy.editor
-          : copy.author;
-
   const clearFilters = () => {
     setSearchTerm('');
     setRoleFilter('ALL');
@@ -543,7 +529,7 @@ export const UserList: React.FC<UserListProps> = () => {
       </div>
 
       {/* Filters */}
-      <div className="rounded-lg border border-slate-200 bg-white/80 p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+      <div className="rounded-lg border border-slate-200 bg-white/80 p-3 shadow-none dark:border-slate-800 dark:bg-slate-900/70">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
             <Filter className="h-4 w-4" />
@@ -560,12 +546,8 @@ export const UserList: React.FC<UserListProps> = () => {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-            {isSuperAdmin ? (
-              <div className="flex h-9 items-center justify-center rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-medium text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
-                {roleScopeLabel}
-              </div>
-            ) : (
+          <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center">
+            {!isSuperAdmin && (
               <Select value={roleFilter} onValueChange={handleRoleFilter}>
                 <SelectTrigger className="h-9 w-full border-slate-200 bg-slate-50 shadow-none dark:border-slate-800 dark:bg-slate-950 sm:w-[150px]">
                   <SelectValue placeholder={copy.allRoles} />

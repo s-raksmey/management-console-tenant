@@ -167,7 +167,6 @@ const tenantsCopy = {
     notSet: "Not set",
     openPublic: "Open public",
     openAdmin: "Open admin",
-    tenantAdminCount: (count: number) => `${count} sub-tenant admin${count !== 1 ? "s" : ""}`,
     cancelEdit: "Cancel Edit",
     editTenant: "Edit Sub-tenant",
     archive: "Archive",
@@ -305,7 +304,6 @@ const tenantsCopy = {
     notSet: "មិនទាន់កំណត់",
     openPublic: "បើកផ្នែកសាធារណៈ",
     openAdmin: "បើកផ្នែកគ្រប់គ្រង",
-    tenantAdminCount: (count: number) => `${count} អ្នកគ្រប់គ្រងគេហទំព័រ`,
     cancelEdit: "បោះបង់ការកែ",
     editTenant: "កែគេហទំព័រ",
     archive: "ដាក់ប័ណ្ណសារ",
@@ -818,7 +816,13 @@ export default function TenantsPage() {
                   : copy.websiteDescription}
               </CardDescription>
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={() => void loadTenants()}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shadow-none"
+              onClick={() => void loadTenants()}
+            >
               <RotateCcw className="mr-2 h-4 w-4" />
               {copy.refresh}
             </Button>
@@ -841,7 +845,6 @@ export default function TenantsPage() {
                 const site = tenant.sites.find((item) => item.isPrimary) ?? tenant.sites[0];
                 const isEditing = editingTenantId === tenant.id;
                 const tenantMemberships = getTenantScopedMemberships(tenant);
-                const adminCount = tenantMemberships.filter((member) => member.role === "ADMIN").length;
                 const isUsersExpanded = expandedUsersTenantId === tenant.id;
                 const isConnectionExpanded = expandedConnectionTenantId === tenant.id;
 
@@ -872,6 +875,7 @@ export default function TenantsPage() {
                             type="button"
                             variant="outline"
                             size="sm"
+                            className="shadow-none"
                             onClick={() =>
                               setExpandedUsersTenantId((current) =>
                                 current === tenant.id ? null : tenant.id,
@@ -888,6 +892,7 @@ export default function TenantsPage() {
                             type="button"
                             variant="outline"
                             size="sm"
+                            className="shadow-none"
                             onClick={() =>
                               setExpandedConnectionTenantId((current) =>
                                 current === tenant.id ? null : tenant.id,
@@ -953,14 +958,11 @@ export default function TenantsPage() {
                       </div>
 
                       <div className="flex flex-col gap-2 xl:items-end">
-                        <div className="mb-1 text-sm text-slate-600">
-                          <span className="font-medium text-slate-950">{adminCount}</span>{" "}
-                          {copy.tenantAdminCount(adminCount).replace(String(adminCount), "")}
-                        </div>
                         <Button
                           type="button"
                           variant={isEditing ? "secondary" : "outline"}
                           size="sm"
+                          className="shadow-none"
                           onClick={() => (isEditing ? cancelTenantEdit() : startTenantEdit(tenant))}
                         >
                           {isEditing ? <X className="mr-2 h-4 w-4" /> : <Edit2 className="mr-2 h-4 w-4" />}
@@ -973,7 +975,7 @@ export default function TenantsPage() {
                             size="sm"
                             disabled={savingLifecycleId === tenant.id}
                             onClick={() => updateTenantLifecycle(tenant, "ARCHIVED")}
-                            className="text-red-600 hover:text-red-700"
+                            className="shadow-none text-red-600 hover:text-red-700"
                           >
                             {savingLifecycleId === tenant.id ? (
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -988,6 +990,7 @@ export default function TenantsPage() {
                             type="button"
                             variant="outline"
                             size="sm"
+                            className="shadow-none"
                             disabled={savingLifecycleId === tenant.id}
                             onClick={() => updateTenantLifecycle(tenant, "ACTIVE")}
                           >
@@ -1018,7 +1021,7 @@ export default function TenantsPage() {
                             <button
                               type="button"
                               onClick={() => copyTenantValue(copy.tenantId, tenant.id)}
-                              className="flex items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+                              className="flex items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-left text-xs text-slate-700 shadow-none hover:bg-slate-50"
                             >
                               <span className="truncate">ID: {tenant.id}</span>
                               <Copy className="h-3.5 w-3.5 flex-shrink-0" />
@@ -1026,7 +1029,7 @@ export default function TenantsPage() {
                             <button
                               type="button"
                               onClick={() => copyTenantValue(copy.tenantSlug, tenant.slug)}
-                              className="flex items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
+                              className="flex items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-left text-xs text-slate-700 shadow-none hover:bg-slate-50"
                             >
                               <span className="truncate">{copy.currentSlug}: {tenant.slug}</span>
                               <Copy className="h-3.5 w-3.5 flex-shrink-0" />
@@ -1038,6 +1041,7 @@ export default function TenantsPage() {
                             type="button"
                             variant="outline"
                             size="sm"
+                            className="shadow-none"
                             onClick={() =>
                               copyTenantValue(copy.publicWebsiteEnvironmentLabel, buildPublicEnv(tenant))
                             }
