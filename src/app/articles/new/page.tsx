@@ -54,7 +54,7 @@ function normalizeTopic(value: string) {
 }
 
 function parseTagSlugs(value: string) {
-  return value.split(",").map(slugify).filter(Boolean);
+  return Array.from(new Set(value.split(",").map(slugify).filter(Boolean)));
 }
 
 const articleCopy = {

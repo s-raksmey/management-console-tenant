@@ -725,9 +725,11 @@ export const AdminDashboard: React.FC = () => {
                       <p className="text-xl font-bold text-red-900 dark:text-red-300">{userStats.usersByRole.admin}</p>
                       <p className="text-xs text-red-700 dark:text-red-300">{copy.admins}</p>
                       {hasPermission(Permission.MANAGE_USER_ROLES) && (
-                        <Button size="sm" variant="ghost" className="mt-2 text-xs">
-                          <Lock className="h-3 w-3 mr-1" />
-                          {copy.manage}
+                        <Button size="sm" variant="ghost" className="mt-2 text-xs" asChild>
+                          <Link href="/users?role=ADMIN">
+                            <Lock className="h-3 w-3 mr-1" />
+                            {copy.manage}
+                          </Link>
                         </Button>
                       )}
                     </div>
@@ -736,9 +738,11 @@ export const AdminDashboard: React.FC = () => {
                       <p className="text-xl font-bold text-blue-900 dark:text-blue-300">{userStats.usersByRole.editor}</p>
                       <p className="text-xs text-blue-700 dark:text-blue-300">{copy.editors}</p>
                       {hasPermission(Permission.MANAGE_USER_ROLES) && (
-                        <Button size="sm" variant="ghost" className="mt-2 text-xs">
-                          <FileEdit className="h-3 w-3 mr-1" />
-                          {copy.manage}
+                        <Button size="sm" variant="ghost" className="mt-2 text-xs" asChild>
+                          <Link href="/users?role=EDITOR">
+                            <FileEdit className="h-3 w-3 mr-1" />
+                            {copy.manage}
+                          </Link>
                         </Button>
                       )}
                     </div>
@@ -747,9 +751,11 @@ export const AdminDashboard: React.FC = () => {
                       <p className="text-xl font-bold text-green-900 dark:text-green-300">{userStats.usersByRole.author}</p>
                       <p className="text-xs text-green-700 dark:text-green-300">{copy.authors}</p>
                       {hasPermission(Permission.MANAGE_USER_ROLES) && (
-                        <Button size="sm" variant="ghost" className="mt-2 text-xs">
-                          <Newspaper className="h-3 w-3 mr-1" />
-                          {copy.manage}
+                        <Button size="sm" variant="ghost" className="mt-2 text-xs" asChild>
+                          <Link href="/users?role=AUTHOR">
+                            <Newspaper className="h-3 w-3 mr-1" />
+                            {copy.manage}
+                          </Link>
                         </Button>
                       )}
                     </div>
@@ -776,9 +782,11 @@ export const AdminDashboard: React.FC = () => {
                     </p>
                     <p className="text-xs text-green-700 dark:text-green-300">{copy.published}</p>
                     {hasPermission(Permission.PUBLISH_ARTICLE) && (
-                      <Button size="sm" variant="ghost" className="mt-1 text-xs">
-                        <Eye className="h-3 w-3 mr-1" />
-                        {copy.view}
+                      <Button size="sm" variant="ghost" className="mt-1 text-xs" asChild>
+                        <Link href="/articles">
+                          <Eye className="h-3 w-3 mr-1" />
+                          {copy.view}
+                        </Link>
                       </Button>
                     )}
                   </div>
@@ -789,9 +797,11 @@ export const AdminDashboard: React.FC = () => {
                     </p>
                     <p className="text-xs text-yellow-700 dark:text-amber-300">{copy.pendingReview}</p>
                     {hasPermission(Permission.REVIEW_ARTICLES) && (
-                      <Button size="sm" variant="ghost" className="mt-1 text-xs">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        {copy.review}
+                      <Button size="sm" variant="ghost" className="mt-1 text-xs" asChild>
+                        <Link href="/review">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          {copy.review}
+                        </Link>
                       </Button>
                     )}
                   </div>
@@ -802,9 +812,11 @@ export const AdminDashboard: React.FC = () => {
                     </p>
                     <p className="text-xs text-gray-700 dark:text-slate-300">{copy.drafts}</p>
                     {hasPermission(Permission.UPDATE_ANY_ARTICLE) && (
-                      <Button size="sm" variant="ghost" className="mt-1 text-xs">
-                        <FileEdit className="h-3 w-3 mr-1" />
-                        {copy.edit}
+                      <Button size="sm" variant="ghost" className="mt-1 text-xs" asChild>
+                        <Link href="/articles">
+                          <FileEdit className="h-3 w-3 mr-1" />
+                          {copy.edit}
+                        </Link>
                       </Button>
                     )}
                   </div>
@@ -815,9 +827,11 @@ export const AdminDashboard: React.FC = () => {
                     </p>
                     <p className="text-xs text-blue-700 dark:text-blue-300">{copy.approvalRate}</p>
                     {hasPermission(Permission.VIEW_AUDIT_LOGS) && (
-                      <Button size="sm" variant="ghost" className="mt-1 text-xs">
-                        <BarChart3 className="h-3 w-3 mr-1" />
-                        {copy.analytics}
+                      <Button size="sm" variant="ghost" className="mt-1 text-xs" asChild>
+                        <Link href="/analytics">
+                          <BarChart3 className="h-3 w-3 mr-1" />
+                          {copy.analytics}
+                        </Link>
                       </Button>
                     )}
                   </div>
@@ -884,9 +898,11 @@ export const AdminDashboard: React.FC = () => {
                       </div>
                     </div>
                     {hasPermission(Permission.SYSTEM_ADMINISTRATION) && (
-                      <Button size="sm" variant="outline" className="w-full mt-3">
-                        <Settings className="h-4 w-4 mr-2" />
-                        {copy.settings}
+                      <Button size="sm" variant="outline" className="w-full mt-3" asChild>
+                        <Link href="/settings">
+                          <Settings className="h-4 w-4 mr-2" />
+                          {copy.settings}
+                        </Link>
                       </Button>
                     )}
                   </>
@@ -942,9 +958,11 @@ export const AdminDashboard: React.FC = () => {
                   </p>
                 )}
                 {hasPermission(Permission.VIEW_AUDIT_LOGS) && (
-                  <Button size="sm" variant="outline" className="w-full mt-4">
-                    <Eye className="h-4 w-4 mr-2" />
-                    {copy.viewAuditLogs}
+                  <Button size="sm" variant="outline" className="w-full mt-4" asChild>
+                    <Link href="/audit">
+                      <Eye className="h-4 w-4 mr-2" />
+                      {copy.viewAuditLogs}
+                    </Link>
                   </Button>
                 )}
               </CardContent>
@@ -974,7 +992,7 @@ export const AdminDashboard: React.FC = () => {
               {copy.refresh}
             </Button>
             {hasPermission(Permission.REVIEW_ARTICLES) && (
-              <Link href="/articles/review">
+              <Link href="/review">
                 <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
                   <Search className="h-4 w-4 mr-2" />
                   {copy.review}
@@ -1136,7 +1154,7 @@ export const AdminDashboard: React.FC = () => {
               {copy.refresh}
             </Button>
             {hasPermission(Permission.CREATE_ARTICLE) && (
-              <Link href="/articles/create">
+              <Link href="/articles/new">
                 <Button size="sm" className="bg-green-600 hover:bg-green-700">
                   <Plus className="h-4 w-4 mr-2" />
                   {copy.newArticle}
@@ -1274,7 +1292,7 @@ export const AdminDashboard: React.FC = () => {
                     <CardDescription>{copy.myRecentDescription}</CardDescription>
                   </div>
                   {hasPermission(Permission.CREATE_ARTICLE) && (
-                    <Link href="/articles/create">
+                    <Link href="/articles/new">
                       <Button variant="outline" size="sm">
                         <Plus className="h-4 w-4 mr-2" />
                         {copy.createArticle}
@@ -1341,7 +1359,7 @@ export const AdminDashboard: React.FC = () => {
                     <FileText className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                     <p className="text-gray-500 mb-4">{copy.noArticlesYet}</p>
                     {hasPermission(Permission.CREATE_ARTICLE) && (
-                      <Link href="/articles/create">
+                      <Link href="/articles/new">
                         <Button>
                           <Plus className="h-4 w-4 mr-2" />
                           {copy.createFirstArticle}

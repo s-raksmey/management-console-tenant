@@ -585,7 +585,7 @@ export default function MyArticlesPage() {
               <div className="space-y-3 px-4 py-4">
                 <div className="min-w-0">
                   <Link
-                    href={`/articles/${article.id}`}
+                    href={`/articles/${article.id}/edit`}
                     className="block truncate text-base font-semibold hover:underline"
                     title={article.title}
                   >
@@ -658,7 +658,7 @@ export default function MyArticlesPage() {
                     <td className="p-4">
                       <div className="min-w-0">
                         <Link 
-                          href={`/articles/${article.id}`}
+                          href={`/articles/${article.id}/edit`}
                           className="block truncate font-medium hover:underline"
                           title={article.title}
                         >

@@ -2,10 +2,23 @@
 
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useRef,
+  useState,
 } from "react";
+import {
+  Heading2,
+  Heading3,
+  ImageIcon,
+  Link2,
+  List as ListIcon,
+  ListOrdered,
+  Pilcrow,
+  Quote as QuoteIcon,
+  Video,
+} from "lucide-react";
 
 import type {
   OutputData,
@@ -45,6 +58,15 @@ const NewsEditor = forwardRef<NewsEditorRef, NewsEditorProps>(
     const holderRef = useRef<HTMLDivElement | null>(null);
     const editorRef = useRef<any>(null);
     const onChangeRef = useRef(onChange);
+    const [isReady, setIsReady] = useState(false);
+
+    const insertBlock = useCallback((type: string, data: Record<string, unknown> = {}) => {
+      const editor = editorRef.current;
+      if (!editor?.blocks) return;
+
+      editor.blocks.insert(type, data, undefined, undefined, true);
+      editor.caret?.setToLastBlock?.("end");
+    }, []);
 
     useEffect(() => {
       onChangeRef.current = onChange;
@@ -83,6 +105,9 @@ const NewsEditor = forwardRef<NewsEditorRef, NewsEditorProps>(
           minHeight: 120,
           placeholder: "Write news content here…",
           data: initialData ?? { blocks: [] },
+          onReady: () => {
+            if (!destroyed) setIsReady(true);
+          },
           onChange: async (api) => {
             if (!onChangeRef.current) return;
 
@@ -151,18 +176,95 @@ const NewsEditor = forwardRef<NewsEditorRef, NewsEditorProps>(
 
       return () => {
         destroyed = true;
+        setIsReady(false);
         editorRef.current?.destroy?.();
         editorRef.current = null;
       };
     }, [initialData, readOnly]);
 
     return (
-      <div className="rounded-md border bg-white p-3">
-        <div ref={holderRef} />
+      <div className="overflow-visible rounded-md border bg-white">
+        {!readOnly && (
+          <div
+            className="flex flex-wrap items-center gap-1 border-b bg-slate-50 p-2"
+            role="toolbar"
+            aria-label="Article content tools"
+          >
+            <EditorToolButton label="Text" disabled={!isReady} onClick={() => insertBlock("paragraph", { text: "" })}>
+              <Pilcrow className="h-4 w-4" />
+            </EditorToolButton>
+            <EditorToolButton label="Heading 2" disabled={!isReady} onClick={() => insertBlock("header", { text: "", level: 2 })}>
+              <Heading2 className="h-4 w-4" />
+            </EditorToolButton>
+            <EditorToolButton label="Heading 3" disabled={!isReady} onClick={() => insertBlock("header", { text: "", level: 3 })}>
+              <Heading3 className="h-4 w-4" />
+            </EditorToolButton>
+            <span className="mx-1 h-6 w-px bg-slate-300" aria-hidden="true" />
+            <EditorToolButton label="Bulleted list" disabled={!isReady} onClick={() => insertBlock("list", {
+              style: "unordered",
+              meta: {},
+              items: [{ content: "", meta: {}, items: [] }],
+            })}>
+              <ListIcon className="h-4 w-4" />
+            </EditorToolButton>
+            <EditorToolButton label="Numbered list" disabled={!isReady} onClick={() => insertBlock("list", {
+              style: "ordered",
+              meta: { start: 1, counterType: "numeric" },
+              items: [{ content: "", meta: {}, items: [] }],
+            })}>
+              <ListOrdered className="h-4 w-4" />
+            </EditorToolButton>
+            <EditorToolButton label="Quote" disabled={!isReady} onClick={() => insertBlock("quote", {
+              text: "",
+              caption: "",
+              alignment: "left",
+            })}>
+              <QuoteIcon className="h-4 w-4" />
+            </EditorToolButton>
+            <span className="mx-1 h-6 w-px bg-slate-300" aria-hidden="true" />
+            <EditorToolButton label="Image" disabled={!isReady} onClick={() => insertBlock("image")}>
+              <ImageIcon className="h-4 w-4" />
+            </EditorToolButton>
+            <EditorToolButton label="Video" disabled={!isReady} onClick={() => insertBlock("video")}>
+              <Video className="h-4 w-4" />
+            </EditorToolButton>
+            <EditorToolButton label="Link preview" disabled={!isReady} onClick={() => insertBlock("linkTool")}>
+              <Link2 className="h-4 w-4" />
+            </EditorToolButton>
+            <p className="ml-auto px-2 text-xs text-slate-500">Select text for bold, italic, and links</p>
+          </div>
+        )}
+        <div className="news-editor min-h-[360px] p-3 sm:p-5" ref={holderRef} />
       </div>
     );
   }
 );
+
+function EditorToolButton({
+  children,
+  disabled,
+  label,
+  onClick,
+}: {
+  children: React.ReactNode;
+  disabled: boolean;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      title={label}
+      aria-label={label}
+      className="inline-flex h-9 items-center gap-1.5 rounded-md border border-transparent px-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {children}
+      <span className="hidden xl:inline">{label}</span>
+    </button>
+  );
+}
 
 NewsEditor.displayName = "NewsEditor";
 export default NewsEditor;

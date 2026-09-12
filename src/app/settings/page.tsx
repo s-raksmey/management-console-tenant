@@ -263,6 +263,7 @@ export default function SettingsPage() {
   const [selectedCategory, setSelectedCategory] = React.useState<SettingType>(
     SettingType.SITE,
   );
+  const settingsPanelRef = React.useRef<HTMLElement | null>(null);
   const [testEmail, setTestEmail] = React.useState(user?.email || "");
   const [testingEmail, setTestingEmail] = React.useState(false);
   const [emailTestResult, setEmailTestResult] = React.useState<EmailTestResult | null>(null);
@@ -558,6 +559,14 @@ export default function SettingsPage() {
       : 100;
   const incompleteSetupItems = visibleSetupChecklist.filter((item) => !item.complete);
 
+  const openSettingsCategory = React.useCallback((category: SettingType) => {
+    setSelectedCategory(category);
+    window.requestAnimationFrame(() => {
+      settingsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      settingsPanelRef.current?.focus({ preventScroll: true });
+    });
+  }, []);
+
   if (!canAccessSettings) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-6">
@@ -700,7 +709,7 @@ export default function SettingsPage() {
                       key={key}
                       type="button"
                       disabled={count === 0}
-                      onClick={() => setSelectedCategory(categoryKey)}
+                      onClick={() => openSettingsCategory(categoryKey)}
                       className={`flex min-w-max items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm transition-colors lg:w-full ${
                         selected
                           ? "bg-slate-950 text-white"
@@ -748,7 +757,7 @@ export default function SettingsPage() {
                     <button
                       key={item.label}
                       type="button"
-                      onClick={() => setSelectedCategory(item.category)}
+                      onClick={() => openSettingsCategory(item.category)}
                       className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-slate-50"
                     >
                       <Icon
@@ -775,7 +784,11 @@ export default function SettingsPage() {
           </aside>
 
           <main className="min-w-0 space-y-4">
-            <section className="rounded-md border border-slate-200 bg-white">
+            <section
+              ref={settingsPanelRef}
+              tabIndex={-1}
+              className="scroll-mt-4 rounded-md border border-slate-200 bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
               <div className="border-b border-slate-200 px-4 py-4 sm:px-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">

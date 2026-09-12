@@ -1,54 +1,88 @@
 import localFont from "next/font/local";
 
-// Define Khmer Digital font with all weights at module level
-export const fontKhmerDigital = localFont({
+export const fontJetBrainsMono = localFont({
   src: [
     {
-      path: "../../public/assets/fonts/KhmerDigital-Thin.ttf",
+      path: "../../public/ttf/JetBrainsMono-Thin.ttf",
       weight: "100",
       style: "normal",
     },
     {
-      path: "../../public/assets/fonts/KhmerDigital-ExtraLight.ttf",
+      path: "../../public/ttf/JetBrainsMono-ThinItalic.ttf",
+      weight: "100",
+      style: "italic",
+    },
+    {
+      path: "../../public/ttf/JetBrainsMono-ExtraLight.ttf",
       weight: "200",
       style: "normal",
     },
     {
-      path: "../../public/assets/fonts/KhmerDigital-Light.ttf",
+      path: "../../public/ttf/JetBrainsMono-ExtraLightItalic.ttf",
+      weight: "200",
+      style: "italic",
+    },
+    {
+      path: "../../public/ttf/JetBrainsMono-Light.ttf",
       weight: "300",
       style: "normal",
     },
     {
-      path: "../../public/assets/fonts/KhmerDigital-Regular.ttf",
+      path: "../../public/ttf/JetBrainsMono-LightItalic.ttf",
+      weight: "300",
+      style: "italic",
+    },
+    {
+      path: "../../public/ttf/JetBrainsMono-Regular.ttf",
       weight: "400",
       style: "normal",
     },
     {
-      path: "../../public/assets/fonts/KhmerDigital-Medium.ttf",
+      path: "../../public/ttf/JetBrainsMono-Italic.ttf",
+      weight: "400",
+      style: "italic",
+    },
+    {
+      path: "../../public/ttf/JetBrainsMono-Medium.ttf",
       weight: "500",
       style: "normal",
     },
     {
-      path: "../../public/assets/fonts/KhmerDigital-SemiBold.ttf",
+      path: "../../public/ttf/JetBrainsMono-MediumItalic.ttf",
+      weight: "500",
+      style: "italic",
+    },
+    {
+      path: "../../public/ttf/JetBrainsMono-SemiBold.ttf",
       weight: "600",
       style: "normal",
     },
     {
-      path: "../../public/assets/fonts/KhmerDigital-Bold.ttf",
+      path: "../../public/ttf/JetBrainsMono-SemiBoldItalic.ttf",
+      weight: "600",
+      style: "italic",
+    },
+    {
+      path: "../../public/ttf/JetBrainsMono-Bold.ttf",
       weight: "700",
       style: "normal",
     },
     {
-      path: "../../public/assets/fonts/KhmerDigital-ExtraBold.ttf",
+      path: "../../public/ttf/JetBrainsMono-BoldItalic.ttf",
+      weight: "700",
+      style: "italic",
+    },
+    {
+      path: "../../public/ttf/JetBrainsMono-ExtraBold.ttf",
       weight: "800",
       style: "normal",
     },
     {
-      path: "../../public/assets/fonts/KhmerDigital-Black.ttf",
-      weight: "900",
-      style: "normal",
+      path: "../../public/ttf/JetBrainsMono-ExtraBoldItalic.ttf",
+      weight: "800",
+      style: "italic",
     },
   ],
-  variable: "--font-khmer-digital",
+  variable: "--font-jetbrains-mono",
   display: "swap",
 });

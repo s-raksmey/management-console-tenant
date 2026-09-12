@@ -45,6 +45,7 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     '/audit',
     '/settings',
     '/profile',
+    '/notifications',
   ];
   const isSuperAdminRouteAllowed = superAdminAllowedRoutes.some((route) =>
     route === '/' ? pathname === route : pathname === route || pathname.startsWith(`${route}/`)

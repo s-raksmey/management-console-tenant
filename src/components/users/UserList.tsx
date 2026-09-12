@@ -3,6 +3,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { 
   Users, 
   Search, 
@@ -218,6 +219,7 @@ const userListCopy = {
 };
 
 export const UserList: React.FC<UserListProps> = () => {
+  const searchParams = useSearchParams();
   const { showSuccess, showError } = useToastHelpers();
   const { locale } = useAdminLocale();
   const copy = userListCopy[locale];
@@ -248,7 +250,12 @@ export const UserList: React.FC<UserListProps> = () => {
   
   // Filters
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR' | 'ALL'>('ALL');
+  const requestedRole = searchParams.get('role');
+  const initialRole = requestedRole === 'SUPER_ADMIN' || requestedRole === 'ADMIN' ||
+    requestedRole === 'EDITOR' || requestedRole === 'AUTHOR'
+    ? requestedRole
+    : 'ALL';
+  const [roleFilter, setRoleFilter] = useState<'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR' | 'ALL'>(initialRole);
   const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'INACTIVE' | 'ALL'>('ALL');
   const [sortBy, setSortBy] = useState<'name' | 'email' | 'role' | 'createdAt' | 'updatedAt'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -267,6 +274,16 @@ export const UserList: React.FC<UserListProps> = () => {
     confirmText: copy.confirm,
     onConfirm: () => {},
   });
+
+  useEffect(() => {
+    const role = searchParams.get('role');
+    const nextRole = role === 'SUPER_ADMIN' || role === 'ADMIN' ||
+      role === 'EDITOR' || role === 'AUTHOR'
+      ? role
+      : 'ALL';
+    setRoleFilter(nextRole);
+    setCurrentPage(1);
+  }, [searchParams]);
 
   const applyVisibleUserScope = useCallback(
     (items: User[]) =>

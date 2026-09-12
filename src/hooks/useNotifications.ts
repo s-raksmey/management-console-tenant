@@ -162,6 +162,66 @@ export function useNotifications() {
     return query<{ unreadNotificationCount: number }>(UNREAD_COUNT_QUERY);
   }, [query]);
 
+  const getNotificationById = useCallback(async (id: string) => {
+    const NOTIFICATION_QUERY = `
+      query NotificationById($id: ID!) {
+        notificationById(id: $id) {
+          id
+          type
+          title
+          message
+          metadata
+          articleId
+          fromUserId
+          fromUser { id name email }
+          toUserId
+          isRead
+          readAt
+          createdAt
+        }
+      }
+    `;
+
+    const LEGACY_NOTIFICATION_QUERY = `
+      query NotificationFromList($limit: Int, $offset: Int) {
+        myNotifications(limit: $limit, offset: $offset, unreadOnly: false) {
+          notifications {
+            id
+            type
+            title
+            message
+            metadata
+            articleId
+            fromUserId
+            toUserId
+            isRead
+            readAt
+            createdAt
+          }
+        }
+      }
+    `;
+
+    const client = getAuthenticatedGqlClient();
+    try {
+      return await client.request<{ notificationById: NotificationRecord | null }>(
+        NOTIFICATION_QUERY,
+        { id },
+      );
+    } catch (error: any) {
+      const message = error?.response?.errors?.[0]?.message || error?.message || "";
+      if (!message.includes("notificationById")) throw error;
+
+      const legacy = await client.request<{
+        myNotifications: { notifications: NotificationRecord[] };
+      }>(LEGACY_NOTIFICATION_QUERY, { limit: 500, offset: 0 });
+      return {
+        notificationById:
+          legacy.myNotifications.notifications.find((item) => item.id === id) ?? null,
+      };
+    }
+  }, []);
+
   const markNotificationRead = useCallback(
     async (id: string) => {
       const MARK_READ_MUTATION = `
@@ -195,6 +255,7 @@ export function useNotifications() {
   return {
     getNotifications,
     getUnreadCount,
+    getNotificationById,
     markNotificationRead,
     markAllNotificationsRead,
     loading,

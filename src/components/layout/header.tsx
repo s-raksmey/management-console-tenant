@@ -75,6 +75,7 @@ const headerCopy = {
     markAllRead: "Mark all as read",
     reviewQueue: "Review queue",
     reviewRequest: "Review request",
+    openUser: "Open user",
     openArticle: "Open article",
     viewDetails: "View details",
     profile: "Profile",
@@ -114,6 +115,7 @@ const headerCopy = {
     markAllRead: "សម្គាល់ថាបានអានទាំងអស់",
     reviewQueue: "ជួរពិនិត្យ",
     reviewRequest: "ពិនិត្យសំណើ",
+    openUser: "បើកអ្នកប្រើ",
     openArticle: "បើកអត្ថបទ",
     viewDetails: "មើលលម្អិត",
     profile: "ប្រវត្តិរូប",
@@ -288,35 +290,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   };
 
   const getNotificationTarget = (notification: NotificationRecord) => {
-    if (notification.type === "SUBMISSION") {
-      return "/review";
-    }
-    if (
-      notification.type === "ACCOUNT_REQUEST" ||
-      notification.type === "USER_ACTIVITY"
-    ) {
-      return "/users";
-    }
-    if (notification.type === "SYSTEM_ALERT") {
-      return "/settings";
-    }
-    if (notification.type === "SECURITY_ALERT") {
-      return "/audit";
-    }
-    if (
-      notification.type === "REVISION_REQUESTED" ||
-      notification.type === "REVISION_APPROVED" ||
-      notification.type === "REVISION_REJECTED" ||
-      notification.type === "REVISION_CONSUMED"
-    ) {
-      if (notification.articleId) {
-        return `/articles/${notification.articleId}/edit`;
-      }
-    }
-    if (notification.articleId) {
-      return `/articles/${notification.articleId}`;
-    }
-    return undefined;
+    return `/notifications/${encodeURIComponent(notification.id)}`;
   };
 
   const getNotificationFromLabel = (notification: NotificationRecord) => {
@@ -373,30 +347,33 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
     }
   }, [user?.id, getNotifications, getUnreadCount]);
 
-  const handleNotificationClick = async (
+  const handleNotificationClick = (
     notification: NotificationRecord,
     targetPath?: string,
   ) => {
-    if (!notification.isRead) {
-      const result = await markNotificationRead(notification.id);
-      if (result?.markNotificationRead?.isRead) {
-        setNotifications((prev) =>
-          prev.map((item) =>
-            item.id === notification.id
-              ? {
-                  ...item,
-                  isRead: true,
-                  readAt: result.markNotificationRead.readAt ?? item.readAt,
-                }
-              : item,
-          ),
-        );
-        setUnreadCount((prev) => Math.max(0, prev - 1));
-      }
-    }
-
+    // Navigation must not wait for the read-status request. Waiting here can
+    // leave the user in the closing dropdown when the request is slow or the
+    // active tenant changes during navigation.
     if (targetPath) {
       router.push(targetPath);
+    }
+
+    if (!notification.isRead) {
+      // Update immediately so the click feels responsive, then persist it.
+      setNotifications((prev) =>
+        prev.map((item) =>
+          item.id === notification.id
+            ? { ...item, isRead: true, readAt: item.readAt ?? new Date().toISOString() }
+            : item,
+        ),
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+
+      void markNotificationRead(notification.id).then((result) => {
+        if (!result?.markNotificationRead?.isRead) {
+          void loadNotifications();
+        }
+      });
     }
   };
 
@@ -654,7 +631,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                             onClick={() => {
                               setShowSuggestions(false);
                               setSearchQuery("");
-                              router.push(`/articles/${result.id}`);
+                              router.push(`/articles/${result.id}/edit`);
                             }}
                           >
                             <Search className="mr-2 h-4 w-4 flex-shrink-0 text-slate-400" />
@@ -773,15 +750,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                       {(() => {
                         const meta = getNotificationMeta(notification.type);
                         const Icon = meta.icon;
-                        const target = getNotificationTarget(notification);
-                        const actionLabel =
-                          target === "/review"
-                            ? copy.reviewQueue
-                            : target === "/users"
-                              ? copy.reviewRequest
-                              : target
-                                ? copy.openArticle
-                                : copy.viewDetails;
+                        const actionLabel = copy.viewDetails;
                         const fromLabel =
                           getNotificationFromLabel(notification);
 

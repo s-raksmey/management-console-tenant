@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useGraphQL } from "@/hooks/useGraphQL";
 import { useCategories } from "@/hooks/useGraphQL";
 import { Button } from "@/components/ui/button";
@@ -178,21 +178,7 @@ export default function TopicsPage() {
     categorySlug: "",
   });
 
-  // Load categories on mount
-  useEffect(() => {
-    loadCategories();
-  }, []);
-
-  // Load topics when category is selected
-  useEffect(() => {
-    if (selectedCategorySlug) {
-      loadTopicsForCategory(selectedCategorySlug);
-    } else {
-      setTopics([]);
-    }
-  }, [selectedCategorySlug]);
-
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       const result = await getCategories();
       setCategories(result.categories || []);
@@ -200,9 +186,9 @@ export default function TopicsPage() {
       console.error("Failed to load categories:", err);
       showError(copy.error, copy.loadCategoriesFailed);
     }
-  };
+  }, [copy.error, copy.loadCategoriesFailed, getCategories, showError]);
 
-  const loadTopicsForCategory = async (categorySlug: string) => {
+  const loadTopicsForCategory = useCallback(async (categorySlug: string) => {
     try {
       const TOPICS_BY_CATEGORY_QUERY = `
         query GetTopicsByCategory($categorySlug: String!) {
@@ -231,7 +217,20 @@ export default function TopicsPage() {
       console.error("Failed to load topics:", err);
       showError(copy.error, copy.loadTopicsFailed);
     }
-  };
+  }, [copy.error, copy.loadTopicsFailed, query, showError]);
+
+  // Load categories on mount and reload topics when the category changes.
+  useEffect(() => {
+    void loadCategories();
+  }, [loadCategories]);
+
+  useEffect(() => {
+    if (selectedCategorySlug) {
+      void loadTopicsForCategory(selectedCategorySlug);
+    } else {
+      setTopics([]);
+    }
+  }, [loadTopicsForCategory, selectedCategorySlug]);
 
   const generateSlug = (title: string) => {
     return title

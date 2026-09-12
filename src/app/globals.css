@@ -22,7 +22,7 @@ body {
 }
 
 body {
-  font-family: var(--font-khmer-digital), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-jetbrains-mono), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   @apply bg-white text-slate-900 antialiased;
   overflow-x: hidden;
 }
@@ -616,4 +616,13 @@ html.dark :where(input, textarea, select, button[role="combobox"]) {
 
 html.dark :where(input::placeholder, textarea::placeholder) {
   color: #94a3b8 !important;
+}
+
+/* Editor.js centers blocks in a narrow reading column by default. The admin
+   writing surface should use the available width and begin near the left edge. */
+.news-editor .ce-block__content,
+.news-editor .ce-toolbar__content {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
 }
