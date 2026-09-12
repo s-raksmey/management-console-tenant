@@ -23,6 +23,32 @@ export function setSelectedTenantId(tenantId: string | null) {
   }
 }
 
+function isLocalDevHost(host?: string | null) {
+  const hostname = host?.split(":")[0]?.toLowerCase();
+  return hostname === "localhost" || hostname === "127.0.0.1";
+}
+
+function getRequestHost() {
+  if (typeof window === "undefined") return null;
+  return window.location.host.toLowerCase();
+}
+
+function applyTenantHeaders(
+  client: GraphQLClient,
+  options?: { includeSelectedTenant?: boolean; hostOnly?: boolean },
+) {
+  const includeSelectedTenant = options?.includeSelectedTenant !== false;
+  const selectedTenantId = includeSelectedTenant ? getSelectedTenantId() : null;
+  if (selectedTenantId && !options?.hostOnly) {
+    client.setHeader("x-tenant-id", selectedTenantId);
+  }
+
+  const host = getRequestHost();
+  if (host && !isLocalDevHost(host)) {
+    client.setHeader("x-tenant-host", host);
+  }
+}
+
 export function getGqlClient() {
   const client = new GraphQLClient(
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql",
@@ -31,11 +57,7 @@ export function getGqlClient() {
     },
   );
 
-  const selectedTenantId = getSelectedTenantId();
-  if (selectedTenantId) {
-    client.setHeader("x-tenant-id", selectedTenantId);
-  }
-
+  applyTenantHeaders(client);
   return client;
 }
 
@@ -58,11 +80,23 @@ export function getAuthenticatedGqlClient(token?: string) {
     client.setHeader("Authorization", `Bearer ${token}`);
   }
 
-  const selectedTenantId = getSelectedTenantId();
-  if (selectedTenantId) {
-    client.setHeader("x-tenant-id", selectedTenantId);
+  applyTenantHeaders(client);
+  return client;
+}
+
+export function getHostBoundGqlClient(token?: string) {
+  const client = new GraphQLClient(
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql",
+    {
+      credentials: "include",
+    },
+  );
+
+  if (isBearerToken(token)) {
+    client.setHeader("Authorization", `Bearer ${token}`);
   }
-  
+
+  applyTenantHeaders(client, { hostOnly: true, includeSelectedTenant: false });
   return client;
 }
 
@@ -74,6 +108,11 @@ export function getAuthFetchHeaders(): Record<string, string> {
   const selectedTenantId = getSelectedTenantId();
   if (selectedTenantId) {
     headers["x-tenant-id"] = selectedTenantId;
+  }
+
+  const host = getRequestHost();
+  if (host && !isLocalDevHost(host)) {
+    headers["x-tenant-host"] = host;
   }
 
   return headers;

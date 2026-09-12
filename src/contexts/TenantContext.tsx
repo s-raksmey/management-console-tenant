@@ -62,12 +62,19 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
 
     try {
+      const hostTenant = await TenantService.getActiveTenantFromHost().catch(() => null);
+
       if (user.role === "SUPER_ADMIN") {
         const options = await TenantService.listTenants();
-        setSelectedTenantId(null);
         setTenantOptions(options);
         setMemberships([]);
-        setActiveTenant(null);
+        if (hostTenant) {
+          setSelectedTenantId(hostTenant.id);
+          setActiveTenant(hostTenant);
+        } else {
+          setSelectedTenantId(null);
+          setActiveTenant(null);
+        }
         return;
       }
 
@@ -78,6 +85,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         .filter((tenant) => tenant.status === "ACTIVE");
 
       const nextTenant =
+        options.find((tenant) => tenant.id === hostTenant?.id) ||
         options.find((tenant) => tenant.id === selectedTenantId) ||
         options.find((tenant) => tenant.id === user.primaryTenantId) ||
         options[0] ||

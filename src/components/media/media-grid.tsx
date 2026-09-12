@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { cn } from '@/lib/utils';
 import type { MediaFile } from '@/types/media';
+import { resolveCmsMediaSrc } from '@/lib/cms-media';
 import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface MediaGridProps {
@@ -107,7 +108,7 @@ export function MediaGrid({
 
   const handleDownload = (file: MediaFile) => {
     const link = document.createElement('a');
-    link.href = file.url;
+    link.href = resolveCmsMediaSrc(file.url);
     link.download = file.originalName;
     document.body.appendChild(link);
     link.click();
@@ -144,7 +145,7 @@ export function MediaGrid({
             <div className="aspect-square bg-slate-50 flex items-center justify-center relative overflow-hidden">
               {isImage ? (
                 <Image
-                  src={file.url}
+                  src={resolveCmsMediaSrc(file.url)}
                   alt={file.alt || file.originalName}
                   fill
                   className="object-cover"
@@ -164,7 +165,7 @@ export function MediaGrid({
                     aria-label={copy.viewFile}
                     onClick={(e) => {
                       e.stopPropagation();
-                      window.open(file.url, '_blank');
+                      window.open(resolveCmsMediaSrc(file.url), '_blank');
                     } }
                   >
                     <Eye className="w-4 h-4" />

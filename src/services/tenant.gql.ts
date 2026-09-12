@@ -205,6 +205,15 @@ export class TenantService {
     return response.activeTenant ?? null;
   }
 
+  static async getActiveTenantFromHost(): Promise<Tenant | null> {
+    const { getHostBoundGqlClient } = await import("@/services/graphql-client");
+    const client = getHostBoundGqlClient();
+    const response = await client.request<{ activeTenant: Tenant | null }>(
+      Q_ACTIVE_TENANT,
+    );
+    return response.activeTenant ?? null;
+  }
+
   static async listTenants(): Promise<Tenant[]> {
     const client = getAuthenticatedGqlClient();
     const response = await client.request<{ tenants: Tenant[] }>(Q_TENANTS);

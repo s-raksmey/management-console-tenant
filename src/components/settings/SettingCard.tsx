@@ -5,13 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, Check, RotateCcw, Save } from 'lucide-react';
 import { Setting } from '@/services/settings.gql';
+import type { JsonValue } from '@/types/json';
 import { SettingInput } from './SettingInput';
 import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface SettingCardProps {
   setting: Setting;
-  value: any;
-  onChange: (value: any) => void;
+  value: JsonValue;
+  onChange: (value: JsonValue) => void;
   onSave: () => Promise<void>;
   onReset: () => Promise<void>;
   error?: string;

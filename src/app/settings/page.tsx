@@ -37,6 +37,7 @@ import {
   UpdateSettingInput,
 } from "@/services/settings.gql";
 import { SettingsCategory } from "@/components/settings";
+import { EmailDeliveryLogs } from "@/app/settings/_components/EmailDeliveryLogs";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { Permission } from "@/components/permissions/PermissionGuard";
@@ -256,6 +257,7 @@ export default function SettingsPage() {
   const userRole = user?.role?.toString().toUpperCase();
   const { hasPermission } = usePermissions();
   const canAccessSettings = hasPermission(Permission.VIEW_SETTINGS);
+  const canRetryEmail = hasPermission(Permission.UPDATE_SETTINGS);
   const [settings, setSettings] = React.useState<Setting[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -865,6 +867,7 @@ export default function SettingsPage() {
                         </Button>
                       </div>
                     </div>
+                    <EmailDeliveryLogs canRetry={canRetryEmail} />
                   </div>
                 ) : null}
 

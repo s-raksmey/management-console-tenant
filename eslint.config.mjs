@@ -12,6 +12,19 @@ const eslintConfig = [
     },
   },
   {
+    files: [
+      "src/types/json.ts",
+      "src/types/settings.ts",
+      "src/services/settings.gql.ts",
+      "src/components/settings/**/*.{ts,tsx}",
+      "src/lib/cms-media.ts",
+      "src/lib/media-server.ts",
+    ],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "error",
+    },
+  },
+  {
     ignores: [
       ".next/**",
       "node_modules/**",

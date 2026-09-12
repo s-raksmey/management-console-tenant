@@ -18,6 +18,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
+import { resolveCmsMediaSrc } from "@/lib/cms-media";
 import {
   Advertisement,
   AdvertisementPlacement,
@@ -192,7 +193,7 @@ function formatDate(value: string | null | undefined, locale: AdminLocale, noLim
 
 function getImageUrl(imageUrl?: string | null) {
   if (!imageUrl) return null;
-  if (imageUrl.startsWith("/uploads/")) return imageUrl;
+  if (imageUrl.startsWith("/uploads/") || imageUrl.startsWith("/media/files/")) return resolveCmsMediaSrc(imageUrl);
   try {
     const url = new URL(imageUrl);
     return ["http:", "https:"].includes(url.protocol) ? url.toString() : null;

@@ -17,6 +17,7 @@ import { Category, Q_CATEGORIES } from "@/services/category.gql";
 import { Q_TOPICS, Topic } from "@/services/topic.gql";
 import { Q_ARTICLES } from "@/services/article.gql";
 import { useAdminLocale, type AdminLocale } from "@/hooks/useAdminLocale";
+import { resolveCmsMediaSrc } from "@/lib/cms-media";
 
 const placements: AdvertisementPlacement[] = ["HOME_TOP", "HOME_SIDEBAR", "CATEGORY_TOP", "ARTICLE_INLINE", "ARTICLE_SIDEBAR", "FOOTER"];
 const statuses: AdvertisementStatus[] = ["DRAFT", "ACTIVE", "PAUSED", "ARCHIVED"];
@@ -199,7 +200,7 @@ function label(value: string, locale: AdminLocale) {
 }
 function dateInput(value?: string | null) { return value ? new Date(value).toISOString().slice(0, 10) : ""; }
 function toForm(ad?: Advertisement | null): AdvertisementInput { return ad ? { name: ad.name, placement: ad.placement, format: ad.format, status: ad.status, imageUrl: ad.imageUrl ?? "", targetUrl: ad.targetUrl ?? "", headline: ad.headline ?? "", body: ad.body ?? "", sponsorName: ad.sponsorName ?? "", html: ad.html ?? "", startAt: dateInput(ad.startAt), endAt: dateInput(ad.endAt), priority: ad.priority, targetScope: ad.targetScope ?? "GLOBAL", categorySlug: ad.categorySlug ?? "", topicSlug: ad.topicSlug ?? "", articleId: ad.articleId ?? "" } : emptyForm; }
-function imageUrl(value?: string | null) { if (!value) return null; if (value.startsWith("/uploads/")) return value; try { const url = new URL(value); return ["http:", "https:"].includes(url.protocol) ? url.toString() : null; } catch { return null; } }
+function imageUrl(value?: string | null) { if (!value) return null; if (value.startsWith("/uploads/") || value.startsWith("/media/files/")) return resolveCmsMediaSrc(value); try { const url = new URL(value); return ["http:", "https:"].includes(url.protocol) ? url.toString() : null; } catch { return null; } }
 function clean(value?: string | null) { const next = value?.trim(); return next || null; }
 function scopesForPlacement(placement: AdvertisementPlacement) {
   if (placement === "ARTICLE_INLINE" || placement === "ARTICLE_SIDEBAR") return targetScopes;

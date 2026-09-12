@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import sharp from "sharp";
-import fs from "fs";
 import path from "path";
 import { getRateLimitRetryAfter } from "@/lib/rate-limit";
+import { persistProcessedMedia } from "@/lib/media-server";
+import { getForwardedTenantHeaders } from "@/lib/tenant-request-headers";
 
 type RolePermissionConfig = {
   role: string;
@@ -35,9 +36,7 @@ async function requireUploadPermission(req: Request) {
         "content-type": "application/json",
         ...(authorization ? { authorization } : {}),
         ...(cookie ? { cookie } : {}),
-        ...(req.headers.get("x-tenant-id")
-          ? { "x-tenant-id": req.headers.get("x-tenant-id") as string }
-          : {}),
+        ...getForwardedTenantHeaders(req),
       },
       body: JSON.stringify({
         query: `
@@ -151,26 +150,10 @@ export async function POST(req: Request) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-
-    // Read metadata
     const meta = await sharp(buffer).metadata();
-
-    // Decide resize width dynamically (NEVER upscale)
     const targetWidth =
       meta.width && meta.width > 1600 ? 1600 : meta.width;
-
-    // Ensure upload directory
-    const uploadDir = path.join(process.cwd(), "public/uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const safeName = sanitizeBaseName(file.name);
-    const filename = `${Date.now()}-${safeName}.jpg`;
-    const outputPath = path.join(uploadDir, filename);
-
-    // ✅ Save image (preserve quality, downscale only)
-    await sharp(buffer)
+    const processed = await sharp(buffer)
       .resize({
         width: targetWidth,
         withoutEnlargement: true,
@@ -179,14 +162,22 @@ export async function POST(req: Request) {
         quality: 90,
         mozjpeg: true,
       })
-      .toFile(outputPath);
+      .toBuffer();
+    const processedMeta = await sharp(processed).metadata();
+    const mediaFile = await persistProcessedMedia(req, {
+      buffer: processed,
+      originalName: `${sanitizeBaseName(file.name)}.jpg`,
+      mimeType: "image/jpeg",
+      width: processedMeta.width,
+      height: processedMeta.height,
+    });
 
     return NextResponse.json({
       success: 1,
       file: {
-        url: `/uploads/${filename}`,
-        width: meta.width,
-        height: meta.height,
+        url: mediaFile.url,
+        width: processedMeta.width,
+        height: processedMeta.height,
       },
     });
   } catch (err) {

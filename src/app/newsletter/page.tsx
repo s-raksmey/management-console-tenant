@@ -46,6 +46,12 @@ const M_SEND_NEWSLETTER_DIGEST = `
   }
 `;
 
+const M_RESEND_NEWSLETTER_VERIFICATION = `
+  mutation ResendNewsletterVerification($email: String!) {
+    resendNewsletterVerification(email: $email) { success message }
+  }
+`;
+
 const newsletterCopy = {
   en: {
     sendSuccess: (count: number) => `Digest processed for ${count} active subscribers.`,
@@ -73,6 +79,9 @@ const newsletterCopy = {
     recipients: (count: number) => `${count} recipients`,
     loadingSubscribers: "Loading subscribers...",
     emptySubscribers: "No subscribers match this view.",
+    resend: "Resend confirmation",
+    resending: "Resending...",
+    resendFailed: "Unable to resend the confirmation email.",
   },
   km: {
     sendSuccess: (count: number) => `បានដំណើរការសង្ខេបសម្រាប់អ្នកជាវសកម្ម ${count} នាក់។`,
@@ -100,6 +109,9 @@ const newsletterCopy = {
     recipients: (count: number) => `${count} អ្នកទទួល`,
     loadingSubscribers: "កំពុងផ្ទុកអ្នកជាវ...",
     emptySubscribers: "គ្មានអ្នកជាវត្រូវនឹងទិដ្ឋភាពនេះទេ។",
+    resend: "Resend confirmation",
+    resending: "Resending...",
+    resendFailed: "Unable to resend the confirmation email.",
   },
 } as const;
 
@@ -116,6 +128,7 @@ export default function NewsletterPage() {
   const [sending, setSending] = useState(false);
   const [message, setMessage] = useState("");
   const [digest, setDigest] = useState({ subject: "", body: "" });
+  const [resendingEmail, setResendingEmail] = useState<string | null>(null);
 
   const loadSubscribers = useCallback(async () => {
     if (permissionsLoading || !canView) return;
@@ -173,6 +186,21 @@ export default function NewsletterPage() {
     }
   };
 
+  const resendVerification = async (email: string) => {
+    setResendingEmail(email);
+    setMessage("");
+    try {
+      const response = await getAuthenticatedGqlClient().request<{
+        resendNewsletterVerification: { success: boolean; message: string };
+      }>(M_RESEND_NEWSLETTER_VERIFICATION, { email });
+      setMessage(response.resendNewsletterVerification.message);
+    } catch {
+      setMessage(copy.resendFailed);
+    } finally {
+      setResendingEmail(null);
+    }
+  };
+
   if (!permissionsLoading && !canView) return <div className="text-sm text-red-600">{copy.accessDenied}</div>;
 
   return (
@@ -206,6 +234,11 @@ export default function NewsletterPage() {
             <div key={subscriber.id} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <p className="min-w-0 flex-1 truncate text-sm font-medium text-slate-900">{subscriber.email}</p>
               <Badge variant={subscriber.status === "ACTIVE" ? "success" : subscriber.status === "PENDING" ? "warning" : "secondary"}>{copy.statuses[subscriber.status]}</Badge>
+              {subscriber.status === "PENDING" && canSend ? (
+                <Button type="button" variant="outline" size="sm" disabled={resendingEmail === subscriber.email} onClick={() => void resendVerification(subscriber.email)}>
+                  {resendingEmail === subscriber.email ? copy.resending : copy.resend}
+                </Button>
+              ) : null}
               <time className="text-xs text-slate-400">{new Date(subscriber.createdAt).toLocaleDateString(locale === "km" ? "km-KH" : undefined)}</time>
             </div>
           ))}</div>

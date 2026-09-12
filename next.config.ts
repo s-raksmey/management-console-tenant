@@ -1,11 +1,20 @@
 /** @type {import('next').NextConfig} */
+const apiOrigin = (
+  process.env.NEXT_PUBLIC_MEDIA_ORIGIN ||
+  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql").replace(
+    /\/graphql\/?$/,
+    ""
+  )
+).replace(/\/+$/, "");
+const apiUrl = new URL(apiOrigin);
+
 const contentSecurityPolicy = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https:",
+  `img-src 'self' data: blob: https: ${apiOrigin}`,
   "font-src 'self' data:",
-  "connect-src 'self' http://localhost:4000 https:",
+  `connect-src 'self' ${apiOrigin} http://localhost:4000 https:`,
   "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com",
   "object-src 'none'",
   "base-uri 'self'",
@@ -27,6 +36,12 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "cdn.yoursite.com",
+      },
+      {
+        protocol: apiUrl.protocol.replace(":", ""),
+        hostname: apiUrl.hostname,
+        ...(apiUrl.port ? { port: apiUrl.port } : {}),
+        pathname: "/media/files/**",
       },
     ],
   },
@@ -57,6 +72,14 @@ const nextConfig = {
               "camera=(), microphone=(), geolocation=(), payment=(), usb=(), browsing-topics=()",
           },
         ],
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      {
+        source: "/media/files/:path*",
+        destination: `${apiOrigin}/media/files/:path*`,
       },
     ];
   },

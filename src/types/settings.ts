@@ -1,5 +1,8 @@
+import type { JsonValue } from '@/types/json';
+
 // Re-export constants from the GraphQL service for consistency
 export { SETTING_CATEGORIES } from '@/services/settings.gql';
+export type { JsonValue } from '@/types/json';
 
 // Define types directly to avoid import issues
 export enum SettingType {
@@ -16,7 +19,7 @@ export enum SettingType {
 export interface Setting {
   id: string;
   key: string;
-  value: any;
+  value: JsonValue;
   type: SettingType;
   label: string;
   description?: string | null;
@@ -29,12 +32,12 @@ export interface Setting {
 
 export interface UpdateSettingInput {
   key: string;
-  value: any;
+  value: JsonValue;
 }
 
 // Additional types for the UI components
 export interface SettingFormData {
-  [key: string]: any;
+  [key: string]: JsonValue;
 }
 
 export interface SettingValidationError {
@@ -61,8 +64,8 @@ export interface SettingsPageState {
 
 export interface SettingInputProps {
   setting: Setting;
-  value: any;
-  onChange: (value: any) => void;
+  value: JsonValue;
+  onChange: (value: JsonValue) => void;
   error?: string;
   disabled?: boolean;
 }
@@ -91,7 +94,7 @@ export interface SettingConfig {
   type: SettingType;
   label: string;
   description?: string;
-  defaultValue: any;
+  defaultValue: JsonValue;
   isPublic: boolean;
   isRequired: boolean;
   validation?: SettingValidationRule;

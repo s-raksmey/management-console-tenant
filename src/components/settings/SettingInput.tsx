@@ -84,15 +84,17 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
       ? 'https://example.com'
       : copy.enter(setting.label.toLowerCase());
 
-  const handleInputChange = (newValue: any) => {
-    // Convert string values to appropriate types
+  const textValue =
+    value === null || value === undefined || typeof value === 'object' ? '' : String(value);
+
+  const handleInputChange = (newValue: string | boolean) => {
     if (inputType === 'number' || validationType === 'number') {
-      const numValue = parseFloat(newValue);
-      onChange(isNaN(numValue) ? 0 : numValue);
+      const numValue = parseFloat(String(newValue));
+      onChange(Number.isNaN(numValue) ? 0 : numValue);
     } else if (inputType === 'boolean' || validationType === 'boolean') {
-      onChange(newValue === 'true' || newValue === true);
+      onChange(newValue === true || newValue === 'true');
     } else {
-      onChange(newValue);
+      onChange(String(newValue));
     }
   };
 
@@ -130,8 +132,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
         throw new Error(result.message || copy.uploadFailed);
       }
 
-      const absoluteUrl = new URL(result.file.url, window.location.origin).toString();
-      onChange(absoluteUrl);
+      onChange(result.file.url);
     } catch (uploadFailure) {
       setUploadError(locale === 'en' && uploadFailure instanceof Error ? uploadFailure.message : copy.uploadFailed);
     } finally {
@@ -161,7 +162,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
       case 'textarea':
         return (
           <textarea
-            value={value || ''}
+            value={textValue}
             onChange={(e) => handleInputChange(e.target.value)}
             disabled={disabled}
             className="flex min-h-[96px] w-full resize-y rounded-md border border-input bg-background px-3 py-2 text-sm leading-6 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -235,14 +236,14 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
           <div className="flex items-center space-x-2">
             <input
               type="color"
-              value={value || '#000000'}
+              value={textValue || '#000000'}
               onChange={(e) => handleInputChange(e.target.value)}
               disabled={disabled}
               className="w-12 h-10 rounded border border-input cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
             />
             <Input
               type="text"
-              value={value || ''}
+              value={textValue}
               onChange={(e) => handleInputChange(e.target.value)}
               disabled={disabled}
               placeholder="#000000"
@@ -257,7 +258,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
             <div className="relative">
               <Input
                 type={isPassword && !showPassword ? 'password' : inputType}
-                value={value || ''}
+                value={textValue}
                 onChange={(e) => handleInputChange(e.target.value)}
                 disabled={disabled || isUploading}
                 placeholder={inputPlaceholder}

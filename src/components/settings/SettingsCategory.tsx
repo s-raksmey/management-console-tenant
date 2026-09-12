@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Save, RotateCcw, AlertTriangle } from 'lucide-react';
 import { Setting, SettingType, SETTING_CATEGORIES, getSettingsByType } from '@/services/settings.gql';
 import { UpdateSettingInput } from '@/types/settings';
+import type { JsonValue } from '@/types/json';
 import { SettingCard } from './SettingCard';
 import { useAdminLocale } from '@/hooks/useAdminLocale';
 
@@ -61,7 +62,7 @@ export function SettingsCategory({
 }: SettingsCategoryProps) {
   const { locale } = useAdminLocale();
   const copy = settingsCategoryCopy[locale];
-  const [formData, setFormData] = React.useState<Record<string, any>>({});
+  const [formData, setFormData] = React.useState<Record<string, JsonValue>>({});
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [hasChanges, setHasChanges] = React.useState<Record<string, boolean>>({});
 
@@ -73,7 +74,7 @@ export function SettingsCategory({
 
   // Initialize form data with current setting values
   React.useEffect(() => {
-    const initialData: Record<string, any> = {};
+    const initialData: Record<string, JsonValue> = {};
     categorySettings.forEach(setting => {
       initialData[setting.key] = setting.value;
     });
@@ -82,7 +83,7 @@ export function SettingsCategory({
     setErrors({});
   }, [categorySettings]);
 
-  const handleSettingChange = (key: string, value: any) => {
+  const handleSettingChange = (key: string, value: JsonValue) => {
     setFormData(prev => ({ ...prev, [key]: value }));
     
     // Check if value has changed from original
@@ -155,7 +156,7 @@ export function SettingsCategory({
 
   const resetAllChanges = () => {
     // Reset form data to original values
-    const resetData: Record<string, any> = {};
+    const resetData: Record<string, JsonValue> = {};
     categorySettings.forEach(setting => {
       resetData[setting.key] = setting.value;
     });

@@ -111,6 +111,9 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { isAuthenticated, isInitializing } = useAuth();
+  const nextPath = searchParams.get("next");
+  const redirectTo =
+    nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/";
   const verified = searchParams.get("verified");
   const [showLoginForm, setShowLoginForm] = useState(verified === "true");
   const { locale, selectLocale } = useAdminLocale();
@@ -127,12 +130,12 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isInitializing && isAuthenticated) {
-      router.push("/");
+      router.push(redirectTo);
     }
-  }, [isAuthenticated, isInitializing, router]);
+  }, [isAuthenticated, isInitializing, redirectTo, router]);
 
   const handleAuthSuccess = () => {
-    router.push("/");
+    router.push(redirectTo);
   };
 
   if (isInitializing) {
