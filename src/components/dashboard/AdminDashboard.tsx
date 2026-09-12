@@ -56,6 +56,7 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Progress } from '@radix-ui/react-progress';
 import { useTenant } from '@/contexts/TenantContext';
+import { getTenantDisplayName } from '@/lib/tenant-display';
 import { useStableLoading } from '@/hooks/useStableLoading';
 import { useAdminLocale } from '@/hooks/useAdminLocale';
 
@@ -130,7 +131,7 @@ interface DashboardStats {
 
 const adminDashboardCopy = {
   en: {
-    tenant: 'អង្គភាព',
+    tenant: 'Sub-tenant',
     unknown: 'Unknown',
     uncategorized: 'Uncategorized',
     system: 'System',
@@ -224,7 +225,7 @@ const adminDashboardCopy = {
     },
   },
   km: {
-    tenant: 'Sub-tenant',
+    tenant: 'គេហទំព័រ',
     unknown: 'មិនស្គាល់',
     uncategorized: 'មិនមានប្រភេទ',
     system: 'ប្រព័ន្ធ',
@@ -342,7 +343,7 @@ export const AdminDashboard: React.FC = () => {
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const tenantName = activeTenant?.name || copy.tenant;
+  const tenantName = getTenantDisplayName(activeTenant, copy.tenant);
 
   const loadDashboardData = async () => {
     try {

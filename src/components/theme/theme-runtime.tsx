@@ -11,6 +11,7 @@ import {
   applyThemeSettings,
 } from "@/lib/tweakcn-theme";
 import { useTenant } from "@/contexts/TenantContext";
+import { resolveCmsMediaSrc } from "@/lib/cms-media";
 
 type PublicSetting = {
   key: string;
@@ -42,7 +43,7 @@ function updateFavicon(settings: PublicSetting[], role?: string | null) {
     document.head.appendChild(link);
   }
 
-  link.href = faviconUrl;
+  link.href = resolveCmsMediaSrc(faviconUrl);
 }
 
 export function ThemeRuntime() {

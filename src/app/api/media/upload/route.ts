@@ -141,6 +141,14 @@ function sanitizeFilename(filename: string): string {
   );
 }
 
+function mimeTypeFromFormat(format?: string) {
+  if (format === "jpeg") return "image/jpeg";
+  if (format === "png") return "image/png";
+  if (format === "webp") return "image/webp";
+  if (format === "gif") return "image/gif";
+  return "";
+}
+
 async function processImage(
   buffer: Buffer,
   options: MediaUploadOptions = {}
@@ -153,21 +161,28 @@ async function processImage(
     (metadata.height && metadata.height > maxHeight);
 
   if (needsResize) {
-    const processed = await image
-      .resize({
-        width: maxWidth,
-        height: maxHeight,
-        fit: "inside",
-        withoutEnlargement: true,
-      })
-      .jpeg({ quality, mozjpeg: true })
-      .toBuffer();
+    const resized = image.resize({
+      width: maxWidth,
+      height: maxHeight,
+      fit: "inside",
+      withoutEnlargement: true,
+    });
+    const keepAlpha = Boolean(metadata.hasAlpha) && metadata.format !== "jpeg";
+    const processed = keepAlpha
+      ? metadata.format === "webp"
+        ? await resized.webp({ quality }).toBuffer()
+        : await resized.png().toBuffer()
+      : await resized.jpeg({ quality, mozjpeg: true }).toBuffer();
     const newMetadata = await sharp(processed).metadata();
     return {
       buffer: processed,
       width: newMetadata.width,
       height: newMetadata.height,
-      mimeType: "image/jpeg",
+      mimeType: keepAlpha
+        ? metadata.format === "webp"
+          ? "image/webp"
+          : "image/png"
+        : "image/jpeg",
     };
   }
 
@@ -175,7 +190,7 @@ async function processImage(
     buffer,
     width: metadata.width,
     height: metadata.height,
-    mimeType: metadata.format === "jpeg" ? "image/jpeg" : "",
+    mimeType: mimeTypeFromFormat(metadata.format),
   };
 }
 
@@ -265,6 +280,12 @@ export async function POST(req: Request) {
         mimeType = processed.mimeType;
         if (mimeType === "image/jpeg" && !originalName.toLowerCase().endsWith(".jpg") && !originalName.toLowerCase().endsWith(".jpeg")) {
           originalName = `${originalName.replace(/\.[^.]+$/, "")}.jpg`;
+        }
+        if (mimeType === "image/png" && !originalName.toLowerCase().endsWith(".png")) {
+          originalName = `${originalName.replace(/\.[^.]+$/, "")}.png`;
+        }
+        if (mimeType === "image/webp" && !originalName.toLowerCase().endsWith(".webp")) {
+          originalName = `${originalName.replace(/\.[^.]+$/, "")}.webp`;
         }
       }
     } else if (mediaType === "image") {

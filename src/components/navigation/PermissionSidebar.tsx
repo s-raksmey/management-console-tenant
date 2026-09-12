@@ -22,6 +22,12 @@ import { useState, useEffect } from "react";
 import { useCounts } from "@/hooks/useCounts";
 import { useArticles } from "@/hooks/useGraphQL";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
+import {
+  getTenantDisplayName,
+  getTenantLogoUrl,
+  isSubTenantDisplay,
+} from "@/lib/tenant-display";
+import { TenantBrandMark } from "@/components/layout/tenant-brand-mark";
 
 
 interface PermissionSidebarProps {
@@ -42,11 +48,15 @@ const sidebarCopy = {
     panel: "Panel",
     expand: "Expand navigation sidebar",
     collapse: "Collapse navigation sidebar",
+    managementConsole: "Management Console",
+    subTenant: "Sub-tenant",
   },
   km: {
     panel: "ផ្ទាំង",
     expand: "ពង្រីកម៉ឺនុយ",
     collapse: "បង្រួមម៉ឺនុយ",
+    managementConsole: "ផ្ទាំងគ្រប់គ្រង",
+    subTenant: "គេហទំព័រ",
   },
 };
 
@@ -198,8 +208,11 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
   const { counts } = useCounts(userRole);
   const { getArticles } = useArticles();
   const [reviewQueueCount, setReviewQueueCount] = useState(0);
-  const brandName =
-    userRole === "SUPER_ADMIN" ? "Management Console" : activeTenant?.name || "Pulse News";
+  const viewingSubTenant = isSubTenantDisplay(activeTenant);
+  const brandName = viewingSubTenant
+    ? getTenantDisplayName(activeTenant, copy.subTenant)
+    : copy.managementConsole;
+  const brandLogoUrl = viewingSubTenant ? getTenantLogoUrl(activeTenant) : null;
   const brandInitials = brandName
     .split(" ")
     .filter(Boolean)
@@ -274,11 +287,11 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
             transition={{ delay: 0.1 }}
             className="flex min-w-0 items-center gap-3 rounded-md"
           >
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-900 ring-1 ring-slate-800 dark:bg-slate-800 dark:ring-slate-700">
-              <span className="text-white font-semibold text-sm">
-                {brandInitials || "PN"}
-              </span>
-            </div>
+            <TenantBrandMark
+              name={brandName}
+              logoUrl={brandLogoUrl}
+              initials={brandInitials}
+            />
             <div className="min-w-0 leading-tight">
               <p className="max-w-[170px] truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {brandName}

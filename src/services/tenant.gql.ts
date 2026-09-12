@@ -12,6 +12,7 @@ export type TenantSite = {
   domain?: string | null;
   publicBaseUrl?: string | null;
   adminBaseUrl?: string | null;
+  logoUrl?: string | null;
   primaryLocale: string;
   isPrimary: boolean;
   isActive: boolean;
@@ -27,6 +28,7 @@ export type TenantMembership = {
     id: string;
     name: string;
     slug: string;
+    isMainTenant?: boolean;
     status: TenantStatus;
     sites: TenantSite[];
   };
@@ -46,6 +48,7 @@ export type Tenant = {
   id: string;
   name: string;
   slug: string;
+  isMainTenant?: boolean;
   status: TenantStatus;
   description?: string | null;
   sites: TenantSite[];
@@ -81,6 +84,7 @@ const TENANT_FIELDS = gql`
     id
     name
     slug
+    isMainTenant
     status
     description
     createdAt
@@ -93,6 +97,7 @@ const TENANT_FIELDS = gql`
       domain
       publicBaseUrl
       adminBaseUrl
+      logoUrl
       primaryLocale
       isPrimary
       isActive
@@ -147,6 +152,7 @@ export const Q_MY_TENANTS = gql`
         id
         name
         slug
+        isMainTenant
         status
         sites {
           id
@@ -156,6 +162,7 @@ export const Q_MY_TENANTS = gql`
           domain
           publicBaseUrl
           adminBaseUrl
+          logoUrl
           primaryLocale
           isPrimary
           isActive

@@ -16,9 +16,26 @@ import {
   TenantService,
 } from "@/services/tenant.gql";
 import {
+  getAuthenticatedGqlClient,
   getSelectedTenantId,
   setSelectedTenantId,
 } from "@/services/graphql-client";
+import { Q_PUBLIC_SETTINGS } from "@/services/settings.gql";
+import { getTenantDisplayName, withTenantLogoUrl } from "@/lib/tenant-display";
+
+async function readSettingLogoUrl() {
+  try {
+    const response = await getAuthenticatedGqlClient().request<{
+      publicSettings?: Array<{ key: string; value: unknown }>;
+    }>(Q_PUBLIC_SETTINGS);
+    const value = response.publicSettings?.find(
+      (setting) => setting.key === "site.logo_url",
+    )?.value;
+    return typeof value === "string" && value.trim() ? value.trim() : null;
+  } catch {
+    return null;
+  }
+}
 
 type TenantContextType = {
   activeTenant: Tenant | null;
@@ -36,6 +53,7 @@ function tenantFromMembership(membership: TenantMembership): Tenant {
     id: membership.tenant.id,
     name: membership.tenant.name,
     slug: membership.tenant.slug,
+    isMainTenant: membership.tenant.isMainTenant,
     status: membership.tenant.status,
     sites: membership.tenant.sites ?? [],
     memberships: [],
@@ -66,11 +84,25 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
       if (user.role === "SUPER_ADMIN") {
         const options = await TenantService.listTenants();
+        const selectedTenantId = getSelectedTenantId();
+        const subTenants = options.filter(
+          (tenant) => tenant.status === "ACTIVE" && tenant.isMainTenant !== true,
+        );
+        const nextTenant =
+          subTenants.find((tenant) => tenant.id === hostTenant?.id) ||
+          subTenants.find((tenant) => tenant.id === selectedTenantId) ||
+          (hostTenant && hostTenant.isMainTenant !== true ? hostTenant : null) ||
+          null;
+
+        const settingLogoUrl = await readSettingLogoUrl();
         setTenantOptions(options);
         setMemberships([]);
-        if (hostTenant) {
+        if (nextTenant) {
+          setSelectedTenantId(nextTenant.id);
+          setActiveTenant(withTenantLogoUrl(nextTenant, settingLogoUrl));
+        } else if (hostTenant) {
           setSelectedTenantId(hostTenant.id);
-          setActiveTenant(hostTenant);
+          setActiveTenant(withTenantLogoUrl(hostTenant, settingLogoUrl));
         } else {
           setSelectedTenantId(null);
           setActiveTenant(null);
@@ -82,7 +114,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       const myMemberships = await TenantService.listMyTenants();
       const options = myMemberships
         .map(tenantFromMembership)
-        .filter((tenant) => tenant.status === "ACTIVE");
+        .filter((tenant) => tenant.status === "ACTIVE" && !tenant.isMainTenant);
 
       const nextTenant =
         options.find((tenant) => tenant.id === hostTenant?.id) ||
@@ -97,9 +129,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         setSelectedTenantId(null);
       }
 
-      setTenantOptions(options);
+      const settingLogoUrl = await readSettingLogoUrl();
+      setTenantOptions(options.map((tenant) => withTenantLogoUrl(tenant, settingLogoUrl)));
       setMemberships(myMemberships);
-      setActiveTenant(nextTenant);
+      setActiveTenant(nextTenant ? withTenantLogoUrl(nextTenant, settingLogoUrl) : null);
     } finally {
       setIsLoading(false);
     }
@@ -108,6 +141,19 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void loadTenants();
   }, [loadTenants]);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!isAuthenticated || !user) {
+      document.title = "Management Console";
+      return;
+    }
+    if (user.role === "SUPER_ADMIN") {
+      document.title = "Management Console";
+      return;
+    }
+    document.title = `${getTenantDisplayName(activeTenant, "Sub-tenant")} Admin`;
+  }, [activeTenant, isAuthenticated, user]);
 
   const switchTenant = useCallback(
     async (tenantId: string) => {

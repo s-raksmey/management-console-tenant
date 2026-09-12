@@ -8,10 +8,12 @@ import { Eye, EyeOff, Loader2, UploadCloud } from 'lucide-react';
 import { Setting, getSettingInputType } from '@/services/settings.gql';
 import { SettingInputProps } from '@/types/settings';
 import { getAuthFetchHeaders } from '@/services/graphql-client';
+import { resolveCmsMediaSrc } from '@/lib/cms-media';
 import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 const BRAND_IMAGE_SETTING_KEYS = new Set([
   'site.logo_url',
+  'site.og_image_url',
   'site.favicon_url',
   'site.dashboard_favicon_url',
   'site.management_favicon_url',
@@ -37,6 +39,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
         weekly: 'ប្រចាំសប្តាហ៍',
         uploadFile: (type: string) => `ផ្ទុកឯកសារ ${type}`,
         logo: 'logo',
+        ogImage: 'Open Graph',
         favicon: 'favicon',
         uploadHelp: 'ការផ្ទុកឡើងនឹងកំណត់ URL ខាងលើ។ ចុចរក្សាទុកដើម្បីផ្សព្វផ្សាយ។',
         uploading: 'កំពុងផ្ទុកឡើង',
@@ -62,6 +65,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
         weekly: 'Weekly',
         uploadFile: (type: string) => `Upload ${type} file`,
         logo: 'logo',
+        ogImage: 'Open Graph image',
         favicon: 'favicon',
         uploadHelp: 'Upload sets the URL above. Click Save to publish it.',
         uploading: 'Uploading',
@@ -77,6 +81,12 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
   const isPassword = setting.key.includes('password') || setting.key.includes('secret');
   const isBrandImageSetting = BRAND_IMAGE_SETTING_KEYS.has(setting.key);
   const isFaviconSetting = setting.key.includes('favicon_url');
+  const isOgImageSetting = setting.key.includes('og_image');
+  const brandImageLabel = isFaviconSetting
+    ? copy.favicon
+    : isOgImageSetting
+      ? copy.ogImage
+      : copy.logo;
   const validationType = setting.validation?.type;
   const validationOptions = setting.validation?.options || [];
   const inputPlaceholder =
@@ -114,10 +124,10 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
         'options',
         JSON.stringify({
           folder: 'branding',
-          maxWidth: isFaviconSetting ? 256 : 1200,
-          maxHeight: isFaviconSetting ? 256 : 600,
+          maxWidth: isFaviconSetting ? 256 : isOgImageSetting ? 1200 : 800,
+          maxHeight: isFaviconSetting ? 256 : isOgImageSetting ? 630 : 800,
           quality: 90,
-          tags: ['branding', isFaviconSetting ? 'favicon' : 'logo'],
+          tags: ['branding', isFaviconSetting ? 'favicon' : isOgImageSetting ? 'og' : 'logo'],
         }),
       );
 
@@ -257,7 +267,13 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
           <div className="space-y-3">
             <div className="relative">
               <Input
-                type={isPassword && !showPassword ? 'password' : inputType}
+                type={
+                  isBrandImageSetting
+                    ? 'text'
+                    : isPassword && !showPassword
+                      ? 'password'
+                      : inputType
+                }
                 value={textValue}
                 onChange={(e) => handleInputChange(e.target.value)}
                 disabled={disabled || isUploading}
@@ -287,8 +303,8 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     {value ? (
-                      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-white">
-                        <img src={String(value)} alt={setting.label} className="max-h-full max-w-full object-contain" />
+                      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-md border border-dashed border-slate-200 bg-transparent">
+                        <img src={resolveCmsMediaSrc(String(value))} alt={setting.label} className="max-h-full max-w-full object-contain" />
                       </div>
                     ) : (
                       <div className="flex h-12 w-12 items-center justify-center rounded-md border border-dashed border-slate-300 bg-white text-slate-400">
@@ -297,7 +313,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
                     )}
                     <div>
                       <p className="text-sm font-medium text-slate-700">
-                        {copy.uploadFile(isFaviconSetting ? copy.favicon : copy.logo)}
+                        {copy.uploadFile(brandImageLabel)}
                       </p>
                       <p className="text-xs text-slate-500">
                         {copy.uploadHelp}

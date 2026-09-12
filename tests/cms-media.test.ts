@@ -17,5 +17,9 @@ test("CMS media previews keep relative upload paths and prefix tenant files", ()
     resolveCmsMediaSrc("/media/files/tenant-a/hero.jpg"),
     "http://localhost:4000/media/files/tenant-a/hero.jpg"
   );
+  assert.equal(
+    resolveCmsMediaSrc("http:/media/files/tenant-a/hero.jpg"),
+    "http://localhost:4000/media/files/tenant-a/hero.jpg"
+  );
   process.env.NEXT_PUBLIC_API_URL = previous;
 });

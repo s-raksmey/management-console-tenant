@@ -48,6 +48,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToastHelpers } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
+import { getTenantDisplayName } from "@/lib/tenant-display";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
@@ -380,7 +381,7 @@ export default function TenantsPage() {
   const { locale } = useAdminLocale();
   const copy = tenantsCopy[locale];
   const { showSuccess, showError } = useToastHelpers();
-  const { refreshTenants } = useTenant();
+  const { activeTenant, refreshTenants } = useTenant();
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
@@ -748,7 +749,9 @@ export default function TenantsPage() {
               {isSuperAdmin ? copy.eyebrowSuper : copy.eyebrowTenant}
             </p>
             <h1 className="mt-2 text-3xl font-bold text-slate-950">
-              {isSuperAdmin ? copy.titleSuper : copy.titleTenant}
+              {isSuperAdmin
+                ? copy.titleSuper
+                : getTenantDisplayName(activeTenant || tenants[0], copy.titleTenant)}
             </h1>
             <p className="mt-2 text-sm leading-6 text-slate-600">
               {isSuperAdmin ? copy.descriptionSuper : copy.descriptionTenant}

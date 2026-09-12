@@ -22,6 +22,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useTopics } from "@/hooks/useTopics";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useTenant } from "@/contexts/TenantContext";
+import { getTenantDisplayName } from "@/lib/tenant-display";
 import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
 import { ArticleStatus, canDeleteArticle, canEditArticle, canViewArticleForEdit } from "@/utils/articlePermissions";
 import { ArticleBreakingNewsRequestStatus } from "@/types/article";
@@ -1385,7 +1386,7 @@ export default function EditArticlePage() {
           slug={slug || slugify(title)}
           categorySlug={categorySlug}
           topicSlug={topic}
-          siteName={activeTenant?.name}
+          siteName={getTenantDisplayName(activeTenant, "")}
           publicBaseUrl={publicBaseUrl}
           coverImageUrl={coverImageUrl}
         />

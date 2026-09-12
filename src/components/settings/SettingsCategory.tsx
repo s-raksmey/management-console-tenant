@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Save, RotateCcw, AlertTriangle } from 'lucide-react';
 import { Setting, SettingType, SETTING_CATEGORIES, getSettingsByType } from '@/services/settings.gql';
+import { presentSetting } from '@/lib/setting-display';
 import { UpdateSettingInput } from '@/types/settings';
 import type { JsonValue } from '@/types/json';
 import { SettingCard } from './SettingCard';
@@ -66,10 +67,25 @@ export function SettingsCategory({
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [hasChanges, setHasChanges] = React.useState<Record<string, boolean>>({});
 
-  const categorySettings = React.useMemo(() => 
-    getSettingsByType(settings, category), 
-    [settings, category]
-  );
+  const categorySettings = React.useMemo(() => {
+    const brandingOrder = [
+      "site.logo_url",
+      "site.og_image_url",
+      "site.favicon_url",
+      "site.dashboard_favicon_url",
+    ];
+
+    return getSettingsByType(settings, category)
+      .map(presentSetting)
+      .sort((left, right) => {
+        const leftRank = brandingOrder.indexOf(left.key);
+        const rightRank = brandingOrder.indexOf(right.key);
+        if (leftRank === -1 && rightRank === -1) return 0;
+        if (leftRank === -1) return 1;
+        if (rightRank === -1) return -1;
+        return leftRank - rightRank;
+      });
+  }, [settings, category]);
   const categoryInfo = SETTING_CATEGORIES[category];
 
   // Initialize form data with current setting values

@@ -51,6 +51,12 @@ import { formatDistanceToNow } from "date-fns";
 import { COLOR_SCHEME_CHANGED_EVENT } from "@/lib/tweakcn-theme";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
 import { AdminLanguageToggle } from "./language-toggle";
+import {
+  getTenantDisplayName,
+  getTenantLogoUrl,
+  isSubTenantDisplay,
+} from "@/lib/tenant-display";
+import { TenantBrandMark } from "./tenant-brand-mark";
 
 interface HeaderProps {
   onMobileNavOpen: (open: boolean) => void;
@@ -82,6 +88,7 @@ const headerCopy = {
     settings: "Settings",
     signOut: "Sign out",
     managementConsole: "Management Console",
+    subTenant: "Sub-tenant",
     from: (name: string) => `From: ${name}`,
     notificationLabels: {
       submission: "Submission",
@@ -122,6 +129,7 @@ const headerCopy = {
     settings: "ការកំណត់",
     signOut: "ចេញ",
     managementConsole: "ផ្ទាំងគ្រប់គ្រង",
+    subTenant: "គេហទំព័រ",
     from: (name: string) => `ពី៖ ${name}`,
     notificationLabels: {
       submission: "ការដាក់ស្នើ",
@@ -160,10 +168,11 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
-  const brandName =
-    user?.role === "SUPER_ADMIN"
-      ? copy.managementConsole
-      : activeTenant?.name || "Pulse News";
+  const viewingSubTenant = isSubTenantDisplay(activeTenant);
+  const brandName = viewingSubTenant
+    ? getTenantDisplayName(activeTenant, copy.subTenant)
+    : copy.managementConsole;
+  const brandLogoUrl = viewingSubTenant ? getTenantLogoUrl(activeTenant) : null;
   const brandInitials = brandName
     .split(" ")
     .filter(Boolean)
@@ -532,11 +541,11 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
 
         {showBrand && (
           <div className="hidden min-w-0 shrink-0 items-center gap-2 lg:flex">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-slate-900">
-              <span className="text-white font-semibold text-sm">
-                {brandInitials || "PN"}
-              </span>
-            </div>
+            <TenantBrandMark
+              name={brandName}
+              logoUrl={brandLogoUrl}
+              initials={brandInitials}
+            />
             <span className="max-w-[260px] truncate font-semibold tracking-tight text-slate-900 dark:text-slate-100 xl:max-w-[360px] 2xl:max-w-[460px]">
               {brandName}
             </span>

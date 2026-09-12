@@ -31,6 +31,12 @@ import { Permission } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAdminLocale, type AdminLocale } from "@/hooks/useAdminLocale";
 import { AdminLanguageToggle } from "./language-toggle";
+import {
+  getTenantDisplayName,
+  getTenantLogoUrl,
+  isSubTenantDisplay,
+} from "@/lib/tenant-display";
+import { TenantBrandMark } from "./tenant-brand-mark";
 
 interface MobileNavProps {
   open: boolean;
@@ -295,8 +301,13 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
       hasPermission(Permission.UPDATE_TOPIC) ||
       hasPermission(Permission.DELETE_TOPIC),
   });
-  const brandName =
-    userRole === "SUPER_ADMIN" ? "Management Console" : activeTenant?.name || "Pulse News";
+  const viewingSubTenant = isSubTenantDisplay(activeTenant);
+  const brandName = viewingSubTenant
+    ? getTenantDisplayName(activeTenant, locale === "km" ? "គេហទំព័រ" : "Sub-tenant")
+    : locale === "km"
+      ? "ផ្ទាំងគ្រប់គ្រង"
+      : "Management Console";
+  const brandLogoUrl = viewingSubTenant ? getTenantLogoUrl(activeTenant) : null;
   const brandInitials = brandName
     .split(" ")
     .filter(Boolean)
@@ -318,11 +329,11 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
         />
         <SheetHeader className="border-b px-4 py-4 pr-16 text-left dark:border-slate-800">
           <SheetTitle className="flex min-w-0 items-center gap-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-purple-600">
-              <span className="text-white font-bold text-sm">
-                {brandInitials || "PN"}
-              </span>
-            </div>
+            <TenantBrandMark
+              name={brandName}
+              logoUrl={brandLogoUrl}
+              initials={brandInitials}
+            />
             <div className="min-w-0">
               <div className="truncate font-semibold text-slate-900 dark:text-white">{brandName}</div>
               <div className="text-xs text-slate-500 dark:text-slate-400">

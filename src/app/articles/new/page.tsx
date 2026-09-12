@@ -13,6 +13,7 @@ import { useCategories } from "@/hooks/useCategories";
 import { useTopics } from "@/hooks/useTopics";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useTenant } from "@/contexts/TenantContext";
+import { getTenantDisplayName } from "@/lib/tenant-display";
 import { ArticleStatusSelect } from "@/components/forms/ArticleStatusSelect";
 import { ArticleStatus } from "@/utils/articlePermissions";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
@@ -652,7 +653,7 @@ export default function NewArticlePage() {
           slug={slug || slugify(title)}
           categorySlug={categorySlug}
           topicSlug={topic}
-          siteName={activeTenant?.name}
+          siteName={getTenantDisplayName(activeTenant, "")}
           publicBaseUrl={publicBaseUrl}
         />
       </div>
