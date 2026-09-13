@@ -1,0 +1,28 @@
+---
+description: Do not copy config or third-party setup from other projects
+alwaysApply: true
+---
+
+# Use only this project's config
+
+This workspace is Pulse News only: `pulse-news-server`, `pulse-news-admin`, `pulse-news-web`.
+
+Do not take configuration, env values, CI, Docker, lint/tsconfig, deploy files, or third-party SDK setup from any other project on disk or from another product.
+
+## Allowed
+
+- Read and reuse files that already exist in these three repos
+- Use this repo's `package.json`, `.env.example`, and existing libraries
+- Use public docs for a tool this repo already uses, then wire it to this repo's scripts
+
+## Not allowed
+
+- Open another app's repo and copy `.env`, `.github`, `docker-compose`, nginx, or vendor config here
+- Add a package, env var, or CI job because another project uses it
+- Change global git config, user-level env, or files outside these three repos
+- Write secrets into `.env` (document keys in `.env.example` only)
+
+```text
+❌ BAD: copy another app's GitHub workflow or SMTP .env into Pulse News
+✅ GOOD: add a workflow that runs this repo's existing `lint`, `typecheck`, and `test` scripts
+```

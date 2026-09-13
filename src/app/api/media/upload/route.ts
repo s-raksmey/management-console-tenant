@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import sharp from "sharp";
 import type { MediaFile, MediaType, MediaUploadOptions } from "@/types/media";
 import { getRateLimitRetryAfter } from "@/lib/rate-limit";
 import { getForwardedTenantHeaders } from "@/lib/tenant-request-headers";
@@ -149,10 +148,15 @@ function mimeTypeFromFormat(format?: string) {
   return "";
 }
 
+async function loadSharp() {
+  return (await import("sharp")).default;
+}
+
 async function processImage(
   buffer: Buffer,
   options: MediaUploadOptions = {}
 ): Promise<{ buffer: Buffer; width?: number; height?: number; mimeType: string }> {
+  const sharp = await loadSharp();
   const { maxWidth = 1920, maxHeight = 1080, quality = 85 } = options;
   const image = sharp(buffer);
   const metadata = await image.metadata();
@@ -290,6 +294,7 @@ export async function POST(req: Request) {
       }
     } else if (mediaType === "image") {
       try {
+        const sharp = await loadSharp();
         const metadata = await sharp(buffer).metadata();
         width = metadata.width;
         height = metadata.height;

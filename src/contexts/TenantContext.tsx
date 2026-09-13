@@ -7,6 +7,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -21,7 +22,17 @@ import {
   setSelectedTenantId,
 } from "@/services/graphql-client";
 import { Q_PUBLIC_SETTINGS } from "@/services/settings.gql";
-import { getTenantDisplayName, withTenantLogoUrl } from "@/lib/tenant-display";
+import {
+  getTenantDisplayName,
+  getTenantLogoUrl,
+  withTenantLogoUrl,
+} from "@/lib/tenant-display";
+
+function sameTenantBrand(left: Tenant | null, right: Tenant | null) {
+  if (left === right) return true;
+  if (!left || !right) return false;
+  return left.id === right.id && getTenantLogoUrl(left) === getTenantLogoUrl(right);
+}
 
 async function readSettingLogoUrl() {
   try {
@@ -68,16 +79,20 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [tenantOptions, setTenantOptions] = useState<Tenant[]>([]);
   const [memberships, setMemberships] = useState<TenantMembership[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const hasResolvedTenantRef = useRef(false);
 
   const loadTenants = useCallback(async () => {
     if (!isAuthenticated || !user) {
+      hasResolvedTenantRef.current = false;
       setActiveTenant(null);
       setTenantOptions([]);
       setMemberships([]);
       return;
     }
 
-    setIsLoading(true);
+    if (!hasResolvedTenantRef.current) {
+      setIsLoading(true);
+    }
 
     try {
       const hostTenant = await TenantService.getActiveTenantFromHost().catch(() => null);
@@ -94,15 +109,23 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           (hostTenant && hostTenant.isMainTenant !== true ? hostTenant : null) ||
           null;
 
-        const settingLogoUrl = await readSettingLogoUrl();
+        const settingLogoUrl = getTenantLogoUrl(nextTenant || hostTenant)
+          ? null
+          : await readSettingLogoUrl();
         setTenantOptions(options);
         setMemberships([]);
         if (nextTenant) {
           setSelectedTenantId(nextTenant.id);
-          setActiveTenant(withTenantLogoUrl(nextTenant, settingLogoUrl));
+          setActiveTenant((current) => {
+            const next = withTenantLogoUrl(nextTenant, settingLogoUrl);
+            return sameTenantBrand(current, next) ? current : next;
+          });
         } else if (hostTenant) {
           setSelectedTenantId(hostTenant.id);
-          setActiveTenant(withTenantLogoUrl(hostTenant, settingLogoUrl));
+          setActiveTenant((current) => {
+            const next = withTenantLogoUrl(hostTenant, settingLogoUrl);
+            return sameTenantBrand(current, next) ? current : next;
+          });
         } else {
           setSelectedTenantId(null);
           setActiveTenant(null);
@@ -129,11 +152,18 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         setSelectedTenantId(null);
       }
 
-      const settingLogoUrl = await readSettingLogoUrl();
+      const settingLogoUrl = getTenantLogoUrl(nextTenant)
+        ? null
+        : await readSettingLogoUrl();
       setTenantOptions(options.map((tenant) => withTenantLogoUrl(tenant, settingLogoUrl)));
       setMemberships(myMemberships);
-      setActiveTenant(nextTenant ? withTenantLogoUrl(nextTenant, settingLogoUrl) : null);
+      setActiveTenant((current) => {
+        if (!nextTenant) return null;
+        const next = withTenantLogoUrl(nextTenant, settingLogoUrl);
+        return sameTenantBrand(current, next) ? current : next;
+      });
     } finally {
+      hasResolvedTenantRef.current = true;
       setIsLoading(false);
     }
   }, [isAuthenticated, user]);

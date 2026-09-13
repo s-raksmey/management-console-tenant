@@ -37,7 +37,7 @@ import {
   UpdateSettingInput,
 } from "@/services/settings.gql";
 import { SettingsCategory } from "@/components/settings";
-import { EmailDeliveryLogs } from "@/app/settings/_components/EmailDeliveryLogs";
+import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { getTenantDisplayName } from "@/lib/tenant-display";
@@ -48,6 +48,14 @@ import { useAdminLocale } from "@/hooks/useAdminLocale";
 import {
   notifyThemeSettingsChanged,
 } from "@/lib/tweakcn-theme";
+
+const EmailDeliveryLogs = dynamic(
+  () =>
+    import("@/app/settings/_components/EmailDeliveryLogs").then(
+      (module) => module.EmailDeliveryLogs,
+    ),
+  { ssr: false },
+);
 
 const CATEGORY_ICONS = {
   [SettingType.SITE]: Globe2,
@@ -282,6 +290,7 @@ export default function SettingsPage() {
     SettingType.SITE,
   );
   const settingsPanelRef = React.useRef<HTMLElement | null>(null);
+  const loadedTenantIdRef = React.useRef<string | null | undefined>(undefined);
   const [testEmail, setTestEmail] = React.useState(user?.email || "");
   const [testingEmail, setTestingEmail] = React.useState(false);
   const [emailTestResult, setEmailTestResult] = React.useState<EmailTestResult | null>(null);
@@ -294,7 +303,9 @@ export default function SettingsPage() {
     }
 
     try {
-      setLoading(true);
+      if (loadedTenantIdRef.current !== activeTenant?.id) {
+        setLoading(true);
+      }
       setError(null);
 
       const response = await getAuthenticatedGqlClient().request(Q_SETTINGS);
@@ -331,6 +342,7 @@ export default function SettingsPage() {
           }),
         );
         setSettings([...visibleSettings, ...missingBranding]);
+        loadedTenantIdRef.current = activeTenant?.id;
       } else {
         setSettings([]);
       }
@@ -341,7 +353,14 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeTenant, canAccessSettings, copy.loadSettingsFailed, locale, userRole]);
+  }, [
+    activeTenant?.id,
+    activeTenant?.isMainTenant,
+    canAccessSettings,
+    copy.loadSettingsFailed,
+    locale,
+    userRole,
+  ]);
 
   React.useEffect(() => {
     void loadSettings();

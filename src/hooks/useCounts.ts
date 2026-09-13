@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { gql } from 'graphql-request';
 import { useArticles, useCategories } from './useGraphQL';
-import { getAuthFetchHeaders } from '@/services/graphql-client';
+import { getAuthenticatedGqlClient } from '@/services/graphql-client';
 import { UserService } from '@/services/user.gql';
 import { Permission } from '@/components/permissions/PermissionGuard';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -109,17 +110,20 @@ export function useCounts(userRole?: string): CountsResult {
         const categoriesData = await getCategories();
         const categoriesCount = categoriesData?.categories?.length || 0;
 
-        // Fetch media count using REST API (this one exists)
         let mediaCount = 0;
         try {
-          const mediaResponse = await fetch('/api/media/upload', {
-            headers: getAuthFetchHeaders(),
-          });
-          const mediaData = await mediaResponse.json();
-          mediaCount = mediaData.success ? (mediaData.files?.length || 0) : 0;
+          const mediaData = await getAuthenticatedGqlClient().request<{
+            mediaAssets?: { files?: Array<{ id: string }> };
+          }>(gql`
+            query MediaCount {
+              mediaAssets {
+                files { id }
+              }
+            }
+          `);
+          mediaCount = mediaData.mediaAssets?.files?.length || 0;
         } catch (mediaError) {
           console.warn('Failed to fetch media count:', mediaError);
-          // Keep default value of 0
         }
 
         setCounts({

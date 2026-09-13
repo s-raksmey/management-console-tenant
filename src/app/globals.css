@@ -22,9 +22,15 @@ body {
 }
 
 body {
-  font-family: var(--font-jetbrains-mono), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-jetbrains-mono), var(--font-noto-sans-khmer), "Khmer OS", "Khmer OS Battambang", var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   @apply bg-white text-slate-900 antialiased;
   overflow-x: hidden;
+}
+
+html[lang="km"] body,
+html[data-locale="km"] body {
+  font-family: var(--font-noto-sans-khmer), var(--font-jetbrains-mono), "Khmer OS", "Khmer OS Battambang", var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  line-height: 1.8;
 }
 
 .editor-highlight {
