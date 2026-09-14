@@ -1,10 +1,10 @@
-import { Noto_Sans_Khmer } from "next/font/google";
+import { Kantumruy_Pro } from "next/font/google";
 import localFont from "next/font/local";
 
-export const fontNotoSansKhmer = Noto_Sans_Khmer({
+export const fontKantumruyPro = Kantumruy_Pro({
   subsets: ["khmer"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-noto-sans-khmer",
+  variable: "--font-kantumruy-pro",
   display: "swap",
 });
 

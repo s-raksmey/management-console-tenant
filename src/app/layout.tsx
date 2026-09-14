@@ -2,7 +2,7 @@
 import type { Metadata } from "next"
 import { cookies } from "next/headers"
 import "./globals.css"
-import { fontJetBrainsMono, fontNotoSansKhmer } from "@/lib/font"
+import { fontJetBrainsMono, fontKantumruyPro } from "@/lib/font"
 import { AuthProvider } from "@/contexts/AuthContext"
 import { TenantProvider } from "@/contexts/TenantContext"
 import { ToastProvider } from "@/contexts/ToastContext"
@@ -35,7 +35,7 @@ export default async function RootLayout({
     <html
       lang={locale}
       data-locale={locale}
-      className={`${fontJetBrainsMono.variable} ${fontNotoSansKhmer.variable}`}
+      className={`${fontJetBrainsMono.variable} ${fontKantumruyPro.variable} locale-${locale}`}
       suppressHydrationWarning
     >
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">

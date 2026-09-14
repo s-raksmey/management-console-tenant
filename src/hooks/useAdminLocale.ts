@@ -22,6 +22,8 @@ export function setAdminLocale(nextLocale: AdminLocale) {
   document.cookie = `locale=${nextLocale}; path=/; max-age=31536000; samesite=lax`;
   document.documentElement.lang = nextLocale;
   document.documentElement.dataset.locale = nextLocale;
+  document.documentElement.classList.remove("locale-en", "locale-km");
+  document.documentElement.classList.add(`locale-${nextLocale}`);
   window.dispatchEvent(new CustomEvent(ADMIN_LOCALE_CHANGED_EVENT, { detail: nextLocale }));
 }
 

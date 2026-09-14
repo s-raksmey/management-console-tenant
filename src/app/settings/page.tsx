@@ -265,12 +265,13 @@ const settingsCopy = {
 function hasSettingValue(settings: Setting[], key: string): boolean {
   const value = settings.find((setting) => setting.key === key)?.value;
 
+  if (value === null || value === undefined) return false;
   if (Array.isArray(value)) return value.length > 0;
   if (typeof value === "boolean") return value;
   if (typeof value === "number") return Number.isFinite(value);
   if (typeof value === "string") return value.trim().length > 0;
 
-  return Boolean(value);
+  return false;
 }
 
 export default function SettingsPage() {
@@ -503,7 +504,7 @@ export default function SettingsPage() {
   const visibleCategories = React.useMemo(
     () =>
       Object.entries(SETTING_CATEGORIES).filter(([key]) => {
-        if (!isSuperAdmin) return true;
+        if (viewingSubTenant) return true;
 
         return [
           SettingType.SITE,
@@ -513,7 +514,7 @@ export default function SettingsPage() {
           SettingType.MAINTENANCE,
         ].includes(key as SettingType);
       }),
-    [isSuperAdmin],
+    [viewingSubTenant],
   );
 
   const filteredSettings = React.useMemo(() => {
@@ -538,10 +539,36 @@ export default function SettingsPage() {
     () => new Set(visibleCategories.map(([key]) => key as SettingType)),
     [visibleCategories],
   );
+
+  React.useEffect(() => {
+    if (!visibleCategoryKeys.has(selectedCategory)) {
+      setSelectedCategory(viewingSubTenant ? SettingType.SITE : SettingType.EMAIL);
+    }
+  }, [selectedCategory, viewingSubTenant, visibleCategoryKeys]);
   const setupChecklist = React.useMemo(() => {
-    const primarySite = activeTenant?.sites?.find((site) => site.isPrimary) || activeTenant?.sites?.[0];
-    const hasPublicUrl = Boolean(primarySite?.publicBaseUrl) || hasSettingValue(settings, "site.public_base_url");
-    const hasAdminUrl = Boolean(primarySite?.adminBaseUrl);
+    const primarySite =
+      activeTenant?.sites?.find((site) => site.isPrimary) || activeTenant?.sites?.[0];
+    const hasEmail =
+      hasSettingValue(settings, "email.smtp_host") &&
+      hasSettingValue(settings, "email.from_address");
+
+    if (!viewingSubTenant) {
+      return [
+        {
+          label: copy.emailDelivery,
+          description: copy.emailDeliveryDescription,
+          complete: hasEmail,
+          category: SettingType.EMAIL,
+        },
+      ];
+    }
+
+    const hasPublicUrl =
+      Boolean(primarySite?.publicBaseUrl) ||
+      hasSettingValue(settings, "site.public_base_url");
+    const hasAdminUrl =
+      Boolean(primarySite?.adminBaseUrl) ||
+      hasSettingValue(settings, "site.admin_base_url");
     const hasBranding =
       hasSettingValue(settings, "site.logo_url") ||
       hasSettingValue(settings, "site.og_image_url") ||
@@ -553,10 +580,6 @@ export default function SettingsPage() {
     const hasSeo =
       hasSettingValue(settings, "seo.meta_title") &&
       hasSettingValue(settings, "seo.meta_description");
-    const hasEmail =
-      hasSettingValue(settings, "email.notifications_enabled") &&
-      hasSettingValue(settings, "email.smtp_host") &&
-      hasSettingValue(settings, "email.from_address");
     const hasUserPolicy =
       hasSettingValue(settings, "users.default_role") &&
       hasSettingValue(settings, "users.password_min_length");
@@ -615,15 +638,10 @@ export default function SettingsPage() {
         category: SettingType.CONTENT,
       },
     ];
-  }, [activeTenant?.sites, copy, settings]);
+  }, [activeTenant?.sites, copy, settings, viewingSubTenant]);
   const visibleSetupChecklist = React.useMemo(
-    () =>
-      setupChecklist.filter(
-        (item) =>
-          visibleCategoryKeys.has(item.category) &&
-          settings.some((setting) => setting.type === item.category),
-      ),
-    [settings, setupChecklist, visibleCategoryKeys],
+    () => setupChecklist.filter((item) => visibleCategoryKeys.has(item.category)),
+    [setupChecklist, visibleCategoryKeys],
   );
   const completedSetupItems = visibleSetupChecklist.filter((item) => item.complete).length;
   const setupProgress =
@@ -851,7 +869,7 @@ export default function SettingsPage() {
                 />
               </div>
               <div className="mt-4 space-y-1">
-                {(incompleteSetupItems.length > 0 ? incompleteSetupItems : visibleSetupChecklist).slice(0, 5).map((item) => {
+                {(incompleteSetupItems.length > 0 ? incompleteSetupItems : visibleSetupChecklist).map((item) => {
                   const Icon = item.complete ? CheckCircle2 : Circle;
 
                   return (
