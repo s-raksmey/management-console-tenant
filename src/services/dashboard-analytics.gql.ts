@@ -96,8 +96,15 @@ const Q_DASHBOARD_ANALYTICS = gql`
 `;
 
 export class DashboardAnalyticsService {
-  static async getDashboardAnalytics(): Promise<DashboardAnalytics> {
-    const response = await getAuthenticatedGqlClient().request<{
+  static async getDashboardAnalytics(tenantId?: string | null): Promise<DashboardAnalytics> {
+    const client = getAuthenticatedGqlClient(undefined, {
+      includeSelectedTenant: false,
+    });
+    if (tenantId) {
+      client.setHeader("x-tenant-id", tenantId);
+    }
+
+    const response = await client.request<{
       dashboardAnalytics: DashboardAnalytics;
     }>(Q_DASHBOARD_ANALYTICS);
 

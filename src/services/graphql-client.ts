@@ -23,16 +23,6 @@ export function setSelectedTenantId(tenantId: string | null) {
   }
 }
 
-function isLocalDevHost(host?: string | null) {
-  const hostname = host?.split(":")[0]?.toLowerCase();
-  return hostname === "localhost" || hostname === "127.0.0.1";
-}
-
-function getRequestHost() {
-  if (typeof window === "undefined") return null;
-  return window.location.host.toLowerCase();
-}
-
 function applyTenantHeaders(
   client: GraphQLClient,
   options?: { includeSelectedTenant?: boolean; hostOnly?: boolean },
@@ -43,10 +33,8 @@ function applyTenantHeaders(
     client.setHeader("x-tenant-id", selectedTenantId);
   }
 
-  const host = getRequestHost();
-  if (host && !isLocalDevHost(host)) {
-    client.setHeader("x-tenant-host", host);
-  }
+  // The management console host is shared. Never send it as x-tenant-host or
+  // the API will bind requests to a sub-tenant that stored this URL as adminBaseUrl.
 }
 
 export function getGqlClient() {
@@ -61,7 +49,10 @@ export function getGqlClient() {
   return client;
 }
 
-export function getAuthenticatedGqlClient(token?: string) {
+export function getAuthenticatedGqlClient(
+  token?: string,
+  options?: { includeSelectedTenant?: boolean },
+) {
   const client = new GraphQLClient(
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/graphql",
     {
@@ -80,7 +71,7 @@ export function getAuthenticatedGqlClient(token?: string) {
     client.setHeader("Authorization", `Bearer ${token}`);
   }
 
-  applyTenantHeaders(client);
+  applyTenantHeaders(client, options);
   return client;
 }
 
@@ -100,19 +91,18 @@ export function getHostBoundGqlClient(token?: string) {
   return client;
 }
 
-export function getAuthFetchHeaders(): Record<string, string> {
+export function getAuthFetchHeaders(options?: { includeSelectedTenant?: boolean }) {
   const headers: Record<string, string> = {};
 
   if (typeof window === "undefined") return headers;
 
+  if (options?.includeSelectedTenant === false) {
+    return headers;
+  }
+
   const selectedTenantId = getSelectedTenantId();
   if (selectedTenantId) {
     headers["x-tenant-id"] = selectedTenantId;
-  }
-
-  const host = getRequestHost();
-  if (host && !isLocalDevHost(host)) {
-    headers["x-tenant-host"] = host;
   }
 
   return headers;

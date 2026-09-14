@@ -191,7 +191,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        const refreshed = await refreshUser({ suppressAuthRequired: true });
+        const refreshed = await refreshUser({
+          suppressAuthRequired: true,
+          resetSuperAdminTenant: true,
+        });
         if (!refreshed) {
           clearAuthState();
           return;
@@ -227,14 +230,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Refresh user data from server
   const refreshUser = async (
-    options: { authToken?: string; suppressAuthRequired?: boolean } = {},
+    options: {
+      authToken?: string;
+      suppressAuthRequired?: boolean;
+      resetSuperAdminTenant?: boolean;
+    } = {},
   ): Promise<boolean> => {
     try {
       const client = getAuthenticatedClient(options.authToken);
       const response = await client.request<{ me: AuthResponse }>(ME_QUERY);
 
       if (response.me.success && response.me.user) {
-        if (response.me.user.role === "SUPER_ADMIN") {
+        if (response.me.user.role === "SUPER_ADMIN" && options.resetSuperAdminTenant) {
           setSelectedTenantId(null);
         }
         setUser(response.me.user);
@@ -289,7 +296,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const completeLogin = async (authResponse: AuthResponse) => {
     if (authResponse.success && authResponse.user) {
       setToken(COOKIE_SESSION_TOKEN);
-      await refreshUser();
+      await refreshUser({ resetSuperAdminTenant: true });
     }
   };
 

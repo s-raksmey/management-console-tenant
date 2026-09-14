@@ -18,6 +18,7 @@ interface SettingsCategoryProps {
   onUpdateSetting: (input: UpdateSettingInput) => Promise<void>;
   onResetSetting: (key: string) => Promise<void>;
   loading?: boolean;
+  showPublicBadge?: boolean;
 }
 
 function getSaveErrorMessage(error: unknown, fallback: string): string {
@@ -59,7 +60,8 @@ export function SettingsCategory({
   settings,
   onUpdateSetting,
   onResetSetting,
-  loading = false
+  loading = false,
+  showPublicBadge = true,
 }: SettingsCategoryProps) {
   const { locale } = useAdminLocale();
   const copy = settingsCategoryCopy[locale];
@@ -69,6 +71,9 @@ export function SettingsCategory({
 
   const categorySettings = React.useMemo(() => {
     const brandingOrder = [
+      "site.management_logo_url",
+      "site.management_og_image_url",
+      "site.management_favicon_url",
       "site.logo_url",
       "site.og_image_url",
       "site.favicon_url",
@@ -253,6 +258,7 @@ export function SettingsCategory({
             error={errors[setting.key]}
             loading={loading}
             hasChanges={hasChanges[setting.key] || false}
+            showPublicBadge={showPublicBadge}
           />
         ))}
       </div>

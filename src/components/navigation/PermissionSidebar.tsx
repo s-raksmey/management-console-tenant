@@ -201,7 +201,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
 export function PermissionSidebar({ collapsed, onToggle, className }: PermissionSidebarProps) {
   const pathname = usePathname();
   const { user, isLoading } = useAuth();
-  const { activeTenant } = useTenant();
+  const { activeTenant, managementLogoUrl } = useTenant();
   const { locale } = useAdminLocale();
   const copy = sidebarCopy[locale];
   const { hasPermission, userRole } = usePermissions();
@@ -212,7 +212,9 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
   const brandName = viewingSubTenant
     ? getTenantDisplayName(activeTenant, copy.subTenant)
     : copy.managementConsole;
-  const brandLogoUrl = viewingSubTenant ? getTenantLogoUrl(activeTenant) : null;
+  const brandLogoUrl = viewingSubTenant
+    ? getTenantLogoUrl(activeTenant)
+    : managementLogoUrl;
   const brandInitials = brandName
     .split(" ")
     .filter(Boolean)

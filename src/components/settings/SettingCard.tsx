@@ -18,6 +18,7 @@ interface SettingCardProps {
   error?: string;
   loading?: boolean;
   hasChanges?: boolean;
+  showPublicBadge?: boolean;
 }
 
 export function SettingCard({
@@ -28,7 +29,8 @@ export function SettingCard({
   onReset,
   error,
   loading = false,
-  hasChanges = false
+  hasChanges = false,
+  showPublicBadge = true,
 }: SettingCardProps) {
   const { locale } = useAdminLocale();
   const copy = locale === 'km'
@@ -94,7 +96,7 @@ export function SettingCard({
                 {copy.required}
               </Badge>
             )}
-            {setting.isPublic && (
+            {showPublicBadge && setting.isPublic && (
               <Badge variant="outline" className="bg-white text-[11px]">
                 {copy.public}
               </Badge>

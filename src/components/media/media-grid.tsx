@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
-import { FileText, Video, Music, File, Download, Trash2, Edit, Eye } from 'lucide-react';
+import { FileText, ImageIcon, Video, Music, File, Download, Trash2, Edit, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
@@ -24,7 +23,7 @@ interface MediaGridProps {
 const getFileIcon = (type: string, className?: string) => {
   const iconClass = cn('w-6 h-6', className);
   
-  if (type.startsWith('image/')) return <Image className={iconClass} width={24} height={24} alt="" src={''} />;
+  if (type.startsWith('image/')) return <ImageIcon className={iconClass} />;
   if (type.startsWith('video/')) return <Video className={iconClass} />;
   if (type.startsWith('audio/')) return <Music className={iconClass} />;
   if (type === 'application/pdf' || type.startsWith('text/')) return <FileText className={iconClass} />;
@@ -144,12 +143,11 @@ export function MediaGrid({
             {/* File Preview */}
             <div className="aspect-square bg-slate-50 flex items-center justify-center relative overflow-hidden">
               {isImage ? (
-                <Image
+                <img
                   src={resolveCmsMediaSrc(file.url)}
                   alt={file.alt || file.originalName}
-                  fill
-                  className="object-cover"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
+                  className="h-full w-full object-cover"
+                />
               ) : (
                 <div className="text-slate-400">
                   {getFileIcon(file.mimeType, 'w-12 h-12')}

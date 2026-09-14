@@ -151,7 +151,7 @@ const headerCopy = {
 export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { activeTenant } = useTenant();
+  const { activeTenant, managementLogoUrl } = useTenant();
   const { searchArticles } = useSearch();
   const { locale } = useAdminLocale();
   const copy = headerCopy[locale];
@@ -172,7 +172,9 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const brandName = viewingSubTenant
     ? getTenantDisplayName(activeTenant, copy.subTenant)
     : copy.managementConsole;
-  const brandLogoUrl = viewingSubTenant ? getTenantLogoUrl(activeTenant) : null;
+  const brandLogoUrl = viewingSubTenant
+    ? getTenantLogoUrl(activeTenant)
+    : managementLogoUrl;
   const brandInitials = brandName
     .split(" ")
     .filter(Boolean)

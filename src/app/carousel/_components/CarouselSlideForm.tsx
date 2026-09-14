@@ -34,6 +34,7 @@ import { Q_TOPICS, type Topic } from "@/services/topic.gql";
 import { useAuth } from "@/contexts/AuthContext";
 import { Tenant, TenantService } from "@/services/tenant.gql";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
+import { DeviceImageUpload } from "@/components/media/device-image-upload";
 
 export type SlideForm = {
   placement: "HOME" | "CATEGORY" | "TOPIC";
@@ -209,9 +210,8 @@ const carouselFormCopy = {
     carouselMedia: "Carousel Media",
     image: "Image",
     video: "Video",
-    posterImageUrl: "Poster Image URL",
-    imageUrl: "Image URL",
-    uploadImage: "Upload Image",
+    posterImage: "Poster image",
+    uploadImage: "Upload from device",
     videoSource: "Video Source",
     mp4Source: "MP4 upload / URL",
     videoUrl: "Video URL",
@@ -281,9 +281,8 @@ const carouselFormCopy = {
     carouselMedia: "មេឌៀការ៉ូសែល",
     image: "រូបភាព",
     video: "វីដេអូ",
-    posterImageUrl: "URL រូបភាពគម្រប",
-    imageUrl: "URL រូបភាព",
-    uploadImage: "ផ្ទុករូបភាពឡើង",
+    posterImage: "រូបភាពគម្រប",
+    uploadImage: "ផ្ទុកពីឧបករណ៍",
     videoSource: "ប្រភពវីដេអូ",
     mp4Source: "ផ្ទុក MP4 ឡើង / URL",
     videoUrl: "Video URL",
@@ -806,48 +805,26 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                 </select>
               </div>
 
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-                <div className="flex-1 space-y-2">
-                  <Label htmlFor="image-url">
-                    {form.mediaType === "VIDEO" ? copy.posterImageUrl : copy.imageUrl}
-                  </Label>
-                  <Input
-                    id="image-url"
-                    value={form.imageUrl}
-                    placeholder="/uploads/carousel/image.jpg"
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        imageUrl: event.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={uploading}
-                  asChild
-                >
-                  <label className="cursor-pointer">
-                    {uploading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <UploadCloud className="mr-2 h-4 w-4" />
-                    )}
-                    {copy.uploadImage}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="sr-only"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        event.target.value = "";
-                        if (file) void handleMediaUpload(file, "image");
-                      }}
-                    />
-                  </label>
-                </Button>
+              <div className="space-y-2">
+                <Label>
+                  {form.mediaType === "VIDEO" ? copy.posterImage : copy.image}
+                </Label>
+                <DeviceImageUpload
+                  value={form.imageUrl}
+                  onChange={(imageUrl) =>
+                    setForm((current) => ({ ...current, imageUrl }))
+                  }
+                  extraHeaders={
+                    isSuperAdmin && selectedTenantId
+                      ? { "x-tenant-id": selectedTenantId }
+                      : undefined
+                  }
+                  folder="carousel"
+                  maxWidth={1920}
+                  maxHeight={720}
+                  tags={["carousel", "image"]}
+                  onBusyChange={setUploading}
+                />
               </div>
               {form.mediaType === "VIDEO" && (
                 <div className="grid gap-4 md:grid-cols-[180px_minmax(0,1fr)_auto] md:items-end">

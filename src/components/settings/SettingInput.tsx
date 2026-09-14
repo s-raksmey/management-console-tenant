@@ -4,28 +4,26 @@ import React from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, EyeOff, Loader2, UploadCloud } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Setting, getSettingInputType } from '@/services/settings.gql';
 import { SettingInputProps } from '@/types/settings';
-import { getAuthFetchHeaders } from '@/services/graphql-client';
-import { resolveCmsMediaSrc } from '@/lib/cms-media';
+import { DeviceImageUpload } from '@/components/media/device-image-upload';
 import { useAdminLocale } from '@/hooks/useAdminLocale';
 
-const BRAND_IMAGE_SETTING_KEYS = new Set([
-  'site.logo_url',
-  'site.og_image_url',
-  'site.favicon_url',
-  'site.dashboard_favicon_url',
-  'site.management_favicon_url',
-]);
+function isBrandImageSettingKey(key: string) {
+  const normalized = key.trim().toLowerCase();
+  return (
+    normalized.endsWith('logo_url') ||
+    normalized.endsWith('favicon_url') ||
+    normalized.includes('og_image')
+  );
+}
 
 export function SettingInput({ setting, value, onChange, error, disabled = false }: SettingInputProps) {
   const { locale } = useAdminLocale();
   const copy = locale === 'km'
     ? {
         enter: (label: string) => `បញ្ចូល ${label}`,
-        uploadImageOnly: 'សូមផ្ទុកឯកសាររូបភាព។',
-        uploadFailed: 'ផ្ទុកឡើងមិនបាន',
         enabled: 'បានបើក',
         disabled: 'បានបិទ',
         select: (label: string) => `ជ្រើស ${label}`,
@@ -37,21 +35,17 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
         every12Hours: 'រៀងរាល់ 12 ម៉ោង',
         daily: 'ប្រចាំថ្ងៃ',
         weekly: 'ប្រចាំសប្តាហ៍',
-        uploadFile: (type: string) => `ផ្ទុកឯកសារ ${type}`,
+        uploadFile: (type: string) => `ផ្ទុក ${type} ពីឧបករណ៍`,
         logo: 'logo',
         ogImage: 'Open Graph',
         favicon: 'favicon',
-        uploadHelp: 'ការផ្ទុកឡើងនឹងកំណត់ URL ខាងលើ។ ចុចរក្សាទុកដើម្បីផ្សព្វផ្សាយ។',
-        uploading: 'កំពុងផ្ទុកឡើង',
-        chooseFile: 'ជ្រើសឯកសារ',
+        uploadHelp: 'ផ្ទុកឯកសារពីឧបករណ៍។ មិនអាចប្រើតំណ http ឬ https។ ចុចរក្សាទុកដើម្បីផ្សព្វផ្សាយ។',
         urlHelp: 'ប្រើ URL ពេញលេញដែលចាប់ផ្តើមដោយ https:// ឬ http://',
         showPassword: 'បង្ហាញពាក្យសម្ងាត់',
         hidePassword: 'លាក់ពាក្យសម្ងាត់',
       }
     : {
         enter: (label: string) => `Enter ${label}`,
-        uploadImageOnly: 'Please upload an image file.',
-        uploadFailed: 'Upload failed',
         enabled: 'Enabled',
         disabled: 'Disabled',
         select: (label: string) => `Select ${label}`,
@@ -63,23 +57,20 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
         every12Hours: 'Every 12 hours',
         daily: 'Daily',
         weekly: 'Weekly',
-        uploadFile: (type: string) => `Upload ${type} file`,
+        uploadFile: (type: string) => `Upload ${type} from this device`,
         logo: 'logo',
         ogImage: 'Open Graph image',
         favicon: 'favicon',
-        uploadHelp: 'Upload sets the URL above. Click Save to publish it.',
-        uploading: 'Uploading',
-        chooseFile: 'Choose File',
+        uploadHelp:
+          'Choose a file from this device. HTTP and HTTPS links are not accepted. Click Save to publish it.',
         urlHelp: 'Use a complete URL beginning with https:// or http://',
         showPassword: 'Show password',
         hidePassword: 'Hide password',
       };
   const [showPassword, setShowPassword] = React.useState(false);
-  const [isUploading, setIsUploading] = React.useState(false);
-  const [uploadError, setUploadError] = React.useState<string | null>(null);
   const inputType = getSettingInputType(setting.key, setting.value);
   const isPassword = setting.key.includes('password') || setting.key.includes('secret');
-  const isBrandImageSetting = BRAND_IMAGE_SETTING_KEYS.has(setting.key);
+  const isBrandImageSetting = isBrandImageSettingKey(setting.key);
   const isFaviconSetting = setting.key.includes('favicon_url');
   const isOgImageSetting = setting.key.includes('og_image');
   const brandImageLabel = isFaviconSetting
@@ -108,49 +99,26 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
     }
   };
 
-  const handleBrandImageUpload = async (file: File) => {
-    if (!file.type.startsWith('image/') && !file.name.toLowerCase().endsWith('.ico')) {
-      setUploadError(copy.uploadImageOnly);
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadError(null);
-
-    try {
-      const payload = new FormData();
-      payload.append('file', file);
-      payload.append(
-        'options',
-        JSON.stringify({
-          folder: 'branding',
-          maxWidth: isFaviconSetting ? 256 : isOgImageSetting ? 1200 : 800,
-          maxHeight: isFaviconSetting ? 256 : isOgImageSetting ? 630 : 800,
-          quality: 90,
-          tags: ['branding', isFaviconSetting ? 'favicon' : isOgImageSetting ? 'og' : 'logo'],
-        }),
-      );
-
-      const response = await fetch('/api/media/upload', {
-        method: 'POST',
-        headers: getAuthFetchHeaders(),
-        body: payload,
-      });
-      const result = await response.json();
-
-      if (!response.ok || !result.success || !result.file?.url) {
-        throw new Error(result.message || copy.uploadFailed);
-      }
-
-      onChange(result.file.url);
-    } catch (uploadFailure) {
-      setUploadError(locale === 'en' && uploadFailure instanceof Error ? uploadFailure.message : copy.uploadFailed);
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
   const renderInput = () => {
+    if (isBrandImageSetting) {
+      return (
+        <DeviceImageUpload
+          value={textValue}
+          onChange={(url) => handleInputChange(url)}
+          disabled={disabled}
+          accept={isFaviconSetting ? 'image/*,.ico' : 'image/*'}
+          folder="branding"
+          maxWidth={isFaviconSetting ? 256 : isOgImageSetting ? 1200 : 800}
+          maxHeight={isFaviconSetting ? 256 : isOgImageSetting ? 630 : 800}
+          tags={['branding', isFaviconSetting ? 'favicon' : isOgImageSetting ? 'og' : 'logo']}
+          label={copy.uploadFile(brandImageLabel)}
+          helpText={copy.uploadHelp}
+          previewAlt={setting.label}
+          includeSelectedTenant={!setting.key.includes('management_')}
+        />
+      );
+    }
+
     switch (inputType) {
       case 'boolean':
         return (
@@ -267,18 +235,12 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
           <div className="space-y-3">
             <div className="relative">
               <Input
-                type={
-                  isBrandImageSetting
-                    ? 'text'
-                    : isPassword && !showPassword
-                      ? 'password'
-                      : inputType
-                }
+                type={isPassword && !showPassword ? 'password' : inputType}
                 value={textValue}
                 onChange={(e) => handleInputChange(e.target.value)}
-                disabled={disabled || isUploading}
+                disabled={disabled}
                 placeholder={inputPlaceholder}
-                className={error || uploadError ? 'border-red-500' : ''}
+                className={error ? 'border-red-500' : ''}
               />
             {isPassword && (
               <Button
@@ -298,52 +260,6 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
               </Button>
             )}
             </div>
-            {isBrandImageSetting && (
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-3">
-                    {value ? (
-                      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-md border border-dashed border-slate-200 bg-transparent">
-                        <img src={resolveCmsMediaSrc(String(value))} alt={setting.label} className="max-h-full max-w-full object-contain" />
-                      </div>
-                    ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-md border border-dashed border-slate-300 bg-white text-slate-400">
-                        <UploadCloud className="h-5 w-5" />
-                      </div>
-                    )}
-                    <div>
-                      <p className="text-sm font-medium text-slate-700">
-                        {copy.uploadFile(brandImageLabel)}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {copy.uploadHelp}
-                      </p>
-                    </div>
-                  </div>
-                  <Button type="button" variant="outline" size="sm" disabled={disabled || isUploading} asChild>
-                    <label className="cursor-pointer">
-                      {isUploading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <UploadCloud className="mr-2 h-4 w-4" />
-                      )}
-                      {isUploading ? copy.uploading : copy.chooseFile}
-                      <input
-                        type="file"
-                        accept="image/*,.ico"
-                        className="sr-only"
-                        disabled={disabled || isUploading}
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          event.target.value = '';
-                          if (file) void handleBrandImageUpload(file);
-                        }}
-                      />
-                    </label>
-                  </Button>
-                </div>
-              </div>
-            )}
           </div>
         );
     }
@@ -357,10 +273,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
       {error && (
         <p className="text-sm text-red-600">{error}</p>
       )}
-      {uploadError && (
-        <p className="text-sm text-red-600">{uploadError}</p>
-      )}
-      {!error && inputType === 'url' && (
+      {!error && inputType === 'url' && !isBrandImageSetting && (
         <p className="text-xs text-slate-500">
           {copy.urlHelp}
         </p>

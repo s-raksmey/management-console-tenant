@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,9 +76,18 @@ const BRANDING_SETTING_KEYS = [
   "site.favicon_url",
   "site.dashboard_favicon_url",
 ] as const;
+const MAIN_TENANT_BRANDING_SETTING_KEYS = [
+  "site.management_logo_url",
+  "site.management_og_image_url",
+  "site.management_favicon_url",
+] as const;
 
 const SUPER_ADMIN_HIDDEN_SETTING_KEYS = new Set([
   "site.description",
+  "site.logo_url",
+  "site.og_image_url",
+  "site.favicon_url",
+  "site.dashboard_favicon_url",
   "site.contact_email",
   "site.contact_phone",
   "site.contact_address",
@@ -86,7 +96,10 @@ const SUPER_ADMIN_HIDDEN_SETTING_KEYS = new Set([
   "site.twitter_url",
   "site.instagram_url",
   "site.timezone",
+  "site.base_url",
   "site.public_base_url",
+  "site.admin_base_url",
+  "site.web_base_url",
   "seo.meta_title",
   "seo.meta_description",
   "seo.meta_keywords",
@@ -115,10 +128,16 @@ const SUPER_ADMIN_HIDDEN_SETTING_KEYS = new Set([
   "maintenance.message",
 ]);
 const TENANT_HIDDEN_SETTING_KEYS = new Set([
+  "site.management_logo_url",
+  "site.management_og_image_url",
   "site.management_favicon_url",
   "theme.super_admin_tweakcn",
   "theme.primary_color",
   "theme.secondary_color",
+  "site.public_base_url",
+  "site.base_url",
+  "site.web_base_url",
+  "site.admin_base_url",
 ]);
 const ROLE_THEME_SETTING_KEYS = new Set([
   "theme.super_admin_tweakcn",
@@ -140,20 +159,26 @@ const settingsCopy = {
     sendTestFailed: "Failed to send test email.",
     pageTitleSuper: "Management Console Settings",
     pageTitleTenant: "Settings",
-    pageDescriptionSuper: "Configure main-tenant defaults used outside sub-tenant websites.",
+    pageDescriptionSuper:
+      "Configure the management console. Public website branding, SEO, and content policy are edited in each sub-tenant admin.",
     pageDescriptionTenant: (name?: string | null) =>
-      `Configure ${name || "this sub-tenant"} public website identity, SEO, content, users, and integrations.`,
+      `Configure ${name || "this sub-tenant"} branding, SEO, content, users, and integrations. Production domains are set by Super Admin on Tenants.`,
     publicWebsiteUrl: "Public website URL",
     publicWebsiteUrlDescription: "Set the public URL used for links, SEO, and article sharing.",
     adminDashboardUrl: "Admin dashboard URL",
     adminDashboardUrlDescription: "Add the sub-tenant admin URL so emails point users to the right console.",
     branding: "Branding",
-    brandingDescription: "Add a square logo, Open Graph image, or public favicon.",
+    brandingDescription: "Upload a square logo, Open Graph image, or favicon from this device.",
     brandingSection: "Website branding",
     brandingSectionDescription:
       "Upload this sub-tenant logo, Open Graph image, and favicons. The logo appears next to the site name in admin and on the public website.",
-    selectSubTenant: "Sub-tenant website",
-    selectSubTenantPlaceholder: "Select a sub-tenant to edit its logo and site settings",
+    consoleBrandingSection: "Management Console branding",
+    consoleBrandingSectionDescription:
+      "Upload the management console logo, Open Graph image, and favicon from this device. The logo appears in the sidebar and header. The Open Graph image is used in search and social previews.",
+    publicWebsiteHint:
+      "Public website branding, SEO, and contact details belong to each sub-tenant. They are not edited from this console.",
+    manageWebsites: "Manage websites",
+    consoleCategory: "Console",
     contactDetails: "Contact details",
     contactDetailsDescription: "Publish an email plus phone or address for the public contact page.",
     seoBasics: "SEO basics",
@@ -204,19 +229,25 @@ const settingsCopy = {
     sendTestFailed: "មិនអាចផ្ញើអ៊ីមែលសាកល្បងបានទេ។",
     pageTitleSuper: "ការកំណត់ផ្ទាំងគ្រប់គ្រង",
     pageTitleTenant: "ការកំណត់",
-    pageDescriptionSuper: "កំណត់លំនាំដើមអ្នកជួលមេសម្រាប់ផ្នែកក្រៅគេហទំព័រជាក់លាក់។",
+    pageDescriptionSuper:
+      "កំណត់ផ្ទាំងគ្រប់គ្រង។ អត្តសញ្ញាណ SEO និងគោលការណ៍មាតិកាគេហទំព័រសាធារណៈត្រូវកែនៅផ្ទាំងគ្រប់គ្រងរបស់គេហទំព័ររង។",
     pageDescriptionTenant: (name?: string | null) =>
-      `កំណត់អត្តសញ្ញាណ SEO មាតិកា អ្នកប្រើ និងការតភ្ជាប់សម្រាប់ ${name || "គេហទំព័រនេះ"}។`,
+      `កំណត់អត្តសញ្ញាណ SEO មាតិកា អ្នកប្រើ និងការតភ្ជាប់សម្រាប់ ${name || "គេហទំព័រនេះ"}។ ដែនផលិតកម្មត្រូវបានកំណត់ដោយ Super Admin នៅ Tenants។`,
     publicWebsiteUrl: "URL គេហទំព័រសាធារណៈ",
     publicWebsiteUrlDescription: "កំណត់ URL សាធារណៈសម្រាប់តំណ SEO និងការចែករំលែកអត្ថបទ។",
     adminDashboardUrl: "URL ផ្ទាំងគ្រប់គ្រង",
     adminDashboardUrlDescription: "បន្ថែម URL ផ្នែកគ្រប់គ្រងគេហទំព័រ ដើម្បីឱ្យអ៊ីមែលនាំអ្នកប្រើទៅផ្ទាំងត្រឹមត្រូវ។",
     branding: "អត្តសញ្ញាណម៉ាក",
     brandingSection: "អត្តសញ្ញាណគេហទំព័រ",
-    selectSubTenant: "គេហទំព័រ",
-    selectSubTenantPlaceholder: "Select a sub-tenant to edit its logo and site settings",
+    publicWebsiteHint:
+      "អត្តសញ្ញាណ SEO និងព័ត៌មានទំនាក់ទំនងគេហទំព័រសាធារណៈស្ថិតនៅគេហទំព័ររង។ មិនកែពីផ្ទាំងគ្រប់គ្រងនេះទេ។",
+    manageWebsites: "គ្រប់គ្រងគេហទំព័រ",
+    consoleCategory: "ផ្ទាំងគ្រប់គ្រង",
     brandingSectionDescription:
       "ផ្ទុក logo រូបភាព Open Graph និង favicon សម្រាប់គេហទំព័រនេះ។ Logo បង្ហាញក្បែរ�ង្ហាញក្បែរឈ្មោះគេហទំព័រនៅផ្ទាំងគ្រប់គ្រង និងគេហទំព័រសា�គ្រង និងគេហទំព័រសាធារណៈ។",
+    consoleBrandingSection: "អត្តសញ្ញាណផ្ទាំងគ្រប់គ្រង",
+    consoleBrandingSectionDescription:
+      "ផ្ទុក logo រូបភាព Open Graph និង favicon របស់ផ្ទាំងគ្រប់គ្រងពីឧបករណ៍នេះ។ Logo បង្ហាញនៅរបារចំហៀង និងក្បាលទំព័រ។ រូបភាព Open Graph ប្រើសម្រាប់ការមើលជាមុននៅស្វែងរក និងបណ្តាញសង្គម។",
     brandingDescription: "បន្ថែម logo ការ៉េ រូបភាព Open Graph ឬ favicon សាធ�េ រូបភាព Open Graph ឬ favicon សាធារណៈ។",
     contactDetails: "ព័ត៌មានទំនាក់ទំនង",
     contactDetailsDescription: "ផ្សព្វផ្សាយអ៊ីមែល លេខទូរសព្ទ ឬអាសយដ្ឋានសម្រាប់ទំព័រទំនាក់ទំនងសាធារណៈ។",
@@ -274,12 +305,20 @@ function hasSettingValue(settings: Setting[], key: string): boolean {
   return false;
 }
 
+function getSettingsGqlClient(isSuperAdmin: boolean) {
+  return getAuthenticatedGqlClient(undefined, {
+    includeSelectedTenant: !isSuperAdmin,
+  });
+}
+
 export default function SettingsPage() {
   const { locale } = useAdminLocale();
   const copy = settingsCopy[locale];
   const { user } = useAuth();
-  const { activeTenant, tenantOptions, switchTenant, refreshTenants } = useTenant();
+  const { activeTenant, switchTenant, refreshTenants } = useTenant();
   const userRole = user?.role?.toString().toUpperCase();
+  const isSuperAdmin = userRole === "SUPER_ADMIN";
+  const viewingSubTenant = !isSuperAdmin;
   const { hasPermission } = usePermissions();
   const canAccessSettings = hasPermission(Permission.VIEW_SETTINGS);
   const canRetryEmail = hasPermission(Permission.UPDATE_SETTINGS);
@@ -309,13 +348,11 @@ export default function SettingsPage() {
       }
       setError(null);
 
-      const response = await getAuthenticatedGqlClient().request(Q_SETTINGS);
+      const response = await getSettingsGqlClient(userRole === "SUPER_ADMIN").request(Q_SETTINGS);
 
       if (response && typeof response === "object" && "settings" in response) {
-        const viewingSubTenant =
-          userRole !== "SUPER_ADMIN" ||
-          Boolean(activeTenant && activeTenant.isMainTenant !== true);
-        const roleHiddenSettings = viewingSubTenant
+        const viewingSubTenantSettings = userRole !== "SUPER_ADMIN";
+        const roleHiddenSettings = viewingSubTenantSettings
           ? TENANT_HIDDEN_SETTING_KEYS
           : SUPER_ADMIN_HIDDEN_SETTING_KEYS;
         const visibleSettings = ((response.settings as Setting[]) || [])
@@ -326,9 +363,12 @@ export default function SettingsPage() {
           )
           .map(presentSetting);
         const existingKeys = new Set(visibleSettings.map((setting) => setting.key));
-        const missingBranding = BRANDING_SETTING_KEYS.filter(
-          (key) => viewingSubTenant && !existingKeys.has(key),
-        ).map((key) =>
+        const brandingKeys = viewingSubTenantSettings
+          ? BRANDING_SETTING_KEYS
+          : MAIN_TENANT_BRANDING_SETTING_KEYS;
+        const missingBranding = brandingKeys
+          .filter((key) => !existingKeys.has(key))
+          .map((key) =>
           presentSetting({
             id: `local:${key}`,
             key,
@@ -368,6 +408,12 @@ export default function SettingsPage() {
   }, [loadSettings]);
 
   React.useEffect(() => {
+    if (isSuperAdmin && activeTenant && activeTenant.isMainTenant !== true) {
+      void switchTenant("");
+    }
+  }, [activeTenant, isSuperAdmin, switchTenant]);
+
+  React.useEffect(() => {
     if (!testEmail && user?.email) {
       setTestEmail(user.email);
     }
@@ -394,7 +440,7 @@ export default function SettingsPage() {
       throw new Error(copy.tenantUpdateBlocked);
     }
 
-    const response = await getAuthenticatedGqlClient().request(M_UPDATE_SETTING, {
+    const response = await getSettingsGqlClient(userRole === "SUPER_ADMIN").request(M_UPDATE_SETTING, {
       input,
     });
     const updatedSetting = getMutationSetting(response, "updateSetting");
@@ -417,6 +463,8 @@ export default function SettingsPage() {
         "site.logo_url",
         "site.og_image_url",
         "site.dashboard_favicon_url",
+        "site.management_logo_url",
+        "site.management_og_image_url",
         "site.management_favicon_url",
         "site.favicon_url",
         "site.public_base_url",
@@ -431,7 +479,7 @@ export default function SettingsPage() {
       throw new Error(copy.tenantResetBlocked);
     }
 
-    const response = await getAuthenticatedGqlClient().request(M_RESET_SETTING, {
+    const response = await getSettingsGqlClient(userRole === "SUPER_ADMIN").request(M_RESET_SETTING, {
       key,
     });
     const resetSetting = getMutationSetting(response, "resetSetting");
@@ -454,6 +502,8 @@ export default function SettingsPage() {
         "site.logo_url",
         "site.og_image_url",
         "site.dashboard_favicon_url",
+        "site.management_logo_url",
+        "site.management_og_image_url",
         "site.management_favicon_url",
         "site.favicon_url",
         "site.public_base_url",
@@ -468,7 +518,7 @@ export default function SettingsPage() {
       setTestingEmail(true);
       setEmailTestResult(null);
 
-      const response = await getAuthenticatedGqlClient().request<{
+      const response = await getSettingsGqlClient(userRole === "SUPER_ADMIN").request<{
         testEmailSettings: EmailTestResult;
       }>(M_TEST_EMAIL_SETTINGS, {
         input: { recipientEmail: testEmail },
@@ -485,17 +535,6 @@ export default function SettingsPage() {
     }
   };
 
-  const isSuperAdmin = userRole === "SUPER_ADMIN";
-  const viewingSubTenant =
-    userRole !== "SUPER_ADMIN" ||
-    Boolean(activeTenant && activeTenant.isMainTenant !== true);
-  const subTenantOptions = React.useMemo(
-    () =>
-      tenantOptions.filter(
-        (tenant) => tenant.status === "ACTIVE" && tenant.isMainTenant !== true,
-      ),
-    [tenantOptions],
-  );
   const pageTitle = isSuperAdmin && !viewingSubTenant ? copy.pageTitleSuper : copy.pageTitleTenant;
   const pageDescription =
     isSuperAdmin && !viewingSubTenant
@@ -535,6 +574,24 @@ export default function SettingsPage() {
   const publicCount = settings.filter((setting) => setting.isPublic).length;
   const selectedCategoryInfo = SETTING_CATEGORIES[selectedCategory];
   const SelectedCategoryIcon = CATEGORY_ICONS[selectedCategory] || SettingsIcon;
+  const categoryLabel = (category: SettingType) =>
+    isSuperAdmin && category === SettingType.SITE
+      ? copy.consoleCategory
+      : copy.categoryLabels[category] || SETTING_CATEGORIES[category].label;
+  const categoryDescription =
+    isSuperAdmin && selectedCategory === SettingType.SITE
+      ? copy.consoleBrandingSectionDescription
+      : selectedCategoryInfo.description;
+  const settingSummary = isSuperAdmin
+    ? [
+        [copy.settings, settings.length],
+        [copy.required, requiredCount],
+      ]
+    : [
+        [copy.settings, settings.length],
+        [copy.public, publicCount],
+        [copy.required, requiredCount],
+      ];
   const visibleCategoryKeys = React.useMemo(
     () => new Set(visibleCategories.map(([key]) => key as SettingType)),
     [visibleCategories],
@@ -542,18 +599,27 @@ export default function SettingsPage() {
 
   React.useEffect(() => {
     if (!visibleCategoryKeys.has(selectedCategory)) {
-      setSelectedCategory(viewingSubTenant ? SettingType.SITE : SettingType.EMAIL);
+      setSelectedCategory(SettingType.SITE);
     }
   }, [selectedCategory, viewingSubTenant, visibleCategoryKeys]);
   const setupChecklist = React.useMemo(() => {
-    const primarySite =
-      activeTenant?.sites?.find((site) => site.isPrimary) || activeTenant?.sites?.[0];
     const hasEmail =
       hasSettingValue(settings, "email.smtp_host") &&
       hasSettingValue(settings, "email.from_address");
 
     if (!viewingSubTenant) {
+      const hasConsoleBranding =
+        hasSettingValue(settings, "site.management_logo_url") ||
+        hasSettingValue(settings, "site.management_og_image_url") ||
+        hasSettingValue(settings, "site.management_favicon_url");
+
       return [
+        {
+          label: copy.consoleBrandingSection,
+          description: copy.consoleBrandingSectionDescription,
+          complete: hasConsoleBranding,
+          category: SettingType.SITE,
+        },
         {
           label: copy.emailDelivery,
           description: copy.emailDeliveryDescription,
@@ -563,12 +629,6 @@ export default function SettingsPage() {
       ];
     }
 
-    const hasPublicUrl =
-      Boolean(primarySite?.publicBaseUrl) ||
-      hasSettingValue(settings, "site.public_base_url");
-    const hasAdminUrl =
-      Boolean(primarySite?.adminBaseUrl) ||
-      hasSettingValue(settings, "site.admin_base_url");
     const hasBranding =
       hasSettingValue(settings, "site.logo_url") ||
       hasSettingValue(settings, "site.og_image_url") ||
@@ -589,18 +649,6 @@ export default function SettingsPage() {
       hasSettingValue(settings, "content.cookies_policy");
 
     return [
-      {
-        label: copy.publicWebsiteUrl,
-        description: copy.publicWebsiteUrlDescription,
-        complete: hasPublicUrl,
-        category: SettingType.SITE,
-      },
-      {
-        label: copy.adminDashboardUrl,
-        description: copy.adminDashboardUrlDescription,
-        complete: hasAdminUrl,
-        category: SettingType.SITE,
-      },
       {
         label: copy.branding,
         description: copy.brandingDescription,
@@ -638,7 +686,7 @@ export default function SettingsPage() {
         category: SettingType.CONTENT,
       },
     ];
-  }, [activeTenant?.sites, copy, settings, viewingSubTenant]);
+  }, [copy, settings, viewingSubTenant]);
   const visibleSetupChecklist = React.useMemo(
     () => setupChecklist.filter((item) => visibleCategoryKeys.has(item.category)),
     [setupChecklist, visibleCategoryKeys],
@@ -726,7 +774,7 @@ export default function SettingsPage() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="bg-white">
-                  {isSuperAdmin
+                  {isSuperAdmin && !viewingSubTenant
                     ? copy.managementConsole
                     : getTenantDisplayName(activeTenant, copy.tenantWebsite)}
                 </Badge>
@@ -740,41 +788,28 @@ export default function SettingsPage() {
               <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
                 {pageDescription}
               </p>
-              {isSuperAdmin && subTenantOptions.length > 0 ? (
-                <div className="mt-4 max-w-md">
-                  <label
-                    htmlFor="settings-sub-tenant"
-                    className="mb-1 block text-sm font-medium text-slate-700"
+              {isSuperAdmin ? (
+                <div className="mt-4 max-w-xl rounded-md border border-slate-200 bg-slate-50 px-3 py-3">
+                  <p className="text-sm leading-6 text-slate-600">
+                    {copy.publicWebsiteHint}
+                  </p>
+                  <Link
+                    href="/tenants"
+                    className="mt-2 inline-flex text-sm font-medium text-slate-950 underline-offset-2 hover:underline"
                   >
-                    {copy.selectSubTenant}
-                  </label>
-                  <select
-                    id="settings-sub-tenant"
-                    value={activeTenant?.isMainTenant ? "" : activeTenant?.id ?? ""}
-                    onChange={(event) => {
-                      const tenantId = event.target.value;
-                      if (tenantId) void switchTenant(tenantId);
-                    }}
-                    className="h-10 w-full rounded-md border border-slate-200 bg-white px-3 text-sm"
-                  >
-                    <option value="">{copy.selectSubTenantPlaceholder}</option>
-                    {subTenantOptions.map((tenant) => (
-                      <option key={tenant.id} value={tenant.id}>
-                        {getTenantDisplayName(tenant, tenant.name)}
-                      </option>
-                    ))}
-                  </select>
+                    {copy.manageWebsites}
+                  </Link>
                 </div>
               ) : null}
             </div>
 
             <div className="space-y-3">
-              <div className="grid grid-cols-3 overflow-hidden rounded-md border border-slate-200 bg-slate-50">
-                {[
-                  [copy.settings, settings.length],
-                  [copy.public, publicCount],
-                  [copy.required, requiredCount],
-                ].map(([label, value]) => (
+              <div
+                className={`grid overflow-hidden rounded-md border border-slate-200 bg-slate-50 ${
+                  isSuperAdmin ? "grid-cols-2" : "grid-cols-3"
+                }`}
+              >
+                {settingSummary.map(([label, value]) => (
                   <div key={label} className="border-r border-slate-200 px-3 py-2 last:border-r-0">
                     <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
                       {label}
@@ -837,7 +872,7 @@ export default function SettingsPage() {
                     >
                       <Icon className="h-4 w-4 shrink-0" />
                       <span className="min-w-0 flex-1 truncate">
-                        {copy.categoryLabels[categoryKey] || SETTING_CATEGORIES[categoryKey].label}
+                        {categoryLabel(categoryKey)}
                       </span>
                       <span
                         className={`rounded-full px-2 py-0.5 text-xs ${
@@ -914,11 +949,11 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-2">
                       <SelectedCategoryIcon className="h-5 w-5 text-slate-600" />
                       <h2 className="text-lg font-semibold text-slate-950">
-                        {copy.categoryLabels[selectedCategory] || selectedCategoryInfo.label}
+                        {categoryLabel(selectedCategory)}
                       </h2>
                     </div>
                     <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600">
-                      {selectedCategoryInfo.description}
+                      {categoryDescription}
                     </p>
                   </div>
                   {!isSuperAdmin && activeTenant ? (
@@ -990,9 +1025,15 @@ export default function SettingsPage() {
 
                 {selectedCategory === SettingType.SITE && viewingSubTenant ? (
                   <div className="mb-5 rounded-md border border-blue-200 bg-blue-50/70 p-4">
-                    <h3 className="font-semibold text-slate-950">{copy.brandingSection}</h3>
+                    <h3 className="font-semibold text-slate-950">
+                      {viewingSubTenant
+                        ? copy.brandingSection
+                        : copy.consoleBrandingSection}
+                    </h3>
                     <p className="mt-1 text-sm text-slate-600">
-                      {copy.brandingSectionDescription}
+                      {viewingSubTenant
+                        ? copy.brandingSectionDescription
+                        : copy.consoleBrandingSectionDescription}
                     </p>
                   </div>
                 ) : null}
@@ -1003,6 +1044,7 @@ export default function SettingsPage() {
                   onUpdateSetting={handleUpdateSetting}
                   onResetSetting={handleResetSetting}
                   loading={loading}
+                  showPublicBadge={viewingSubTenant}
                 />
               </div>
             </section>

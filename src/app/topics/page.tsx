@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trash2, Edit, Plus, Save, X } from "lucide-react";
+import { DeviceImageUpload } from "@/components/media/device-image-upload";
 import { useToastHelpers } from "@/components/ui/toast";
 import { PermissionGuard, Permission } from "@/components/permissions/PermissionGuard";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
@@ -72,7 +73,7 @@ const topicsCopy = {
     slug: "Slug",
     description: "Description",
     descriptionPlaceholder: "Optional description for this topic...",
-    coverImageUrl: "Cover Image URL",
+    coverImage: "Cover image",
     coverVideoUrl: "Cover Video URL",
     updateTopic: "Update Topic",
     createTopic: "Create Topic",
@@ -127,7 +128,7 @@ const topicsCopy = {
     slug: "ស្លាក URL",
     description: "ពណ៌នា",
     descriptionPlaceholder: "ពណ៌នាបន្ថែមសម្រាប់ប្រធានបទនេះ...",
-    coverImageUrl: "URL រូបគម្រប",
+    coverImage: "រូបគម្រប",
     coverVideoUrl: "URL វីដេអូគម្រប",
     updateTopic: "កែប្រធានបទ",
     createTopic: "បង្កើតប្រធានបទ",
@@ -495,11 +496,16 @@ export default function TopicsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium mb-2 block">{copy.coverImageUrl}</label>
-                <Input
+                <label className="text-sm font-medium mb-2 block">{copy.coverImage}</label>
+                <DeviceImageUpload
                   value={formData.coverImageUrl}
-                  onChange={(e) => setFormData(prev => ({ ...prev, coverImageUrl: e.target.value }))}
-                  placeholder="https://example.com/image.jpg"
+                  onChange={(coverImageUrl) =>
+                    setFormData((prev) => ({ ...prev, coverImageUrl }))
+                  }
+                  folder="topics"
+                  maxWidth={1600}
+                  maxHeight={900}
+                  tags={["topics", "cover"]}
                 />
               </div>
               <div>

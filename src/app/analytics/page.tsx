@@ -11,7 +11,6 @@ import {
   DashboardAnalytics,
   DashboardAnalyticsService,
 } from "@/services/dashboard-analytics.gql";
-import { getSelectedTenantId, setSelectedTenantId } from "@/services/graphql-client";
 import { Tenant, TenantService } from "@/services/tenant.gql";
 import { useAuth } from "@/contexts/AuthContext";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
@@ -29,7 +28,7 @@ const analyticsCopy = {
     tenantDescription: (name: string) => `Track content, users, and public performance for ${name}.`,
     fallbackTenant: "this sub-tenant website",
     loadingTenants: "Loading sub-tenants...",
-    selectTenant: "Select sub-tenant",
+    mainTenantOption: "Main Tenant",
     tenantView: "Sub-tenant View",
     refresh: "Refresh",
   },
@@ -44,7 +43,7 @@ const analyticsCopy = {
     tenantDescription: (name: string) => `តាមដានមាតិកា អ្នកប្រើ និងប្រសិទ្ធភាពសាធារណៈសម្រាប់ ${name}។`,
     fallbackTenant: "គេហទំព័រនេះ",
     loadingTenants: "កំពុងផ្ទុកគេហទំព័រ...",
-    selectTenant: "ជ្រើសគេហទំព័រ",
+    mainTenantOption: "អ្នកជួលមេ",
     tenantView: "ទិដ្ឋភាពគេហទំព័រ",
     refresh: "ធ្វើបច្ចុប្បន្នភាព",
   },
@@ -55,9 +54,12 @@ export default function AnalyticsPage() {
   const copy = analyticsCopy[locale];
   const { user } = useAuth();
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const MAIN_TENANT_ANALYTICS_ID = "__main__";
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
   const [tenantOptions, setTenantOptions] = useState<Tenant[]>([]);
-  const [selectedAnalyticsTenantId, setSelectedAnalyticsTenantId] = useState<string>("");
+  const [selectedAnalyticsTenantId, setSelectedAnalyticsTenantId] = useState<string>(
+    MAIN_TENANT_ANALYTICS_ID,
+  );
   const [loading, setLoading] = useState(true);
   const [loadingTenants, setLoadingTenants] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -66,10 +68,9 @@ export default function AnalyticsPage() {
   const loadAnalytics = async (tenantId?: string) => {
     try {
       setError(null);
-      if (isSuperAdmin && tenantId) {
-        setSelectedTenantId(tenantId);
-      }
-      const data = await DashboardAnalyticsService.getDashboardAnalytics();
+      const scopedTenantId =
+        tenantId && tenantId !== MAIN_TENANT_ANALYTICS_ID ? tenantId : null;
+      const data = await DashboardAnalyticsService.getDashboardAnalytics(scopedTenantId);
       setAnalytics(data);
     } catch (err) {
       console.error("Failed to load analytics:", err);
@@ -99,21 +100,8 @@ export default function AnalyticsPage() {
 
         const activeTenants = tenants.filter((tenant) => tenant.status === "ACTIVE");
         setTenantOptions(activeTenants);
-
-        const storedTenantId = getSelectedTenantId();
-        const nextTenant =
-          activeTenants.find((tenant) => tenant.id === storedTenantId) ||
-          activeTenants[0] ||
-          null;
-
-        if (nextTenant) {
-          setSelectedAnalyticsTenantId(nextTenant.id);
-          await loadAnalytics(nextTenant.id);
-        } else {
-          setAnalytics(null);
-          setError(copy.noActiveTenants);
-          setLoading(false);
-        }
+        setSelectedAnalyticsTenantId(MAIN_TENANT_ANALYTICS_ID);
+        await loadAnalytics(MAIN_TENANT_ANALYTICS_ID);
       } catch (err) {
         console.error("Failed to load tenants for analytics:", err);
         if (!mounted) return;
@@ -182,6 +170,9 @@ export default function AnalyticsPage() {
                   />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={MAIN_TENANT_ANALYTICS_ID}>
+                    {copy.mainTenantOption}
+                  </SelectItem>
                   {tenantOptions.map((tenant) => (
                     <SelectItem key={tenant.id} value={tenant.id}>
                       {tenant.name}

@@ -49,6 +49,7 @@ import { useToastHelpers } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { getTenantDisplayName } from "@/lib/tenant-display";
+import { displaySiteUrl, isLoopbackSiteUrl } from "@/lib/site-url";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
@@ -127,7 +128,7 @@ const tenantsCopy = {
     eyebrowTenant: "Website Control",
     titleSuper: "Sub-tenant Websites",
     titleTenant: "Current Website",
-    descriptionSuper: "Create sub-tenant websites, inspect users, and manage every sub-tenant from the main tenant.",
+    descriptionSuper: "Create sub-tenant websites, set production domains, inspect users, and manage every sub-tenant from the main tenant.",
     descriptionTenant: "Manage this sub-tenant admin website and public website identity.",
     createTenantWebsite: "Create Sub-tenant Website",
     newSite: "New admin and public site",
@@ -138,16 +139,27 @@ const tenantsCopy = {
     tenants: "Sub-tenants",
     website: "Website",
     tenantsConfigured: (count: number) => `${count} sub-tenant website${count !== 1 ? "s" : ""} configured`,
-    websiteDescription: "Update the name, URLs, locale, and active state for this sub-tenant",
+    websiteDescription: "Update the name, locale, and active state for this sub-tenant",
+    websiteDescriptionSuper: "Set production domains, locale, and whether this site is active.",
+    websiteDescriptionTenant: "Update the name, locale, and active state. Super Admin sets production domains.",
     refresh: "Refresh",
     loadingTenants: "Loading sub-tenants...",
     noTenants: "No sub-tenants yet.",
-    createTenantDialogDescription: "Create a clean sub-tenant admin and public website. Content starts empty.",
+    createTenantDialogDescription:
+      "Create a clean sub-tenant admin and public website. Set the production public domain here, or leave it empty for local development.",
     tenantName: "Sub-tenant Name",
     slug: "Slug",
     formDescription: "Description",
-    publicUrl: "Public URL",
-    adminUrl: "Admin URL",
+    publicUrl: "Public website domain",
+    adminUrl: "Admin console URL",
+    publicUrlPlaceholder: "https://news.example.com",
+    adminUrlPlaceholder: "https://admin.news.example.com",
+    publicUrlHint:
+      "Required in production. Point DNS for this host at the public website deploy. Leave empty locally — local uses the sub-tenant ID under Connection.",
+    adminUrlHint:
+      "Optional. Use only if this sub-tenant has its own admin host. A shared management console is fine.",
+    localUrlIgnored: "A local address was stored and is ignored. Enter the production domain or leave empty.",
+    domainsSetBySuperAdmin: "Production domains are set by Super Admin on this Tenants page.",
     createTenantUser: "Create Sub-tenant User",
     createTenantUserDialogDescription: "Create a user directly inside this sub-tenant and choose their role.",
     tenant: "Sub-tenant",
@@ -173,7 +185,7 @@ const tenantsCopy = {
     archive: "Archive",
     restore: "Restore",
     publicWebsiteEnvironment: "Public Website Environment",
-    envHint: "Sub-tenant ID is stable. The slug can change when the sub-tenant name changes, so it is not required in the public website env.",
+    envHint: "Local public website uses this sub-tenant ID. Production uses the public website domain Super Admin sets above — point DNS at the public web deploy.",
     tenantId: "Sub-tenant ID",
     tenantSlug: "Sub-tenant slug",
     publicWebsiteEnvironmentLabel: "Public website environment",
@@ -264,7 +276,7 @@ const tenantsCopy = {
     eyebrowTenant: "គ្រប់គ្រងគេហទំព័រ",
     titleSuper: "គេហទំព័រទាំងអស់",
     titleTenant: "គេហទំព័របច្ចុប្បន្ន",
-    descriptionSuper: "បង្កើតគេហទំព័រ ពិនិត្យអ្នកប្រើ និងគ្រប់គ្រងគេហទំព័រទាំងអស់ពីកន្លែងតែមួយ។",
+    descriptionSuper: "បង្កើតគេហទំព័រ កំណត់ដែនផលិតកម្ម ពិនិត្យអ្នកប្រើ និងគ្រប់គ្រងគេហទំព័រទាំងអស់ពីកន្លែងតែមួយ។",
     descriptionTenant: "គ្រប់គ្រងអត្តសញ្ញាណគេហទំព័រផ្នែកគ្រប់គ្រង និងគេហទំព័រសាធារណៈនេះ។",
     createTenantWebsite: "បង្កើតគេហទំព័រ",
     newSite: "គេហទំព័រផ្នែកគ្រប់គ្រង និងសាធារណៈថ្មី",
@@ -275,16 +287,27 @@ const tenantsCopy = {
     tenants: "គេហទំព័រ",
     website: "គេហទំព័រ",
     tenantsConfigured: (count: number) => `បានកំណត់គេហទំព័រ ${count}`,
-    websiteDescription: "កែឈ្មោះ URL ភាសាចម្បង និងស្ថានភាពសកម្មរបស់គេហទំព័រនេះ",
+    websiteDescription: "កែឈ្មោះ ភាសាចម្បង និងស្ថានភាពសកម្មរបស់គេហទំព័រនេះ",
+    websiteDescriptionSuper: "កំណត់ដែនផលិតកម្ម ភាសា និងថាតើគេហទំព័រនេះសកម្មដែរឬទេ។",
+    websiteDescriptionTenant: "កែឈ្មោះ ភាសា និងស្ថានភាពសកម្ម។ Super Admin ជាអ្នកកំណត់ដែនផលិតកម្ម។",
     refresh: "ផ្ទុកឡើងវិញ",
     loadingTenants: "កំពុងផ្ទុកគេហទំព័រ...",
     noTenants: "មិនទាន់មានគេហទំព័រ។",
-    createTenantDialogDescription: "បង្កើតគេហទំព័រផ្នែកគ្រប់គ្រង និងសាធារណៈថ្មី។ មាតិកាចាប់ផ្តើមទទេ។",
+    createTenantDialogDescription:
+      "បង្កើតគេហទំព័រផ្នែកគ្រប់គ្រង និងសាធារណៈថ្មី។ កំណត់ដែនសាធារណៈផលិតកម្មនៅទីនេះ ឬទុកទទេសម្រាប់ម៉ាស៊ីនមូលដ្ឋាន។",
     tenantName: "ឈ្មោះគេហទំព័រ",
     slug: "ស្លាក URL",
     formDescription: "ពណ៌នា",
-    publicUrl: "URL សាធារណៈ",
-    adminUrl: "URL ផ្នែកគ្រប់គ្រង",
+    publicUrl: "ដែនគេហទំព័រសាធារណៈ",
+    adminUrl: "URL ផ្ទាំងគ្រប់គ្រង",
+    publicUrlPlaceholder: "https://news.example.com",
+    adminUrlPlaceholder: "https://admin.news.example.com",
+    publicUrlHint:
+      "ត្រូវការនៅផលិតកម្ម។ តម្រង់ DNS របស់ host នេះទៅការដាក់ឱ្យប្រើគេហទំព័រសាធារណៈ។ ទុកទទេនៅក្នុងម៉ាស៊ីនមូលដ្ឋាន — ម៉ាស៊ីនមូលដ្ឋានប្រើលេខសម្គាល់គេហទំព័រក្នុង Connection។",
+    adminUrlHint:
+      "ជាជម្រើស។ ប្រើតែពេលគេហទំព័ររងនេះមាន host ផ្នែកគ្រប់គ្រងផ្ទាល់ខ្លួន។ ផ្ទាំងគ្រប់គ្រងរួមគ្នាក៏បាន។",
+    localUrlIgnored: "អាសយដ្ឋានមូលដ្ឋានត្រូវបានរក្សាទុក ហើយមិនប្រើ។ បញ្ចូលដែនផលិតកម្ម ឬទុកទទេ។",
+    domainsSetBySuperAdmin: "ដែនផលិតកម្មត្រូវបានកំណត់ដោយ Super Admin នៅទំព័រ Tenants នេះ។",
     createTenantUser: "បង្កើតអ្នកប្រើគេហទំព័រ",
     createTenantUserDialogDescription: "បង្កើតអ្នកប្រើដោយផ្ទាល់ក្នុងគេហទំព័រនេះ និងជ្រើសតួនាទី។",
     tenant: "គេហទំព័រ",
@@ -310,7 +333,7 @@ const tenantsCopy = {
     archive: "ដាក់ប័ណ្ណសារ",
     restore: "ស្ដារ",
     publicWebsiteEnvironment: "បរិស្ថានគេហទំព័រសាធារណៈ",
-    envHint: "លេខសម្គាល់គេហទំព័រមានស្ថិរភាព។ ស្លាក URL អាចផ្លាស់ប្តូរពេលឈ្មោះគេហទំព័រផ្លាស់ប្តូរ ដូច្នេះវាមិនចាំបាច់នៅក្នុងការកំណត់បរិស្ថានរបស់គេហទំព័រសាធារណៈទេ។",
+    envHint: "គេហទំព័រសាធារណៈក្នុងម៉ាស៊ីនមូលដ្ឋានប្រើលេខសម្គាល់គេហទំព័រនេះ។ ផលិតកម្មប្រើដែនគេហទំព័រសាធារណៈដែល Super Admin កំណត់ខាងលើ — តម្រង់ DNS ទៅការដាក់ឱ្យប្រើគេហទំព័រសាធារណៈ។",
     tenantId: "លេខសម្គាល់គេហទំព័រ",
     tenantSlug: "ស្លាក URL គេហទំព័រ",
     publicWebsiteEnvironmentLabel: "បរិស្ថានគេហទំព័រសាធារណៈ",
@@ -634,8 +657,8 @@ export default function TenantsPage() {
       name: tenant.name,
       slug: tenant.slug,
       description: tenant.description ?? "",
-      publicBaseUrl: site?.publicBaseUrl ?? "",
-      adminBaseUrl: site?.adminBaseUrl ?? "",
+      publicBaseUrl: displaySiteUrl(site?.publicBaseUrl),
+      adminBaseUrl: displaySiteUrl(site?.adminBaseUrl),
       primaryLocale: site?.primaryLocale ?? "en",
       status: tenant.status,
       isActive: site?.isActive ?? true,
@@ -665,15 +688,20 @@ export default function TenantsPage() {
     setSavingEdit(true);
     try {
       const tenant = await TenantService.updateTenant(editingTenantId, {
-        ...editTenantForm,
         name: tenantName,
         slug: editTenantForm.slug?.trim()
           ? toSlug(editTenantForm.slug)
           : toSlug(tenantName),
         description: editTenantForm.description?.trim() || null,
-        publicBaseUrl: editTenantForm.publicBaseUrl?.trim() || null,
-        adminBaseUrl: editTenantForm.adminBaseUrl?.trim() || null,
         primaryLocale: editTenantForm.primaryLocale?.trim() || "en",
+        status: editTenantForm.status,
+        isActive: editTenantForm.isActive,
+        ...(isSuperAdmin
+          ? {
+              publicBaseUrl: editTenantForm.publicBaseUrl?.trim() || null,
+              adminBaseUrl: editTenantForm.adminBaseUrl?.trim() || null,
+            }
+          : {}),
       });
 
       setTenants((current) =>
@@ -816,7 +844,7 @@ export default function TenantsPage() {
               <CardDescription>
                 {isSuperAdmin
                   ? copy.tenantsConfigured(tenants.length)
-                  : copy.websiteDescription}
+                  : copy.websiteDescriptionTenant}
               </CardDescription>
             </div>
             <Button
@@ -919,16 +947,19 @@ export default function TenantsPage() {
                             {copy.publicSite}
                           </p>
                           <p className="mt-2 truncate text-sm font-medium text-slate-900">
-                            {site?.publicBaseUrl || copy.notSet}
+                            {displaySiteUrl(site?.publicBaseUrl) || copy.notSet}
                           </p>
-                          {site?.publicBaseUrl && (
+                          {isLoopbackSiteUrl(site?.publicBaseUrl) && (
+                            <p className="mt-1 text-xs text-amber-700">{copy.localUrlIgnored}</p>
+                          )}
+                          {displaySiteUrl(site?.publicBaseUrl) && (
                             <Button
                               type="button"
                               variant="link"
                               size="sm"
                               className="mt-1 h-auto p-0"
                               onClick={() =>
-                                window.open(site.publicBaseUrl ?? undefined, "_blank", "noreferrer")
+                                window.open(displaySiteUrl(site?.publicBaseUrl), "_blank", "noreferrer")
                               }
                             >
                               {copy.openPublic}
@@ -941,16 +972,19 @@ export default function TenantsPage() {
                             {copy.adminSite}
                           </p>
                           <p className="mt-2 truncate text-sm font-medium text-slate-900">
-                            {site?.adminBaseUrl || copy.notSet}
+                            {displaySiteUrl(site?.adminBaseUrl) || copy.notSet}
                           </p>
-                          {site?.adminBaseUrl && (
+                          {isLoopbackSiteUrl(site?.adminBaseUrl) && (
+                            <p className="mt-1 text-xs text-amber-700">{copy.localUrlIgnored}</p>
+                          )}
+                          {displaySiteUrl(site?.adminBaseUrl) && (
                             <Button
                               type="button"
                               variant="link"
                               size="sm"
                               className="mt-1 h-auto p-0"
                               onClick={() =>
-                                window.open(site.adminBaseUrl ?? undefined, "_blank", "noreferrer")
+                                window.open(displaySiteUrl(site?.adminBaseUrl), "_blank", "noreferrer")
                               }
                             >
                               {copy.openAdmin}
@@ -1176,6 +1210,9 @@ export default function TenantsPage() {
 
                     {isEditing && (
                       <form className="rounded-md border bg-slate-50 p-4" onSubmit={updateTenant}>
+                        <p className="mb-4 text-sm text-slate-600">
+                          {isSuperAdmin ? copy.websiteDescriptionSuper : copy.websiteDescriptionTenant}
+                        </p>
                         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                           <div className="space-y-2">
                             <Label htmlFor={`edit-name-${tenant.id}`}>{copy.tenantName}</Label>
@@ -1226,32 +1263,48 @@ export default function TenantsPage() {
                               ))}
                             </select>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`edit-public-${tenant.id}`}>{copy.publicUrl}</Label>
-                            <Input
-                              id={`edit-public-${tenant.id}`}
-                              value={editTenantForm.publicBaseUrl ?? ""}
-                              onChange={(event) =>
-                                setEditTenantForm((current) => ({
-                                  ...current,
-                                  publicBaseUrl: event.target.value,
-                                }))
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`edit-admin-${tenant.id}`}>{copy.adminUrl}</Label>
-                            <Input
-                              id={`edit-admin-${tenant.id}`}
-                              value={editTenantForm.adminBaseUrl ?? ""}
-                              onChange={(event) =>
-                                setEditTenantForm((current) => ({
-                                  ...current,
-                                  adminBaseUrl: event.target.value,
-                                }))
-                              }
-                            />
-                          </div>
+                          {isSuperAdmin ? (
+                            <>
+                              <div className="space-y-2">
+                                <Label htmlFor={`edit-public-${tenant.id}`}>{copy.publicUrl}</Label>
+                                <Input
+                                  id={`edit-public-${tenant.id}`}
+                                  value={editTenantForm.publicBaseUrl ?? ""}
+                                  onChange={(event) =>
+                                    setEditTenantForm((current) => ({
+                                      ...current,
+                                      publicBaseUrl: event.target.value,
+                                    }))
+                                  }
+                                  placeholder={copy.publicUrlPlaceholder}
+                                />
+                                {(isLoopbackSiteUrl(site?.publicBaseUrl) ||
+                                  isLoopbackSiteUrl(editTenantForm.publicBaseUrl)) && (
+                                  <p className="text-xs text-amber-700">{copy.localUrlIgnored}</p>
+                                )}
+                                <p className="text-xs text-slate-500">{copy.publicUrlHint}</p>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`edit-admin-${tenant.id}`}>{copy.adminUrl}</Label>
+                                <Input
+                                  id={`edit-admin-${tenant.id}`}
+                                  value={editTenantForm.adminBaseUrl ?? ""}
+                                  onChange={(event) =>
+                                    setEditTenantForm((current) => ({
+                                      ...current,
+                                      adminBaseUrl: event.target.value,
+                                    }))
+                                  }
+                                  placeholder={copy.adminUrlPlaceholder}
+                                />
+                                <p className="text-xs text-slate-500">{copy.adminUrlHint}</p>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="space-y-2 md:col-span-2">
+                              <p className="text-xs text-slate-500">{copy.domainsSetBySuperAdmin}</p>
+                            </div>
+                          )}
                           <div className="space-y-2">
                             <Label htmlFor={`edit-locale-${tenant.id}`}>{copy.primaryLocale}</Label>
                             <Input
@@ -1388,8 +1441,9 @@ export default function TenantsPage() {
                       publicBaseUrl: event.target.value,
                     }))
                   }
-                  placeholder="http://localhost:3000"
+                  placeholder={copy.publicUrlPlaceholder}
                 />
+                <p className="text-xs text-slate-500">{copy.publicUrlHint}</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="admin-url">{copy.adminUrl}</Label>
@@ -1402,8 +1456,9 @@ export default function TenantsPage() {
                       adminBaseUrl: event.target.value,
                     }))
                   }
-                  placeholder="http://localhost:3001"
+                  placeholder={copy.adminUrlPlaceholder}
                 />
+                <p className="text-xs text-slate-500">{copy.adminUrlHint}</p>
               </div>
             </div>
 

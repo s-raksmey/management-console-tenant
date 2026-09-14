@@ -34,13 +34,18 @@ function sameTenantBrand(left: Tenant | null, right: Tenant | null) {
   return left.id === right.id && getTenantLogoUrl(left) === getTenantLogoUrl(right);
 }
 
-async function readSettingLogoUrl() {
+async function readPublicSettingUrl(
+  key: string,
+  includeSelectedTenant: boolean,
+) {
   try {
-    const response = await getAuthenticatedGqlClient().request<{
+    const response = await getAuthenticatedGqlClient(undefined, {
+      includeSelectedTenant,
+    }).request<{
       publicSettings?: Array<{ key: string; value: unknown }>;
     }>(Q_PUBLIC_SETTINGS);
     const value = response.publicSettings?.find(
-      (setting) => setting.key === "site.logo_url",
+      (setting) => setting.key === key,
     )?.value;
     return typeof value === "string" && value.trim() ? value.trim() : null;
   } catch {
@@ -48,11 +53,20 @@ async function readSettingLogoUrl() {
   }
 }
 
+async function readSettingLogoUrl() {
+  return readPublicSettingUrl("site.logo_url", true);
+}
+
+async function readManagementLogoUrl() {
+  return readPublicSettingUrl("site.management_logo_url", false);
+}
+
 type TenantContextType = {
   activeTenant: Tenant | null;
   tenantOptions: Tenant[];
   memberships: TenantMembership[];
   isLoading: boolean;
+  managementLogoUrl: string | null;
   switchTenant: (tenantId: string) => Promise<void>;
   refreshTenants: () => Promise<void>;
 };
@@ -78,6 +92,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   const [activeTenant, setActiveTenant] = useState<Tenant | null>(null);
   const [tenantOptions, setTenantOptions] = useState<Tenant[]>([]);
   const [memberships, setMemberships] = useState<TenantMembership[]>([]);
+  const [managementLogoUrl, setManagementLogoUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const hasResolvedTenantRef = useRef(false);
 
@@ -87,6 +102,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       setActiveTenant(null);
       setTenantOptions([]);
       setMemberships([]);
+      setManagementLogoUrl(null);
       return;
     }
 
@@ -95,8 +111,6 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const hostTenant = await TenantService.getActiveTenantFromHost().catch(() => null);
-
       if (user.role === "SUPER_ADMIN") {
         const options = await TenantService.listTenants();
         const selectedTenantId = getSelectedTenantId();
@@ -104,26 +118,23 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           (tenant) => tenant.status === "ACTIVE" && tenant.isMainTenant !== true,
         );
         const nextTenant =
-          subTenants.find((tenant) => tenant.id === hostTenant?.id) ||
-          subTenants.find((tenant) => tenant.id === selectedTenantId) ||
-          (hostTenant && hostTenant.isMainTenant !== true ? hostTenant : null) ||
-          null;
+          subTenants.find((tenant) => tenant.id === selectedTenantId) || null;
 
-        const settingLogoUrl = getTenantLogoUrl(nextTenant || hostTenant)
-          ? null
-          : await readSettingLogoUrl();
+        const [settingLogoUrl, consoleLogoUrl] = await Promise.all([
+          getTenantLogoUrl(nextTenant)
+            ? Promise.resolve(null)
+            : nextTenant
+              ? readSettingLogoUrl()
+              : Promise.resolve(null),
+          readManagementLogoUrl(),
+        ]);
+        setManagementLogoUrl(consoleLogoUrl);
         setTenantOptions(options);
         setMemberships([]);
         if (nextTenant) {
           setSelectedTenantId(nextTenant.id);
           setActiveTenant((current) => {
             const next = withTenantLogoUrl(nextTenant, settingLogoUrl);
-            return sameTenantBrand(current, next) ? current : next;
-          });
-        } else if (hostTenant) {
-          setSelectedTenantId(hostTenant.id);
-          setActiveTenant((current) => {
-            const next = withTenantLogoUrl(hostTenant, settingLogoUrl);
             return sameTenantBrand(current, next) ? current : next;
           });
         } else {
@@ -140,7 +151,6 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         .filter((tenant) => tenant.status === "ACTIVE" && !tenant.isMainTenant);
 
       const nextTenant =
-        options.find((tenant) => tenant.id === hostTenant?.id) ||
         options.find((tenant) => tenant.id === selectedTenantId) ||
         options.find((tenant) => tenant.id === user.primaryTenantId) ||
         options[0] ||
@@ -155,6 +165,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       const settingLogoUrl = getTenantLogoUrl(nextTenant)
         ? null
         : await readSettingLogoUrl();
+      setManagementLogoUrl(null);
       setTenantOptions(options.map((tenant) => withTenantLogoUrl(tenant, settingLogoUrl)));
       setMemberships(myMemberships);
       setActiveTenant((current) => {
@@ -187,6 +198,13 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   const switchTenant = useCallback(
     async (tenantId: string) => {
+      if (!tenantId) {
+        setSelectedTenantId(null);
+        setActiveTenant(null);
+        window.dispatchEvent(new CustomEvent("pulse-news:tenant-changed"));
+        return;
+      }
+
       const tenant = tenantOptions.find((item) => item.id === tenantId);
       if (!tenant) return;
 
@@ -203,6 +221,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       tenantOptions,
       memberships,
       isLoading,
+      managementLogoUrl,
       switchTenant,
       refreshTenants: loadTenants,
     }),
@@ -211,6 +230,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       tenantOptions,
       memberships,
       isLoading,
+      managementLogoUrl,
       switchTenant,
       loadTenants,
     ],

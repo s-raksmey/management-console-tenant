@@ -12,9 +12,7 @@ export function getApiOrigin() {
 }
 
 export function resolveCmsMediaSrc(value: string) {
-  const normalized = normalizeCmsMediaUrl(value);
-  if (normalized.startsWith("/media/files/")) {
-    return `${getApiOrigin()}${normalized}`;
-  }
-  return normalized;
+  // Keep CMS files on the admin origin so Next can rewrite /media/files/* to the API.
+  // Absolute http://localhost:4000 URLs fail in next/image (private IP) and are unnecessary.
+  return normalizeCmsMediaUrl(value);
 }

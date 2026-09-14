@@ -274,7 +274,7 @@ const getNavigation = (
 export function MobileNav({ open, onOpenChange }: MobileNavProps) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { activeTenant } = useTenant();
+  const { activeTenant, managementLogoUrl } = useTenant();
   const { hasPermission } = usePermissions();
   const { locale } = useAdminLocale();
   const userRole = user?.role?.toString().toUpperCase();
@@ -307,7 +307,9 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
     : locale === "km"
       ? "ផ្ទាំងគ្រប់គ្រង"
       : "Management Console";
-  const brandLogoUrl = viewingSubTenant ? getTenantLogoUrl(activeTenant) : null;
+  const brandLogoUrl = viewingSubTenant
+    ? getTenantLogoUrl(activeTenant)
+    : managementLogoUrl;
   const brandInitials = brandName
     .split(" ")
     .filter(Boolean)
