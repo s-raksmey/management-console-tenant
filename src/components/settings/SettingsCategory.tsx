@@ -19,6 +19,7 @@ interface SettingsCategoryProps {
   onResetSetting: (key: string) => Promise<void>;
   loading?: boolean;
   showPublicBadge?: boolean;
+  readOnly?: boolean;
 }
 
 function getSaveErrorMessage(error: unknown, fallback: string): string {
@@ -62,6 +63,7 @@ export function SettingsCategory({
   onResetSetting,
   loading = false,
   showPublicBadge = true,
+  readOnly = false,
 }: SettingsCategoryProps) {
   const { locale } = useAdminLocale();
   const copy = settingsCategoryCopy[locale];
@@ -105,6 +107,7 @@ export function SettingsCategory({
   }, [categorySettings]);
 
   const handleSettingChange = (key: string, value: JsonValue) => {
+    if (readOnly) return;
     setFormData(prev => ({ ...prev, [key]: value }));
     
     // Check if value has changed from original
@@ -120,6 +123,7 @@ export function SettingsCategory({
   };
 
   const handleSaveSetting = async (key: string) => {
+    if (readOnly) return;
     try {
       setErrors(prev => ({ ...prev, [key]: '' }));
       
@@ -138,6 +142,7 @@ export function SettingsCategory({
   };
 
   const handleResetSetting = async (key: string) => {
+    if (readOnly) return;
     try {
       setErrors(prev => ({ ...prev, [key]: '' }));
       
@@ -153,6 +158,7 @@ export function SettingsCategory({
   };
 
   const saveAllChanges = async () => {
+    if (readOnly) return;
     const changedSettings = Object.entries(hasChanges)
       .filter(([_, changed]) => changed)
       .map(([key]) => ({ key, value: formData[key] }));
@@ -208,7 +214,7 @@ export function SettingsCategory({
 
   return (
     <div className="space-y-4">
-      {(hasAnyChanges || errorCount > 0) && (
+      {!readOnly && (hasAnyChanges || errorCount > 0) && (
         <div className="sticky top-3 z-10 rounded-md border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2">
@@ -252,13 +258,17 @@ export function SettingsCategory({
             key={setting.key}
             setting={setting}
             value={formData[setting.key]}
-            onChange={(value) => handleSettingChange(setting.key, value)}
+            onChange={(value) => {
+              if (readOnly) return;
+              handleSettingChange(setting.key, value);
+            }}
             onSave={() => handleSaveSetting(setting.key)}
             onReset={() => handleResetSetting(setting.key)}
             error={errors[setting.key]}
             loading={loading}
             hasChanges={hasChanges[setting.key] || false}
             showPublicBadge={showPublicBadge}
+            readOnly={readOnly}
           />
         ))}
       </div>

@@ -309,8 +309,11 @@ export function canViewArticleForEdit(
     return true;
   }
   
-  // User owns the article and has permission to edit own articles
   if (articleAuthorId === currentUserId && hasPermission(Permission.UPDATE_OWN_ARTICLE)) {
+    return true;
+  }
+
+  if (hasPermission(Permission.VIEW_ALL_ARTICLES) || hasPermission(Permission.REVIEW_ARTICLES)) {
     return true;
   }
   

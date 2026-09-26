@@ -5,21 +5,20 @@ import {
   Archive,
   Building2,
   Check,
-  ChevronDown,
   Copy,
   Edit2,
   ExternalLink,
-  Globe2,
+  Filter,
   KeyRound,
   Loader2,
   Mail,
+  MoreHorizontal,
   Plus,
   RotateCcw,
-  Server,
+  Search,
   Shield,
   UserPlus,
   Users,
-  X,
 } from "lucide-react";
 import {
   CreateTenantAdminInput,
@@ -45,6 +44,28 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useToastHelpers } from "@/components/ui/toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
@@ -128,10 +149,24 @@ const tenantsCopy = {
     eyebrowTenant: "Website Control",
     titleSuper: "Sub-tenant Websites",
     titleTenant: "Current Website",
-    descriptionSuper: "Create sub-tenant websites, set production domains, inspect users, and manage every sub-tenant from the main tenant.",
+    descriptionSuper: "Create websites, set production domains, and manage users from the main tenant.",
     descriptionTenant: "Manage this sub-tenant admin website and public website identity.",
-    createTenantWebsite: "Create Sub-tenant Website",
+    createTenantWebsite: "Create Sub-tenant",
     newSite: "New admin and public site",
+    searchPlaceholder: "Search name, slug, or domain",
+    filter: "Filter",
+    allStatuses: "All statuses",
+    columnName: "Sub-tenant",
+    columnDomain: "Public domain",
+    columnAdminDomain: "Admin domain",
+    columnUsers: "Users",
+    columnStatus: "Status",
+    columnActions: "Actions",
+    localSetup: "Local setup",
+    openUsers: "Users",
+    noSearchResults: "No sub-tenants match this search.",
+    summaryLine: (active: number, users: number, archived: number) =>
+      `${active} active · ${users} users · ${archived} archived`,
     activeTenants: "Active Sub-tenants",
     tenantUsers: "Sub-tenant Users",
     activeSites: "Active Sites",
@@ -155,7 +190,7 @@ const tenantsCopy = {
     publicUrlPlaceholder: "https://news.example.com",
     adminUrlPlaceholder: "https://admin.news.example.com",
     publicUrlHint:
-      "Required in production. Point DNS for this host at the public website deploy. Leave empty locally — local uses the sub-tenant ID under Connection.",
+      "Required in production. Point DNS for this host at the public website deploy. Leave empty locally — local uses the sub-tenant ID under Local setup.",
     adminUrlHint:
       "Optional. Use only if this sub-tenant has its own admin host. A shared management console is fine.",
     localUrlIgnored: "A local address was stored and is ignored. Enter the production domain or leave empty.",
@@ -195,6 +230,7 @@ const tenantsCopy = {
     usersInTenant: (count: number, tenantName: string) => `${count} user${count !== 1 ? "s" : ""} in ${tenantName}`,
     addUser: "Add User",
     noUsersAssigned: "No users are assigned to this sub-tenant yet.",
+    passwordRequired: "Password is required for new users (min 8 characters).",
     tableUser: "User",
     tableEmail: "Email",
     tenantRole: "Sub-tenant Role",
@@ -276,10 +312,24 @@ const tenantsCopy = {
     eyebrowTenant: "គ្រប់គ្រងគេហទំព័រ",
     titleSuper: "គេហទំព័រទាំងអស់",
     titleTenant: "គេហទំព័របច្ចុប្បន្ន",
-    descriptionSuper: "បង្កើតគេហទំព័រ កំណត់ដែនផលិតកម្ម ពិនិត្យអ្នកប្រើ និងគ្រប់គ្រងគេហទំព័រទាំងអស់ពីកន្លែងតែមួយ។",
+    descriptionSuper: "បង្កើតគេហទំព័រ កំណត់ដែនផលិតកម្ម និងគ្រប់គ្រងអ្នកប្រើពីអ្នកជួលមេ។",
     descriptionTenant: "គ្រប់គ្រងអត្តសញ្ញាណគេហទំព័រផ្នែកគ្រប់គ្រង និងគេហទំព័រសាធារណៈនេះ។",
-    createTenantWebsite: "បង្កើតគេហទំព័រ",
+    createTenantWebsite: "បង្កើតគេហទំព័ររង",
     newSite: "គេហទំព័រផ្នែកគ្រប់គ្រង និងសាធារណៈថ្មី",
+    searchPlaceholder: "ស្វែងរកឈ្មោះ ស្លាក URL ឬដែន",
+    filter: "តម្រង",
+    allStatuses: "ស្ថានភាពទាំងអស់",
+    columnName: "គេហទំព័ររង",
+    columnDomain: "ដែនសាធារណៈ",
+    columnAdminDomain: "ដែនផ្ទាំងគ្រប់គ្រង",
+    columnUsers: "អ្នកប្រើ",
+    columnStatus: "ស្ថានភាព",
+    columnActions: "សកម្មភាព",
+    localSetup: "ការដំឡើងមូលដ្ឋាន",
+    openUsers: "អ្នកប្រើ",
+    noSearchResults: "មិនមានគេហទំព័ររងដែលត្រូវនឹងការស្វែងរកនេះទេ។",
+    summaryLine: (active: number, users: number, archived: number) =>
+      `${active} សកម្ម · ${users} អ្នកប្រើ · ${archived} ប័ណ្ណសារ`,
     activeTenants: "គេហទំព័រសកម្ម",
     tenantUsers: "អ្នកប្រើគេហទំព័រ",
     activeSites: "តំបន់បណ្តាញសកម្ម",
@@ -303,7 +353,7 @@ const tenantsCopy = {
     publicUrlPlaceholder: "https://news.example.com",
     adminUrlPlaceholder: "https://admin.news.example.com",
     publicUrlHint:
-      "ត្រូវការនៅផលិតកម្ម។ តម្រង់ DNS របស់ host នេះទៅការដាក់ឱ្យប្រើគេហទំព័រសាធារណៈ។ ទុកទទេនៅក្នុងម៉ាស៊ីនមូលដ្ឋាន — ម៉ាស៊ីនមូលដ្ឋានប្រើលេខសម្គាល់គេហទំព័រក្នុង Connection។",
+      "ត្រូវការនៅផលិតកម្ម។ តម្រង់ DNS របស់ host នេះទៅការដាក់ឱ្យប្រើគេហទំព័រសាធារណៈ។ ទុកទទេនៅក្នុងម៉ាស៊ីនមូលដ្ឋាន — ម៉ាស៊ីនមូលដ្ឋានប្រើលេខសម្គាល់គេហទំព័រក្នុង Local setup។",
     adminUrlHint:
       "ជាជម្រើស។ ប្រើតែពេលគេហទំព័ររងនេះមាន host ផ្នែកគ្រប់គ្រងផ្ទាល់ខ្លួន។ ផ្ទាំងគ្រប់គ្រងរួមគ្នាក៏បាន។",
     localUrlIgnored: "អាសយដ្ឋានមូលដ្ឋានត្រូវបានរក្សាទុក ហើយមិនប្រើ។ បញ្ចូលដែនផលិតកម្ម ឬទុកទទេ។",
@@ -343,6 +393,7 @@ const tenantsCopy = {
     usersInTenant: (count: number, tenantName: string) => `${count} អ្នកប្រើ ក្នុង ${tenantName}`,
     addUser: "បន្ថែមអ្នកប្រើ",
     noUsersAssigned: "មិនទាន់មានអ្នកប្រើត្រូវបានផ្តល់ទៅគេហទំព័រនេះទេ។",
+    passwordRequired: "ត្រូវការពាក្យសម្ងាត់សម្រាប់អ្នកប្រើថ្មី (យ៉ាងតិច 8 តួ)។",
     tableUser: "អ្នកប្រើ",
     tableEmail: "អ៊ីមែល",
     tenantRole: "តួនាទីគេហទំព័រ",
@@ -386,6 +437,46 @@ function shouldSyncSlugFromName(currentSlug: string | null | undefined, previous
   return !currentSlug || currentSlug === toSlug(previousName || "");
 }
 
+function formatSiteHost(url?: string | null) {
+  const displayed = displaySiteUrl(url);
+  if (!displayed) return "";
+  try {
+    return new URL(displayed).host;
+  } catch {
+    return displayed.replace(/^https?:\/\//i, "");
+  }
+}
+
+function DomainLink({
+  url,
+  emptyLabel,
+}: {
+  url?: string | null;
+  emptyLabel: string;
+}) {
+  const host = formatSiteHost(url);
+  const href = displaySiteUrl(url);
+
+  if (!host || !href) {
+    return <span className="text-sm text-slate-400">{emptyLabel}</span>;
+  }
+
+  return (
+    <button
+      type="button"
+      className="inline-flex max-w-[220px] items-center gap-1 truncate text-left text-sm text-blue-600 hover:underline dark:text-blue-400"
+      onClick={() => window.open(href, "_blank", "noreferrer")}
+    >
+      <span className="truncate">{host}</span>
+      <ExternalLink className="h-3 w-3 shrink-0" />
+    </button>
+  );
+}
+
+function getPrimarySite(tenant: Tenant) {
+  return tenant.sites.find((item) => item.isPrimary) ?? tenant.sites[0];
+}
+
 function statusBadgeVariant(status: TenantStatus) {
   if (status === "ACTIVE") return "outline";
   if (status === "SUSPENDED") return "secondary";
@@ -422,8 +513,9 @@ export default function TenantsPage() {
   const [tenantForm, setTenantForm] = useState<CreateTenantInput>(emptyTenant);
   const [adminForm, setAdminForm] = useState<CreateTenantAdminInput>(emptyAdmin);
   const [editingTenantId, setEditingTenantId] = useState<string | null>(null);
-  const [expandedUsersTenantId, setExpandedUsersTenantId] = useState<string | null>(null);
-  const [expandedConnectionTenantId, setExpandedConnectionTenantId] = useState<string | null>(null);
+  const [usersTenantId, setUsersTenantId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<"ALL" | TenantStatus>("ALL");
   const [editTenantForm, setEditTenantForm] = useState<UpdateTenantInput>({});
   const [confirmation, setConfirmation] = useState<{
     open: boolean;
@@ -449,11 +541,22 @@ export default function TenantsPage() {
     (total, tenant) => total + getTenantScopedMemberships(tenant).length,
     0,
   );
-  const activeSiteCount = tenants.reduce(
-    (total, tenant) => total + tenant.sites.filter((site) => site.isActive).length,
-    0,
-  );
   const selectedUserTenant = tenants.find((tenant) => tenant.id === adminForm.tenantId);
+  const editingTenant = tenants.find((tenant) => tenant.id === editingTenantId) ?? null;
+  const editingSite = editingTenant ? getPrimarySite(editingTenant) : undefined;
+  const usersTenant = tenants.find((tenant) => tenant.id === usersTenantId) ?? null;
+  const usersMemberships = usersTenant ? getTenantScopedMemberships(usersTenant) : [];
+  const filteredTenants = tenants.filter((tenant) => {
+    if (statusFilter !== "ALL" && tenant.status !== statusFilter) return false;
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return true;
+    const site = getPrimarySite(tenant);
+    return [tenant.name, tenant.slug, tenant.description, site?.publicBaseUrl, site?.adminBaseUrl, tenant.id]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase()
+      .includes(query);
+  });
 
   const copyTenantValue = async (label: string, value: string) => {
     try {
@@ -572,6 +675,11 @@ export default function TenantsPage() {
       return;
     }
 
+    if (!adminForm.password?.trim() || adminForm.password.trim().length < 8) {
+      showError(copy.validationError, copy.passwordRequired);
+      return;
+    }
+
     requestConfirmation({
       title: copy.createTenantUserTitle,
       description: copy.createTenantUserDescription(adminForm.name.trim(), adminForm.role),
@@ -587,6 +695,9 @@ export default function TenantsPage() {
       });
       setAdminForm((current) => ({ ...emptyAdmin, tenantId: current.tenantId }));
       setAdminDialogOpen(false);
+      if (adminForm.tenantId) {
+        setUsersTenantId(adminForm.tenantId);
+      }
       showSuccess(copy.tenantUserCreated, copy.tenantUserCreatedDescription);
       await loadTenants();
     } catch (error: any) {
@@ -604,6 +715,7 @@ export default function TenantsPage() {
   };
 
   const resetUserTwoFactor = async (targetUser: { id: string; name: string }) => {
+    if (!hasPermission(Permission.UPDATE_USER)) return;
     requestConfirmation({
       title: copy.resetTwoFactorTitle,
       description: copy.resetTwoFactorDescription(targetUser.name),
@@ -770,75 +882,46 @@ export default function TenantsPage() {
   return (
     <PermissionGuard permissions={[Permission.SYSTEM_ADMINISTRATION, Permission.UPDATE_SETTINGS]} showError>
       <main className="space-y-6">
-      <section className="rounded-lg border bg-white p-6">
-        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div className="max-w-3xl">
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
               {isSuperAdmin ? copy.eyebrowSuper : copy.eyebrowTenant}
             </p>
-            <h1 className="mt-2 text-3xl font-bold text-slate-950">
+            <h1 className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-50 sm:text-3xl">
               {isSuperAdmin
                 ? copy.titleSuper
                 : getTenantDisplayName(activeTenant || tenants[0], copy.titleTenant)}
             </h1>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
               {isSuperAdmin ? copy.descriptionSuper : copy.descriptionTenant}
             </p>
+            {isSuperAdmin && tenants.length > 0 && (
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                {copy.summaryLine(activeTenantCount, tenantUserCount, archivedTenantCount)}
+              </p>
+            )}
           </div>
-
-          {isSuperAdmin && (
-            <div className="w-full xl:w-auto">
-              <button
-                type="button"
-                onClick={() => setTenantDialogOpen(true)}
-                className="group w-full rounded-lg border border-blue-200 bg-blue-600 p-4 text-left text-white shadow-sm transition hover:bg-blue-700 xl:w-[320px]"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-md bg-white/15">
-                    <Globe2 className="h-5 w-5" />
-                  </span>
-                  <span>
-                    <span className="block font-semibold">{copy.createTenantWebsite}</span>
-                    <span className="mt-0.5 block text-xs text-blue-100">
-                      {copy.newSite}
-                    </span>
-                  </span>
-                </div>
-              </button>
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => void loadTenants()}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              {copy.refresh}
+            </Button>
+            {isSuperAdmin && (
+              <Button type="button" onClick={() => setTenantDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                {copy.createTenantWebsite}
+              </Button>
+            )}
+          </div>
         </div>
 
-        {isSuperAdmin && (
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {[
-              [copy.activeTenants, activeTenantCount, Building2],
-              [copy.tenantUsers, tenantUserCount, Users],
-              [copy.activeSites, activeSiteCount, Globe2],
-              [copy.archived, archivedTenantCount, Archive],
-            ].map(([label, value, Icon]) => {
-              const StatIcon = Icon as typeof Building2;
-              return (
-                <div key={label as string} className="rounded-md border bg-slate-50 p-4">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase text-slate-500">
-                      {label as string}
-                    </p>
-                    <StatIcon className="h-4 w-4 text-slate-500" />
-                  </div>
-                  <p className="mt-2 text-3xl font-bold text-slate-950">
-                    {value as number}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      <Card>
-        <CardHeader className="border-b">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+        <Card>
+          <CardHeader className="space-y-4 border-b border-slate-200 dark:border-slate-800">
             <div>
               <CardTitle>{isSuperAdmin ? copy.tenants : copy.website}</CardTitle>
               <CardDescription>
@@ -847,740 +930,673 @@ export default function TenantsPage() {
                   : copy.websiteDescriptionTenant}
               </CardDescription>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="shadow-none"
-              onClick={() => void loadTenants()}
-            >
-              <RotateCcw className="mr-2 h-4 w-4" />
-              {copy.refresh}
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center py-16 text-slate-500">
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              {copy.loadingTenants}
-            </div>
-          ) : tenants.length === 0 ? (
-            <div className="py-16 text-center">
-              <Building2 className="mx-auto h-10 w-10 text-slate-400" />
-              <p className="mt-3 text-sm text-slate-500">{copy.noTenants}</p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {tenants.map((tenant) => {
-                const site = tenant.sites.find((item) => item.isPrimary) ?? tenant.sites[0];
-                const isEditing = editingTenantId === tenant.id;
-                const tenantMemberships = getTenantScopedMemberships(tenant);
-                const isUsersExpanded = expandedUsersTenantId === tenant.id;
-                const isConnectionExpanded = expandedConnectionTenantId === tenant.id;
+            {isSuperAdmin && (
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  <Filter className="h-4 w-4" />
+                  <span>{copy.filter}</span>
+                </div>
+                <div className="relative min-w-0 flex-1">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    value={searchQuery}
+                    onChange={(event) => setSearchQuery(event.target.value)}
+                    placeholder={copy.searchPlaceholder}
+                    className="h-9 pl-9"
+                  />
+                </div>
+                <Select
+                  value={statusFilter}
+                  onValueChange={(value) => setStatusFilter(value as "ALL" | TenantStatus)}
+                >
+                  <SelectTrigger className="h-9 w-full sm:w-[180px]">
+                    <SelectValue placeholder={copy.allStatuses} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="ALL">{copy.allStatuses}</SelectItem>
+                    {tenantStatuses.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {copy.statusLabels[status]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </CardHeader>
+          <CardContent className="p-0">
+            {loading ? (
+              <div className="flex items-center justify-center py-16 text-slate-500">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                {copy.loadingTenants}
+              </div>
+            ) : tenants.length === 0 ? (
+              <div className="py-16 text-center">
+                <Building2 className="mx-auto h-10 w-10 text-slate-400" />
+                <p className="mt-3 text-sm text-slate-500">{copy.noTenants}</p>
+                {isSuperAdmin && (
+                  <Button className="mt-4" type="button" onClick={() => setTenantDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {copy.createTenantWebsite}
+                  </Button>
+                )}
+              </div>
+            ) : filteredTenants.length === 0 ? (
+              <div className="py-16 text-center text-sm text-slate-500">{copy.noSearchResults}</div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{copy.columnName}</TableHead>
+                    <TableHead>{copy.columnDomain}</TableHead>
+                    <TableHead>{copy.columnAdminDomain}</TableHead>
+                    <TableHead className="hidden sm:table-cell">{copy.columnUsers}</TableHead>
+                    <TableHead>{copy.columnStatus}</TableHead>
+                    <TableHead className="w-14 text-right">
+                      <span className="sr-only">{copy.columnActions}</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredTenants.map((tenant) => {
+                    const site = getPrimarySite(tenant);
+                    const membershipCount = getTenantScopedMemberships(tenant).length;
 
-                return (
-                  <div key={tenant.id} className="space-y-4 p-5">
-                    <div className="grid gap-5 xl:grid-cols-[minmax(260px,1fr)_minmax(320px,1.3fr)_260px]">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="truncate text-lg font-semibold text-slate-950">
+                    return (
+                      <TableRow key={tenant.id}>
+                        <TableCell className="max-w-[260px]">
+                          <p className="truncate font-medium text-slate-900 dark:text-slate-50">
                             {tenant.name}
-                          </h2>
-                          <Badge variant={statusBadgeVariant(tenant.status) as any}>
-                            {copy.statusLabels[tenant.status]}
-                          </Badge>
-                          {site?.isActive === false && (
-                            <Badge variant="secondary">{copy.siteDisabled}</Badge>
-                          )}
-                        </div>
-                        <p className="mt-1 text-sm text-slate-500">/{tenant.slug}</p>
-                        {tenant.description && (
-                          <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                            {tenant.description}
                           </p>
-                        )}
-
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          <Button
+                          <p className="truncate text-xs text-slate-500">/{tenant.slug}</p>
+                        </TableCell>
+                        <TableCell>
+                          <DomainLink url={site?.publicBaseUrl} emptyLabel={copy.notSet} />
+                        </TableCell>
+                        <TableCell>
+                          <DomainLink url={site?.adminBaseUrl} emptyLabel={copy.notSet} />
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <button
                             type="button"
-                            variant="outline"
-                            size="sm"
-                            className="shadow-none"
-                            onClick={() =>
-                              setExpandedUsersTenantId((current) =>
-                                current === tenant.id ? null : tenant.id,
-                              )
-                            }
+                            className="text-sm text-slate-700 hover:underline dark:text-slate-300"
+                            onClick={() => setUsersTenantId(tenant.id)}
                           >
-                            <Users className="mr-2 h-4 w-4" />
-                            {copy.users}
-                            <Badge variant="secondary" className="ml-2">
-                              {tenantMemberships.length}
+                            {membershipCount}
+                          </button>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            <Badge variant={statusBadgeVariant(tenant.status) as "outline" | "secondary" | "destructive"}>
+                              {copy.statusLabels[tenant.status]}
                             </Badge>
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="shadow-none"
-                            onClick={() =>
-                              setExpandedConnectionTenantId((current) =>
-                                current === tenant.id ? null : tenant.id,
-                              )
-                            }
-                          >
-                            <Server className="mr-2 h-4 w-4" />
-                            {copy.connection}
-                            <ChevronDown
-                              className={`ml-1 h-4 w-4 transition-transform ${
-                                isConnectionExpanded ? "rotate-180" : ""
-                              }`}
-                            />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="rounded-md border bg-slate-50 p-3">
-                          <p className="text-xs font-semibold uppercase text-slate-500">
-                            {copy.publicSite}
-                          </p>
-                          <p className="mt-2 truncate text-sm font-medium text-slate-900">
-                            {displaySiteUrl(site?.publicBaseUrl) || copy.notSet}
-                          </p>
-                          {isLoopbackSiteUrl(site?.publicBaseUrl) && (
-                            <p className="mt-1 text-xs text-amber-700">{copy.localUrlIgnored}</p>
-                          )}
-                          {displaySiteUrl(site?.publicBaseUrl) && (
-                            <Button
-                              type="button"
-                              variant="link"
-                              size="sm"
-                              className="mt-1 h-auto p-0"
-                              onClick={() =>
-                                window.open(displaySiteUrl(site?.publicBaseUrl), "_blank", "noreferrer")
-                              }
-                            >
-                              {copy.openPublic}
-                              <ExternalLink className="ml-1 h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                        <div className="rounded-md border bg-slate-50 p-3">
-                          <p className="text-xs font-semibold uppercase text-slate-500">
-                            {copy.adminSite}
-                          </p>
-                          <p className="mt-2 truncate text-sm font-medium text-slate-900">
-                            {displaySiteUrl(site?.adminBaseUrl) || copy.notSet}
-                          </p>
-                          {isLoopbackSiteUrl(site?.adminBaseUrl) && (
-                            <p className="mt-1 text-xs text-amber-700">{copy.localUrlIgnored}</p>
-                          )}
-                          {displaySiteUrl(site?.adminBaseUrl) && (
-                            <Button
-                              type="button"
-                              variant="link"
-                              size="sm"
-                              className="mt-1 h-auto p-0"
-                              onClick={() =>
-                                window.open(displaySiteUrl(site?.adminBaseUrl), "_blank", "noreferrer")
-                              }
-                            >
-                              {copy.openAdmin}
-                              <ExternalLink className="ml-1 h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2 xl:items-end">
-                        <Button
-                          type="button"
-                          variant={isEditing ? "secondary" : "outline"}
-                          size="sm"
-                          className="shadow-none"
-                          onClick={() => (isEditing ? cancelTenantEdit() : startTenantEdit(tenant))}
-                        >
-                          {isEditing ? <X className="mr-2 h-4 w-4" /> : <Edit2 className="mr-2 h-4 w-4" />}
-                          {isEditing ? copy.cancelEdit : copy.editTenant}
-                        </Button>
-                        {isSuperAdmin && tenant.status !== "ARCHIVED" && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={savingLifecycleId === tenant.id}
-                            onClick={() => updateTenantLifecycle(tenant, "ARCHIVED")}
-                            className="shadow-none text-red-600 hover:text-red-700"
-                          >
-                            {savingLifecycleId === tenant.id ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <Archive className="mr-2 h-4 w-4" />
+                            {site?.isActive === false && (
+                              <Badge variant="secondary">{copy.siteDisabled}</Badge>
                             )}
-                            {copy.archive}
-                          </Button>
-                        )}
-                        {isSuperAdmin && tenant.status === "ARCHIVED" && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="shadow-none"
-                            disabled={savingLifecycleId === tenant.id}
-                            onClick={() => updateTenantLifecycle(tenant, "ACTIVE")}
-                          >
-                            {savingLifecycleId === tenant.id ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <RotateCcw className="mr-2 h-4 w-4" />
-                            )}
-                            {copy.restore}
-                          </Button>
-                        )}
-                      </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">{copy.columnActions}</span>
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => startTenantEdit(tenant)}>
+                                <Edit2 className="mr-2 h-4 w-4" />
+                                {copy.editTenant}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setUsersTenantId(tenant.id)}>
+                                <Users className="mr-2 h-4 w-4" />
+                                {copy.openUsers}
+                              </DropdownMenuItem>
+                              {hasPermission(Permission.CREATE_USER) && (
+                                <DropdownMenuItem onClick={() => openCreateTenantUser(tenant)}>
+                                  <UserPlus className="mr-2 h-4 w-4" />
+                                  {copy.addUser}
+                                </DropdownMenuItem>
+                              )}
+                              {isSuperAdmin && tenant.status !== "ARCHIVED" && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    className="text-red-600 focus:text-red-600"
+                                    onClick={() => void updateTenantLifecycle(tenant, "ARCHIVED")}
+                                  >
+                                    <Archive className="mr-2 h-4 w-4" />
+                                    {copy.archive}
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {isSuperAdmin && tenant.status === "ARCHIVED" && (
+                                <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem
+                                    onClick={() => void updateTenantLifecycle(tenant, "ACTIVE")}
+                                  >
+                                    <RotateCcw className="mr-2 h-4 w-4" />
+                                    {copy.restore}
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Dialog
+          open={Boolean(editingTenantId)}
+          onOpenChange={(open) => {
+            if (!open) cancelTenantEdit();
+          }}
+        >
+          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{copy.editTenant}</DialogTitle>
+              <DialogDescription>
+                {isSuperAdmin ? copy.websiteDescriptionSuper : copy.websiteDescriptionTenant}
+              </DialogDescription>
+            </DialogHeader>
+            {editingTenant && (
+              <form className="space-y-5" onSubmit={updateTenant}>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">{copy.tenantName}</Label>
+                    <Input
+                      id="edit-name"
+                      value={editTenantForm.name ?? ""}
+                      onChange={(event) =>
+                        setEditTenantForm((current) => ({
+                          ...current,
+                          name: event.target.value,
+                          slug: shouldSyncSlugFromName(current.slug, current.name)
+                            ? toSlug(event.target.value)
+                            : current.slug,
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-slug">{copy.slug}</Label>
+                    <Input
+                      id="edit-slug"
+                      value={editTenantForm.slug ?? ""}
+                      onChange={(event) =>
+                        setEditTenantForm((current) => ({
+                          ...current,
+                          slug: toSlug(event.target.value),
+                        }))
+                      }
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-status">{copy.status}</Label>
+                    <select
+                      id="edit-status"
+                      value={editTenantForm.status ?? "ACTIVE"}
+                      onChange={(event) =>
+                        setEditTenantForm((current) => ({
+                          ...current,
+                          status: event.target.value as TenantStatus,
+                        }))
+                      }
+                      className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+                    >
+                      {tenantStatuses.map((status) => (
+                        <option key={status} value={status}>
+                          {copy.statusLabels[status]}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-locale">{copy.primaryLocale}</Label>
+                    <Input
+                      id="edit-locale"
+                      value={editTenantForm.primaryLocale ?? "en"}
+                      onChange={(event) =>
+                        setEditTenantForm((current) => ({
+                          ...current,
+                          primaryLocale: event.target.value,
+                        }))
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">{copy.formDescription}</Label>
+                  <Textarea
+                    id="edit-description"
+                    value={editTenantForm.description ?? ""}
+                    onChange={(event) =>
+                      setEditTenantForm((current) => ({
+                        ...current,
+                        description: event.target.value,
+                      }))
+                    }
+                  />
+                </div>
+
+                {isSuperAdmin ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-public">{copy.publicUrl}</Label>
+                      <Input
+                        id="edit-public"
+                        value={editTenantForm.publicBaseUrl ?? ""}
+                        onChange={(event) =>
+                          setEditTenantForm((current) => ({
+                            ...current,
+                            publicBaseUrl: event.target.value,
+                          }))
+                        }
+                        placeholder={copy.publicUrlPlaceholder}
+                      />
+                      {(isLoopbackSiteUrl(editingSite?.publicBaseUrl) ||
+                        isLoopbackSiteUrl(editTenantForm.publicBaseUrl)) && (
+                        <p className="text-xs text-amber-700 dark:text-amber-400">{copy.localUrlIgnored}</p>
+                      )}
+                      <p className="text-xs text-slate-500">{copy.publicUrlHint}</p>
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-admin">{copy.adminUrl}</Label>
+                      <Input
+                        id="edit-admin"
+                        value={editTenantForm.adminBaseUrl ?? ""}
+                        onChange={(event) =>
+                          setEditTenantForm((current) => ({
+                            ...current,
+                            adminBaseUrl: event.target.value,
+                          }))
+                        }
+                        placeholder={copy.adminUrlPlaceholder}
+                      />
+                      <p className="text-xs text-slate-500">{copy.adminUrlHint}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500">{copy.domainsSetBySuperAdmin}</p>
+                )}
 
-                    {isConnectionExpanded && (
-                      <div className="grid gap-3 rounded-md border bg-slate-50 p-4 lg:grid-cols-[minmax(0,1fr)_220px]">
-                        <div>
-                          <p className="text-xs font-semibold uppercase text-slate-500">
-                            {copy.publicWebsiteEnvironment}
-                          </p>
-                          <pre className="mt-2 overflow-x-auto rounded-md border bg-white p-3 text-xs leading-5 text-slate-700">
-                            {buildPublicEnv(tenant)}
-                          </pre>
-                          <p className="mt-2 text-xs leading-5 text-slate-500">
-                            {copy.envHint}
-                          </p>
-                          <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                            <button
-                              type="button"
-                              onClick={() => copyTenantValue(copy.tenantId, tenant.id)}
-                              className="flex items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-left text-xs text-slate-700 shadow-none hover:bg-slate-50"
-                            >
-                              <span className="truncate">ID: {tenant.id}</span>
-                              <Copy className="h-3.5 w-3.5 flex-shrink-0" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => copyTenantValue(copy.tenantSlug, tenant.slug)}
-                              className="flex items-center justify-between gap-2 rounded-md border bg-white px-3 py-2 text-left text-xs text-slate-700 shadow-none hover:bg-slate-50"
-                            >
-                              <span className="truncate">{copy.currentSlug}: {tenant.slug}</span>
-                              <Copy className="h-3.5 w-3.5 flex-shrink-0" />
-                            </button>
-                          </div>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="shadow-none"
-                            onClick={() =>
-                              copyTenantValue(copy.publicWebsiteEnvironmentLabel, buildPublicEnv(tenant))
-                            }
-                          >
-                            <Copy className="mr-2 h-4 w-4" />
-                            {copy.copyEnv}
-                          </Button>
-                        </div>
-                      </div>
+                <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={editTenantForm.isActive ?? true}
+                    onChange={(event) =>
+                      setEditTenantForm((current) => ({
+                        ...current,
+                        isActive: event.target.checked,
+                      }))
+                    }
+                  />
+                  {copy.enableTenantSite}
+                </label>
+
+                {isSuperAdmin && (
+                  <div className="space-y-2 rounded-md border border-slate-200 p-3 dark:border-slate-800">
+                    <p className="text-sm font-medium">{copy.localSetup}</p>
+                    <pre className="overflow-x-auto rounded-md bg-slate-50 p-3 text-xs leading-5 text-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                      {buildPublicEnv(editingTenant)}
+                    </pre>
+                    <p className="text-xs text-slate-500">{copy.envHint}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => copyTenantValue(copy.tenantId, editingTenant.id)}
+                      >
+                        <Copy className="mr-2 h-3.5 w-3.5" />
+                        {copy.tenantId}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() =>
+                          copyTenantValue(copy.publicWebsiteEnvironmentLabel, buildPublicEnv(editingTenant))
+                        }
+                      >
+                        <Copy className="mr-2 h-3.5 w-3.5" />
+                        {copy.copyEnv}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={cancelTenantEdit}>
+                    {copy.cancel}
+                  </Button>
+                  <Button type="submit" disabled={savingEdit}>
+                    {savingEdit ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Check className="mr-2 h-4 w-4" />
                     )}
+                    {copy.saveTenant}
+                  </Button>
+                </DialogFooter>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
 
-                    {isUsersExpanded && (
-                      <div className="rounded-md border bg-white">
-                        <div className="flex flex-col gap-2 border-b bg-slate-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div>
-                            <h3 className="flex items-center gap-2 font-semibold text-slate-950">
-                              <Users className="h-4 w-4 text-blue-600" />
-                              {copy.tenantUsersTitle}
-                            </h3>
-                            <p className="text-sm text-slate-500">
-                              {copy.usersInTenant(tenantMemberships.length, tenant.name)}
+        <Dialog
+          open={Boolean(usersTenant)}
+          onOpenChange={(open) => {
+            if (!open) setUsersTenantId(null);
+          }}
+        >
+          <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{copy.tenantUsersTitle}</DialogTitle>
+              <DialogDescription>
+                {usersTenant
+                  ? copy.usersInTenant(usersMemberships.length, usersTenant.name)
+                  : copy.users}
+              </DialogDescription>
+            </DialogHeader>
+            {usersTenant && (
+              <div className="space-y-4">
+                <div className="flex justify-end">
+                  {hasPermission(Permission.CREATE_USER) && (
+                    <Button type="button" size="sm" onClick={() => openCreateTenantUser(usersTenant)}>
+                      <UserPlus className="mr-2 h-4 w-4" />
+                      {copy.addUser}
+                    </Button>
+                  )}
+                </div>
+                {usersMemberships.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-slate-500">{copy.noUsersAssigned}</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{copy.tableUser}</TableHead>
+                        <TableHead>{copy.tableEmail}</TableHead>
+                        <TableHead>{copy.tenantRole}</TableHead>
+                        <TableHead>{copy.status}</TableHead>
+                        <TableHead>{copy.twoFactor}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {usersMemberships.map((membership) => (
+                        <TableRow key={membership.id}>
+                          <TableCell>
+                            <p className="font-medium">{membership.user.name}</p>
+                            <p className="text-xs text-slate-500">
+                              {copy.roleLabels[membership.user.role as keyof typeof copy.roleLabels] ??
+                                membership.user.role}
                             </p>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="outline" className="w-fit bg-white">
-                              {tenant.slug}
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex items-center gap-2 text-sm">
+                              <Mail className="h-3.5 w-3.5 text-slate-400" />
+                              {membership.user.email}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="secondary" className="gap-1">
+                              <Shield className="h-3 w-3" />
+                              {copy.roleLabels[membership.role as keyof typeof copy.roleLabels] ??
+                                membership.role}
                             </Badge>
-                            {hasPermission(Permission.CREATE_USER) && (
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={membership.user.isActive ? "default" : "secondary"}>
+                              {membership.user.isActive ? copy.accountActive : copy.accountInactive}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col items-start gap-2">
+                              <Badge
+                                variant={membership.user.twoFactorEnabled ? "outline" : "secondary"}
+                              >
+                                {membership.user.twoFactorEnabled ? copy.enabled : copy.needsSetup}
+                              </Badge>
+                              {hasPermission(Permission.UPDATE_USER) ? (
                               <Button
                                 type="button"
+                                variant="outline"
                                 size="sm"
-                                onClick={() => openCreateTenantUser(tenant)}
+                                disabled={savingTwoFactorUserId === membership.user.id}
+                                onClick={() => void resetUserTwoFactor(membership.user)}
                               >
-                                <UserPlus className="mr-2 h-4 w-4" />
-                                {copy.addUser}
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-
-                        {tenantMemberships.length === 0 ? (
-                          <div className="p-6 text-center text-sm text-slate-500">
-                            {copy.noUsersAssigned}
-                          </div>
-                        ) : (
-                          <div className="overflow-x-auto">
-                            <table className="w-full min-w-[760px] text-sm">
-                              <thead>
-                                <tr className="border-b text-left text-xs font-semibold uppercase text-slate-500">
-                                  <th className="px-4 py-3">{copy.tableUser}</th>
-                                  <th className="px-4 py-3">{copy.tableEmail}</th>
-                                  <th className="px-4 py-3">{copy.tenantRole}</th>
-                                  <th className="px-4 py-3">{copy.mainTenantRole}</th>
-                                  <th className="px-4 py-3">{copy.status}</th>
-                                  <th className="px-4 py-3">{copy.twoFactor}</th>
-                                  <th className="px-4 py-3">{copy.created}</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {tenantMemberships.map((membership) => (
-                                  <tr key={membership.id} className="border-b last:border-0">
-                                    <td className="px-4 py-3">
-                                      <p className="font-medium text-slate-950">
-                                        {membership.user.name}
-                                      </p>
-                                      <p className="text-xs text-slate-500">ID: {membership.user.id}</p>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                      <div className="flex items-center gap-2 text-slate-700">
-                                        <Mail className="h-3.5 w-3.5 text-slate-400" />
-                                        {membership.user.email}
-                                      </div>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                      <Badge variant="secondary" className="gap-1">
-                                        <Shield className="h-3 w-3" />
-                                        {copy.roleLabels[membership.role as keyof typeof copy.roleLabels] ?? membership.role}
-                                      </Badge>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                      <Badge variant="outline">{copy.roleLabels[membership.user.role as keyof typeof copy.roleLabels] ?? membership.user.role}</Badge>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                      <div className="flex flex-wrap gap-1">
-                                        <Badge variant={membership.user.isActive ? "default" : "secondary"}>
-                                          {membership.user.isActive ? copy.accountActive : copy.accountInactive}
-                                        </Badge>
-                                        {!membership.isActive && (
-                                          <Badge variant="secondary">{copy.membershipInactive}</Badge>
-                                        )}
-                                      </div>
-                                    </td>
-                                    <td className="px-4 py-3">
-                                      <div className="flex flex-col gap-2">
-                                        <Badge
-                                          variant={membership.user.twoFactorEnabled ? "outline" : "secondary"}
-                                          className="w-fit"
-                                        >
-                                          {membership.user.twoFactorEnabled ? copy.enabled : copy.needsSetup}
-                                        </Badge>
-                                        <Button
-                                          type="button"
-                                          variant="outline"
-                                          size="sm"
-                                          className="w-fit"
-                                          disabled={savingTwoFactorUserId === membership.user.id}
-                                          onClick={() => void resetUserTwoFactor(membership.user)}
-                                        >
-                                          {savingTwoFactorUserId === membership.user.id ? (
-                                            <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                                          ) : (
-                                            <KeyRound className="mr-2 h-3.5 w-3.5" />
-                                          )}
-                                          {copy.showQrAgain}
-                                        </Button>
-                                      </div>
-                                    </td>
-                                    <td className="px-4 py-3 text-slate-600">
-                                      {new Date(membership.user.createdAt).toLocaleDateString(locale === "km" ? "km-KH" : undefined)}
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {isEditing && (
-                      <form className="rounded-md border bg-slate-50 p-4" onSubmit={updateTenant}>
-                        <p className="mb-4 text-sm text-slate-600">
-                          {isSuperAdmin ? copy.websiteDescriptionSuper : copy.websiteDescriptionTenant}
-                        </p>
-                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                          <div className="space-y-2">
-                            <Label htmlFor={`edit-name-${tenant.id}`}>{copy.tenantName}</Label>
-                            <Input
-                              id={`edit-name-${tenant.id}`}
-                              value={editTenantForm.name ?? ""}
-                              onChange={(event) =>
-                                setEditTenantForm((current) => ({
-                                  ...current,
-                                  name: event.target.value,
-                                  slug: shouldSyncSlugFromName(current.slug, current.name)
-                                    ? toSlug(event.target.value)
-                                    : current.slug,
-                                }))
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`edit-slug-${tenant.id}`}>{copy.slug}</Label>
-                            <Input
-                              id={`edit-slug-${tenant.id}`}
-                              value={editTenantForm.slug ?? ""}
-                              onChange={(event) =>
-                                setEditTenantForm((current) => ({
-                                  ...current,
-                                  slug: toSlug(event.target.value),
-                                }))
-                              }
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor={`edit-status-${tenant.id}`}>{copy.status}</Label>
-                            <select
-                              id={`edit-status-${tenant.id}`}
-                              value={editTenantForm.status ?? "ACTIVE"}
-                              onChange={(event) =>
-                                setEditTenantForm((current) => ({
-                                  ...current,
-                                  status: event.target.value as TenantStatus,
-                                }))
-                              }
-                              className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
-                            >
-                              {tenantStatuses.map((status) => (
-                                <option key={status} value={status}>
-                                  {copy.statusLabels[status]}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          {isSuperAdmin ? (
-                            <>
-                              <div className="space-y-2">
-                                <Label htmlFor={`edit-public-${tenant.id}`}>{copy.publicUrl}</Label>
-                                <Input
-                                  id={`edit-public-${tenant.id}`}
-                                  value={editTenantForm.publicBaseUrl ?? ""}
-                                  onChange={(event) =>
-                                    setEditTenantForm((current) => ({
-                                      ...current,
-                                      publicBaseUrl: event.target.value,
-                                    }))
-                                  }
-                                  placeholder={copy.publicUrlPlaceholder}
-                                />
-                                {(isLoopbackSiteUrl(site?.publicBaseUrl) ||
-                                  isLoopbackSiteUrl(editTenantForm.publicBaseUrl)) && (
-                                  <p className="text-xs text-amber-700">{copy.localUrlIgnored}</p>
+                                {savingTwoFactorUserId === membership.user.id ? (
+                                  <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <KeyRound className="mr-2 h-3.5 w-3.5" />
                                 )}
-                                <p className="text-xs text-slate-500">{copy.publicUrlHint}</p>
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`edit-admin-${tenant.id}`}>{copy.adminUrl}</Label>
-                                <Input
-                                  id={`edit-admin-${tenant.id}`}
-                                  value={editTenantForm.adminBaseUrl ?? ""}
-                                  onChange={(event) =>
-                                    setEditTenantForm((current) => ({
-                                      ...current,
-                                      adminBaseUrl: event.target.value,
-                                    }))
-                                  }
-                                  placeholder={copy.adminUrlPlaceholder}
-                                />
-                                <p className="text-xs text-slate-500">{copy.adminUrlHint}</p>
-                              </div>
-                            </>
-                          ) : (
-                            <div className="space-y-2 md:col-span-2">
-                              <p className="text-xs text-slate-500">{copy.domainsSetBySuperAdmin}</p>
+                                {copy.showQrAgain}
+                              </Button>
+                              ) : null}
                             </div>
-                          )}
-                          <div className="space-y-2">
-                            <Label htmlFor={`edit-locale-${tenant.id}`}>{copy.primaryLocale}</Label>
-                            <Input
-                              id={`edit-locale-${tenant.id}`}
-                              value={editTenantForm.primaryLocale ?? "en"}
-                              onChange={(event) =>
-                                setEditTenantForm((current) => ({
-                                  ...current,
-                                  primaryLocale: event.target.value,
-                                }))
-                              }
-                            />
-                          </div>
-                        </div>
-
-                        <div className="mt-4 space-y-2">
-                          <Label htmlFor={`edit-description-${tenant.id}`}>{copy.formDescription}</Label>
-                          <Textarea
-                            id={`edit-description-${tenant.id}`}
-                            value={editTenantForm.description ?? ""}
-                            onChange={(event) =>
-                              setEditTenantForm((current) => ({
-                                ...current,
-                                description: event.target.value,
-                              }))
-                            }
-                          />
-                        </div>
-
-                        <label className="mt-4 flex items-center gap-2 text-sm text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={editTenantForm.isActive ?? true}
-                            onChange={(event) =>
-                              setEditTenantForm((current) => ({
-                                ...current,
-                                isActive: event.target.checked,
-                              }))
-                            }
-                            className="h-4 w-4 rounded border-slate-300"
-                          />
-                          {copy.enableTenantSite}
-                        </label>
-
-                        <div className="mt-4 flex justify-end gap-2">
-                          <Button type="button" variant="outline" onClick={cancelTenantEdit}>
-                            {copy.cancel}
-                          </Button>
-                          <Button type="submit" disabled={savingEdit}>
-                            {savingEdit ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <Check className="mr-2 h-4 w-4" />
-                            )}
-                            {copy.saveTenant}
-                          </Button>
-                        </div>
-                      </form>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Dialog open={tenantDialogOpen} onOpenChange={setTenantDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>{copy.createTenantWebsite}</DialogTitle>
-            <DialogDescription>
-              {copy.createTenantDialogDescription}
-            </DialogDescription>
-          </DialogHeader>
-          <form className="space-y-4" onSubmit={createTenant}>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="tenant-name">{copy.tenantName}</Label>
-                <Input
-                  id="tenant-name"
-                  value={tenantForm.name}
-                  onChange={(event) =>
-                    setTenantForm((current) => ({
-                      ...current,
-                      name: event.target.value,
-                      slug: shouldSyncSlugFromName(current.slug, current.name)
-                        ? toSlug(event.target.value)
-                        : current.slug,
-                    }))
-                  }
-                  placeholder="Pulse Business"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tenant-slug">{copy.slug}</Label>
-                <Input
-                  id="tenant-slug"
-                  value={tenantForm.slug ?? ""}
-                  onChange={(event) =>
-                    setTenantForm((current) => ({
-                      ...current,
-                      slug: toSlug(event.target.value),
-                    }))
-                  }
-                  placeholder="pulse-business"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="tenant-description">{copy.formDescription}</Label>
-              <Textarea
-                id="tenant-description"
-                value={tenantForm.description ?? ""}
-                onChange={(event) =>
-                  setTenantForm((current) => ({
-                    ...current,
-                    description: event.target.value,
-                  }))
-                }
-              />
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="public-url">{copy.publicUrl}</Label>
-                <Input
-                  id="public-url"
-                  value={tenantForm.publicBaseUrl ?? ""}
-                  onChange={(event) =>
-                    setTenantForm((current) => ({
-                      ...current,
-                      publicBaseUrl: event.target.value,
-                    }))
-                  }
-                  placeholder={copy.publicUrlPlaceholder}
-                />
-                <p className="text-xs text-slate-500">{copy.publicUrlHint}</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="admin-url">{copy.adminUrl}</Label>
-                <Input
-                  id="admin-url"
-                  value={tenantForm.adminBaseUrl ?? ""}
-                  onChange={(event) =>
-                    setTenantForm((current) => ({
-                      ...current,
-                      adminBaseUrl: event.target.value,
-                    }))
-                  }
-                  placeholder={copy.adminUrlPlaceholder}
-                />
-                <p className="text-xs text-slate-500">{copy.adminUrlHint}</p>
-              </div>
-            </div>
-
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setTenantDialogOpen(false)}>
-                {copy.cancel}
-              </Button>
-              <Button type="submit" disabled={savingTenant}>
-                {savingTenant ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="mr-2 h-4 w-4" />
-                )}
-                {copy.createTenant}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{copy.createTenantUser}</DialogTitle>
-            <DialogDescription>
-              {copy.createTenantUserDialogDescription}
-            </DialogDescription>
-          </DialogHeader>
-          <form className="space-y-4" onSubmit={createTenantAdmin}>
-            <div className="space-y-2">
-              <Label>{copy.tenant}</Label>
-              <div className="rounded-md border bg-slate-50 px-3 py-2 text-sm">
-                <p className="font-medium text-slate-950">
-                  {selectedUserTenant?.name || copy.selectFromTenantUsers}
-                </p>
-                {selectedUserTenant && (
-                  <p className="text-xs text-slate-500">/{selectedUserTenant.slug}</p>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 )}
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="admin-name">{copy.name}</Label>
-              <Input
-                id="admin-name"
-                value={adminForm.name}
-                onChange={(event) =>
-                  setAdminForm((current) => ({ ...current, name: event.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="admin-email">{copy.email}</Label>
-              <Input
-                id="admin-email"
-                type="email"
-                value={adminForm.email}
-                onChange={(event) =>
-                  setAdminForm((current) => ({ ...current, email: event.target.value }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="admin-role">{copy.role}</Label>
-              <select
-                id="admin-role"
-                value={adminForm.role ?? "AUTHOR"}
-                onChange={(event) =>
-                  setAdminForm((current) => ({
-                    ...current,
-                    role: event.target.value as "ADMIN" | "EDITOR" | "AUTHOR",
-                  }))
-                }
-                className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm"
-              >
-                <option value="ADMIN">{copy.admin}</option>
-                <option value="EDITOR">{copy.editor}</option>
-                <option value="AUTHOR">{copy.author}</option>
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="admin-password">{copy.password}</Label>
-              <Input
-                id="admin-password"
-                type="password"
-                value={adminForm.password ?? ""}
-                onChange={(event) =>
-                  setAdminForm((current) => ({ ...current, password: event.target.value }))
-                }
-                placeholder={copy.passwordPlaceholder}
-              />
-            </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setAdminDialogOpen(false)}>
-                {copy.cancel}
-              </Button>
-              <Button type="submit" disabled={savingAdmin}>
-                {savingAdmin ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <UserPlus className="mr-2 h-4 w-4" />
-                )}
-                {copy.createUser}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-      <ConfirmationDialog
-        open={confirmation.open}
-        onOpenChange={(open) =>
-          setConfirmation((current) => ({ ...current, open }))
-        }
-        title={confirmation.title}
-        description={confirmation.description}
-        confirmText={confirmation.confirmText}
-        cancelText={copy.cancel}
-        variant={confirmation.variant}
-        onConfirm={() => {
-          void confirmation.onConfirm();
-        }}
-      />
+        <Dialog open={tenantDialogOpen} onOpenChange={setTenantDialogOpen}>
+          <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{copy.createTenantWebsite}</DialogTitle>
+              <DialogDescription>{copy.createTenantDialogDescription}</DialogDescription>
+            </DialogHeader>
+            <form className="space-y-4" onSubmit={createTenant}>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="tenant-name">{copy.tenantName}</Label>
+                  <Input
+                    id="tenant-name"
+                    value={tenantForm.name}
+                    onChange={(event) =>
+                      setTenantForm((current) => ({
+                        ...current,
+                        name: event.target.value,
+                        slug: shouldSyncSlugFromName(current.slug, current.name)
+                          ? toSlug(event.target.value)
+                          : current.slug,
+                      }))
+                    }
+                    placeholder="Pulse Business"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tenant-slug">{copy.slug}</Label>
+                  <Input
+                    id="tenant-slug"
+                    value={tenantForm.slug ?? ""}
+                    onChange={(event) =>
+                      setTenantForm((current) => ({
+                        ...current,
+                        slug: toSlug(event.target.value),
+                      }))
+                    }
+                    placeholder="pulse-business"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="tenant-description">{copy.formDescription}</Label>
+                <Textarea
+                  id="tenant-description"
+                  value={tenantForm.description ?? ""}
+                  onChange={(event) =>
+                    setTenantForm((current) => ({
+                      ...current,
+                      description: event.target.value,
+                    }))
+                  }
+                />
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="public-url">{copy.publicUrl}</Label>
+                  <Input
+                    id="public-url"
+                    value={tenantForm.publicBaseUrl ?? ""}
+                    onChange={(event) =>
+                      setTenantForm((current) => ({
+                        ...current,
+                        publicBaseUrl: event.target.value,
+                      }))
+                    }
+                    placeholder={copy.publicUrlPlaceholder}
+                  />
+                  <p className="text-xs text-slate-500">{copy.publicUrlHint}</p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-url">{copy.adminUrl}</Label>
+                  <Input
+                    id="admin-url"
+                    value={tenantForm.adminBaseUrl ?? ""}
+                    onChange={(event) =>
+                      setTenantForm((current) => ({
+                        ...current,
+                        adminBaseUrl: event.target.value,
+                      }))
+                    }
+                    placeholder={copy.adminUrlPlaceholder}
+                  />
+                  <p className="text-xs text-slate-500">{copy.adminUrlHint}</p>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setTenantDialogOpen(false)}>
+                  {copy.cancel}
+                </Button>
+                <Button type="submit" disabled={savingTenant}>
+                  {savingTenant ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="mr-2 h-4 w-4" />
+                  )}
+                  {copy.createTenant}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={adminDialogOpen} onOpenChange={setAdminDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{copy.createTenantUser}</DialogTitle>
+              <DialogDescription>{copy.createTenantUserDialogDescription}</DialogDescription>
+            </DialogHeader>
+            <form className="space-y-4" onSubmit={createTenantAdmin}>
+              <div className="space-y-2">
+                <Label>{copy.tenant}</Label>
+                <div className="rounded-md border border-slate-200 px-3 py-2 text-sm dark:border-slate-800">
+                  <p className="font-medium">{selectedUserTenant?.name || copy.selectFromTenantUsers}</p>
+                  {selectedUserTenant && (
+                    <p className="text-xs text-slate-500">/{selectedUserTenant.slug}</p>
+                  )}
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-name">{copy.name}</Label>
+                <Input
+                  id="admin-name"
+                  value={adminForm.name}
+                  onChange={(event) =>
+                    setAdminForm((current) => ({ ...current, name: event.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-email">{copy.email}</Label>
+                <Input
+                  id="admin-email"
+                  type="email"
+                  value={adminForm.email}
+                  onChange={(event) =>
+                    setAdminForm((current) => ({ ...current, email: event.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-role">{copy.role}</Label>
+                <select
+                  id="admin-role"
+                  value={adminForm.role ?? "AUTHOR"}
+                  onChange={(event) =>
+                    setAdminForm((current) => ({
+                      ...current,
+                      role: event.target.value as "ADMIN" | "EDITOR" | "AUTHOR",
+                    }))
+                  }
+                  className="flex h-10 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-950"
+                >
+                  <option value="ADMIN">{copy.admin}</option>
+                  <option value="EDITOR">{copy.editor}</option>
+                  <option value="AUTHOR">{copy.author}</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="admin-password">{copy.password}</Label>
+                <Input
+                  id="admin-password"
+                  type="password"
+                  required
+                  minLength={8}
+                  value={adminForm.password ?? ""}
+                  onChange={(event) =>
+                    setAdminForm((current) => ({ ...current, password: event.target.value }))
+                  }
+                  placeholder={copy.passwordPlaceholder}
+                />
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setAdminDialogOpen(false)}>
+                  {copy.cancel}
+                </Button>
+                <Button type="submit" disabled={savingAdmin}>
+                  {savingAdmin ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <UserPlus className="mr-2 h-4 w-4" />
+                  )}
+                  {copy.createUser}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <ConfirmationDialog
+          open={confirmation.open}
+          onOpenChange={(open) => setConfirmation((current) => ({ ...current, open }))}
+          title={confirmation.title}
+          description={confirmation.description}
+          confirmText={confirmation.confirmText}
+          cancelText={copy.cancel}
+          variant={confirmation.variant}
+          onConfirm={() => {
+            void confirmation.onConfirm();
+          }}
+        />
       </main>
     </PermissionGuard>
   );

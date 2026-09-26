@@ -24,10 +24,11 @@ const analyticsCopy = {
     mainTenantAnalytics: "Main Tenant Analytics",
     tenantAnalytics: "Sub-tenant Analytics",
     title: "Analytics",
-    mainTenantDescription: "Track the main tenant, sub-tenants, users, content, and operational activity.",
+    mainTenantDescription: "Track sub-tenants, public sites, Super Admins, and console activity.",
     tenantDescription: (name: string) => `Track content, users, and public performance for ${name}.`,
     fallbackTenant: "this sub-tenant website",
     loadingTenants: "Loading sub-tenants...",
+    selectTenant: "Select tenant",
     mainTenantOption: "Main Tenant",
     tenantView: "Sub-tenant View",
     refresh: "Refresh",
@@ -39,10 +40,11 @@ const analyticsCopy = {
     mainTenantAnalytics: "វិភាគអ្នកជួលមេ",
     tenantAnalytics: "វិភាគគេហទំព័រ",
     title: "វិភាគ",
-    mainTenantDescription: "តាមដានអ្នកជួលរង អ្នកប្រើ មាតិកា និងសកម្មភាពប្រតិបត្តិការទូទាំងអ្នកជួលមេ។",
+    mainTenantDescription: "តាមដានគេហទំព័ររង គេហទំព័រសាធារណៈ អ្នកគ្រប់គ្រងកំពូល និងសកម្មភាពកុងសូល។",
     tenantDescription: (name: string) => `តាមដានមាតិកា អ្នកប្រើ និងប្រសិទ្ធភាពសាធារណៈសម្រាប់ ${name}។`,
     fallbackTenant: "គេហទំព័រនេះ",
     loadingTenants: "កំពុងផ្ទុកគេហទំព័រ...",
+    selectTenant: "ជ្រើសអ្នកជួល",
     mainTenantOption: "អ្នកជួលមេ",
     tenantView: "ទិដ្ឋភាពគេហទំព័រ",
     refresh: "ធ្វើបច្ចុប្បន្នភាព",
@@ -98,7 +100,9 @@ export default function AnalyticsPage() {
         const tenants = await TenantService.listTenants();
         if (!mounted) return;
 
-        const activeTenants = tenants.filter((tenant) => tenant.status === "ACTIVE");
+        const activeTenants = tenants.filter(
+          (tenant) => tenant.status === "ACTIVE" && tenant.isMainTenant !== true,
+        );
         setTenantOptions(activeTenants);
         setSelectedAnalyticsTenantId(MAIN_TENANT_ANALYTICS_ID);
         await loadAnalytics(MAIN_TENANT_ANALYTICS_ID);
@@ -138,17 +142,17 @@ export default function AnalyticsPage() {
   return (
     <PermissionGuard permissions={[Permission.VIEW_ANALYTICS]} showError>
       <div className="space-y-6">
-      <section className="rounded-lg border bg-white p-4 sm:p-6">
+      <section className="rounded-lg border border-slate-200 bg-white p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-sky-400">
               {isMainTenantView ? copy.mainTenantAnalytics : copy.tenantAnalytics}
             </p>
-            <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold text-slate-950 sm:text-3xl">
-              <BarChart3 className="h-6 w-6 shrink-0 text-blue-600 sm:h-7 sm:w-7" />
+            <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">
+              <BarChart3 className="h-6 w-6 shrink-0 text-blue-600 sm:h-7 sm:w-7 dark:text-sky-400" />
               {copy.title}
             </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
               {isMainTenantView
                 ? copy.mainTenantDescription
                 : copy.tenantDescription(analytics?.tenantName || copy.fallbackTenant)}
@@ -162,7 +166,7 @@ export default function AnalyticsPage() {
                 onValueChange={handleTenantChange}
                 disabled={loadingTenants || tenantOptions.length === 0}
               >
-                <SelectTrigger className="w-full bg-white sm:w-[240px]">
+                <SelectTrigger className="w-full bg-white sm:w-[240px] dark:bg-slate-950">
                   <SelectValue
                     placeholder={
                       loadingTenants ? copy.loadingTenants : copy.selectTenant

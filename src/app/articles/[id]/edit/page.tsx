@@ -114,6 +114,7 @@ const editArticleCopy = {
     readOnlyReview: 'This article is in review. To propose changes, use the "Request Revision" form below.',
     readOnlyPublished: 'This article is published. To propose changes, use the "Request Revision" form below.',
     readOnlyArchived: "This article is archived and cannot be modified.",
+    readOnlyView: "Your role can view this article but cannot change it.",
     editArticle: "Edit Article",
     unpublish: "Unpublish",
     approvePublish: "Approve & Publish",
@@ -225,6 +226,7 @@ const editArticleCopy = {
     readOnlyReview: 'អត្ថបទនេះកំពុងពិនិត្យ។ ដើម្បីស្នើកែប្រែ សូមប្រើទម្រង់ "ស្នើកែប្រែ" ខាងក្រោម។',
     readOnlyPublished: 'អត្ថបទនេះបានផ្សព្វផ្សាយ។ ដើម្បីស្នើកែប្រែ សូមប្រើទម្រង់ "ស្នើកែប្រែ" ខាងក្រោម។',
     readOnlyArchived: "អត្ថបទនេះបានដាក់ប័ណ្ណសារ ហើយមិនអាចកែបានទេ។",
+    readOnlyView: "តួនាទីរបស់អ្នកអាចមើលអត្ថបទនេះ ប៉ុន្តែមិនអាចកែបានទេ។",
     editArticle: "កែអត្ថបទ",
     unpublish: "ដកពីការផ្សព្វផ្សាយ",
     approvePublish: "អនុម័ត និងផ្សព្វផ្សាយ",
@@ -878,6 +880,7 @@ export default function EditArticlePage() {
                 {status === 'REVIEW' && copy.readOnlyReview}
                 {status === 'PUBLISHED' && copy.readOnlyPublished}
                 {status === 'ARCHIVED' && copy.readOnlyArchived}
+                {status !== 'REVIEW' && status !== 'PUBLISHED' && status !== 'ARCHIVED' && copy.readOnlyView}
               </p>
             </div>
           </div>

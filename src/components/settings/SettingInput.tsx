@@ -40,6 +40,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
         ogImage: 'Open Graph',
         favicon: 'favicon',
         uploadHelp: 'ផ្ទុកឯកសារពីឧបករណ៍។ មិនអាចប្រើតំណ http ឬ https។ ចុចរក្សាទុកដើម្បីផ្សព្វផ្សាយ។',
+        viewOnlyHelp: 'តួនាទីរបស់អ្នកអាចមើលឯកសារនេះ ប៉ុន្តែមិនអាចជំនួស ឬលុបបានទេ។',
         urlHelp: 'ប្រើ URL ពេញលេញដែលចាប់ផ្តើមដោយ https:// ឬ http://',
         showPassword: 'បង្ហាញពាក្យសម្ងាត់',
         hidePassword: 'លាក់ពាក្យសម្ងាត់',
@@ -63,6 +64,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
         favicon: 'favicon',
         uploadHelp:
           'Choose a file from this device. HTTP and HTTPS links are not accepted. Click Save to publish it.',
+        viewOnlyHelp: 'Your role can view this file but cannot replace or remove it.',
         urlHelp: 'Use a complete URL beginning with https:// or http://',
         showPassword: 'Show password',
         hidePassword: 'Hide password',
@@ -89,6 +91,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
     value === null || value === undefined || typeof value === 'object' ? '' : String(value);
 
   const handleInputChange = (newValue: string | boolean) => {
+    if (disabled) return;
     if (inputType === 'number' || validationType === 'number') {
       const numValue = parseFloat(String(newValue));
       onChange(Number.isNaN(numValue) ? 0 : numValue);
@@ -112,7 +115,7 @@ export function SettingInput({ setting, value, onChange, error, disabled = false
           maxHeight={isFaviconSetting ? 256 : isOgImageSetting ? 630 : 800}
           tags={['branding', isFaviconSetting ? 'favicon' : isOgImageSetting ? 'og' : 'logo']}
           label={copy.uploadFile(brandImageLabel)}
-          helpText={copy.uploadHelp}
+          helpText={disabled ? copy.viewOnlyHelp : copy.uploadHelp}
           previewAlt={setting.label}
           includeSelectedTenant={!setting.key.includes('management_')}
         />

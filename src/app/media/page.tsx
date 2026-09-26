@@ -46,6 +46,7 @@ const mediaPageCopy = {
     metadataSavedDescription: (name: string) => `${name} was updated.`,
     metadataUpdateFailedTitle: 'Metadata update failed',
     pageTitle: 'Media Library',
+    viewOnlyBanner: 'Your role can view media but cannot upload, edit, or delete files.',
     pageDescription: (count: number, size: string) => `Manage your files and images. ${count} files (${size})`,
     refresh: 'Refresh',
     typeCount: (type: string) => `${type}s`,
@@ -88,6 +89,7 @@ const mediaPageCopy = {
     metadataSavedDescription: (name: string) => `បានកែប្រែ ${name}។`,
     metadataUpdateFailedTitle: 'កែទិន្នន័យមេតាមិនបាន',
     pageTitle: 'បណ្ណាល័យមេឌៀ',
+    viewOnlyBanner: 'តួនាទីរបស់អ្នកអាចមើលមេឌៀ ប៉ុន្តែមិនអាចផ្ទុកឡើង កែ ឬលុបឯកសារបានទេ។',
     pageDescription: (count: number, size: string) => `គ្រប់គ្រងឯកសារ និងរូបភាព។ ${count} ឯកសារ (${size})`,
     refresh: 'ផ្ទុកឡើងវិញ',
     typeCount: (type: string) => `${type}`,
@@ -426,6 +428,11 @@ export default function MediaPage() {
           <p className="text-slate-600">
             {copy.pageDescription(stats.totalFiles, formatFileSize(stats.totalSize))}
           </p>
+          {!canManageMedia ? (
+            <p className="mt-3 max-w-2xl rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {copy.viewOnlyBanner}
+            </p>
+          ) : null}
         </div>
         
         <div className="flex items-center gap-2">

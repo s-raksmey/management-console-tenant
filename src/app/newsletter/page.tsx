@@ -74,6 +74,7 @@ const newsletterCopy = {
     bodyPlaceholder: "Digest content",
     sending: "Sending...",
     sendDigest: "Send Digest",
+    viewOnlyBanner: "Your role can view newsletter data but cannot send digests or confirmation emails.",
     recentSends: "Recent Sends",
     noDigests: "No digests sent yet.",
     recipients: (count: number) => `${count} recipients`,
@@ -104,6 +105,7 @@ const newsletterCopy = {
     bodyPlaceholder: "មាតិកាសង្ខេប",
     sending: "កំពុងផ្ញើ...",
     sendDigest: "ផ្ញើសង្ខេប",
+    viewOnlyBanner: "តួនាទីរបស់អ្នកអាចមើលទិន្នន័យព្រឹត្តិបត្រ ប៉ុន្តែមិនអាចផ្ញើសង្ខេប ឬអ៊ីមែលបញ្ជាក់បានទេ។",
     recentSends: "ការផ្ញើថ្មីៗ",
     noDigests: "មិនទាន់មានសង្ខេបដែលបានផ្ញើទេ។",
     recipients: (count: number) => `${count} អ្នកទទួល`,
@@ -170,6 +172,7 @@ export default function NewsletterPage() {
   };
 
   const sendDigest = async () => {
+    if (!canSend) return;
     setSending(true);
     setMessage("");
     try {
@@ -187,6 +190,7 @@ export default function NewsletterPage() {
   };
 
   const resendVerification = async (email: string) => {
+    if (!canSend) return;
     setResendingEmail(email);
     setMessage("");
     try {
@@ -221,10 +225,21 @@ export default function NewsletterPage() {
       </section>
       <section className="grid gap-4 rounded-lg border border-slate-200 bg-white p-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <div className="grid gap-3">
-          <div><h2 className="font-semibold text-slate-950">{copy.sendDigestTitle}</h2><p className="mt-1 text-sm text-slate-500">{copy.sendDigestDescription}</p></div>
+          <div>
+            <h2 className="font-semibold text-slate-950">{copy.sendDigestTitle}</h2>
+            <p className="mt-1 text-sm text-slate-500">{copy.sendDigestDescription}</p>
+          </div>
+          {canSend ? (
+            <>
           <input value={digest.subject} onChange={(event) => setDigest({ ...digest, subject: event.target.value })} placeholder={copy.subjectPlaceholder} className="rounded-md border border-slate-200 px-3 py-2 text-sm" />
           <textarea rows={7} value={digest.body} onChange={(event) => setDigest({ ...digest, body: event.target.value })} placeholder={copy.bodyPlaceholder} className="rounded-md border border-slate-200 px-3 py-2 text-sm" />
-          <div className="flex flex-wrap items-center gap-3"><Button onClick={() => void sendDigest()} disabled={!canSend || sending || digest.subject.trim().length < 3 || digest.body.trim().length < 10}><Send className="h-4 w-4" />{sending ? copy.sending : copy.sendDigest}</Button>{message && <p className="text-sm text-slate-600">{message}</p>}</div>
+          <div className="flex flex-wrap items-center gap-3"><Button onClick={() => void sendDigest()} disabled={sending || digest.subject.trim().length < 3 || digest.body.trim().length < 10}><Send className="h-4 w-4" />{sending ? copy.sending : copy.sendDigest}</Button>{message && <p className="text-sm text-slate-600">{message}</p>}</div>
+            </>
+          ) : (
+            <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {copy.viewOnlyBanner}
+            </p>
+          )}
         </div>
         <div><h2 className="font-semibold text-slate-950">{copy.recentSends}</h2><div className="mt-3 space-y-2">{deliveries.length === 0 ? <p className="text-sm text-slate-500">{copy.noDigests}</p> : deliveries.slice(0, 6).map((delivery) => <div key={delivery.id} className="rounded-md border border-slate-100 p-3"><p className="truncate text-sm font-medium text-slate-900">{delivery.subject}</p><p className="mt-1 text-xs text-slate-500">{copy.recipients(delivery.recipientCount)} / {new Date(delivery.createdAt).toLocaleString(locale === "km" ? "km-KH" : undefined)}</p></div>)}</div></div>
       </section>

@@ -72,6 +72,7 @@ export interface CreateUserInput {
   role?: AssignableUserRole;
   isActive?: boolean;
   sendWelcomeEmail?: boolean;
+  tenantId?: string | null;
 }
 
 export interface ListUsersInput {

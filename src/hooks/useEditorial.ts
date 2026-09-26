@@ -332,7 +332,7 @@ export function useEditorial() {
   // Approve an article with RBAC check
   const approveArticle = useCallback(async (articleId: string) => {
     // Check if user has permission to approve articles
-    if (!hasPermission(Permission.PUBLISH_ARTICLE)) {
+    if (!hasPermission(Permission.APPROVE_ARTICLES)) {
       throw new Error('Insufficient permissions to approve articles');
     }
 
@@ -357,7 +357,7 @@ export function useEditorial() {
   // Reject an article with RBAC check
   const rejectArticle = useCallback(async (articleId: string, reason?: string) => {
     // Check if user has permission to reject articles
-    if (!hasPermission(Permission.REVIEW_ARTICLES)) {
+    if (!hasPermission(Permission.REJECT_ARTICLES)) {
       throw new Error('Insufficient permissions to reject articles');
     }
 

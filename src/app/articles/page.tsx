@@ -20,7 +20,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Edit, Trash2, Plus, Share2 } from "lucide-react";
+import { MoreHorizontal, Edit, Trash2, Plus, Share2, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
@@ -52,6 +52,7 @@ const articlesCopy = {
     empty: "No articles found.",
     createFirst: "Create your first article",
     edit: "Edit",
+    view: "View",
     publish: "Publish",
     publishTitle: "Publish Article?",
     publishDescription: (title: string) => `Publish "${title}" now?`,
@@ -118,6 +119,7 @@ const articlesCopy = {
     empty: "រកមិនឃើញអត្ថបទទេ។",
     createFirst: "បង្កើតអត្ថបទដំបូង",
     edit: "កែសម្រួល",
+    view: "មើល",
     publish: "ផ្សព្វផ្សាយ",
     publishTitle: "ផ្សព្វផ្សាយអត្ថបទ?",
     publishDescription: (title: string) => `ផ្សព្វផ្សាយ "${title}" ឥឡូវនេះ?`,
@@ -394,6 +396,8 @@ export default function AdminArticlesPage() {
 
   const hasRowActions = (article: Article) =>
     hasPermission(Permission.UPDATE_ANY_ARTICLE) ||
+    hasPermission(Permission.VIEW_ALL_ARTICLES) ||
+    hasPermission(Permission.REVIEW_ARTICLES) ||
     (article.status === "DRAFT" && hasPermission(Permission.PUBLISH_ARTICLE)) ||
     (article.status === "REVIEW" &&
       (hasPermission(Permission.APPROVE_ARTICLES) ||
@@ -490,14 +494,22 @@ export default function AdminArticlesPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {hasPermission(Permission.UPDATE_ANY_ARTICLE) && (
+                      {hasPermission(Permission.UPDATE_ANY_ARTICLE) ? (
                         <DropdownMenuItem asChild>
                           <Link href={`/articles/${article.id}/edit`}>
                             <Edit className="mr-2 h-4 w-4" />
                             {copy.edit}
                           </Link>
                         </DropdownMenuItem>
-                      )}
+                      ) : (hasPermission(Permission.VIEW_ALL_ARTICLES) ||
+                          hasPermission(Permission.REVIEW_ARTICLES)) ? (
+                        <DropdownMenuItem asChild>
+                          <Link href={`/articles/${article.id}/edit`}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            {copy.view}
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : null}
                       {article.status === "DRAFT" &&
                         hasPermission(Permission.PUBLISH_ARTICLE) && (
                           <DropdownMenuItem
@@ -769,14 +781,22 @@ export default function AdminArticlesPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {hasPermission(Permission.UPDATE_ANY_ARTICLE) && (
+                      {hasPermission(Permission.UPDATE_ANY_ARTICLE) ? (
                         <DropdownMenuItem asChild>
                           <Link href={`/articles/${article.id}/edit`}>
                             <Edit className="w-4 h-4 mr-2" />
                             {copy.edit}
                           </Link>
                         </DropdownMenuItem>
-                      )}
+                      ) : (hasPermission(Permission.VIEW_ALL_ARTICLES) ||
+                          hasPermission(Permission.REVIEW_ARTICLES)) ? (
+                        <DropdownMenuItem asChild>
+                          <Link href={`/articles/${article.id}/edit`}>
+                            <Eye className="w-4 h-4 mr-2" />
+                            {copy.view}
+                          </Link>
+                        </DropdownMenuItem>
+                      ) : null}
                       {article.status === "DRAFT" &&
                         hasPermission(Permission.PUBLISH_ARTICLE) && (
                           <DropdownMenuItem

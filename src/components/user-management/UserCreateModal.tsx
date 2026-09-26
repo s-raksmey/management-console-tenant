@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { X, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -23,6 +24,9 @@ const createUserCopy = {
     editor: 'Editor',
     author: 'Author',
     superAdminBlocked: 'Sub-tenant users cannot create super admin accounts.',
+    superAdminHint:
+      'Main Tenant has one role only: Super Admin. Create Admin, Editor, or Author from Tenants → Users for a website.',
+    tenantsLink: 'Open Tenants',
     createFailed: 'Failed to create user',
     title: 'Create New User',
     close: 'Close',
@@ -46,6 +50,9 @@ const createUserCopy = {
     editor: 'អ្នកកែសម្រួល',
     author: 'អ្នកនិពន្ធ',
     superAdminBlocked: 'អ្នកប្រើគេហទំព័រមិនអាចបង្កើតគណនីអ្នកគ្រប់គ្រងកំពូលបានទេ។',
+    superAdminHint:
+      'អ្នកជួលមេមានតែតួនាទីមួយ៖ អ្នកគ្រប់គ្រងកំពូល។ បង្កើត Admin / Editor / Author ពី គេហទំព័រ → អ្នកប្រើ។',
+    tenantsLink: 'បើកគេហទំព័រ',
     createFailed: 'មិនអាចបង្កើតអ្នកប្រើបានទេ',
     title: 'បង្កើតអ្នកប្រើថ្មី',
     close: 'បិទ',
@@ -70,9 +77,9 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
   const copy = createUserCopy[locale];
   const { user } = useAuth();
   const { hasPermission } = usePermissions();
-  const canAssignSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
   const canManageRoles = hasPermission(Permission.MANAGE_USER_ROLES);
-  const defaultRole: AssignableUserRole = canAssignSuperAdmin ? 'SUPER_ADMIN' : 'AUTHOR';
+  const defaultRole: AssignableUserRole = isSuperAdmin ? 'SUPER_ADMIN' : 'AUTHOR';
   const roleOptions: Array<{ value: AssignableUserRole; label: string }> = canManageRoles
     ? [
         { value: 'ADMIN', label: copy.admin },
@@ -94,7 +101,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!canAssignSuperAdmin && formData.role === 'SUPER_ADMIN') {
+    if (!isSuperAdmin && formData.role === 'SUPER_ADMIN') {
       setError(copy.superAdminBlocked);
       return;
     }
@@ -103,13 +110,16 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
     setError(null);
 
     try {
-      const result = await UserService.createUser({
-        ...formData,
-        role: canAssignSuperAdmin ? 'SUPER_ADMIN' : formData.role,
-      });
-      
+      const result = await UserService.createUser(
+        {
+          ...formData,
+          role: isSuperAdmin ? 'SUPER_ADMIN' : formData.role,
+          tenantId: null,
+        },
+        { tenantId: null },
+      );
+
       if (result.success) {
-        // Reset form
         setFormData({
           name: '',
           email: '',
@@ -120,7 +130,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
         });
         onUserCreated();
       } else {
-        setError(result.message);
+        setError(result.message || copy.createFailed);
       }
     } catch (err) {
       setError(locale === 'en' && err instanceof Error ? err.message : copy.createFailed);
@@ -149,7 +159,6 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">{copy.title}</h2>
           <button
@@ -162,7 +171,6 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
@@ -170,7 +178,15 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
             </div>
           )}
 
-          {/* Name Field */}
+          {isSuperAdmin ? (
+            <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <p>{copy.superAdminHint}</p>
+              <Link href="/tenants" className="mt-1 inline-block font-medium underline">
+                {copy.tenantsLink}
+              </Link>
+            </div>
+          ) : null}
+
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
               {copy.fullName}
@@ -187,7 +203,6 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
             />
           </div>
 
-          {/* Email Field */}
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
               {copy.email}
@@ -204,7 +219,6 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
             />
           </div>
 
-          {/* Password Field */}
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
               {copy.password}
@@ -233,7 +247,7 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
             </div>
           </div>
 
-          {!canAssignSuperAdmin && (
+          {!isSuperAdmin && (
             <div>
               <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
                 {copy.tenantRole}
@@ -241,7 +255,9 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
               <select
                 id="role"
                 value={formData.role}
-                onChange={(e) => setFormData({ ...formData, role: e.target.value as AssignableUserRole })}
+                onChange={(e) =>
+                  setFormData({ ...formData, role: e.target.value as AssignableUserRole })
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 disabled={loading || !canManageRoles}
               >
@@ -254,7 +270,6 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
             </div>
           )}
 
-          {/* Account Status */}
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -269,7 +284,6 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
             </label>
           </div>
 
-          {/* Welcome Email */}
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -284,7 +298,6 @@ export default function UserCreateModal({ isOpen, onClose, onUserCreated }: User
             </label>
           </div>
 
-          {/* Form Actions */}
           <div className="flex justify-end space-x-3 pt-4">
             <button
               type="button"

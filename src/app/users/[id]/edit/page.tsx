@@ -12,12 +12,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Permission, PermissionGuard } from '@/components/permissions/PermissionGuard';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { useToastHelpers } from '@/components/ui/toast';
 import { User, useUserManagement } from '@/hooks/useUserManagement';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { UserService } from '@/services/user.gql';
 import { useAdminLocale } from '@/hooks/useAdminLocale';
+import { isSubTenantDisplay } from '@/lib/tenant-display';
 
 type UserRole = 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR';
 
@@ -52,7 +54,7 @@ const editUserCopy = {
     email: 'Email Address',
     emailPlaceholder: 'Enter email address',
     role: 'Role',
-    superAdminHelp: 'Main-tenant user management only edits super admin accounts.',
+    superAdminHelp: 'Main Tenant only uses the Super Admin role. Website roles are assigned from Tenants.',
     permissionHelp: 'You can edit profile details, but role changes require role management permission.',
     status: 'Status',
     active: 'Active',
@@ -99,7 +101,7 @@ const editUserCopy = {
     email: 'អ៊ីមែល',
     emailPlaceholder: 'បញ្ចូលអ៊ីមែល',
     role: 'តួនាទី',
-    superAdminHelp: 'ការគ្រប់គ្រងអ្នកប្រើអ្នកជួលមេកែតែគណនីអ្នកគ្រប់គ្រងកំពូលប៉ុណ្ណោះ។',
+    superAdminHelp: 'អ្នកជួលមេប្រើតែតួនាទីអ្នកគ្រប់គ្រងកំពូល។ តួនាទីគេហទំព័រកំណត់ពី គេហទំព័រ។',
     permissionHelp: 'អ្នកអាចកែប្រវត្តិរូប ប៉ុន្តែការប្តូរតួនាទីត្រូវការសិទ្ធិគ្រប់គ្រងតួនាទី។',
     status: 'ស្ថានភាព',
     active: 'សកម្ម',
@@ -124,6 +126,7 @@ export default function EditUserPage() {
   const { locale } = useAdminLocale();
   const copy = editUserCopy[locale];
   const { user: currentUser } = useAuth();
+  const { activeTenant } = useTenant();
   const { hasPermission } = usePermissions();
   const { showSuccess, showError } = useToastHelpers();
   const {
@@ -145,14 +148,16 @@ export default function EditUserPage() {
   const [twoFactorConfirmationOpen, setTwoFactorConfirmationOpen] = React.useState(false);
 
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+  const viewingSubTenant = isSubTenantDisplay(activeTenant);
+  const managingTenantStaff = viewingSubTenant || !isSuperAdmin;
   const canManageRoles = hasPermission(Permission.MANAGE_USER_ROLES);
-  const roleOptions: Array<{ value: UserRole; label: string }> = isSuperAdmin
-    ? [{ value: 'SUPER_ADMIN', label: copy.superAdmin }]
-    : [
+  const roleOptions: Array<{ value: UserRole; label: string }> = managingTenantStaff
+    ? [
         { value: 'ADMIN', label: copy.tenantAdmin },
         { value: 'EDITOR', label: copy.editor },
         { value: 'AUTHOR', label: copy.author },
-      ];
+      ]
+    : [{ value: 'SUPER_ADMIN', label: copy.superAdmin }];
 
   React.useEffect(() => {
     let isCurrent = true;
@@ -178,7 +183,7 @@ export default function EditUserPage() {
   const handleSave = async () => {
     if (!user) return;
 
-    if (!isSuperAdmin && role === 'SUPER_ADMIN') {
+    if (managingTenantStaff && role === 'SUPER_ADMIN') {
       showError(copy.roleUpdateBlockedTitle, copy.roleUpdateBlockedDescription);
       return;
     }
@@ -374,7 +379,7 @@ export default function EditUserPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                {isSuperAdmin && (
+                {isSuperAdmin && !viewingSubTenant && (
                   <p className="text-xs text-slate-500">
                     {copy.superAdminHelp}
                   </p>

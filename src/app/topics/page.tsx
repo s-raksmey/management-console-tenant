@@ -13,6 +13,7 @@ import { Trash2, Edit, Plus, Save, X } from "lucide-react";
 import { DeviceImageUpload } from "@/components/media/device-image-upload";
 import { useToastHelpers } from "@/components/ui/toast";
 import { PermissionGuard, Permission } from "@/components/permissions/PermissionGuard";
+import { usePermissions } from "@/hooks/usePermissions";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
 
@@ -57,6 +58,7 @@ const topicsCopy = {
     deleteTopicFailed: "Failed to delete topic",
     pageTitle: "Topic Management",
     pageDescription: "Create and manage topics (sub-categories) for your categories",
+    viewOnlyBanner: "Your role can view topics but cannot create, edit, or delete them.",
     selectCategory: "Select Category",
     selectCategoryDescription: "Choose a category to view and manage its topics",
     selectCategoryPlaceholder: "Select a category...",
@@ -112,6 +114,7 @@ const topicsCopy = {
     deleteTopicFailed: "មិនអាចលុបប្រធានបទបានទេ",
     pageTitle: "គ្រប់គ្រងប្រធានបទ",
     pageDescription: "បង្កើត និងគ្រប់គ្រងប្រធានបទរងសម្រាប់ប្រភេទ",
+    viewOnlyBanner: "តួនាទីរបស់អ្នកអាចមើលប្រធានបទ ប៉ុន្តែមិនអាចបង្កើត កែ ឬលុបបានទេ។",
     selectCategory: "ជ្រើសប្រភេទ",
     selectCategoryDescription: "ជ្រើសប្រភេទដើម្បីមើល និងគ្រប់គ្រងប្រធានបទ",
     selectCategoryPlaceholder: "ជ្រើសប្រភេទ...",
@@ -155,6 +158,11 @@ const topicsCopy = {
 export default function TopicsPage() {
   const { locale } = useAdminLocale();
   const copy = topicsCopy[locale];
+  const { hasPermission } = usePermissions();
+  const canMutateTopics =
+    hasPermission(Permission.CREATE_TOPIC) ||
+    hasPermission(Permission.UPDATE_TOPIC) ||
+    hasPermission(Permission.DELETE_TOPIC);
   const { query, loading, error } = useGraphQL();
   const { getCategories } = useCategories();
   const { showSuccess, showError } = useToastHelpers();
@@ -387,6 +395,7 @@ export default function TopicsPage() {
   const isFormVisible = isCreating || editingTopic;
 
   return (
+    <PermissionGuard permissions={[Permission.LIST_CATEGORIES]} showError>
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -394,6 +403,11 @@ export default function TopicsPage() {
           <p className="text-muted-foreground">
             {copy.pageDescription}
           </p>
+          {!canMutateTopics ? (
+            <p className="mt-3 max-w-2xl rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {copy.viewOnlyBanner}
+            </p>
+          ) : null}
         </div>
       </div>
 
@@ -633,5 +647,6 @@ export default function TopicsPage() {
         }}
       />
     </div>
+    </PermissionGuard>
   );
 }

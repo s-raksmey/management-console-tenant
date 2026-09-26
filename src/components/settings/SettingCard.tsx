@@ -19,6 +19,7 @@ interface SettingCardProps {
   loading?: boolean;
   hasChanges?: boolean;
   showPublicBadge?: boolean;
+  readOnly?: boolean;
 }
 
 export function SettingCard({
@@ -31,6 +32,7 @@ export function SettingCard({
   loading = false,
   hasChanges = false,
   showPublicBadge = true,
+  readOnly = false,
 }: SettingCardProps) {
   const { locale } = useAdminLocale();
   const copy = locale === 'km'
@@ -43,6 +45,7 @@ export function SettingCard({
         undo: 'Undo',
         saving: 'កំពុងរក្សាទុក',
         save: 'រក្សាទុក',
+        viewOnly: 'មើលតែប៉ុណ្ណោះ',
       }
     : {
         required: 'Required',
@@ -53,6 +56,7 @@ export function SettingCard({
         undo: 'Undo',
         saving: 'Saving',
         save: 'Save',
+        viewOnly: 'View only',
       };
   const [isSaving, setIsSaving] = React.useState(false);
   const [isResetting, setIsResetting] = React.useState(false);
@@ -111,31 +115,51 @@ export function SettingCard({
         </div>
 
         <div className="min-w-0 space-y-3">
+          <fieldset
+            disabled={readOnly}
+            className={`min-w-0 border-0 p-0 ${readOnly ? 'opacity-80' : ''}`}
+          >
           <SettingInput
             setting={setting}
             value={value}
             onChange={onChange}
             error={error}
-            disabled={loading || isSaving || isResetting}
+            disabled={loading || isSaving || isResetting || readOnly}
           />
+          </fieldset>
 
           <div className="flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
             <div
               className={`flex items-center gap-2 text-xs font-medium ${
-                error ? 'text-red-700' : hasChanges ? 'text-sky-700' : 'text-emerald-700'
+                readOnly
+                  ? 'text-slate-500'
+                  : error
+                    ? 'text-red-700'
+                    : hasChanges
+                      ? 'text-sky-700'
+                      : 'text-emerald-700'
               }`}
             >
-              {error ? (
+              {readOnly ? (
+                <span className="h-2 w-2 rounded-full bg-slate-400" />
+              ) : error ? (
                 <AlertCircle className="h-3.5 w-3.5" />
               ) : hasChanges ? (
                 <span className="h-2 w-2 rounded-full bg-sky-500" />
               ) : (
                 <Check className="h-3.5 w-3.5" />
               )}
-              {error ? copy.needsAttention : hasChanges ? copy.unsavedChanges : copy.saved}
+              {readOnly
+                ? copy.viewOnly
+                : error
+                  ? copy.needsAttention
+                  : hasChanges
+                    ? copy.unsavedChanges
+                    : copy.saved}
             </div>
 
-            <div className="flex items-center gap-2 sm:justify-end">
+            {readOnly ? null : (
+              <div className="flex items-center gap-2 sm:justify-end">
               <Button
                 variant="outline"
                 size="sm"
@@ -165,7 +189,8 @@ export function SettingCard({
                   </div>
                 )}
               </Button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

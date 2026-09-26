@@ -147,6 +147,8 @@ export function DeviceImageUpload({
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            {disabled ? null : (
+              <>
             <input
               ref={fileInputRef}
               type="file"
@@ -196,6 +198,8 @@ export function DeviceImageUpload({
                     : copy.chooseFile}
               </span>
             </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

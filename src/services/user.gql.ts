@@ -402,16 +402,42 @@ export class UserService {
   }
 
   // Mutation Functions
-  static async createUser(input: CreateUserInput): Promise<UserManagementResult> {
+  static async createUser(
+    input: CreateUserInput,
+    options?: { tenantId?: string | null },
+  ): Promise<UserManagementResult> {
     try {
-      const response = await this.getClient().request<{ createUser: UserManagementResult }>(
+      const explicitTenantId = options?.tenantId?.trim() || null;
+      const client = getAuthenticatedGqlClient(undefined, {
+        includeSelectedTenant: options?.tenantId === undefined,
+      });
+      if (explicitTenantId) {
+        client.setHeader('x-tenant-id', explicitTenantId);
+      }
+
+      const response = await client.request<{ createUser: UserManagementResult }>(
         CREATE_USER_MUTATION,
-        { input }
+        {
+          input: {
+            ...input,
+            tenantId: input.tenantId ?? explicitTenantId,
+          },
+        }
       );
       return response.createUser;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Error creating user:', error);
-      throw new Error('Failed to create user');
+      const graphqlError = error as {
+        response?: { errors?: Array<{ message?: string }> };
+        message?: string;
+      };
+      return {
+        success: false,
+        message:
+          graphqlError?.response?.errors?.[0]?.message ||
+          graphqlError?.message ||
+          'Failed to create user',
+      };
     }
   }
 

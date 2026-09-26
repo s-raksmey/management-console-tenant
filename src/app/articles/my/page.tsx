@@ -508,8 +508,7 @@ export default function MyArticlesPage() {
                         {copy.submitForReview}
                       </DropdownMenuItem>
                     )}
-                    {article.status === 'REVIEW' && hasPermission(Permission.REVIEW_ARTICLES) && (
-                      <>
+                    {article.status === 'REVIEW' && hasPermission(Permission.APPROVE_ARTICLES) && (
                         <DropdownMenuItem
                           onClick={() =>
                             requestAction({
@@ -523,6 +522,8 @@ export default function MyArticlesPage() {
                         >
                           {copy.publish}
                         </DropdownMenuItem>
+                    )}
+                    {article.status === 'REVIEW' && hasPermission(Permission.REJECT_ARTICLES) && (
                         <DropdownMenuItem
                           onClick={() =>
                             requestAction({
@@ -536,7 +537,6 @@ export default function MyArticlesPage() {
                         >
                           {copy.sendBackToDraft}
                         </DropdownMenuItem>
-                      </>
                     )}
                     {article.status === 'PUBLISHED' && hasPermission(Permission.UNPUBLISH_ARTICLE) && (
                       <DropdownMenuItem
@@ -728,8 +728,7 @@ export default function MyArticlesPage() {
                               {copy.submitForReview}
                             </DropdownMenuItem>
                           )}
-                          {article.status === 'REVIEW' && hasPermission && hasPermission(Permission.REVIEW_ARTICLES) && (
-                            <>
+                          {article.status === 'REVIEW' && hasPermission(Permission.APPROVE_ARTICLES) && (
                               <DropdownMenuItem 
                                 onClick={() =>
                                   requestAction({
@@ -743,6 +742,8 @@ export default function MyArticlesPage() {
                               >
                                 {copy.publish}
                               </DropdownMenuItem>
+                          )}
+                          {article.status === 'REVIEW' && hasPermission(Permission.REJECT_ARTICLES) && (
                               <DropdownMenuItem 
                                 onClick={() =>
                                   requestAction({
@@ -756,7 +757,6 @@ export default function MyArticlesPage() {
                               >
                                 {copy.sendBackToDraft}
                               </DropdownMenuItem>
-                            </>
                           )}
                           {article.status === 'PUBLISHED' && hasPermission(Permission.UNPUBLISH_ARTICLE) && (
                             <DropdownMenuItem 

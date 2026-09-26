@@ -10,7 +10,6 @@ import {
   Filter, 
   MoreHorizontal, 
   Edit, 
-  Trash2, 
   Shield, 
   ShieldCheck, 
   UserCheck, 
@@ -51,11 +50,13 @@ import {
 import { useUserManagement, User, ListUsersInput } from '@/hooks/useUserManagement';
 import { useToastHelpers } from '@/components/ui/toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { Permission, PermissionGuard } from '@/components/permissions/PermissionGuard';
 import { usePermissions } from '@/hooks/usePermissions';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { UserService } from '@/services/user.gql';
 import { useAdminLocale } from '@/hooks/useAdminLocale';
+import { isSubTenantDisplay } from '@/lib/tenant-display';
 
 interface UserListProps {}
 
@@ -67,6 +68,9 @@ const userListCopy = {
     superAdminDescription: 'Manage Main Tenant super admins only.',
     tenantDescription: 'Manage this sub-tenant’s admins, editors, and authors.',
     createUser: 'Create User',
+    createFromTenants: 'Create website users',
+    createFromTenantsHint: 'Admin, Editor, and Author accounts are created from Tenants → Users.',
+    viewOnlyBanner: 'Your role can view users but cannot create, edit, or delete them.',
     filter: 'Filter',
     searchPlaceholder: 'Search name or email',
     allRoles: 'All roles',
@@ -145,6 +149,9 @@ const userListCopy = {
     superAdminDescription: 'គ្រប់គ្រងអ្នកគ្រប់គ្រងកំពូលរបស់អ្នកជួលមេប៉ុណ្ណោះ។',
     tenantDescription: 'គ្រប់គ្រងអ្នកគ្រប់គ្រង អ្នកកែសម្រួល និងអ្នកនិពន្ធរបស់គេហទំព័រនេះ។',
     createUser: 'បង្កើតអ្នកប្រើ',
+    createFromTenants: 'បង្កើតអ្នកប្រើគេហទំព័រ',
+    createFromTenantsHint: 'គណនី Admin, Editor និង Author បង្កើតពី គេហទំព័រ → អ្នកប្រើ។',
+    viewOnlyBanner: 'តួនាទីរបស់អ្នកអាចមើលអ្នកប្រើ ប៉ុន្តែមិនអាចបង្កើត កែ ឬលុបបានទេ។',
     filter: 'តម្រង',
     searchPlaceholder: 'ស្វែងរកឈ្មោះ ឬអ៊ីមែល',
     allRoles: 'តួនាទីទាំងអស់',
@@ -229,15 +236,18 @@ export const UserList: React.FC<UserListProps> = () => {
     isInitializing,
   } = useAuth();
   const { hasPermission } = usePermissions();
+  const { activeTenant } = useTenant();
   const isSuperAdmin = currentUser?.role === 'SUPER_ADMIN';
+  const viewingSubTenant = isSubTenantDisplay(activeTenant);
+  const managingTenantStaff = viewingSubTenant || !isSuperAdmin;
   const canUpdateUser = hasPermission(Permission.UPDATE_USER);
-  const canDeleteUser = hasPermission(Permission.DELETE_USER);
+  const canCreateUser = hasPermission(Permission.CREATE_USER);
   const canManageRoles = hasPermission(Permission.MANAGE_USER_ROLES);
-  const { 
+  const viewOnly = !canCreateUser && !canUpdateUser && !canManageRoles;
+  const {
     listUsers, 
     updateUserRole, 
     updateUserStatus, 
-    deleteUser, 
     loading, 
     error 
   } = useUserManagement();
@@ -256,7 +266,8 @@ export const UserList: React.FC<UserListProps> = () => {
     ? requestedRole
     : 'ALL';
   const [roleFilter, setRoleFilter] = useState<'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR' | 'ALL'>(initialRole);
-  const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'INACTIVE' | 'ALL'>('ALL');
+  const defaultStatusFilter: 'ACTIVE' | 'INACTIVE' | 'ALL' = managingTenantStaff ? 'ACTIVE' : 'ALL';
+  const [statusFilter, setStatusFilter] = useState<'ACTIVE' | 'INACTIVE' | 'ALL'>(defaultStatusFilter);
   const [sortBy, setSortBy] = useState<'name' | 'email' | 'role' | 'createdAt' | 'updatedAt'>('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [savingTwoFactorUserId, setSavingTwoFactorUserId] = useState<string | null>(null);
@@ -285,10 +296,17 @@ export const UserList: React.FC<UserListProps> = () => {
     setCurrentPage(1);
   }, [searchParams]);
 
+  useEffect(() => {
+    setStatusFilter(managingTenantStaff ? 'ACTIVE' : 'ALL');
+    setCurrentPage(1);
+  }, [activeTenant?.id, managingTenantStaff]);
+
   const applyVisibleUserScope = useCallback(
     (items: User[]) =>
-      isSuperAdmin ? items : items.filter((user) => user.role !== 'SUPER_ADMIN'),
-    [isSuperAdmin],
+      isSuperAdmin && !viewingSubTenant
+        ? items
+        : items.filter((user) => user.role !== 'SUPER_ADMIN'),
+    [isSuperAdmin, viewingSubTenant],
   );
 
   const fetchUsers = useCallback(async (page = 1) => {
@@ -298,7 +316,9 @@ export const UserList: React.FC<UserListProps> = () => {
       take: pageSize,
       skip: (page - 1) * pageSize,
       search: searchTerm || undefined,
-      role: isSuperAdmin ? 'SUPER_ADMIN' : roleFilter === 'ALL' ? undefined : roleFilter,
+      role: managingTenantStaff
+        ? roleFilter === 'ALL' ? undefined : roleFilter
+        : 'SUPER_ADMIN',
       status: statusFilter === 'ALL' ? undefined : statusFilter,
       sortBy,
       sortOrder,
@@ -308,10 +328,10 @@ export const UserList: React.FC<UserListProps> = () => {
     if (result) {
       const visibleUsers = applyVisibleUserScope(result.users);
       setUsers(visibleUsers);
-      setTotalCount(isSuperAdmin ? result.totalCount : visibleUsers.length);
+      setTotalCount(result.totalCount);
       setHasMore(result.hasMore);
     }
-  }, [applyVisibleUserScope, isAuthenticated, isInitializing, isSuperAdmin, listUsers, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
+  }, [applyVisibleUserScope, isAuthenticated, isInitializing, listUsers, managingTenantStaff, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
 
   useEffect(() => {
     let isCurrent = true;
@@ -330,7 +350,9 @@ export const UserList: React.FC<UserListProps> = () => {
         take: pageSize,
         skip: (currentPage - 1) * pageSize,
         search: searchTerm || undefined,
-        role: isSuperAdmin ? 'SUPER_ADMIN' : roleFilter === 'ALL' ? undefined : roleFilter,
+        role: managingTenantStaff
+          ? roleFilter === 'ALL' ? undefined : roleFilter
+          : 'SUPER_ADMIN',
         status: statusFilter === 'ALL' ? undefined : statusFilter,
         sortBy,
         sortOrder,
@@ -340,7 +362,7 @@ export const UserList: React.FC<UserListProps> = () => {
       if (result && isCurrent) {
         const visibleUsers = applyVisibleUserScope(result.users);
         setUsers(visibleUsers);
-        setTotalCount(isSuperAdmin ? result.totalCount : visibleUsers.length);
+        setTotalCount(result.totalCount);
         setHasMore(result.hasMore);
       }
     };
@@ -350,7 +372,7 @@ export const UserList: React.FC<UserListProps> = () => {
     return () => {
       isCurrent = false;
     };
-  }, [applyVisibleUserScope, currentPage, isAuthenticated, isInitializing, isSuperAdmin, listUsers, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
+  }, [activeTenant?.id, applyVisibleUserScope, currentPage, isAuthenticated, isInitializing, listUsers, managingTenantStaff, pageSize, roleFilter, searchTerm, sortBy, sortOrder, statusFilter]);
 
   const handleSearch = (value: string) => {
     setSearchTerm(value);
@@ -371,7 +393,7 @@ export const UserList: React.FC<UserListProps> = () => {
     userId: string,
     newRole: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR',
   ) => {
-    if (!isSuperAdmin && newRole === 'SUPER_ADMIN') {
+    if (managingTenantStaff && newRole === 'SUPER_ADMIN') {
       showError(copy.roleUpdateBlockedTitle, copy.roleUpdateBlockedDescription);
       return;
     }
@@ -403,22 +425,6 @@ export const UserList: React.FC<UserListProps> = () => {
       showError(
         copy.statusUpdateFailedTitle,
         locale === 'en' && result?.message ? result.message : copy.statusUpdateFailedDescription,
-      );
-    }
-  };
-
-  const handleDeleteUser = async (userId: string) => {
-    const result = await deleteUser(userId);
-    if (result?.success) {
-      showSuccess(
-        copy.userDeletedTitle,
-        locale === 'en' && result.message ? result.message : copy.userDeletedDescription,
-      );
-      void fetchUsers(currentPage);
-    } else {
-      showError(
-        copy.deleteFailedTitle,
-        locale === 'en' && result?.message ? result.message : copy.deleteFailedDescription,
       );
     }
   };
@@ -486,11 +492,14 @@ export const UserList: React.FC<UserListProps> = () => {
   };
 
   const totalPages = Math.ceil(totalCount / pageSize);
-  const hasActiveFilters = Boolean(searchTerm) || statusFilter !== 'ALL' || (!isSuperAdmin && roleFilter !== 'ALL');
+  const hasActiveFilters =
+    Boolean(searchTerm) ||
+    statusFilter !== defaultStatusFilter ||
+    (managingTenantStaff && roleFilter !== 'ALL');
   const clearFilters = () => {
     setSearchTerm('');
     setRoleFilter('ALL');
-    setStatusFilter('ALL');
+    setStatusFilter(defaultStatusFilter);
     setCurrentPage(1);
   };
   const getUserDisplayName = (user: User) => user.name || user.email;
@@ -530,20 +539,49 @@ export const UserList: React.FC<UserListProps> = () => {
         <div className="min-w-0">
           <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">{copy.title}</h1>
           <p className="text-gray-600 mt-1">
-            {isSuperAdmin
-              ? copy.superAdminDescription
-              : copy.tenantDescription}
+            {managingTenantStaff
+              ? copy.tenantDescription
+              : copy.superAdminDescription}
           </p>
+          {viewOnly ? (
+            <p className="mt-3 max-w-2xl rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {copy.viewOnlyBanner}
+            </p>
+          ) : null}
         </div>
         <PermissionGuard permissions={[Permission.CREATE_USER]} fallback={null}>
-          <Button asChild>
-            <Link href="/users/new">
-              <Plus className="h-4 w-4 mr-2" />
-              {copy.createUser}
-            </Link>
-          </Button>
+          {isSuperAdmin ? (
+            viewingSubTenant ? (
+              <Button asChild variant="outline">
+                <Link href="/tenants">
+                  <Plus className="h-4 w-4 mr-2" />
+                  {copy.createFromTenants}
+                </Link>
+              </Button>
+            ) : (
+              <Button asChild>
+                <Link href="/users/new">
+                  <Plus className="h-4 w-4 mr-2" />
+                  {copy.createUser}
+                </Link>
+              </Button>
+            )
+          ) : (
+            <Button asChild>
+              <Link href="/users/new">
+                <Plus className="h-4 w-4 mr-2" />
+                {copy.createUser}
+              </Link>
+            </Button>
+          )}
         </PermissionGuard>
       </div>
+
+      {isSuperAdmin && viewingSubTenant ? (
+        <p className="rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-900">
+          {copy.createFromTenantsHint}
+        </p>
+      ) : null}
 
       {/* Filters */}
       <div className="rounded-lg border border-slate-200 bg-white/80 p-3 shadow-none dark:border-slate-800 dark:bg-slate-900/70">
@@ -564,7 +602,7 @@ export const UserList: React.FC<UserListProps> = () => {
           </div>
 
           <div className="grid grid-cols-1 gap-2 sm:flex sm:items-center">
-            {!isSuperAdmin && (
+            {managingTenantStaff && (
               <Select value={roleFilter} onValueChange={handleRoleFilter}>
                 <SelectTrigger className="h-9 w-full border-slate-200 bg-slate-50 shadow-none dark:border-slate-800 dark:bg-slate-950 sm:w-[150px]">
                   <SelectValue placeholder={copy.allRoles} />
@@ -669,7 +707,7 @@ export const UserList: React.FC<UserListProps> = () => {
                           </DropdownMenuItem>
                         )}
                         <DropdownMenuSeparator />
-                        {!isSuperAdmin && canManageRoles && (
+                        {managingTenantStaff && canManageRoles && (
                           <>
                             <DropdownMenuItem 
                               onClick={() =>
@@ -759,26 +797,6 @@ export const UserList: React.FC<UserListProps> = () => {
                                   {copy.activate}
                                 </>
                               )}
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                        {canDeleteUser && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() =>
-                                requestConfirmation({
-                                  title: copy.deleteUserTitle,
-                                  description: copy.deleteUserDescription(getUserDisplayName(user)),
-                                  confirmText: copy.deleteUser,
-                                  variant: 'destructive',
-                                  onConfirm: () => handleDeleteUser(user.id),
-                                })
-                              }
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              {copy.deleteUser}
                             </DropdownMenuItem>
                           </>
                         )}

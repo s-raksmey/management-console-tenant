@@ -25,6 +25,7 @@ import {
   Settings as SettingsIcon,
   Users,
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
 import {
   M_RESET_SETTING,
@@ -41,7 +42,7 @@ import { SettingsCategory } from "@/components/settings";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
-import { getTenantDisplayName } from "@/lib/tenant-display";
+import { getTenantDisplayName, isSubTenantDisplay } from "@/lib/tenant-display";
 import { presentSetting } from "@/lib/setting-display";
 import { Permission } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -178,6 +179,8 @@ const settingsCopy = {
     publicWebsiteHint:
       "Public website branding, SEO, and contact details belong to each sub-tenant. They are not edited from this console.",
     manageWebsites: "Manage websites",
+    selectScope: "Select settings",
+    consoleOption: "Management Console",
     consoleCategory: "Console",
     contactDetails: "Contact details",
     contactDetailsDescription: "Publish an email plus phone or address for the public contact page.",
@@ -191,6 +194,7 @@ const settingsCopy = {
     legalPagesDescription: "Publish privacy, terms, and cookie policy content.",
     settingsUnavailable: "Settings Unavailable",
     settingsUnavailableDescription: "Settings are available only for admin accounts.",
+    viewOnlyBanner: "Your role can view these settings but cannot change them.",
     failedToLoadSettings: "Failed to Load Settings",
     tryAgain: "Try Again",
     managementConsole: "Management Console",
@@ -242,6 +246,8 @@ const settingsCopy = {
     publicWebsiteHint:
       "អត្តសញ្ញាណ SEO និងព័ត៌មានទំនាក់ទំនងគេហទំព័រសាធារណៈស្ថិតនៅគេហទំព័ររង។ មិនកែពីផ្ទាំងគ្រប់គ្រងនេះទេ។",
     manageWebsites: "គ្រប់គ្រងគេហទំព័រ",
+    selectScope: "ជ្រើសការកំណត់",
+    consoleOption: "ផ្ទាំងគ្រប់គ្រង",
     consoleCategory: "ផ្ទាំងគ្រប់គ្រង",
     brandingSectionDescription:
       "ផ្ទុក logo រូបភាព Open Graph និង favicon សម្រាប់គេហទំព័រនេះ។ Logo បង្ហាញក្បែរ�ង្ហាញក្បែរឈ្មោះគេហទំព័រនៅផ្ទាំងគ្រប់គ្រង និងគេហទំព័រសា�គ្រង និងគេហទំព័រសាធារណៈ។",
@@ -261,6 +267,7 @@ const settingsCopy = {
     legalPagesDescription: "ផ្សព្វផ្សាយមាតិកាគោលការណ៍ឯកជនភាព លក្ខខណ្ឌ និងគោលការណ៍ខូគី។",
     settingsUnavailable: "ការកំណត់មិនអាចប្រើបាន",
     settingsUnavailableDescription: "ការកំណត់មានសម្រាប់គណនីអ្នកគ្រប់គ្រងប៉ុណ្ណោះ។",
+    viewOnlyBanner: "តួនាទីរបស់អ្នកអាចមើលការកំណត់ទាំងនេះ ប៉ុន្តែមិនអាចកែបានទេ។",
     failedToLoadSettings: "ផ្ទុកការកំណត់មិនបាន",
     tryAgain: "ព្យាយាមម្តងទៀត",
     managementConsole: "ផ្ទាំងគ្រប់គ្រង",
@@ -305,23 +312,26 @@ function hasSettingValue(settings: Setting[], key: string): boolean {
   return false;
 }
 
-function getSettingsGqlClient(isSuperAdmin: boolean) {
+function getSettingsGqlClient(includeSelectedTenant: boolean) {
   return getAuthenticatedGqlClient(undefined, {
-    includeSelectedTenant: !isSuperAdmin,
+    includeSelectedTenant,
   });
 }
+
+const CONSOLE_SETTINGS_SCOPE = "__console__";
 
 export default function SettingsPage() {
   const { locale } = useAdminLocale();
   const copy = settingsCopy[locale];
   const { user } = useAuth();
-  const { activeTenant, switchTenant, refreshTenants } = useTenant();
+  const { activeTenant, tenantOptions, switchTenant, refreshTenants } = useTenant();
   const userRole = user?.role?.toString().toUpperCase();
   const isSuperAdmin = userRole === "SUPER_ADMIN";
-  const viewingSubTenant = !isSuperAdmin;
-  const { hasPermission } = usePermissions();
+  const viewingSubTenant = isSubTenantDisplay(activeTenant);
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
   const canAccessSettings = hasPermission(Permission.VIEW_SETTINGS);
-  const canRetryEmail = hasPermission(Permission.UPDATE_SETTINGS);
+  const canUpdateSettings = hasPermission(Permission.UPDATE_SETTINGS);
+  const canRetryEmail = canUpdateSettings;
   const [settings, setSettings] = React.useState<Setting[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -348,11 +358,10 @@ export default function SettingsPage() {
       }
       setError(null);
 
-      const response = await getSettingsGqlClient(userRole === "SUPER_ADMIN").request(Q_SETTINGS);
+      const response = await getSettingsGqlClient(viewingSubTenant).request(Q_SETTINGS);
 
       if (response && typeof response === "object" && "settings" in response) {
-        const viewingSubTenantSettings = userRole !== "SUPER_ADMIN";
-        const roleHiddenSettings = viewingSubTenantSettings
+        const roleHiddenSettings = viewingSubTenant
           ? TENANT_HIDDEN_SETTING_KEYS
           : SUPER_ADMIN_HIDDEN_SETTING_KEYS;
         const visibleSettings = ((response.settings as Setting[]) || [])
@@ -363,7 +372,7 @@ export default function SettingsPage() {
           )
           .map(presentSetting);
         const existingKeys = new Set(visibleSettings.map((setting) => setting.key));
-        const brandingKeys = viewingSubTenantSettings
+        const brandingKeys = viewingSubTenant
           ? BRANDING_SETTING_KEYS
           : MAIN_TENANT_BRANDING_SETTING_KEYS;
         const missingBranding = brandingKeys
@@ -396,22 +405,15 @@ export default function SettingsPage() {
     }
   }, [
     activeTenant?.id,
-    activeTenant?.isMainTenant,
     canAccessSettings,
     copy.loadSettingsFailed,
     locale,
-    userRole,
+    viewingSubTenant,
   ]);
 
   React.useEffect(() => {
     void loadSettings();
   }, [loadSettings]);
-
-  React.useEffect(() => {
-    if (isSuperAdmin && activeTenant && activeTenant.isMainTenant !== true) {
-      void switchTenant("");
-    }
-  }, [activeTenant, isSuperAdmin, switchTenant]);
 
   React.useEffect(() => {
     if (!testEmail && user?.email) {
@@ -436,11 +438,19 @@ export default function SettingsPage() {
   }
 
   const handleUpdateSetting = async (input: UpdateSettingInput) => {
-    if (userRole !== "SUPER_ADMIN" && TENANT_HIDDEN_SETTING_KEYS.has(input.key)) {
-      throw new Error(copy.tenantUpdateBlocked);
+    if (!canUpdateSettings) {
+      throw new Error(copy.viewOnlyBanner);
+    }
+    const hiddenKeys = viewingSubTenant
+      ? TENANT_HIDDEN_SETTING_KEYS
+      : SUPER_ADMIN_HIDDEN_SETTING_KEYS;
+    if (hiddenKeys.has(input.key)) {
+      throw new Error(
+        viewingSubTenant ? copy.tenantUpdateBlocked : copy.saveSettingFailed,
+      );
     }
 
-    const response = await getSettingsGqlClient(userRole === "SUPER_ADMIN").request(M_UPDATE_SETTING, {
+    const response = await getSettingsGqlClient(viewingSubTenant).request(M_UPDATE_SETTING, {
       input,
     });
     const updatedSetting = getMutationSetting(response, "updateSetting");
@@ -475,11 +485,19 @@ export default function SettingsPage() {
   };
 
   const handleResetSetting = async (key: string) => {
-    if (userRole !== "SUPER_ADMIN" && TENANT_HIDDEN_SETTING_KEYS.has(key)) {
-      throw new Error(copy.tenantResetBlocked);
+    if (!canUpdateSettings) {
+      throw new Error(copy.viewOnlyBanner);
+    }
+    const hiddenKeys = viewingSubTenant
+      ? TENANT_HIDDEN_SETTING_KEYS
+      : SUPER_ADMIN_HIDDEN_SETTING_KEYS;
+    if (hiddenKeys.has(key)) {
+      throw new Error(
+        viewingSubTenant ? copy.tenantResetBlocked : copy.saveSettingFailed,
+      );
     }
 
-    const response = await getSettingsGqlClient(userRole === "SUPER_ADMIN").request(M_RESET_SETTING, {
+    const response = await getSettingsGqlClient(viewingSubTenant).request(M_RESET_SETTING, {
       key,
     });
     const resetSetting = getMutationSetting(response, "resetSetting");
@@ -514,11 +532,12 @@ export default function SettingsPage() {
   };
 
   const handleTestEmailSettings = async () => {
+    if (!canUpdateSettings) return;
     try {
       setTestingEmail(true);
       setEmailTestResult(null);
 
-      const response = await getSettingsGqlClient(userRole === "SUPER_ADMIN").request<{
+      const response = await getSettingsGqlClient(viewingSubTenant).request<{
         testEmailSettings: EmailTestResult;
       }>(M_TEST_EMAIL_SETTINGS, {
         input: { recipientEmail: testEmail },
@@ -535,11 +554,10 @@ export default function SettingsPage() {
     }
   };
 
-  const pageTitle = isSuperAdmin && !viewingSubTenant ? copy.pageTitleSuper : copy.pageTitleTenant;
-  const pageDescription =
-    isSuperAdmin && !viewingSubTenant
-      ? copy.pageDescriptionSuper
-      : copy.pageDescriptionTenant(getTenantDisplayName(activeTenant, copy.tenantWebsite));
+  const pageTitle = viewingSubTenant ? copy.pageTitleTenant : copy.pageTitleSuper;
+  const pageDescription = viewingSubTenant
+    ? copy.pageDescriptionTenant(getTenantDisplayName(activeTenant, copy.tenantWebsite))
+    : copy.pageDescriptionSuper;
   const visibleCategories = React.useMemo(
     () =>
       Object.entries(SETTING_CATEGORIES).filter(([key]) => {
@@ -575,21 +593,21 @@ export default function SettingsPage() {
   const selectedCategoryInfo = SETTING_CATEGORIES[selectedCategory];
   const SelectedCategoryIcon = CATEGORY_ICONS[selectedCategory] || SettingsIcon;
   const categoryLabel = (category: SettingType) =>
-    isSuperAdmin && category === SettingType.SITE
+    !viewingSubTenant && category === SettingType.SITE
       ? copy.consoleCategory
       : copy.categoryLabels[category] || SETTING_CATEGORIES[category].label;
   const categoryDescription =
-    isSuperAdmin && selectedCategory === SettingType.SITE
+    !viewingSubTenant && selectedCategory === SettingType.SITE
       ? copy.consoleBrandingSectionDescription
       : selectedCategoryInfo.description;
-  const settingSummary = isSuperAdmin
+  const settingSummary = viewingSubTenant
     ? [
         [copy.settings, settings.length],
+        [copy.public, publicCount],
         [copy.required, requiredCount],
       ]
     : [
         [copy.settings, settings.length],
-        [copy.public, publicCount],
         [copy.required, requiredCount],
       ];
   const visibleCategoryKeys = React.useMemo(
@@ -706,6 +724,25 @@ export default function SettingsPage() {
     });
   }, []);
 
+  if (permissionsLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="rounded-lg border bg-white p-6">
+          <div className="mb-6 h-10 w-72 animate-pulse rounded bg-slate-100" />
+          <div className="h-12 animate-pulse rounded-md bg-slate-100" />
+        </div>
+        <div className="grid gap-4 xl:grid-cols-2">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="h-44 animate-pulse rounded-lg border bg-white"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   if (!canAccessSettings) {
     return (
       <div className="flex min-h-[60vh] items-center justify-center px-6">
@@ -774,11 +811,11 @@ export default function SettingsPage() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <Badge variant="outline" className="bg-white">
-                  {isSuperAdmin && !viewingSubTenant
-                    ? copy.managementConsole
-                    : getTenantDisplayName(activeTenant, copy.tenantWebsite)}
+                  {viewingSubTenant
+                    ? getTenantDisplayName(activeTenant, copy.tenantWebsite)
+                    : copy.managementConsole}
                 </Badge>
-                {!isSuperAdmin && activeTenant?.slug ? (
+                {viewingSubTenant && activeTenant?.slug ? (
                   <span className="font-mono text-xs text-slate-400">{activeTenant.slug}</span>
                 ) : null}
               </div>
@@ -788,7 +825,14 @@ export default function SettingsPage() {
               <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
                 {pageDescription}
               </p>
-              {isSuperAdmin ? (
+              {canAccessSettings && !canUpdateSettings ? (
+                <div className="mt-4 max-w-xl rounded-md border border-amber-200 bg-amber-50 px-3 py-3">
+                  <p className="text-sm leading-6 text-amber-900">
+                    {copy.viewOnlyBanner}
+                  </p>
+                </div>
+              ) : null}
+              {isSuperAdmin && !viewingSubTenant ? (
                 <div className="mt-4 max-w-xl rounded-md border border-slate-200 bg-slate-50 px-3 py-3">
                   <p className="text-sm leading-6 text-slate-600">
                     {copy.publicWebsiteHint}
@@ -806,7 +850,7 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <div
                 className={`grid overflow-hidden rounded-md border border-slate-200 bg-slate-50 ${
-                  isSuperAdmin ? "grid-cols-2" : "grid-cols-3"
+                  viewingSubTenant ? "grid-cols-3" : "grid-cols-2"
                 }`}
               >
                 {settingSummary.map(([label, value]) => (
@@ -819,6 +863,30 @@ export default function SettingsPage() {
                 ))}
               </div>
               <div className="flex flex-col gap-2 sm:flex-row">
+                {isSuperAdmin ? (
+                  <Select
+                    value={activeTenant?.id || CONSOLE_SETTINGS_SCOPE}
+                    onValueChange={(value) => {
+                      void switchTenant(value === CONSOLE_SETTINGS_SCOPE ? "" : value);
+                    }}
+                  >
+                    <SelectTrigger className="h-10 w-full bg-white sm:w-[240px]">
+                      <SelectValue placeholder={copy.selectScope} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={CONSOLE_SETTINGS_SCOPE}>
+                        {copy.consoleOption}
+                      </SelectItem>
+                      {tenantOptions
+                        .filter((tenant) => tenant.status === "ACTIVE" && tenant.isMainTenant !== true)
+                        .map((tenant) => (
+                          <SelectItem key={tenant.id} value={tenant.id}>
+                            {getTenantDisplayName(tenant, tenant.name)}
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                ) : null}
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <Input
@@ -956,7 +1024,7 @@ export default function SettingsPage() {
                       {categoryDescription}
                     </p>
                   </div>
-                  {!isSuperAdmin && activeTenant ? (
+                  {!viewingSubTenant ? null : activeTenant ? (
                     <Badge variant="outline" className="max-w-full truncate bg-white">
                       {activeTenant.slug}
                     </Badge>
@@ -996,6 +1064,7 @@ export default function SettingsPage() {
                         ) : null}
                       </div>
 
+                      {canUpdateSettings ? (
                       <div className="flex w-full flex-col gap-2 sm:flex-row xl:w-auto">
                         <Input
                           type="email"
@@ -1018,6 +1087,7 @@ export default function SettingsPage() {
                           {copy.sendTest}
                         </Button>
                       </div>
+                      ) : null}
                     </div>
                     <EmailDeliveryLogs canRetry={canRetryEmail} />
                   </div>
@@ -1045,6 +1115,7 @@ export default function SettingsPage() {
                   onResetSetting={handleResetSetting}
                   loading={loading}
                   showPublicBadge={viewingSubTenant}
+                  readOnly={!canUpdateSettings}
                 />
               </div>
             </section>

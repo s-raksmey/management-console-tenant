@@ -23,6 +23,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { Input } from '@/components/ui/input';
 import { useEditorial } from '@/hooks/useEditorial';
+import { usePermissions } from '@/hooks/usePermissions';
+import { Permission } from '@/components/permissions/PermissionGuard';
 import { useStableLoading } from '@/hooks/useStableLoading';
 import { useAdminLocale } from '@/hooks/useAdminLocale';
 import type { ActivityItem } from './shared';
@@ -201,6 +203,11 @@ function KpiCard({
 export const EditorDashboard: React.FC = () => {
   const { locale } = useAdminLocale();
   const copy = editorDashboardCopy[locale];
+  const { hasPermission } = usePermissions();
+  const canReview = hasPermission(Permission.REVIEW_ARTICLES);
+  const canApprove = hasPermission(Permission.APPROVE_ARTICLES);
+  const canReject = hasPermission(Permission.REJECT_ARTICLES);
+  const canFeature = hasPermission(Permission.SET_FEATURED);
   const {
     loading: requestLoading,
     error,
@@ -349,12 +356,14 @@ export const EditorDashboard: React.FC = () => {
                 <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                 {copy.refresh}
               </Button>
-              <Button asChild>
-                <Link href="/review">
-                  <FileText className="mr-2 h-4 w-4" />
-                  {copy.reviewQueue}
-                </Link>
-              </Button>
+              {canReview ? (
+                <Button asChild>
+                  <Link href="/review">
+                    <FileText className="mr-2 h-4 w-4" />
+                    {copy.reviewQueue}
+                  </Link>
+                </Button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -428,18 +437,24 @@ export const EditorDashboard: React.FC = () => {
                           )}
                         </div>
                         <div className="flex flex-wrap gap-2 lg:justify-end">
-                          <Button variant="outline" size="sm" onClick={() => requestArticleAction('feature', article)}>
-                            <Star className="mr-2 h-4 w-4" />
-                            {copy.feature}
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => requestArticleAction('reject', article)}>
-                            <XCircle className="mr-2 h-4 w-4" />
-                            {copy.reject}
-                          </Button>
-                          <Button size="sm" onClick={() => requestArticleAction('approve', article)}>
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            {copy.approve}
-                          </Button>
+                          {canFeature ? (
+                            <Button variant="outline" size="sm" onClick={() => requestArticleAction('feature', article)}>
+                              <Star className="mr-2 h-4 w-4" />
+                              {copy.feature}
+                            </Button>
+                          ) : null}
+                          {canReject ? (
+                            <Button variant="outline" size="sm" onClick={() => requestArticleAction('reject', article)}>
+                              <XCircle className="mr-2 h-4 w-4" />
+                              {copy.reject}
+                            </Button>
+                          ) : null}
+                          {canApprove ? (
+                            <Button size="sm" onClick={() => requestArticleAction('approve', article)}>
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              {copy.approve}
+                            </Button>
+                          ) : null}
                         </div>
                       </div>
                     </div>

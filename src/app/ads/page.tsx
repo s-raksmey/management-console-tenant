@@ -57,6 +57,7 @@ const adsPageCopy = {
     archiveFailed: "Failed to archive advertisement.",
     archivedDescription: "Advertisement moved to archive.",
     accessDenied: "Access denied: Ads permission required.",
+    viewOnlyBanner: "Your role can view ads but cannot create, edit, or archive them.",
     noLimit: "No limit",
     delivery: {
       Archived: "Archived",
@@ -89,6 +90,7 @@ const adsPageCopy = {
     views: "Views",
     clicks: "Clicks",
     edit: "Edit",
+    view: "View",
     archiveTitleAttr: "Archive advertisement",
     archiveDialogTitle: "Archive Advertisement?",
     archiveDialogDescription: (name?: string) =>
@@ -122,6 +124,7 @@ const adsPageCopy = {
     archiveFailed: "ដាក់ពាណិជ្ជកម្មក្នុងប័ណ្ណសារមិនបាន។",
     archivedDescription: "បានផ្លាស់ទីពាណិជ្ជកម្មទៅប័ណ្ណសារ។",
     accessDenied: "គ្មានសិទ្ធិ៖ ត្រូវការសិទ្ធិពាណិជ្ជកម្ម។",
+    viewOnlyBanner: "តួនាទីរបស់អ្នកអាចមើលពាណិជ្ជកម្ម ប៉ុន្តែមិនអាចបង្កើត កែ ឬទុកក្នុងប័ណ្ណសារបានទេ។",
     noLimit: "គ្មានកំណត់",
     delivery: {
       Archived: "បានដាក់ប័ណ្ណសារ",
@@ -154,6 +157,7 @@ const adsPageCopy = {
     views: "ចំនួនមើល",
     clicks: "ការចុច",
     edit: "កែ",
+    view: "មើល",
     archiveTitleAttr: "ដាក់ពាណិជ្ជកម្មក្នុងប័ណ្ណសារ",
     archiveDialogTitle: "ដាក់ពាណិជ្ជកម្មក្នុងប័ណ្ណសារ?",
     archiveDialogDescription: (name?: string) =>
@@ -303,6 +307,7 @@ export default function AdsPage() {
   };
 
   if (!permissionsLoading && !canView) return <div className="text-sm text-red-600">{copy.accessDenied}</div>;
+  const viewOnly = canView && !canCreate && !canUpdate && !canDelete;
   const numberLocale = locale === "km" ? "km-KH" : undefined;
 
   const metrics = [
@@ -319,6 +324,11 @@ export default function AdsPage() {
           <div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-blue-700"><Megaphone className="h-4 w-4" />{copy.revenueWorkspace}</div>
           <h1 className="text-3xl font-bold text-slate-950">{copy.title}</h1>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">{copy.description}</p>
+          {viewOnly ? (
+            <p className="mt-3 max-w-2xl rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              {copy.viewOnlyBanner}
+            </p>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {isSuperAdmin && (
@@ -379,7 +389,11 @@ export default function AdsPage() {
                       <div><p className="text-sm font-semibold">{ctr.toFixed(1)}%</p><p className="text-[11px] uppercase text-slate-400">CTR</p></div>
                     </div>
                     <div className="flex gap-2 lg:justify-end">
-                      {canUpdate && <Button variant="outline" size="sm" asChild><Link href={`/ads/${ad.id}/edit${selectedTenantId ? `?tenantId=${selectedTenantId}` : ""}`}><Edit className="h-4 w-4" />{copy.edit}</Link></Button>}
+                      {canUpdate ? (
+                        <Button variant="outline" size="sm" asChild><Link href={`/ads/${ad.id}/edit${selectedTenantId ? `?tenantId=${selectedTenantId}` : ""}`}><Edit className="h-4 w-4" />{copy.edit}</Link></Button>
+                      ) : (
+                        <Button variant="outline" size="sm" asChild><Link href={`/ads/${ad.id}/edit${selectedTenantId ? `?tenantId=${selectedTenantId}` : ""}`}><Eye className="h-4 w-4" />{copy.view}</Link></Button>
+                      )}
                       {canDelete && <Button variant="ghost" size="icon" className="text-red-600 hover:text-red-700" title={copy.archiveTitleAttr} onClick={() => setArchiveTarget(ad)}><Trash2 className="h-4 w-4" /></Button>}
                     </div>
                   </div>
