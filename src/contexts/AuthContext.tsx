@@ -221,10 +221,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
     };
 
-    window.addEventListener("pulse-news:tenant-changed", handleTenantChanged);
+    window.addEventListener("tenant-console:tenant-changed", handleTenantChanged);
 
     return () => {
-      window.removeEventListener("pulse-news:tenant-changed", handleTenantChanged);
+      window.removeEventListener("tenant-console:tenant-changed", handleTenantChanged);
     };
   }, [clearAuthState]);
 

@@ -73,13 +73,13 @@ export function SettingsCategory({
 
   const categorySettings = React.useMemo(() => {
     const brandingOrder = [
-      "site.management_logo_url",
-      "site.management_og_image_url",
-      "site.management_favicon_url",
+      "site.dashboard_logo_url",
       "site.logo_url",
       "site.og_image_url",
       "site.favicon_url",
-      "site.dashboard_favicon_url",
+      "site.management_logo_url",
+      "site.management_og_image_url",
+      "site.management_favicon_url",
     ];
 
     return getSettingsByType(settings, category)

@@ -1,8 +1,9 @@
 // src/services/graphql-client.ts
 import { GraphQLClient } from "graphql-request"
 
-export const SELECTED_TENANT_ID_KEY = "pulse_news_admin_selected_tenant_id";
+export const SELECTED_TENANT_ID_KEY = "management_console_tenant_selected_tenant_id";
 export const COOKIE_SESSION_TOKEN = "cookie-session";
+export const CONSOLE_AUDIENCE = "tenant";
 
 export function isBearerToken(token?: string | null) {
   return Boolean(token && token !== COOKIE_SESSION_TOKEN);
@@ -27,6 +28,7 @@ function applyTenantHeaders(
   client: GraphQLClient,
   options?: { includeSelectedTenant?: boolean; hostOnly?: boolean },
 ) {
+  client.setHeader("x-console-audience", CONSOLE_AUDIENCE);
   const includeSelectedTenant = options?.includeSelectedTenant !== false;
   const selectedTenantId = includeSelectedTenant ? getSelectedTenantId() : null;
   if (selectedTenantId && !options?.hostOnly) {
@@ -92,7 +94,9 @@ export function getHostBoundGqlClient(token?: string) {
 }
 
 export function getAuthFetchHeaders(options?: { includeSelectedTenant?: boolean }) {
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    "x-console-audience": CONSOLE_AUDIENCE,
+  };
 
   if (typeof window === "undefined") return headers;
 

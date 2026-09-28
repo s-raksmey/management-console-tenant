@@ -17,13 +17,17 @@ const SETTING_DISPLAY: Record<string, Pick<Setting, "label" | "description">> = 
     label: "Open Graph Image",
     description: "Upload the default image used when the management console is shared in search or social previews.",
   },
+  "site.dashboard_logo_url": {
+    label: "Admin Dashboard Logo",
+    description: "Upload the logo shown in this admin dashboard sidebar and header. If empty, the public website logo is used.",
+  },
   "site.dashboard_favicon_url": {
     label: "Admin Dashboard Favicon",
     description: "Upload the favicon used for this admin dashboard.",
   },
   "site.favicon_url": {
-    label: "Public Website Favicon",
-    description: "Upload the favicon used for this public website.",
+    label: "Favicon",
+    description: "Upload one favicon. It is used on the public website and in this admin dashboard.",
   },
   "site.management_favicon_url": {
     label: "Management Console Favicon",

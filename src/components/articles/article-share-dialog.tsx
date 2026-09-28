@@ -24,7 +24,7 @@ type SharePlatform = {
   label: string;
 };
 
-const STORAGE_KEY = "pulse-news-share-platforms";
+const STORAGE_KEY = "tenant-console-share-platforms";
 
 const PLATFORMS: SharePlatform[] = [
   {
@@ -152,7 +152,9 @@ function getPreviewArticleUrl(article: Article | null, publicBaseUrl?: string | 
   if (!article) return "";
   const base =
     publicBaseUrl?.trim() ||
-    (typeof window !== "undefined" ? window.location.origin.replace(":3001", ":3000") : "");
+    (typeof window !== "undefined"
+      ? window.location.origin.replace(":3002", ":3000").replace(":3001", ":3000")
+      : "");
   const category = article.category?.slug || "news";
   const topic = article.topic || "latest";
 

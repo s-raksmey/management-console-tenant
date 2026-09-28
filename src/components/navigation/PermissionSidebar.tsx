@@ -48,7 +48,7 @@ const sidebarCopy = {
     panel: "Panel",
     expand: "Expand navigation sidebar",
     collapse: "Collapse navigation sidebar",
-    managementConsole: "Management Console",
+    managementConsole: "Tenant Console",
     subTenant: "Sub-tenant",
   },
   km: {

@@ -30,7 +30,7 @@ function cleanSegment(value: string | null | undefined, fallback: string) {
 
 function getFallbackBaseUrl() {
   if (typeof window === "undefined") return "https://example.com";
-  return window.location.origin.replace(":3001", ":3000");
+  return window.location.origin.replace(":3002", ":3000").replace(":3001", ":3000");
 }
 
 function buildArticleUrl({
@@ -85,7 +85,7 @@ export function SeoPreviewCard({
   const displayTitle = title.trim() || copy.articleTitle;
   const displayExcerpt =
     excerpt?.trim() || copy.excerpt;
-  const displaySiteName = siteName?.trim() || "Pulse News";
+  const displaySiteName = siteName?.trim() || "Website";
   const articleUrl = buildArticleUrl({
     publicBaseUrl,
     categorySlug,

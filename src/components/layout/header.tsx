@@ -87,7 +87,7 @@ const headerCopy = {
     profile: "Profile",
     settings: "Settings",
     signOut: "Sign out",
-    managementConsole: "Management Console",
+    managementConsole: "Tenant Console",
     subTenant: "Sub-tenant",
     from: (name: string) => `From: ${name}`,
     notificationLabels: {
@@ -193,7 +193,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const toggleDarkMode = () => {
     const nextIsDark = !isDarkMode;
     document.documentElement.classList.toggle("dark", nextIsDark);
-    localStorage.setItem("pulse-news-color-scheme", nextIsDark ? "dark" : "light");
+    localStorage.setItem("tenant-console-color-scheme", nextIsDark ? "dark" : "light");
     setIsDarkMode(nextIsDark);
     window.dispatchEvent(new Event(COLOR_SCHEME_CHANGED_EVENT));
   };
@@ -453,11 +453,11 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   };
 
   useEffect(() => {
-    const savedScheme = localStorage.getItem("pulse-news-color-scheme");
+    const savedScheme = localStorage.getItem("tenant-console-color-scheme");
     const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)");
 
     const applyScheme = () => {
-      const scheme = localStorage.getItem("pulse-news-color-scheme") || savedScheme || "system";
+      const scheme = localStorage.getItem("tenant-console-color-scheme") || savedScheme || "system";
       const nextIsDark =
         scheme === "dark" || (scheme === "system" && systemPrefersDark.matches);
 

@@ -166,77 +166,10 @@ export const getNavigationItems = (
     media: number;
     reviewQueue?: number;
   },
-  userRole?: string,
+  _userRole?: string,
   locale: AdminLocale = "en",
 ): NavigationItem[] => {
   const copy = navCopy[locale];
-  if (userRole === "SUPER_ADMIN") {
-    return [
-      {
-        name: copy.dashboard,
-        href: "/",
-        icon: LayoutDashboard,
-        badge: null,
-        description: copy.mainTenantOverview,
-      },
-      {
-        name: copy.tenantManagement,
-        href: "/tenants",
-        icon: Building2,
-        badge: null,
-        description: copy.manageTenantWebsites,
-        permissions: [Permission.SYSTEM_ADMINISTRATION],
-      },
-      {
-        name: copy.userManagement,
-        href: "/users",
-        icon: Users,
-        badge: counts.users > 0 ? counts.users.toString() : null,
-        description: copy.manageMainTenantUsers,
-        permissions: [Permission.VIEW_ALL_USERS],
-      },
-      {
-        name: copy.roleManagement,
-        href: "/users/roles",
-        icon: Shield,
-        badge: null,
-        description: copy.manageRolePermissions,
-        permissions: [Permission.MANAGE_USER_ROLES],
-      },
-      {
-        name: copy.analytics,
-        href: "/analytics",
-        icon: BarChart3,
-        badge: null,
-        description: copy.mainTenantAnalytics,
-        permissions: [Permission.VIEW_ANALYTICS],
-      },
-      {
-        name: copy.media,
-        href: "/media",
-        icon: Image,
-        badge: counts.media > 0 ? counts.media.toString() : null,
-        description: copy.filesImages,
-        permissions: [Permission.VIEW_MEDIA, Permission.MANAGE_MEDIA],
-      },
-      {
-        name: copy.logs,
-        href: "/audit",
-        icon: Archive,
-        badge: null,
-        description: copy.systemActivityLogs,
-        permissions: [Permission.VIEW_AUDIT_LOGS],
-      },
-      {
-        name: copy.settings,
-        href: "/settings",
-        icon: Settings,
-        badge: null,
-        description: copy.mainTenantConfiguration,
-        permissions: [Permission.VIEW_SETTINGS],
-      },
-    ];
-  }
 
   const navigationItems: NavigationItem[] = [
     // Dashboard - Available to all users

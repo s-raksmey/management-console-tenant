@@ -1,7 +1,10 @@
+import { CONSOLE_AUDIENCE } from "@/services/graphql-client";
+
 export function getForwardedTenantHeaders(req: Request): Record<string, string> {
+  const audience = { "x-console-audience": CONSOLE_AUDIENCE };
   const tenantId = req.headers.get("x-tenant-id")?.trim();
   if (tenantId) {
-    return { "x-tenant-id": tenantId };
+    return { ...audience, "x-tenant-id": tenantId };
   }
 
   const host =
@@ -10,8 +13,8 @@ export function getForwardedTenantHeaders(req: Request): Record<string, string> 
     req.headers.get("host")?.trim();
 
   if (host) {
-    return { "x-tenant-host": host.toLowerCase() };
+    return { ...audience, "x-tenant-host": host.toLowerCase() };
   }
 
-  return {};
+  return audience;
 }

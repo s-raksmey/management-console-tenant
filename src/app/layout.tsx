@@ -11,7 +11,7 @@ import { ThemeRuntime } from "@/components/theme/theme-runtime"
 import { AdminLocaleProvider } from "@/hooks/useAdminLocale"
 
 export const metadata: Metadata = {
-  title: "Management Console",
+  title: "Tenant Console",
   description: "Modern CMS dashboard with responsive design",
 }
 
@@ -25,7 +25,7 @@ export default async function RootLayout({
   const locale = cookieStore.get("locale")?.value === "km" ? "km" : "en"
   const colorSchemeScript = `
     try {
-      var scheme = localStorage.getItem('pulse-news-color-scheme') || 'system';
+      var scheme = localStorage.getItem('tenant-console-color-scheme') || 'system';
       var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       document.documentElement.classList.toggle('dark', scheme === 'dark' || (scheme === 'system' && prefersDark));
     } catch (_) {}

@@ -425,7 +425,7 @@ export default function NewArticlePage() {
           <Input
             value={slug}
             onChange={(e) => setSlug(e.target.value)}
-            placeholder="welcome-to-pulse-news"
+            placeholder="article-title"
           />
         </div>
 

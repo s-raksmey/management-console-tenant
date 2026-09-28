@@ -154,7 +154,7 @@ type CarouselSlideFormProps = {
 
 const carouselFormCopy = {
   en: {
-    pulseNews: "Pulse News",
+    website: "Website",
     defaultSubtitle: "Breaking news, insightful analysis, and stories that matter",
     error: "Error",
     success: "Success",
@@ -225,7 +225,7 @@ const carouselFormCopy = {
     previewDescription: "How the slide will feel on the selected public page.",
   },
   km: {
-    pulseNews: "Pulse News",
+    website: "គេហទំព័រ",
     defaultSubtitle: "ព័ត៌មានទាន់ហេតុការណ៍ ការវិភាគ និងរឿងរ៉ាវសំខាន់ៗ",
     error: "បញ្ហា",
     success: "ជោគជ័យ",
@@ -315,7 +315,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
   const isEditing = !!slide;
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const selectedTenant = tenants.find((tenant) => tenant.id === selectedTenantId) ?? null;
-  const previewTitle = form.title.trim() || copy.pulseNews;
+  const previewTitle = form.title.trim() || copy.englishTitle;
   const previewSubtitle =
     form.subtitle.trim() ||
     copy.defaultSubtitle;
@@ -1001,7 +1001,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
               <div className="absolute inset-0 bg-gradient-to-r from-slate-950/90 via-slate-950/65 to-red-950/50" />
               <div className="absolute inset-x-0 bottom-0 p-5 text-white">
                 <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-red-200">
-                  {copy.pulseNews}
+                  {selectedTenant?.name || copy.website}
                 </p>
                 <h2
                   className={`line-clamp-2 font-black ${

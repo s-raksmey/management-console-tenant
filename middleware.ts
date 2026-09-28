@@ -1,7 +1,7 @@
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-const ADMIN_SESSION_COOKIE = "pulse_news_admin_session";
+const TENANT_SESSION_COOKIE = "management_console_tenant_session";
 
 const PUBLIC_PAGE_PREFIXES = [
   "/login",
@@ -28,7 +28,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = req.cookies.get(ADMIN_SESSION_COOKIE)?.value;
+  const session = req.cookies.get(TENANT_SESSION_COOKIE)?.value;
   if (session) {
     return NextResponse.next();
   }

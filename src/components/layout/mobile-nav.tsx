@@ -305,8 +305,8 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
   const brandName = viewingSubTenant
     ? getTenantDisplayName(activeTenant, locale === "km" ? "គេហទំព័រ" : "Sub-tenant")
     : locale === "km"
-      ? "ផ្ទាំងគ្រប់គ្រង"
-      : "Management Console";
+      ? "កុងសូលគេហទំព័រ"
+      : "Tenant Console";
   const brandLogoUrl = viewingSubTenant
     ? getTenantLogoUrl(activeTenant)
     : managementLogoUrl;

@@ -22,18 +22,18 @@ import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 const loginPageCopy = {
   en: {
-    brand: "Management Console",
-    badge: "Secure editorial operations",
-    headline: "Management Console",
+    brand: "Tenant Console",
+    badge: "Secure newsroom operations",
+    headline: "Tenant Console",
     description:
-      "A focused workspace for newsroom operations, sub-tenant administration, and main-tenant security.",
+      "The workspace for one sub-tenant: articles, publishing, team access, and website setup.",
     statusOnline: "System online",
     auditEnabled: "Audit logging enabled",
     authorized: "Authorized access only",
     verified: "Email verified successfully. You can now sign in.",
     signInTitle: "Sign in",
     signInDescription:
-      "Access the newsroom workspace with your authorized admin account.",
+      "Sign in with your sub-tenant admin, editor, or author account.",
     signInButton: "Sign in",
     protection:
       "Protected by secure cookies, short sessions, and two-factor verification.",
@@ -48,8 +48,8 @@ const loginPageCopy = {
         icon: FileText,
       },
       {
-        title: "Sub-tenant operations",
-        detail: "Manage sub-tenant spaces, team access, roles, and configuration.",
+        title: "Newsroom team",
+        detail: "Manage this website's team access, roles, and configuration.",
         icon: Users,
       },
       {
@@ -60,11 +60,11 @@ const loginPageCopy = {
     ],
   },
   km: {
-    brand: "ផ្ទាំងគ្រប់គ្រង",
+    brand: "កុងសូលគេហទំព័រ",
     badge: "ប្រតិបត្តិការព័ត៌មានមានសុវត្ថិភាព",
-    headline: "ផ្ទាំងគ្រប់គ្រង",
+    headline: "កុងសូលគេហទំព័រ",
     description:
-      "កន្លែងធ្វើការសម្រាប់ប្រតិបត្តិការព័ត៌មាន ការគ្រប់គ្រងអង្គភាព និងសុវត្ថិភាពប្រព័ន្ធ។",
+      "កន្លែងធ្វើការសម្រាប់គេហទំព័រមួយ៖ អត្ថបទ ការផ្សព្វផ្សាយ ក្រុមការងារ និងការរៀបចំគេហទំព័រ។",
     statusOnline: "ប្រព័ន្ធកំពុងដំណើរការ",
     auditEnabled: "បានបើកកំណត់ហេតុសវនកម្ម",
     authorized: "សម្រាប់អ្នកមានសិទ្ធិចូលប៉ុណ្ណោះ",
@@ -86,8 +86,8 @@ const loginPageCopy = {
         icon: FileText,
       },
       {
-        title: "ប្រតិបត្តិការអង្គភាព",
-        detail: "គ្រប់គ្រងអង្គភាព ការចូលប្រើរបស់ក្រុម តួនាទី និងការកំណត់។",
+        title: "ក្រុមការងារព័ត៌មាន",
+        detail: "គ្រប់គ្រងការចូលប្រើរបស់ក្រុម តួនាទី និងការកំណត់របស់គេហទំព័រនេះ។",
         icon: Users,
       },
       {
@@ -102,7 +102,7 @@ const loginPageCopy = {
 function getInitialDarkMode() {
   if (typeof window === "undefined") return true;
 
-  const savedScheme = localStorage.getItem("pulse-news-color-scheme") || "system";
+  const savedScheme = localStorage.getItem("tenant-console-color-scheme") || "system";
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   return savedScheme === "dark" || (savedScheme === "system" && prefersDark);
 }
@@ -124,7 +124,7 @@ export default function LoginPage() {
     const nextIsDark = !isDarkMode;
     setIsDarkMode(nextIsDark);
     document.documentElement.classList.toggle("dark", nextIsDark);
-    localStorage.setItem("pulse-news-color-scheme", nextIsDark ? "dark" : "light");
+    localStorage.setItem("tenant-console-color-scheme", nextIsDark ? "dark" : "light");
     window.dispatchEvent(new Event(COLOR_SCHEME_CHANGED_EVENT));
   };
 

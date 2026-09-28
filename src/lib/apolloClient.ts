@@ -1,5 +1,5 @@
 import { ApolloClient, InMemoryCache, HttpLink } from '@apollo/client';
-import { SELECTED_TENANT_ID_KEY } from '@/services/graphql-client';
+import { CONSOLE_AUDIENCE, SELECTED_TENANT_ID_KEY } from '@/services/graphql-client';
 
 const client = new ApolloClient({
   link: new HttpLink({
@@ -7,6 +7,8 @@ const client = new ApolloClient({
     credentials: 'include',
     fetch: (uri, options) => {
       const headers = new Headers(options?.headers);
+
+      headers.set('x-console-audience', CONSOLE_AUDIENCE);
 
       if (typeof window !== 'undefined') {
         const tenantId = localStorage.getItem(SELECTED_TENANT_ID_KEY);

@@ -28,7 +28,7 @@ const resetPasswordCopy = {
     resetting: "Resetting password...",
     resetPassword: "Reset Password",
     backToLogin: "Back to login",
-    console: "Management Console",
+    console: "Tenant Console",
     pageDescription: "Password recovery",
     loading: "Loading...",
     showPassword: "Show password",

@@ -9,7 +9,7 @@ import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 const forgotPasswordCopy = {
   en: {
-    console: "Management Console",
+    console: "Tenant Console",
     pageDescription: "Reset your password",
     title: "Forgot Password",
     description: "Enter your account email and we will send a password reset link if the account exists.",

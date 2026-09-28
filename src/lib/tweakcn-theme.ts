@@ -6,9 +6,9 @@ const THEME_SETTING_BY_ROLE: Record<string, string> = {
 };
 
 export const PUBLIC_THEME_SETTING_KEY = "theme.public_tweakcn";
-export const THEME_SETTINGS_CHANGED_EVENT = "pulse-news-theme-settings-changed";
-export const COLOR_SCHEME_CHANGED_EVENT = "pulse-news-color-scheme-changed";
-const THEME_CUSTOM_STYLE_ID = "pulse-news-runtime-theme";
+export const THEME_SETTINGS_CHANGED_EVENT = "tenant-console-theme-settings-changed";
+export const COLOR_SCHEME_CHANGED_EVENT = "tenant-console-color-scheme-changed";
+const THEME_CUSTOM_STYLE_ID = "tenant-console-runtime-theme";
 
 export const getThemeSettingKeyForRole = (role?: string | null) =>
   THEME_SETTING_BY_ROLE[role?.toUpperCase() || ""] || "theme.admin_tweakcn";

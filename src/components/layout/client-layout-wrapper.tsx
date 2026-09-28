@@ -25,31 +25,19 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     ? {
         loading: 'កំពុងផ្ទុក...',
         loginRedirect: 'កំពុងបញ្ជូនទៅទំព័រចូល...',
-        dashboardRedirect: 'កំពុងបញ្ជូនទៅផ្ទាំងគ្រប់គ្រងអ្នកជួលមេ...',
+        dashboardRedirect: 'កំពុងបញ្ជូនទៅផ្ទាំងគ្រប់គ្រងគេហទំព័រ...',
+        wrongConsole: 'កុងសូលនេះសម្រាប់បុគ្គលិកគេហទំព័រ។ អ្នកគ្រប់គ្រងកំពូលត្រូវប្រើកុងសូលមេ។',
       }
     : {
         loading: 'Loading...',
         loginRedirect: 'Redirecting to login...',
-        dashboardRedirect: 'Redirecting to the Main Tenant dashboard...',
+        dashboardRedirect: 'Redirecting to the tenant dashboard...',
+        wrongConsole: 'This console is for sub-tenant staff. Super admins use the main console.',
       };
 
   // Public routes that don't require authentication
   const publicRoutes = ['/login', '/forgot-password', '/reset-password'];
   const isPublicRoute = publicRoutes.includes(pathname);
-  const superAdminAllowedRoutes = [
-    '/',
-    '/tenants',
-    '/users',
-    '/analytics',
-    '/media',
-    '/audit',
-    '/settings',
-    '/profile',
-    '/notifications',
-  ];
-  const isSuperAdminRouteAllowed = superAdminAllowedRoutes.some((route) =>
-    route === '/' ? pathname === route : pathname === route || pathname.startsWith(`${route}/`)
-  );
 
   useEffect(() => {
     // Don't redirect while loading
@@ -66,25 +54,13 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
       router.push('/');
       return;
     }
-
-    if (
-      isAuthenticated &&
-      user?.role === 'SUPER_ADMIN' &&
-      !isPublicRoute &&
-      !isSuperAdminRouteAllowed
-    ) {
-      router.push('/');
-      return;
-    }
   }, [
     isAuthenticated,
     isInitializing,
     isPublicRoute,
-    isSuperAdminRouteAllowed,
     pathname,
     permissionsLoading,
     router,
-    user?.role,
   ]);
 
   useEffect(() => {
@@ -176,16 +152,11 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     );
   }
 
-  if (
-    user?.role === 'SUPER_ADMIN' &&
-    !permissionsLoading &&
-    !isPublicRoute &&
-    !isSuperAdminRouteAllowed
-  ) {
+  if (isAuthenticated && user?.role === 'SUPER_ADMIN' && !isPublicRoute) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-slate-600">{copy.dashboardRedirect}</p>
+          <p className="text-slate-600">{copy.wrongConsole}</p>
         </div>
       </div>
     );

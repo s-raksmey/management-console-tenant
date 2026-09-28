@@ -12,7 +12,6 @@ import {
 } from "@/lib/tweakcn-theme";
 import { useTenant } from "@/contexts/TenantContext";
 import { resolveCmsMediaSrc } from "@/lib/cms-media";
-import { isSubTenantDisplay } from "@/lib/tenant-display";
 
 type PublicSetting = {
   key: string;
@@ -27,16 +26,10 @@ function valueToString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function updateFavicon(
-  settings: PublicSetting[],
-  role?: string | null,
-  viewingSubTenant?: boolean,
-) {
+function updateFavicon(settings: PublicSetting[]) {
   const faviconUrl =
-    role === "SUPER_ADMIN" && !viewingSubTenant
-      ? valueToString(getSettingValue(settings, "site.management_favicon_url"))
-      : valueToString(getSettingValue(settings, "site.dashboard_favicon_url")) ||
-        valueToString(getSettingValue(settings, "site.favicon_url"));
+    valueToString(getSettingValue(settings, "site.favicon_url")) ||
+    valueToString(getSettingValue(settings, "site.dashboard_favicon_url"));
 
   let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
 
@@ -59,7 +52,6 @@ function updateFavicon(
 export function ThemeRuntime() {
   const { user } = useAuth();
   const { activeTenant } = useTenant();
-  const viewingSubTenant = isSubTenantDisplay(activeTenant);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,11 +65,7 @@ export function ThemeRuntime() {
         if (cancelled) return;
 
         applyThemeSettings(response.publicSettings || [], user?.role);
-        updateFavicon(
-          response.publicSettings || [],
-          user?.role,
-          viewingSubTenant,
-        );
+        updateFavicon(response.publicSettings || []);
       } catch (error) {
         console.warn("Failed to load theme settings", error);
       }
@@ -92,7 +80,7 @@ export function ThemeRuntime() {
       window.removeEventListener(THEME_SETTINGS_CHANGED_EVENT, loadTheme);
       window.removeEventListener(COLOR_SCHEME_CHANGED_EVENT, loadTheme);
     };
-  }, [activeTenant?.id, user?.role, viewingSubTenant]);
+  }, [activeTenant?.id, user?.role]);
 
   return null;
 }

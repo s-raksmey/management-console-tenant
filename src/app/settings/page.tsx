@@ -72,10 +72,10 @@ const CATEGORY_ICONS = {
 
 const HIDDEN_SETTING_KEYS = new Set(["site.name"]);
 const BRANDING_SETTING_KEYS = [
+  "site.dashboard_logo_url",
   "site.logo_url",
   "site.og_image_url",
   "site.favicon_url",
-  "site.dashboard_favicon_url",
 ] as const;
 const MAIN_TENANT_BRANDING_SETTING_KEYS = [
   "site.management_logo_url",
@@ -129,6 +129,7 @@ const SUPER_ADMIN_HIDDEN_SETTING_KEYS = new Set([
   "maintenance.message",
 ]);
 const TENANT_HIDDEN_SETTING_KEYS = new Set([
+  "site.dashboard_favicon_url",
   "site.management_logo_url",
   "site.management_og_image_url",
   "site.management_favicon_url",
@@ -172,7 +173,7 @@ const settingsCopy = {
     brandingDescription: "Upload a square logo, Open Graph image, or favicon from this device.",
     brandingSection: "Website branding",
     brandingSectionDescription:
-      "Upload this sub-tenant logo, Open Graph image, and favicons. The logo appears next to the site name in admin and on the public website.",
+      "Upload this admin dashboard logo, the public website logo, an Open Graph image, and one favicon. The favicon is used on the public website and in this admin dashboard.",
     consoleBrandingSection: "Management Console branding",
     consoleBrandingSectionDescription:
       "Upload the management console logo, Open Graph image, and favicon from this device. The logo appears in the sidebar and header. The Open Graph image is used in search and social previews.",
@@ -250,7 +251,7 @@ const settingsCopy = {
     consoleOption: "ផ្ទាំងគ្រប់គ្រង",
     consoleCategory: "ផ្ទាំងគ្រប់គ្រង",
     brandingSectionDescription:
-      "ផ្ទុក logo រូបភាព Open Graph និង favicon សម្រាប់គេហទំព័រនេះ។ Logo បង្ហាញក្បែរ�ង្ហាញក្បែរឈ្មោះគេហទំព័រនៅផ្ទាំងគ្រប់គ្រង និងគេហទំព័រសា�គ្រង និងគេហទំព័រសាធារណៈ។",
+      "ផ្ទុក logo ផ្ទាំងគ្រប់គ្រង logo គេហទំព័រសាធារណៈ រូបភាព Open Graph និង favicon មួយ។ Favicon ប្រើទាំងគេហទំព័រសាធារណៈ និងផ្ទាំងគ្រប់គ្រងនេះ។",
     consoleBrandingSection: "អត្តសញ្ញាណផ្ទាំងគ្រប់គ្រង",
     consoleBrandingSectionDescription:
       "ផ្ទុក logo រូបភាព Open Graph និង favicon របស់ផ្ទាំងគ្រប់គ្រងពីឧបករណ៍នេះ។ Logo បង្ហាញនៅរបារចំហៀង និងក្បាលទំព័រ។ រូបភាព Open Graph ប្រើសម្រាប់ការមើលជាមុននៅស្វែងរក និងបណ្តាញសង្គម។",
@@ -471,6 +472,7 @@ export default function SettingsPage() {
       [
         "site.description",
         "site.logo_url",
+        "site.dashboard_logo_url",
         "site.og_image_url",
         "site.dashboard_favicon_url",
         "site.management_logo_url",
@@ -518,6 +520,7 @@ export default function SettingsPage() {
       [
         "site.description",
         "site.logo_url",
+        "site.dashboard_logo_url",
         "site.og_image_url",
         "site.dashboard_favicon_url",
         "site.management_logo_url",
@@ -648,6 +651,7 @@ export default function SettingsPage() {
     }
 
     const hasBranding =
+      hasSettingValue(settings, "site.dashboard_logo_url") ||
       hasSettingValue(settings, "site.logo_url") ||
       hasSettingValue(settings, "site.og_image_url") ||
       hasSettingValue(settings, "site.favicon_url");

@@ -57,6 +57,13 @@ async function readSettingLogoUrl() {
   return readPublicSettingUrl("site.logo_url", true);
 }
 
+async function readDashboardBrandLogoUrl(tenantHasLogo: boolean) {
+  const dashboardLogoUrl = await readPublicSettingUrl("site.dashboard_logo_url", true);
+  if (dashboardLogoUrl) return dashboardLogoUrl;
+  if (tenantHasLogo) return null;
+  return readSettingLogoUrl();
+}
+
 async function readManagementLogoUrl() {
   return readPublicSettingUrl("site.management_logo_url", false);
 }
@@ -121,11 +128,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
           subTenants.find((tenant) => tenant.id === selectedTenantId) || null;
 
         const [settingLogoUrl, consoleLogoUrl] = await Promise.all([
-          getTenantLogoUrl(nextTenant)
-            ? Promise.resolve(null)
-            : nextTenant
-              ? readSettingLogoUrl()
-              : Promise.resolve(null),
+          nextTenant
+            ? readDashboardBrandLogoUrl(Boolean(getTenantLogoUrl(nextTenant)))
+            : Promise.resolve(null),
           readManagementLogoUrl(),
         ]);
         setManagementLogoUrl(consoleLogoUrl);
@@ -162,9 +167,9 @@ export function TenantProvider({ children }: { children: ReactNode }) {
         setSelectedTenantId(null);
       }
 
-      const settingLogoUrl = getTenantLogoUrl(nextTenant)
-        ? null
-        : await readSettingLogoUrl();
+      const settingLogoUrl = await readDashboardBrandLogoUrl(
+        Boolean(getTenantLogoUrl(nextTenant)),
+      );
       setManagementLogoUrl(null);
       setTenantOptions(options.map((tenant) => withTenantLogoUrl(tenant, settingLogoUrl)));
       setMemberships(myMemberships);
@@ -186,11 +191,11 @@ export function TenantProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (typeof document === "undefined") return;
     if (!isAuthenticated || !user) {
-      document.title = "Management Console";
+      document.title = "Tenant Console";
       return;
     }
     if (user.role === "SUPER_ADMIN") {
-      document.title = "Management Console";
+      document.title = "Tenant Console";
       return;
     }
     document.title = `${getTenantDisplayName(activeTenant, "Sub-tenant")} Admin`;
@@ -201,7 +206,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       if (!tenantId) {
         setSelectedTenantId(null);
         setActiveTenant(null);
-        window.dispatchEvent(new CustomEvent("pulse-news:tenant-changed"));
+        window.dispatchEvent(new CustomEvent("tenant-console:tenant-changed"));
         return;
       }
 
@@ -210,7 +215,7 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
       setSelectedTenantId(tenant.id);
       setActiveTenant(tenant);
-      window.dispatchEvent(new CustomEvent("pulse-news:tenant-changed"));
+      window.dispatchEvent(new CustomEvent("tenant-console:tenant-changed"));
     },
     [tenantOptions],
   );

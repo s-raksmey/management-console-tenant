@@ -4,7 +4,7 @@ import { createContext, createElement, useContext, useEffect, useState, type Rea
 
 export type AdminLocale = "en" | "km";
 
-export const ADMIN_LOCALE_CHANGED_EVENT = "pulse-news-admin-locale-changed";
+export const ADMIN_LOCALE_CHANGED_EVENT = "tenant-console-locale-changed";
 
 type AdminLocaleContextValue = {
   locale: AdminLocale;
