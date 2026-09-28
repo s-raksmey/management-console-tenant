@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Eye, EyeOff, KeyRound, LogIn, Loader2, ShieldCheck } from 'lucide-react';
@@ -10,6 +11,9 @@ interface LoginFormProps {
   onSuccess?: () => void;
   onSwitchToRegister?: () => void;
   locale?: 'en' | 'km';
+  appearance?: 'card' | 'editorial';
+  heading?: string;
+  subheading?: string;
 }
 
 const loginCopy = {
@@ -71,7 +75,14 @@ const loginCopy = {
   },
 };
 
-export function LoginForm({ onSuccess, onSwitchToRegister, locale = 'en' }: LoginFormProps) {
+export function LoginForm({
+  onSuccess,
+  onSwitchToRegister,
+  locale = 'en',
+  appearance = 'card',
+  heading,
+  subheading,
+}: LoginFormProps) {
   const copy = loginCopy[locale];
   const { login, verifyTwoFactorLogin, isLoading } = useAuth();
   const [formData, setFormData] = useState({
@@ -175,22 +186,24 @@ export function LoginForm({ onSuccess, onSwitchToRegister, locale = 'en' }: Logi
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="w-full max-w-md mx-auto"
+      className={appearance === 'editorial' ? 'w-full' : 'mx-auto w-full max-w-md'}
     >
-      <div className="bg-white rounded-lg shadow-lg p-8">
-        <div className="text-center mb-8">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-            {twoFactorState ? <ShieldCheck className="h-6 w-6" /> : <LogIn className="h-6 w-6" />}
-          </div>
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">
-            {twoFactorState ? copy.verifyTitle : copy.welcomeTitle}
+      <div className={appearance === 'editorial' ? 'p-1 sm:p-2' : 'rounded-lg bg-white p-8 shadow-lg'}>
+        <div className={appearance === 'editorial' ? 'mb-7' : 'mb-8 text-center'}>
+          {appearance === 'card' && (
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+              {twoFactorState ? <ShieldCheck className="h-6 w-6" /> : <LogIn className="h-6 w-6" />}
+            </div>
+          )}
+          <h1 className={`font-bold text-slate-900 ${appearance === 'editorial' ? 'font-[family-name:var(--font-kantumruy-pro)] text-3xl' : 'mb-2 text-2xl'}`}>
+            {twoFactorState ? copy.verifyTitle : heading || copy.welcomeTitle}
           </h1>
-          <p className="text-slate-600">
+          <p className={`text-slate-600 ${appearance === 'editorial' ? 'mt-2 text-sm leading-6' : ''}`}>
             {twoFactorState
               ? twoFactorState.setupRequired
                 ? copy.setupDescription
                 : copy.verifyDescription
-              : copy.signInDescription}
+              : subheading || copy.signInDescription}
           </p>
         </div>
 
@@ -199,9 +212,12 @@ export function LoginForm({ onSuccess, onSwitchToRegister, locale = 'en' }: Logi
             {twoFactorState.setupRequired && twoFactorState.setup && (
               <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
                 <div className="flex flex-col items-center gap-3">
-                  <img
+                  <Image
                     src={twoFactorState.setup.qrCodeUrl}
                     alt={copy.qrAlt}
+                    width={192}
+                    height={192}
+                    unoptimized
                     className="h-48 w-48 rounded-md border border-white bg-white p-2 shadow-sm"
                   />
                   <div className="w-full rounded-md bg-white p-3 text-center">

@@ -11,6 +11,10 @@ export function getApiOrigin() {
     .replace(/\/+$/, "");
 }
 
+export function shouldBypassImageOptimizer(src: string) {
+  return !src.startsWith("/") || src.startsWith("//");
+}
+
 export function resolveCmsMediaSrc(value: string) {
   // Keep CMS files on the admin origin so Next can rewrite /media/files/* to the API.
   // Absolute http://localhost:4000 URLs fail in next/image (private IP) and are unnecessary.

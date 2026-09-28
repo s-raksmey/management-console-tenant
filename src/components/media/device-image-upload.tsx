@@ -1,10 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { useRef, useState } from "react";
 import { Loader2, UploadCloud, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAuthFetchHeaders } from "@/services/graphql-client";
-import { resolveCmsMediaSrc } from "@/lib/cms-media";
+import { resolveCmsMediaSrc, shouldBypassImageOptimizer } from "@/lib/cms-media";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 export type DeviceImageUploadProps = {
@@ -126,11 +127,14 @@ export function DeviceImageUpload({
       <div className="overflow-hidden rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
         <div className="flex items-center gap-3">
           {previewSrc ? (
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-900">
-              <img
+            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-white dark:border-slate-600 dark:bg-slate-900">
+              <Image
                 src={previewSrc}
                 alt={previewAlt || label || copy.defaultLabel}
-                className="max-h-full max-w-full object-contain"
+                fill
+                sizes="48px"
+                unoptimized={shouldBypassImageOptimizer(previewSrc)}
+                className="object-contain"
               />
             </div>
           ) : (

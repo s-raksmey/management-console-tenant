@@ -1,103 +1,60 @@
 "use client";
 
 import { LoginForm } from "@/components/auth/LoginForm";
+import { TenantBrandMark } from "@/components/layout/tenant-brand-mark";
 import { useAuth } from "@/contexts/AuthContext";
-import { motion } from "framer-motion";
-import {
-  CheckCircle2,
-  FileText,
-  LockKeyhole,
-  LogIn,
-  Moon,
-  RadioTower,
-  ShieldCheck,
-  Sparkles,
-  Sun,
-  Users,
-} from "lucide-react";
+import { useAdminLocale } from "@/hooks/useAdminLocale";
+import { resolveCmsMediaSrc, shouldBypassImageOptimizer } from "@/lib/cms-media";
+import { COLOR_SCHEME_CHANGED_EVENT } from "@/lib/tweakcn-theme";
+import { getGqlClient } from "@/services/graphql-client";
+import { gql } from "graphql-request";
+import { Moon, Sun } from "lucide-react";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { COLOR_SCHEME_CHANGED_EVENT } from "@/lib/tweakcn-theme";
-import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 const loginPageCopy = {
   en: {
     brand: "Tenant Console",
-    badge: "Secure newsroom operations",
-    headline: "Tenant Console",
-    description:
-      "The workspace for one sub-tenant: articles, publishing, team access, and website setup.",
-    statusOnline: "System online",
-    auditEnabled: "Audit logging enabled",
-    authorized: "Authorized access only",
+    signIn: "Sign in",
+    signInHint: "Use your newsroom account to continue.",
     verified: "Email verified successfully. You can now sign in.",
-    signInTitle: "Sign in",
-    signInDescription:
-      "Sign in with your sub-tenant admin, editor, or author account.",
-    signInButton: "Sign in",
-    protection:
-      "Protected by secure cookies, short sessions, and two-factor verification.",
+    protection: "Protected by secure cookies, short sessions, and two-factor verification.",
     darkMode: "Dark mode",
     lightMode: "Light mode",
     language: "Language",
     loading: "Loading...",
-    capabilities: [
-      {
-        title: "Editorial control",
-        detail: "Review articles, publishing states, carousel stories, and media.",
-        icon: FileText,
-      },
-      {
-        title: "Newsroom team",
-        detail: "Manage this website's team access, roles, and configuration.",
-        icon: Users,
-      },
-      {
-        title: "Protected access",
-        detail: "Secure sessions, two-factor verification, and audit visibility.",
-        icon: ShieldCheck,
-      },
-    ],
   },
   km: {
     brand: "កុងសូលគេហទំព័រ",
-    badge: "ប្រតិបត្តិការព័ត៌មានមានសុវត្ថិភាព",
-    headline: "កុងសូលគេហទំព័រ",
-    description:
-      "កន្លែងធ្វើការសម្រាប់គេហទំព័រមួយ៖ អត្ថបទ ការផ្សព្វផ្សាយ ក្រុមការងារ និងការរៀបចំគេហទំព័រ។",
-    statusOnline: "ប្រព័ន្ធកំពុងដំណើរការ",
-    auditEnabled: "បានបើកកំណត់ហេតុសវនកម្ម",
-    authorized: "សម្រាប់អ្នកមានសិទ្ធិចូលប៉ុណ្ណោះ",
+    signIn: "ចូល",
+    signInHint: "ប្រើគណនីរបស់អ្នកដើម្បីបន្ត។",
     verified: "បានផ្ទៀងផ្ទាត់អ៊ីមែលដោយជោគជ័យ។ ឥឡូវនេះអ្នកអាចចូលបាន។",
-    signInTitle: "ចូល",
-    signInDescription:
-      "ចូលទៅកាន់កន្លែងធ្វើការព័ត៌មានដោយប្រើគណនីគ្រប់គ្រងដែលមានសិទ្ធិ។",
-    signInButton: "ចូល",
-    protection:
-      "ការពារដោយឃុកគីសុវត្ថិភាព វគ្គចូលប្រើខ្លី និងការផ្ទៀងផ្ទាត់ពីរជាន់។",
+    protection: "ការពារដោយឃុកគីសុវត្ថិភាព វគ្គចូលប្រើខ្លី និងការផ្ទៀងផ្ទាត់ពីរជាន់។",
     darkMode: "ផ្ទៃងងឹត",
     lightMode: "ផ្ទៃភ្លឺ",
     language: "ភាសា",
     loading: "កំពុងផ្ទុក...",
-    capabilities: [
-      {
-        title: "ការគ្រប់គ្រងមាតិកា",
-        detail: "ពិនិត្យអត្ថបទ ស្ថានភាពផ្សព្វផ្សាយ រឿងរំកិល និងមេឌៀ។",
-        icon: FileText,
-      },
-      {
-        title: "ក្រុមការងារព័ត៌មាន",
-        detail: "គ្រប់គ្រងការចូលប្រើរបស់ក្រុម តួនាទី និងការកំណត់របស់គេហទំព័រនេះ។",
-        icon: Users,
-      },
-      {
-        title: "ការចូលមានសុវត្ថិភាព",
-        detail: "ការពារវគ្គចូលប្រើ ការផ្ទៀងផ្ទាត់ពីរជាន់ និងកំណត់ហេតុសវនកម្ម។",
-        icon: ShieldCheck,
-      },
-    ],
   },
 };
+
+type ConsoleBrand = {
+  name: string;
+  description?: string | null;
+  logoUrl?: string | null;
+  faviconUrl?: string | null;
+};
+
+const Q_CONSOLE_BRAND = gql`
+  query TenantConsoleBrand {
+    tenantConsoleBrand {
+      name
+      description
+      logoUrl
+      faviconUrl
+    }
+  }
+`;
 
 function getInitialDarkMode() {
   if (typeof window === "undefined") return true;
@@ -105,6 +62,35 @@ function getInitialDarkMode() {
   const savedScheme = localStorage.getItem("tenant-console-color-scheme") || "system";
   const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
   return savedScheme === "dark" || (savedScheme === "system" && prefersDark);
+}
+
+function brandInitials(name: string) {
+  const initials = name
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => word.charAt(0))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  return initials || "PN";
+}
+
+function applyFavicon(url?: string | null) {
+  let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+
+  if (!url) {
+    link?.remove();
+    return;
+  }
+
+  if (!link) {
+    link = document.createElement("link");
+    link.rel = "icon";
+    document.head.appendChild(link);
+  }
+
+  link.href = resolveCmsMediaSrc(url);
 }
 
 export default function LoginPage() {
@@ -115,10 +101,12 @@ export default function LoginPage() {
   const redirectTo =
     nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/";
   const verified = searchParams.get("verified");
-  const [showLoginForm, setShowLoginForm] = useState(verified === "true");
   const { locale, selectLocale } = useAdminLocale();
   const [isDarkMode, setIsDarkMode] = useState(getInitialDarkMode);
+  const [brand, setBrand] = useState<ConsoleBrand | null>(null);
+  const [brandReady, setBrandReady] = useState(false);
   const copy = loginPageCopy[locale];
+  const siteName = brand?.name || copy.brand;
 
   const toggleDarkMode = () => {
     const nextIsDark = !isDarkMode;
@@ -127,6 +115,32 @@ export default function LoginPage() {
     localStorage.setItem("tenant-console-color-scheme", nextIsDark ? "dark" : "light");
     window.dispatchEvent(new Event(COLOR_SCHEME_CHANGED_EVENT));
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getGqlClient()
+      .request<{ tenantConsoleBrand: ConsoleBrand | null }>(Q_CONSOLE_BRAND)
+      .then((result) => {
+        if (!cancelled) setBrand(result.tenantConsoleBrand);
+      })
+      .catch(() => {
+        if (!cancelled) setBrand(null);
+      })
+      .finally(() => {
+        if (!cancelled) setBrandReady(true);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!brand) return;
+    document.title = brand.name;
+    applyFavicon(brand.faviconUrl);
+  }, [brand]);
 
   useEffect(() => {
     if (!isInitializing && isAuthenticated) {
@@ -138,12 +152,12 @@ export default function LoginPage() {
     router.push(redirectTo);
   };
 
-  if (isInitializing) {
+  if (isInitializing || !brandReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-100">
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600 dark:bg-slate-950 dark:text-slate-300">
         <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-slate-700 border-t-sky-300" />
-          <p className="text-sm text-slate-300">{copy.loading}</p>
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-white" />
+          <p className="text-sm">{copy.loading}</p>
         </div>
       </div>
     );
@@ -153,165 +167,97 @@ export default function LoginPage() {
     return null;
   }
 
+  const logoSrc = brand?.logoUrl ? resolveCmsMediaSrc(brand.logoUrl) : null;
+
   return (
-    <main className="min-h-screen overflow-hidden bg-slate-200 text-slate-950 dark:bg-slate-950 dark:text-white">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(14,116,144,0.12),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(15,118,110,0.09),transparent_32%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(14,165,233,0.24),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(16,185,129,0.18),transparent_32%)]" />
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.045)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.045)_1px,transparent_1px)] bg-[size:48px_48px] dark:bg-[linear-gradient(rgba(148,163,184,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(148,163,184,0.08)_1px,transparent_1px)]" />
-      <div className="absolute right-4 top-4 z-20 flex items-center gap-2 sm:right-6 sm:top-6">
-        <div
-          className="flex items-center gap-0.5 rounded-md border border-slate-300 bg-slate-100/80 p-0.5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.06]"
-          aria-label={copy.language}
-        >
-          {(["en", "km"] as const).map((item) => (
-            <button
-              key={item}
-              type="button"
-              onClick={() => selectLocale(item)}
-              className={`h-7 min-w-8 rounded px-2 text-[11px] font-semibold transition ${
-                locale === item
-                  ? "bg-sky-200/70 text-sky-800 dark:bg-sky-300/20 dark:text-sky-100"
-                  : "text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white"
-              }`}
-            >
-              {item === "en" ? "EN" : "ខ្មែរ"}
-            </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={toggleDarkMode}
-          className="flex h-8 w-8 items-center justify-center rounded-md border border-slate-300 bg-slate-100/80 text-slate-700 shadow-sm backdrop-blur transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-200 dark:hover:bg-white/[0.1]"
-          aria-label={isDarkMode ? copy.lightMode : copy.darkMode}
-          title={isDarkMode ? copy.lightMode : copy.darkMode}
-        >
-          {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </button>
-      </div>
+    <main className="relative min-h-screen overflow-hidden bg-[#eef3fb] text-slate-950 dark:bg-[#07111f] dark:text-white">
+      <div className="pointer-events-none absolute -left-24 top-0 h-[34rem] w-[34rem] rounded-full bg-sky-400/25 blur-3xl dark:bg-sky-500/20" />
+      <div className="pointer-events-none absolute bottom-0 right-0 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-400/10" />
 
-      <section className="relative mx-auto grid min-h-screen w-full max-w-7xl grid-cols-1 items-center gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(360px,440px)] lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="min-w-0 py-6 lg:py-10"
-        >
-          <div className="mb-10 flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 bg-slate-100/80 shadow-sm backdrop-blur dark:border-white/15 dark:bg-white/10">
-              <RadioTower className="h-5 w-5 text-sky-600 dark:text-sky-200" />
-            </div>
-            <div>
-              <p className="text-base font-semibold leading-5">
-                {copy.brand}
-              </p>
-            </div>
-          </div>
-
-          <div className="max-w-2xl">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/25 bg-emerald-500/10 px-3 py-1 text-sm font-medium text-emerald-700 dark:border-emerald-300/30 dark:bg-emerald-300/10 dark:text-emerald-100">
-              <ShieldCheck className="h-4 w-4" />
-              {copy.badge}
-            </div>
-            <h1 className="text-4xl font-bold leading-tight text-slate-950 dark:text-white sm:text-5xl lg:text-6xl">
-              {copy.headline}
-            </h1>
-            <p className="mt-5 text-base leading-7 text-slate-600 dark:text-slate-300 sm:text-lg">
-              {copy.description}
-            </p>
-          </div>
-
-          <div className="mt-10 max-w-2xl space-y-3">
-            {copy.capabilities.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div
-                  key={item.title}
-                  className="flex gap-4 rounded-lg border border-slate-300 bg-slate-100/70 p-4 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.055]"
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-slate-300 bg-slate-200/80 text-sky-700 dark:border-white/10 dark:bg-slate-950/30 dark:text-sky-200">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="text-sm font-semibold text-slate-950 dark:text-white">
-                      {item.title}
-                    </h2>
-                    <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
-                      {item.detail}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <div className="mt-8 flex max-w-2xl flex-wrap items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
-            <div className="flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100/70 px-3 py-1.5 dark:border-white/10 dark:bg-slate-950/30">
-              <span className="h-2 w-2 rounded-full bg-emerald-300" />
-              {copy.statusOnline}
-            </div>
-            <div className="flex items-center gap-2 rounded-full border border-slate-300 bg-slate-100/70 px-3 py-1.5 dark:border-white/10 dark:bg-slate-950/30">
-              <CheckCircle2 className="h-4 w-4 text-emerald-300" />
-              {copy.auditEnabled}
-            </div>
-          </div>
-        </motion.div>
-
-        <motion.aside
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, delay: 0.08 }}
-          className="relative z-10 w-full justify-self-center pb-6 lg:pb-0"
-        >
-          <div className="mb-4 rounded-lg border border-slate-300 bg-slate-100/80 px-4 py-3 text-sm text-slate-700 shadow-sm backdrop-blur dark:border-white/12 dark:bg-white/[0.08] dark:text-slate-200">
-            <div className="flex items-center gap-2">
-              <LockKeyhole className="h-4 w-4 text-amber-200" />
-              <span>{copy.authorized}</span>
-              <Sparkles className="ml-auto h-4 w-4 text-sky-200" />
-            </div>
-          </div>
-
-          {verified === "true" && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mb-4 rounded-lg border border-emerald-200/40 bg-emerald-300/15 p-4 text-center text-sm text-emerald-50"
-            >
-              {copy.verified}
-            </motion.div>
-          )}
-
-          {showLoginForm ? (
-            <LoginForm onSuccess={handleAuthSuccess} locale={locale} />
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25 }}
-              className="rounded-lg border border-slate-300 bg-slate-100/80 p-6 text-center shadow-xl backdrop-blur dark:border-white/10 dark:bg-white/[0.06]"
-            >
-              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-md border border-sky-500/15 bg-sky-500/10 text-sky-600 dark:border-sky-200/20 dark:bg-sky-300/10 dark:text-sky-200">
-                <LogIn className="h-5 w-5" />
-              </div>
-              <h2 className="mt-5 text-xl font-semibold text-slate-950 dark:text-white">
-                {copy.signInTitle}
-              </h2>
-              <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-slate-600 dark:text-slate-400">
-                {copy.signInDescription}
-              </p>
+      <header className="relative z-20 flex items-center justify-end px-5 py-4 sm:px-8">
+        <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-0.5 rounded-md border border-slate-300 bg-slate-100/80 p-0.5 shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.06]"
+            aria-label={copy.language}
+          >
+            {(["en", "km"] as const).map((item) => (
               <button
+                key={item}
                 type="button"
-                onClick={() => setShowLoginForm(true)}
-                className="mt-6 inline-flex h-11 items-center justify-center rounded-md border border-sky-500/25 bg-sky-500/10 px-5 text-sm font-semibold text-sky-700 transition hover:border-sky-500/40 hover:bg-sky-500/15 focus:outline-none focus:ring-2 focus:ring-sky-300/40 dark:border-sky-300/25 dark:bg-sky-300/10 dark:text-sky-100 dark:hover:border-sky-200/40 dark:hover:bg-sky-300/15"
+                onClick={() => selectLocale(item)}
+                className={`h-7 min-w-8 rounded px-2 text-[11px] font-semibold transition ${
+                  locale === item
+                    ? "bg-sky-200/70 text-sky-800 dark:bg-sky-300/20 dark:text-sky-100"
+                    : "text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white"
+                }`}
               >
-                <LogIn className="mr-2 h-4 w-4" />
-                {copy.signInButton}
+                {item === "en" ? "EN" : "KH"}
               </button>
-            </motion.div>
-          )}
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={toggleDarkMode}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/70 bg-white/70 text-slate-700 shadow-sm backdrop-blur transition hover:bg-white dark:border-white/10 dark:bg-white/5 dark:text-slate-200 dark:hover:bg-white/10"
+            aria-label={isDarkMode ? copy.lightMode : copy.darkMode}
+            title={isDarkMode ? copy.lightMode : copy.darkMode}
+          >
+            {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+        </div>
+      </header>
 
-          <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
+      <section className="relative z-10 mx-auto grid min-h-[calc(100vh-4.5rem)] w-full max-w-6xl items-center gap-8 px-5 pb-10 sm:px-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(340px,420px)] lg:gap-14">
+        <div className="min-w-0 py-4 lg:py-10">
+          <div className="relative mb-8 h-36 w-36 sm:h-44 sm:w-44">
+            <div className="absolute inset-3 rounded-full bg-sky-400/30 blur-2xl" />
+            {logoSrc ? (
+              <Image
+                src={logoSrc}
+                alt={siteName}
+                fill
+                priority
+                sizes="176px"
+                unoptimized={shouldBypassImageOptimizer(logoSrc)}
+                className="object-contain drop-shadow-[0_18px_30px_rgba(14,116,220,0.35)]"
+              />
+            ) : (
+              <TenantBrandMark
+                name={siteName}
+                initials={brandInitials(siteName)}
+                className="relative h-full w-full"
+              />
+            )}
+          </div>
+
+          <h1 className="max-w-xl font-[family-name:var(--font-kantumruy-pro)] text-5xl font-semibold leading-[0.95] tracking-tight text-slate-950 dark:text-white sm:text-7xl">
+            {siteName}
+          </h1>
+          <div className="mt-6 h-px w-28 bg-gradient-to-r from-sky-500 to-transparent" />
+          {brand?.description ? (
+            <p className="mt-6 max-w-md font-[family-name:var(--font-kantumruy-pro)] text-lg leading-8 text-slate-600 dark:text-slate-300">
+              {brand.description}
+            </p>
+          ) : null}
+          <p className="mt-8 max-w-sm text-xs leading-5 text-slate-500 dark:text-slate-400">
             {copy.protection}
           </p>
-        </motion.aside>
+        </div>
+
+        <div className="relative w-full rounded-[28px] border border-sky-200/80 bg-[#f8fbff] p-6 text-slate-950 shadow-[0_30px_80px_-36px_rgba(15,23,42,0.28)] sm:p-8 dark:border-white/10 dark:bg-[#122033] dark:text-slate-100 dark:shadow-none">
+          {verified === "true" && (
+            <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-400/10 dark:text-emerald-100">
+              {copy.verified}
+            </div>
+          )}
+          <LoginForm
+            onSuccess={handleAuthSuccess}
+            locale={locale}
+            appearance="editorial"
+            heading={copy.signIn}
+            subheading={copy.signInHint}
+          />
+        </div>
       </section>
     </main>
   );

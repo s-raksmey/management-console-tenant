@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -18,7 +19,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
-import { resolveCmsMediaSrc } from "@/lib/cms-media";
+import { resolveCmsMediaSrc, shouldBypassImageOptimizer } from "@/lib/cms-media";
 import {
   Advertisement,
   AdvertisementPlacement,
@@ -376,7 +377,7 @@ export default function AdsPage() {
                 const ctr = ad.impressions ? (ad.clicks / ad.impressions) * 100 : 0;
                 return (
                   <div key={ad.id} className="grid gap-4 bg-white p-4 transition hover:bg-slate-50 lg:grid-cols-[128px_minmax(0,1fr)_240px_auto] lg:items-center">
-                    <div className="flex h-20 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-100">{imageUrl ? <img src={imageUrl} alt={ad.name} className="h-full w-full object-cover" /> : <ImageIcon className="h-6 w-6 text-slate-400" />}</div>
+                    <div className="relative flex h-20 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-100">{imageUrl ? <Image src={imageUrl} alt={ad.name} fill sizes="128px" unoptimized={shouldBypassImageOptimizer(imageUrl)} className="object-cover" /> : <ImageIcon className="h-6 w-6 text-slate-400" />}</div>
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2"><Badge variant={delivery.variant} className="gap-1"><DeliveryIcon className="h-3 w-3" />{copy.delivery[delivery.label as keyof typeof copy.delivery]}</Badge><Badge variant="outline">{label(ad.placement, locale)}</Badge><Badge variant="outline">{label(ad.targetScope ?? "GLOBAL", locale)}</Badge><span className="text-xs text-slate-400">{label(ad.format, locale)}</span></div>
                       <p className="mt-2 truncate text-sm font-semibold text-slate-950">{ad.name}</p>

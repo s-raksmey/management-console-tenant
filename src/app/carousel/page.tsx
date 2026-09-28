@@ -1,8 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Edit, Image as ImageIcon, Loader2, PlayCircle, Plus, Trash2 } from "lucide-react";
+import { shouldBypassImageOptimizer } from "@/lib/cms-media";
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
 import {
   CarouselSlide,
@@ -321,7 +323,7 @@ export default function CarouselListPage() {
                   key={slide.id}
                   className="grid gap-4 bg-white p-4 transition-colors hover:bg-slate-50 lg:grid-cols-[144px_1fr_auto]"
                 >
-                  <div className="flex h-24 items-center justify-center overflow-hidden rounded-md bg-slate-100">
+                  <div className="relative flex h-24 items-center justify-center overflow-hidden rounded-md bg-slate-100">
                     {slide.mediaType === "VIDEO" && slide.videoProvider === "MP4" && slide.videoUrl ? (
                       <video
                         src={slide.videoUrl}
@@ -331,11 +333,13 @@ export default function CarouselListPage() {
                         playsInline
                       />
                     ) : slide.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
+                      <Image
                         src={slide.imageUrl}
                         alt={slide.title}
-                        className="h-full w-full object-cover"
+                        fill
+                        sizes="144px"
+                        unoptimized={shouldBypassImageOptimizer(slide.imageUrl)}
+                        className="object-cover"
                       />
                     ) : slide.mediaType === "VIDEO" ? (
                       <PlayCircle className="h-7 w-7 text-slate-400" />

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Image as ImageIcon, Link2, Loader2, Save, X } from "lucide-react";
@@ -17,7 +18,7 @@ import { Category, Q_CATEGORIES } from "@/services/category.gql";
 import { Q_TOPICS, Topic } from "@/services/topic.gql";
 import { Q_ARTICLES } from "@/services/article.gql";
 import { useAdminLocale, type AdminLocale } from "@/hooks/useAdminLocale";
-import { resolveCmsMediaSrc } from "@/lib/cms-media";
+import { resolveCmsMediaSrc, shouldBypassImageOptimizer } from "@/lib/cms-media";
 import { DeviceImageUpload } from "@/components/media/device-image-upload";
 
 const placements: AdvertisementPlacement[] = ["HOME_TOP", "HOME_SIDEBAR", "CATEGORY_TOP", "ARTICLE_INLINE", "ARTICLE_SIDEBAR", "FOOTER"];
@@ -304,7 +305,7 @@ export function AdvertisementForm({
           </fieldset>
         </form>
       </CardContent></Card>
-      <aside><Card><CardHeader><CardTitle>{copy.preview}</CardTitle><CardDescription>{copy.previewDescription}</CardDescription></CardHeader><CardContent><div className="overflow-hidden rounded-md border border-slate-200 bg-slate-100">{previewImage ? <img src={previewImage} alt={form.headline || form.name} className="aspect-[16/9] w-full object-cover" /> : <div className="flex aspect-[16/9] items-center justify-center"><ImageIcon className="h-9 w-9 text-slate-400" /></div>}<div className="bg-white p-4"><p className="text-xs font-semibold uppercase text-blue-700">{form.sponsorName || copy.sponsored}</p><h3 className="mt-2 font-semibold text-slate-950">{form.headline || copy.publicHeadline}</h3><p className="mt-1 text-sm text-slate-600">{form.body || copy.supportingMessage}</p></div></div></CardContent></Card></aside>
+      <aside><Card><CardHeader><CardTitle>{copy.preview}</CardTitle><CardDescription>{copy.previewDescription}</CardDescription></CardHeader><CardContent><div className="overflow-hidden rounded-md border border-slate-200 bg-slate-100">{previewImage ? <div className="relative aspect-[16/9] w-full"><Image src={previewImage} alt={form.headline || form.name} fill sizes="480px" unoptimized={shouldBypassImageOptimizer(previewImage)} className="object-cover" /></div> : <div className="flex aspect-[16/9] items-center justify-center"><ImageIcon className="h-9 w-9 text-slate-400" /></div>}<div className="bg-white p-4"><p className="text-xs font-semibold uppercase text-blue-700">{form.sponsorName || copy.sponsored}</p><h3 className="mt-2 font-semibold text-slate-950">{form.headline || copy.publicHeadline}</h3><p className="mt-1 text-sm text-slate-600">{form.body || copy.supportingMessage}</p></div></div></CardContent></Card></aside>
     </div>
   );
 }

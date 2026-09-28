@@ -246,7 +246,9 @@ export async function POST(req: Request) {
         ? ["MANAGE_MEDIA", "CREATE_ADS", "UPDATE_ADS"]
         : folder === "carousel"
           ? ["MANAGE_MEDIA", "CREATE_CAROUSEL", "UPDATE_CAROUSEL"]
-          : ["MANAGE_MEDIA"];
+          : folder === "branding"
+            ? ["MANAGE_MEDIA", "UPDATE_SETTINGS"]
+            : ["MANAGE_MEDIA"];
     const authenticatedUser = await requireMediaPermission(req, uploadPermissions);
     if (authenticatedUser instanceof NextResponse) return authenticatedUser;
 

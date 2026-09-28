@@ -173,7 +173,7 @@ const settingsCopy = {
     brandingDescription: "Upload a square logo, Open Graph image, or favicon from this device.",
     brandingSection: "Website branding",
     brandingSectionDescription:
-      "Upload this admin dashboard logo, the public website logo, an Open Graph image, and one favicon. The favicon is used on the public website and in this admin dashboard.",
+      "Upload this admin dashboard logo, the public website logo, an Open Graph image, and one favicon. The Open Graph image and favicon are used on this sub-tenant console and on the public website.",
     consoleBrandingSection: "Management Console branding",
     consoleBrandingSectionDescription:
       "Upload the management console logo, Open Graph image, and favicon from this device. The logo appears in the sidebar and header. The Open Graph image is used in search and social previews.",
@@ -251,7 +251,7 @@ const settingsCopy = {
     consoleOption: "ផ្ទាំងគ្រប់គ្រង",
     consoleCategory: "ផ្ទាំងគ្រប់គ្រង",
     brandingSectionDescription:
-      "ផ្ទុក logo ផ្ទាំងគ្រប់គ្រង logo គេហទំព័រសាធារណៈ រូបភាព Open Graph និង favicon មួយ។ Favicon ប្រើទាំងគេហទំព័រសាធារណៈ និងផ្ទាំងគ្រប់គ្រងនេះ។",
+      "ផ្ទុក logo ផ្ទាំងគ្រប់គ្រង logo គេហទំព័រសាធារណៈ រូបភាព Open Graph និង favicon មួយ។ រូបភាព Open Graph និង favicon ប្រើទាំងផ្ទាំងគេហទំព័ររងនេះ និងគេហទំព័រសាធារណៈ។",
     consoleBrandingSection: "អត្តសញ្ញាណផ្ទាំងគ្រប់គ្រង",
     consoleBrandingSectionDescription:
       "ផ្ទុក logo រូបភាព Open Graph និង favicon របស់ផ្ទាំងគ្រប់គ្រងពីឧបករណ៍នេះ។ Logo បង្ហាញនៅរបារចំហៀង និងក្បាលទំព័រ។ រូបភាព Open Graph ប្រើសម្រាប់ការមើលជាមុននៅស្វែងរក និងបណ្តាញសង្គម។",

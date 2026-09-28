@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import React, { useState } from 'react';
 import { FileText, ImageIcon, Video, Music, File, Download, Trash2, Edit, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { cn } from '@/lib/utils';
 import type { MediaFile } from '@/types/media';
-import { resolveCmsMediaSrc } from '@/lib/cms-media';
+import { resolveCmsMediaSrc, shouldBypassImageOptimizer } from '@/lib/cms-media';
 import { useAdminLocale } from '@/hooks/useAdminLocale';
 
 interface MediaGridProps {
@@ -129,6 +130,7 @@ export function MediaGrid({
       {files.map((file) => {
         const isSelected = selectedFiles.includes(file.id);
         const isImage = file.type === 'image';
+        const imageSrc = isImage ? resolveCmsMediaSrc(file.url) : '';
 
         return (
           <div
@@ -143,10 +145,13 @@ export function MediaGrid({
             {/* File Preview */}
             <div className="aspect-square bg-slate-50 flex items-center justify-center relative overflow-hidden">
               {isImage ? (
-                <img
-                  src={resolveCmsMediaSrc(file.url)}
+                <Image
+                  src={imageSrc}
                   alt={file.alt || file.originalName}
-                  className="h-full w-full object-cover"
+                  fill
+                  sizes="240px"
+                  unoptimized={shouldBypassImageOptimizer(imageSrc)}
+                  className="object-cover"
                 />
               ) : (
                 <div className="text-slate-400">

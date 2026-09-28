@@ -26,6 +26,35 @@ function valueToString(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
 
+function upsertMeta(attribute: "property" | "name", key: string, content: string) {
+  const selector = `meta[${attribute}="${key}"]`;
+  let meta = document.head.querySelector<HTMLMetaElement>(selector);
+
+  if (!content) {
+    meta?.remove();
+    return;
+  }
+
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute(attribute, key);
+    document.head.appendChild(meta);
+  }
+
+  meta.content = content;
+}
+
+function updateOpenGraphImage(settings: PublicSetting[]) {
+  const imageUrl = valueToString(getSettingValue(settings, "site.og_image_url"));
+  const absoluteUrl = imageUrl
+    ? new URL(resolveCmsMediaSrc(imageUrl), window.location.origin).toString()
+    : "";
+
+  upsertMeta("property", "og:image", absoluteUrl);
+  upsertMeta("name", "twitter:image", absoluteUrl);
+  upsertMeta("name", "twitter:card", absoluteUrl ? "summary_large_image" : "");
+}
+
 function updateFavicon(settings: PublicSetting[]) {
   const faviconUrl =
     valueToString(getSettingValue(settings, "site.favicon_url")) ||
@@ -66,6 +95,7 @@ export function ThemeRuntime() {
 
         applyThemeSettings(response.publicSettings || [], user?.role);
         updateFavicon(response.publicSettings || []);
+        updateOpenGraphImage(response.publicSettings || []);
       } catch (error) {
         console.warn("Failed to load theme settings", error);
       }

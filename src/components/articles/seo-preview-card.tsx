@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState } from "react";
 import {
   Check,
@@ -11,6 +12,7 @@ import {
   Share2,
 } from "lucide-react";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
+import { shouldBypassImageOptimizer } from "@/lib/cms-media";
 
 type SeoPreviewCardProps = {
   title: string;
@@ -152,12 +154,15 @@ export function SeoPreviewCard({
       </div>
 
       <div className="grid gap-3 rounded-md border border-slate-200 bg-white p-3 sm:grid-cols-[160px_1fr]">
-        <div className="flex aspect-[1.91/1] items-center justify-center overflow-hidden rounded-md bg-slate-100">
+        <div className="relative flex aspect-[1.91/1] items-center justify-center overflow-hidden rounded-md bg-slate-100">
           {coverImageUrl ? (
-            <img
+            <Image
               src={coverImageUrl}
               alt=""
-              className="h-full w-full object-cover"
+              fill
+              sizes="160px"
+              unoptimized={shouldBypassImageOptimizer(coverImageUrl)}
+              className="object-cover"
             />
           ) : (
             <ImageIcon className="h-7 w-7 text-slate-400" aria-hidden="true" />

@@ -7,7 +7,7 @@ const SETTING_DISPLAY: Record<string, Pick<Setting, "label" | "description">> = 
   },
   "site.og_image_url": {
     label: "Open Graph Image",
-    description: "Upload the default image used when this public website is shared on social media.",
+    description: "Upload one image. It is used when this sub-tenant console and its public website are shared.",
   },
   "site.management_logo_url": {
     label: "Management Console Logo",

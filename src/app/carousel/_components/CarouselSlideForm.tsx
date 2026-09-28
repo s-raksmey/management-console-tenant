@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -10,6 +11,7 @@ import {
   UploadCloud,
   X,
 } from "lucide-react";
+import { shouldBypassImageOptimizer } from "@/lib/cms-media";
 import { getAuthFetchHeaders, getAuthenticatedGqlClient } from "@/services/graphql-client";
 import {
   CarouselSlide,
@@ -977,14 +979,16 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
                   allowFullScreen
                 />
               ) : hasImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={form.imageUrl}
-                  alt={previewTitle}
-                  className={`w-full object-cover ${
-                    form.size === "STANDARD" ? "h-48" : "h-64"
-                  }`}
-                />
+                <div className={`relative w-full ${form.size === "STANDARD" ? "h-48" : "h-64"}`}>
+                  <Image
+                    src={form.imageUrl}
+                    alt={previewTitle}
+                    fill
+                    sizes="640px"
+                    unoptimized={shouldBypassImageOptimizer(form.imageUrl)}
+                    className="object-cover"
+                  />
+                </div>
               ) : (
                 <div
                   className={`flex items-center justify-center bg-slate-100 ${

@@ -37,7 +37,7 @@ html.locale-en body {
 html[lang="km"] body,
 html[data-locale="km"] body,
 html.locale-km body {
-  font-family: var(--font-kantumruy-pro), var(--font-jetbrains-mono), sans-serif;
+  font-family: var(--font-kantumruy-pro), ui-sans-serif, system-ui, "Segoe UI", "Khmer UI", sans-serif;
   line-height: 1.8;
 }
 
