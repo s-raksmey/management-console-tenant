@@ -23,9 +23,6 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const nextConfig = {
-  devIndicators: {
-    position: "top-left",
-  },
   images: {
     remotePatterns: [
       {
