@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Shield, 
   Download, 
@@ -10,7 +10,7 @@ import {
   User,
   FileText,
   Settings,
-  Image,
+  Image as ImageIcon,
   Folder,
   RefreshCw,
   Clock,
@@ -245,17 +245,23 @@ export default function AuditLogsPage() {
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({ start: '', end: '' });
   const [isExporting, setIsExporting] = useState(false);
 
-  const fetchAuditLogs = async () => {
+  const filtersRef = useRef({ searchQuery, dateRange });
+  useEffect(() => {
+    filtersRef.current = { searchQuery, dateRange };
+  }, [searchQuery, dateRange]);
+
+  const fetchAuditLogs = useCallback(async () => {
     try {
       setLoading(true);
       const filters: AuditLogFilters = {};
+      const { searchQuery: query, dateRange: range } = filtersRef.current;
       
-      if (searchQuery) filters.search = searchQuery;
+      if (query) filters.search = query;
       if (selectedAction !== 'all') filters.action = selectedAction;
       if (selectedResourceType !== 'all') filters.resourceType = selectedResourceType;
       if (selectedStatus !== 'all') filters.success = selectedStatus === 'success';
-      if (dateRange.start) filters.startDate = dateRange.start;
-      if (dateRange.end) filters.endDate = dateRange.end;
+      if (range.start) filters.startDate = range.start;
+      if (range.end) filters.endDate = range.end;
 
       const result = await AuditService.listAuditLogs(
         (currentPage - 1) * pageSize,
@@ -271,11 +277,20 @@ export default function AuditLogsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    currentPage,
+    pageSize,
+    selectedAction,
+    selectedResourceType,
+    selectedStatus,
+    showError,
+    copy.loadFailedTitle,
+    copy.loadFailedDescription,
+  ]);
 
   useEffect(() => {
-    fetchAuditLogs();
-  }, [currentPage, selectedAction, selectedResourceType, selectedStatus]);
+    void fetchAuditLogs();
+  }, [fetchAuditLogs]);
 
   const handleSearch = () => {
     setCurrentPage(1);
@@ -328,7 +343,7 @@ export default function AuditLogsPage() {
       case 'ARTICLE': return <FileText className="h-4 w-4" />;
       case 'CATEGORY': return <Folder className="h-4 w-4" />;
       case 'SETTINGS': return <Settings className="h-4 w-4" />;
-      case 'MEDIA': return <Image className="h-4 w-4" />;
+      case 'MEDIA': return <ImageIcon className="h-4 w-4" />;
       default: return <FileText className="h-4 w-4" />;
     }
   };

@@ -245,7 +245,7 @@ export function AdvertisementForm({
       setSelectedTenantId((current) => current || active[0]?.id || "");
     }).catch(() => showError(copy.error, copy.loadTenantFailed));
     return () => { mounted = false; };
-  }, [isSuperAdmin, showError]);
+  }, [copy.error, copy.loadTenantFailed, isSuperAdmin, showError]);
 
   useEffect(() => {
     const loadTargetingOptions = async () => {
@@ -266,7 +266,7 @@ export function AdvertisementForm({
       }
     };
     void loadTargetingOptions();
-  }, [isSuperAdmin, selectedTenantId, showError]);
+  }, [copy.error, copy.loadTargetingFailed, isSuperAdmin, selectedTenantId, showError]);
 
   const uploadImageHeaders =
     isSuperAdmin && selectedTenantId ? { "x-tenant-id": selectedTenantId } : undefined;

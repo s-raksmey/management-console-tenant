@@ -1,7 +1,7 @@
 // src/components/dashboard/AdminDashboard.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Users,
   FileText,
@@ -345,7 +345,7 @@ export const AdminDashboard: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const tenantName = getTenantDisplayName(activeTenant, copy.tenant);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       // Fetch user statistics
       const userStatsData = await getUserStats();
@@ -495,13 +495,19 @@ export const AdminDashboard: React.FC = () => {
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [
+    copy,
+    getArticles,
+    getBasicStats,
+    getEditorialStats,
+    getUserActivity,
+    getUserStats,
+    userId,
+  ]);
 
   useEffect(() => {
-    loadDashboardData();
-    
-    return () => {};
-  }, []);
+    void loadDashboardData();
+  }, [loadDashboardData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

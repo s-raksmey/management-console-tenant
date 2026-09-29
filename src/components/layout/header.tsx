@@ -667,9 +667,9 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
                     </div>
                   )
                 ) : (
-                  <div className="px-4 py-5 text-sm text-slate-500 dark:text-slate-400">
-                    {copy.emptySearch}
-                    <kbd className="ml-2 inline-flex h-5 select-none items-center gap-1 rounded border border-slate-200 bg-slate-50 px-1.5 font-mono text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+                  <div className="space-y-2 px-4 py-5 text-sm text-slate-500 dark:text-slate-400">
+                    <p>{copy.emptySearch}</p>
+                    <kbd className="inline-flex h-5 select-none items-center gap-1 rounded border border-slate-200 bg-slate-50 px-1.5 font-mono text-xs text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
                       <span className="text-xs">⌘</span>K
                     </kbd>
                   </div>

@@ -11,17 +11,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import {
-  Edit,
-  FolderTree,
-  Languages,
-  Plus,
-  Save,
-  Trash2,
-  X,
-} from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { Plus, Save, X } from "lucide-react";
 import { useToastHelpers } from "@/components/ui/toast";
 import {
   Category,
@@ -121,6 +120,7 @@ const categoryCopy = {
     deleteTopicFailed: "Failed to delete topic",
     categoryDeleted: "Category deleted successfully",
     deleteCategoryFailed: "Failed to delete category",
+    newCategory: "New category",
     pageTitle: "Category Management",
     pageDescription: "Create bilingual categories and organize their sub-categories.",
     editCategory: "Edit Category",
@@ -202,6 +202,7 @@ const categoryCopy = {
     deleteTopicFailed: "មិនអាចលុបប្រធានបទបានទេ",
     categoryDeleted: "បានលុបប្រភេទដោយជោគជ័យ",
     deleteCategoryFailed: "មិនអាចលុបប្រភេទបានទេ",
+    newCategory: "ប្រភេទថ្មី",
     pageTitle: "គ្រប់គ្រងប្រភេទ",
     pageDescription: "បង្កើតប្រភេទពីរភាសា និងរៀបចំប្រភេទរង។",
     editCategory: "កែប្រភេទ",
@@ -246,6 +247,7 @@ export default function CategoriesPage() {
   const { hasPermission } = usePermissions();
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [creating, setCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [showTopicForm, setShowTopicForm] = useState(false);
@@ -268,7 +270,7 @@ export default function CategoriesPage() {
   const canListCategories = hasPermission(Permission.LIST_CATEGORIES);
   const canCreateCategory = hasPermission(Permission.CREATE_CATEGORY);
   const canUpdateCategory = hasPermission(Permission.UPDATE_CATEGORY);
-  const canShowCategoryForm = editingCategory ? canUpdateCategory : canCreateCategory;
+  const formOpen = (creating && canCreateCategory) || Boolean(editingCategory && canUpdateCategory);
 
   useEffect(() => {
     showErrorRef.current = showError;
@@ -394,6 +396,7 @@ export default function CategoriesPage() {
     setShowTopicForm(false);
     setEditingTopic(null);
     setPendingTopics([]);
+    setCreating(false);
     resetTopicForm();
   };
 
@@ -407,6 +410,17 @@ export default function CategoriesPage() {
     setEditingTopic(null);
   };
 
+  const startCreating = () => {
+    setFormData({ name: "", nameKhmer: "", slug: "" });
+    setEditingCategory(null);
+    setTopics([]);
+    setPendingTopics([]);
+    setShowTopicForm(false);
+    setEditingTopic(null);
+    setTopicFormData({ title: "", titleKhmer: "", slug: "" });
+    setCreating(true);
+  };
+
   const startEditing = (category: Category) => {
     setFormData({
       name: category.name,
@@ -414,7 +428,10 @@ export default function CategoriesPage() {
       slug: category.slug,
     });
     setEditingCategory(category);
-    setPendingTopics([]); // Clear pending topics when editing existing category
+    setCreating(false);
+    setPendingTopics([]);
+    setShowTopicForm(false);
+    setEditingTopic(null);
   };
 
   const startEditingTopic = (topic: Topic) => {
@@ -753,8 +770,8 @@ export default function CategoriesPage() {
 
   return (
     <PermissionGuard permissions={[Permission.LIST_CATEGORIES]} showError>
-      <div className="mx-auto min-h-screen max-w-7xl space-y-5 px-3 py-5 pb-24 sm:px-6 sm:py-6">
-      <div>
+      <div className="space-y-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
             {copy.pageTitle}
@@ -763,33 +780,33 @@ export default function CategoriesPage() {
             {copy.pageDescription}
           </p>
         </div>
+        {canCreateCategory && (
+          <Button onClick={startCreating} className="w-full items-center gap-2 sm:w-auto">
+            <Plus className="h-4 w-4" />
+            {copy.newCategory}
+          </Button>
+        )}
       </div>
 
-      {/* Category Form - visible only when the role can create or edit categories */}
-      {canShowCategoryForm && (
-        <Card className="overflow-hidden border-slate-200">
-          <CardHeader className="border-b bg-white px-4 py-5 sm:px-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FolderTree className="h-5 w-5 text-blue-600" />
-                  {editingCategory ? copy.editCategory : copy.createCategory}
-                </CardTitle>
-                <CardDescription className="mt-1">
-                  {editingCategory
-                    ? copy.editing(editingCategory.name)
-                    : copy.formDescription}
-                </CardDescription>
-              </div>
-              {editingCategory && (
-                <Badge variant="secondary" className="w-fit">
-                  {editingCategory.slug}
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-5 px-4 py-5 sm:px-6">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_260px]">
+      <Dialog
+        open={formOpen}
+        onOpenChange={(open) => {
+          if (!open && !confirmation.open) resetForm();
+        }}
+      >
+        <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+          <DialogHeader className="pr-8">
+            <DialogTitle>
+              {editingCategory ? copy.editCategory : copy.createCategory}
+            </DialogTitle>
+            <DialogDescription>
+              {editingCategory
+                ? copy.editing(editingCategory.name)
+                : copy.formDescription}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5">
+            <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-slate-700">
                   {copy.englishName} <span className="text-red-500">*</span>
@@ -801,8 +818,7 @@ export default function CategoriesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
-                  <Languages className="h-4 w-4 text-slate-400" />
+                <label className="block text-sm font-medium text-slate-700">
                   {copy.khmerName}
                 </label>
                 <Input
@@ -816,7 +832,7 @@ export default function CategoriesPage() {
                   placeholder="ពាណិជ្ជកម្ម"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2">
                 <label className="block text-sm font-medium text-slate-700">
                   {copy.slug} <span className="text-red-500">*</span>
                 </label>
@@ -859,7 +875,7 @@ export default function CategoriesPage() {
                 {showTopicForm && (
                   <PermissionGuard permissions={[Permission.CREATE_TOPIC]} fallback={null}>
                   <div className="mb-3 py-2">
-                    <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_220px]">
+                    <div className="mb-4 space-y-3">
                       <div className="space-y-1.5">
                         <label className="block text-sm font-medium text-slate-700">
                           {copy.englishTitle} <span className="text-red-500">*</span>
@@ -949,9 +965,7 @@ export default function CategoriesPage() {
                               {topic.titleKhmer}
                             </span>
                           )}
-                          <Badge variant="outline" className="text-xs">
-                            {topic.slug}
-                          </Badge>
+                          <span className="text-xs text-slate-400">{topic.slug}</span>
                         </div>
                         <Button
                           variant="ghost"
@@ -966,281 +980,248 @@ export default function CategoriesPage() {
                   </div>
                 ) : (
                   !showTopicForm && (
-                    <div className="px-4 py-8 text-center text-sm text-slate-500">
-                      {copy.noSubCategoriesAdded}
-                    </div>
+                    <p className="text-sm text-slate-500">{copy.noSubCategoriesAdded}</p>
                   )
                 )}
               </div>
             )}
 
-            <div className="flex flex-col gap-2 border-t pt-5 sm:flex-row sm:flex-wrap sm:items-center">
-              <Button
-                onClick={requestSaveCategory}
-                disabled={isLoading}
-                className="w-full items-center gap-2 sm:w-auto"
-              >
-                <Save className="h-4 w-4" />
-                {editingCategory ? copy.updateCategory : copy.createCategory}
-                {!editingCategory &&
-                  pendingTopics.length > 0 &&
-                  ` & ${pendingTopics.length} ${copy.subCategories}`}
-              </Button>
-              {editingCategory && (
-                <Button
-                  variant="outline"
-                  onClick={resetForm}
-                  className="w-full items-center gap-2 sm:w-auto"
-                >
-                  <X className="h-4 w-4" />
-                  {copy.cancel}
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Topics Management - Only show when editing a category */}
-      {editingCategory && (
-        <Card className="overflow-hidden border-slate-200">
-          <CardHeader className="border-b bg-white px-6 py-5">
-            <CardTitle className="flex items-center justify-between gap-3 text-lg">
-              <span>{copy.subCategoriesFor(editingCategory.name)}</span>
-              <PermissionGuard permissions={[Permission.CREATE_TOPIC]}>
-                <Button
-                  onClick={() => setShowTopicForm(true)}
-                  size="sm"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  {copy.addTopic}
-                </Button>
-              </PermissionGuard>
-            </CardTitle>
-            <CardDescription className="mt-1">
-              {copy.topicManagementDescription}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 px-6 py-5">
-            {/* Topic Form */}
-            {showTopicForm && (
-              <PermissionGuard permissions={[Permission.CREATE_TOPIC]}>
-                <div className="py-2">
-                  <h4 className="mb-3 font-medium text-slate-950">
-                    {editingTopic ? copy.editTopic : copy.addNewTopic}
-                  </h4>
-                  <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-[1fr_1fr_240px]">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-slate-700">
-                        {copy.englishTitle} <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        value={topicFormData.title}
-                        onChange={(e) => handleTopicTitleChange(e.target.value)}
-                        placeholder={copy.englishTopicPlaceholder}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-slate-700">
-                        {copy.khmerTitle}
-                      </label>
-                      <Input
-                        value={topicFormData.titleKhmer}
-                        onChange={(e) =>
-                          setTopicFormData((prev) => ({
-                            ...prev,
-                            titleKhmer: e.target.value,
-                          }))
-                        }
-                        placeholder={copy.khmerTopicPlaceholder}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="block text-sm font-medium text-slate-700">
-                        {copy.slug} <span className="text-red-500">*</span>
-                      </label>
-                      <Input
-                        value={topicFormData.slug}
-                        onChange={(e) =>
-                          setTopicFormData((prev) => ({
-                            ...prev,
-                            slug: e.target.value,
-                          }))
-                        }
-                        placeholder={copy.topicSlugPlaceholder}
-                      />
-                    </div>
+            {editingCategory && (
+              <div className="border-t pt-5">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-medium text-slate-950">{copy.subCategories}</h4>
+                    <p className="text-sm text-slate-500">{copy.subCategoryCount(topics.length)}</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <PermissionGuard permissions={[Permission.CREATE_TOPIC]} fallback={null}>
                     <Button
-                      onClick={requestSaveTopic}
-                      disabled={isLoading}
+                      onClick={() => {
+                        setEditingTopic(null);
+                        setTopicFormData({ title: "", titleKhmer: "", slug: "" });
+                        setShowTopicForm(true);
+                      }}
                       size="sm"
-                      className="flex items-center gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      {editingTopic ? copy.updateTopic : copy.addTopic}
-                    </Button>
-                    <Button
                       variant="outline"
-                      onClick={resetTopicForm}
-                      size="sm"
-                      className="flex items-center gap-2"
+                      className="items-center gap-2"
                     >
-                      <X className="h-4 w-4" />
-                      {copy.cancel}
+                      <Plus className="h-4 w-4" />
+                      {copy.addTopic}
                     </Button>
-                  </div>
+                  </PermissionGuard>
                 </div>
-              </PermissionGuard>
-            )}
 
-            {/* Topics List */}
-            {topics.length === 0 ? (
-              <div className="py-10 text-center text-sm text-slate-500">
-                {copy.noSubCategoriesYet}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <p className="mb-3 text-sm font-medium text-slate-700">
-                  {copy.subCategoryCount(topics.length)}
-                </p>
-                {topics.map((topic) => (
-                  <div
-                    key={topic.id}
-                    className="flex items-center justify-between gap-4 py-3"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex flex-wrap items-center gap-2">
-                        <h4 className="font-medium">{topic.title}</h4>
-                        {topic.titleKhmer && (
-                          <span className="text-sm text-muted-foreground">
-                            {topic.titleKhmer}
-                          </span>
-                        )}
-                        <Badge variant="outline" className="text-xs">
-                          {topic.slug}
-                        </Badge>
+                {showTopicForm && (
+                  <PermissionGuard permissions={[Permission.CREATE_TOPIC]} fallback={null}>
+                    <div className="mb-4 space-y-3">
+                      <h4 className="text-sm font-medium text-slate-950">
+                        {editingTopic ? copy.editTopic : copy.addNewTopic}
+                      </h4>
+                      <div className="space-y-3">
+                        <div className="space-y-1.5">
+                          <label className="block text-sm font-medium text-slate-700">
+                            {copy.englishTitle} <span className="text-red-500">*</span>
+                          </label>
+                          <Input
+                            value={topicFormData.title}
+                            onChange={(e) => handleTopicTitleChange(e.target.value)}
+                            placeholder={copy.englishTopicPlaceholder}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="block text-sm font-medium text-slate-700">
+                            {copy.khmerTitle}
+                          </label>
+                          <Input
+                            value={topicFormData.titleKhmer}
+                            onChange={(e) =>
+                              setTopicFormData((prev) => ({
+                                ...prev,
+                                titleKhmer: e.target.value,
+                              }))
+                            }
+                            placeholder={copy.khmerTopicPlaceholder}
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="block text-sm font-medium text-slate-700">
+                            {copy.slug} <span className="text-red-500">*</span>
+                          </label>
+                          <Input
+                            value={topicFormData.slug}
+                            onChange={(e) =>
+                              setTopicFormData((prev) => ({
+                                ...prev,
+                                slug: e.target.value,
+                              }))
+                            }
+                            placeholder={copy.topicSlugPlaceholder}
+                          />
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <PermissionGuard permissions={[Permission.UPDATE_TOPIC]} fallback={null}>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={requestSaveTopic}
+                          disabled={isLoading}
+                          size="sm"
+                          className="items-center gap-2"
+                        >
+                          <Save className="h-4 w-4" />
+                          {editingTopic ? copy.updateTopic : copy.addTopic}
+                        </Button>
                         <Button
                           variant="outline"
+                          onClick={resetTopicForm}
                           size="sm"
-                          onClick={() => startEditingTopic(topic)}
-                          disabled={isLoading}
-                          className="flex items-center gap-1"
+                          className="items-center gap-2"
                         >
-                          <Edit className="h-3 w-3" />
+                          {copy.cancel}
+                        </Button>
+                      </div>
+                    </div>
+                  </PermissionGuard>
+                )}
+
+                {topics.length === 0 ? (
+                  <p className="text-sm text-slate-500">{copy.noSubCategoriesYet}</p>
+                ) : (
+                  <div className="divide-y">
+                    {topics.map((topic) => (
+                      <div
+                        key={topic.id}
+                        className="flex items-center justify-between gap-3 py-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-slate-950">{topic.title}</p>
+                          <p className="truncate text-xs text-slate-500">
+                            {[topic.titleKhmer, topic.slug].filter(Boolean).join(" · ")}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center">
+                          <PermissionGuard permissions={[Permission.UPDATE_TOPIC]} fallback={null}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => startEditingTopic(topic)}
+                              disabled={isLoading}
+                              className="h-8 px-2"
+                            >
+                              {copy.edit}
+                            </Button>
+                          </PermissionGuard>
+                          <PermissionGuard permissions={[Permission.DELETE_TOPIC]} fallback={null}>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => requestDeleteTopic(topic.id, topic.title)}
+                              disabled={isLoading}
+                              className="h-8 px-2 text-red-600 hover:text-red-700"
+                            >
+                              {copy.delete}
+                            </Button>
+                          </PermissionGuard>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+          </div>
+          <DialogFooter className="gap-2 sm:space-x-0">
+            <Button variant="outline" onClick={resetForm} disabled={isLoading}>
+              {copy.cancel}
+            </Button>
+            <Button
+              onClick={requestSaveCategory}
+              disabled={isLoading}
+              className="items-center gap-2"
+            >
+              <Save className="h-4 w-4" />
+              {editingCategory ? copy.updateCategory : copy.createCategory}
+              {!editingCategory &&
+                pendingTopics.length > 0 &&
+                ` & ${pendingTopics.length} ${copy.subCategories}`}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Card className="overflow-hidden border-slate-200">
+        <CardHeader className="border-b bg-white px-4 py-4 sm:px-5">
+          <CardTitle className="text-lg">{copy.allCategories}</CardTitle>
+          <CardDescription className="mt-1">
+            {categoriesLoading
+              ? copy.loading
+              : categories.length === 0
+                ? copy.noCategoriesFound
+                : copy.categoriesFound(categories.length)}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {categories.length === 0 ? (
+            <p className="px-5 py-10 text-center text-sm text-slate-500">
+              {categoriesLoading ? copy.loading : copy.noCategoriesYet}
+            </p>
+          ) : (
+            <div className="divide-y">
+              {categories.map((category) => {
+                const selected = editingCategory?.id === category.id;
+                return (
+                  <div
+                    key={category.id}
+                    className={`flex items-center justify-between gap-3 px-4 py-3 sm:px-5 ${selected ? "bg-slate-50" : ""}`}
+                  >
+                    {canUpdateCategory ? (
+                      <button
+                        type="button"
+                        onClick={() => startEditing(category)}
+                        className="min-w-0 flex-1 text-left"
+                      >
+                        <p className="truncate font-medium text-slate-950">{category.name}</p>
+                        <p className="truncate text-sm text-slate-500">
+                          {[category.nameKhmer, category.slug].filter(Boolean).join(" · ")}
+                        </p>
+                      </button>
+                    ) : (
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium text-slate-950">{category.name}</p>
+                        <p className="truncate text-sm text-slate-500">
+                          {[category.nameKhmer, category.slug].filter(Boolean).join(" · ")}
+                        </p>
+                      </div>
+                    )}
+                    <div className="flex shrink-0 items-center">
+                      <PermissionGuard permissions={[Permission.UPDATE_CATEGORY]} fallback={null}>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => startEditing(category)}
+                          disabled={isLoading}
+                          className="h-8 px-2"
+                        >
                           {copy.edit}
                         </Button>
                       </PermissionGuard>
-                      <PermissionGuard permissions={[Permission.DELETE_TOPIC]} fallback={null}>
+                      <PermissionGuard permissions={[Permission.DELETE_CATEGORY]} fallback={null}>
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
-                          onClick={() =>
-                            requestDeleteTopic(topic.id, topic.title)
-                          }
+                          onClick={() => requestDeleteCategory(category.id, category.name)}
                           disabled={isLoading}
-                          className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                          className="h-8 px-2 text-red-600 hover:text-red-700"
                         >
-                          <Trash2 className="h-3 w-3" />
                           {copy.delete}
                         </Button>
                       </PermissionGuard>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Categories List */}
-      <Card className="overflow-hidden border-slate-200">
-        <CardHeader className="border-b bg-white px-6 py-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <CardTitle className="text-lg">{copy.allCategories}</CardTitle>
-              <CardDescription className="mt-1">
-                {categories.length === 0
-                  ? copy.noCategoriesFound
-                  : copy.categoriesFound(categories.length)}
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-0">
-          {categories.length === 0 ? (
-            <div className="py-12 text-center text-sm text-slate-500">
-              <p>{copy.noCategoriesYet}</p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {categories.map((category) => (
-                <div
-                  key={category.id}
-                  className="flex flex-col gap-3 px-6 py-4 transition-colors hover:bg-slate-50 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="min-w-0 flex-1">
-                    <div className="mb-1 flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold">{category.name}</h3>
-                      {category.nameKhmer && (
-                        <span className="text-sm text-slate-500">
-                          {category.nameKhmer}
-                        </span>
-                      )}
-                      <Badge variant="secondary">{category.slug}</Badge>
-                    </div>
-                    <div className="text-xs text-slate-500">
-                      {copy.created}{" "}
-                      {new Date(category.createdAt).toLocaleDateString(locale === "km" ? "km-KH" : undefined)}
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <PermissionGuard permissions={[Permission.UPDATE_CATEGORY]} fallback={null}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => startEditing(category)}
-                        disabled={isLoading}
-                        className="flex items-center gap-1"
-                      >
-                        <Edit className="h-3 w-3" />
-                        {copy.editManageTopics}
-                      </Button>
-                    </PermissionGuard>
-                    <PermissionGuard permissions={[Permission.DELETE_CATEGORY]} fallback={null}>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() =>
-                          requestDeleteCategory(category.id, category.name)
-                        }
-                        disabled={isLoading}
-                        className="flex items-center gap-1 text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        {copy.delete}
-                      </Button>
-                    </PermissionGuard>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
-
-      {categoriesLoading && (
-        <div className="text-center py-4">
-          <p>{copy.loading}</p>
-        </div>
-      )}
 
       <ConfirmationDialog
         open={confirmation.open}

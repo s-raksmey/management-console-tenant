@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useArticles, useArticleMutations, useRevisions } from '@/hooks/useGraphQL';
 import { Button } from '@/components/ui/button';
@@ -154,24 +154,7 @@ export default function ReviewQueuePage() {
     return null;
   };
 
-  useEffect(() => {
-    loadReviewArticles();
-  }, []);
-
-  const loadReviewArticles = async () => {
-    try {
-      const response = await getArticles({ status: 'REVIEW' });
-      if (response?.articles) {
-        setArticles(response.articles);
-        await loadRevisionStatuses(response.articles);
-      }
-    } catch (error) {
-      console.error('Failed to load review articles:', error);
-      showError(copy.failedLoadTitle, copy.refreshTryAgain);
-    }
-  };
-
-  const loadRevisionStatuses = async (list: Article[]) => {
+  const loadRevisionStatuses = useCallback(async (list: Article[]) => {
     if (!list.length) {
       setRevisionRequestStatusById({});
       setRevisionRequestNoteById({});
@@ -205,8 +188,24 @@ export default function ReviewQueuePage() {
     } catch (err) {
       console.error('Failed to load revision request statuses:', err);
     }
-  };
+  }, [getLatestRevisionRequest]);
 
+  const loadReviewArticles = useCallback(async () => {
+    try {
+      const response = await getArticles({ status: 'REVIEW' });
+      if (response?.articles) {
+        setArticles(response.articles);
+        await loadRevisionStatuses(response.articles);
+      }
+    } catch (error) {
+      console.error('Failed to load review articles:', error);
+      showError(copy.failedLoadTitle, copy.refreshTryAgain);
+    }
+  }, [copy.failedLoadTitle, copy.refreshTryAgain, getArticles, loadRevisionStatuses, showError]);
+
+  useEffect(() => {
+    void loadReviewArticles();
+  }, [loadReviewArticles]);
 
   const handleApprove = async (articleId: string) => {
     if (processingIds.has(articleId)) return;

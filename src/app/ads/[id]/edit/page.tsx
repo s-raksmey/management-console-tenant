@@ -79,7 +79,7 @@ export default function EditAdvertisementPage() {
     };
     void load();
     return () => { mounted = false; };
-  }, [canView, id, permissionsLoading, tenantId, user?.role]);
+  }, [canView, copy.loadFailed, copy.notFound, id, locale, permissionsLoading, tenantId, user?.role]);
 
   if (!permissionsLoading && !canView) return <div className="text-sm text-red-600">{copy.accessDenied}</div>;
   if (loading) return <Card><CardContent className="flex items-center justify-center py-16 text-slate-500"><Loader2 className="mr-2 h-5 w-5 animate-spin" />{copy.loading}</CardContent></Card>;

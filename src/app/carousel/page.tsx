@@ -162,7 +162,7 @@ export default function CarouselListPage() {
     return () => {
       isMounted = false;
     };
-  }, [isSuperAdmin]);
+  }, [copy.error, copy.loadTenantFailed, isSuperAdmin]);
 
   const loadSlides = useCallback(async () => {
     if (permissionsLoading || !canAccessCarousel) return;
@@ -197,7 +197,7 @@ export default function CarouselListPage() {
     } finally {
       setLoading(false);
     }
-  }, [canAccessCarousel, isSuperAdmin, permissionsLoading, selectedTenantId]);
+  }, [canAccessCarousel, copy.error, copy.loadSlidesFailed, isSuperAdmin, locale, permissionsLoading, selectedTenantId]);
 
   useEffect(() => {
     if (permissionsLoading) return;

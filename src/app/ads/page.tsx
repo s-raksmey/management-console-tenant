@@ -252,7 +252,7 @@ export default function AdsPage() {
       setSelectedTenantId((current) => current || active[0]?.id || "");
     }).catch(() => showErrorRef.current(copy.error, copy.loadTenantFailed));
     return () => { mounted = false; };
-  }, [isSuperAdmin]);
+  }, [copy.error, copy.loadTenantFailed, isSuperAdmin]);
 
   const loadAds = useCallback(async () => {
     if (permissionsLoading || !canView) return;
@@ -278,7 +278,7 @@ export default function AdsPage() {
     } finally {
       setLoading(false);
     }
-  }, [canView, isSuperAdmin, permissionsLoading, placementFilter, selectedTenantId, statusFilter]);
+  }, [canView, copy.error, copy.loadAdsFailed, isSuperAdmin, locale, permissionsLoading, placementFilter, selectedTenantId, statusFilter]);
 
   useEffect(() => { void loadAds(); }, [loadAds]);
 

@@ -458,7 +458,7 @@ export default function EditArticlePage() {
     return () => {
       active = false;
     };
-  }, [client, id]);
+  }, [client, getLatestRevisionRequest, id]);
 
   /* -------------------------
      Actions

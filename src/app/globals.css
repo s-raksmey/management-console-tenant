@@ -22,7 +22,7 @@ body {
 }
 
 body {
-  font-family: var(--font-jetbrains-mono), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans, ui-sans-serif), ui-sans-serif, system-ui, sans-serif;
   @apply bg-white text-slate-900 antialiased;
   overflow-x: hidden;
 }
@@ -30,8 +30,15 @@ body {
 html[lang="en"] body,
 html[data-locale="en"] body,
 html.locale-en body {
-  font-family: var(--font-jetbrains-mono), var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans, ui-sans-serif), ui-sans-serif, system-ui, sans-serif;
   line-height: 1.5;
+}
+
+.font-mono,
+kbd,
+code,
+pre {
+  font-family: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 html[lang="km"] body,

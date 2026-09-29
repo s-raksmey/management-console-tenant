@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BarChart3, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,7 +67,7 @@ export default function AnalyticsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadAnalytics = async (tenantId?: string) => {
+  const loadAnalytics = useCallback(async (tenantId?: string) => {
     try {
       setError(null);
       const scopedTenantId =
@@ -82,7 +82,7 @@ export default function AnalyticsPage() {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [copy.loadAnalyticsFailed, locale]);
 
   useEffect(() => {
     let mounted = true;
@@ -121,7 +121,7 @@ export default function AnalyticsPage() {
     return () => {
       mounted = false;
     };
-  }, [isSuperAdmin]);
+  }, [copy.loadTenantsFailed, isSuperAdmin, loadAnalytics, locale]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

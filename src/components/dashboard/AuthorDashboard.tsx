@@ -1,7 +1,7 @@
 // src/components/dashboard/AuthorDashboard.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   BarChart3,
@@ -185,7 +185,7 @@ export const AuthorDashboard: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const loading = useStableLoading(initialLoading || requestLoading);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       const [statsData, articlesData, insightsData] = await Promise.all([
         getAuthorStats(),
@@ -201,11 +201,11 @@ export const AuthorDashboard: React.FC = () => {
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [getAuthorArticles, getAuthorInsights, getAuthorStats]);
 
   useEffect(() => {
     void loadDashboardData();
-  }, []);
+  }, [loadDashboardData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

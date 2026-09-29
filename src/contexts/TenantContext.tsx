@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Tenant,
@@ -95,6 +96,7 @@ function tenantFromMembership(membership: TenantMembership): Tenant {
 }
 
 export function TenantProvider({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
   const { user, isAuthenticated } = useAuth();
   const [activeTenant, setActiveTenant] = useState<Tenant | null>(null);
   const [tenantOptions, setTenantOptions] = useState<Tenant[]>([]);
@@ -190,16 +192,13 @@ export function TenantProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    if (!isAuthenticated || !user) {
-      document.title = "Tenant Console";
+    const consoleTitle = "Tenant Console";
+    if (!isAuthenticated || !user || !activeTenant || activeTenant.isMainTenant) {
+      document.title = consoleTitle;
       return;
     }
-    if (user.role === "SUPER_ADMIN") {
-      document.title = "Tenant Console";
-      return;
-    }
-    document.title = `${getTenantDisplayName(activeTenant, "Sub-tenant")} Admin`;
-  }, [activeTenant, isAuthenticated, user]);
+    document.title = getTenantDisplayName(activeTenant, consoleTitle);
+  }, [activeTenant, isAuthenticated, pathname, user]);
 
   const switchTenant = useCallback(
     async (tenantId: string) => {

@@ -1,7 +1,7 @@
 // src/components/dashboard/EditorDashboard.tsx
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   AlertCircle,
@@ -243,7 +243,7 @@ export const EditorDashboard: React.FC = () => {
   });
   const loading = useStableLoading(initialLoading || requestLoading);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       const [statsData, articlesData] = await Promise.all([
         getEditorialStats(),
@@ -282,11 +282,11 @@ export const EditorDashboard: React.FC = () => {
     } finally {
       setInitialLoading(false);
     }
-  };
+  }, [copy, getAuthorPerformance, getEditorialStats, getPendingArticles, getRecentActions]);
 
   useEffect(() => {
     void loadDashboardData();
-  }, []);
+  }, [loadDashboardData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);

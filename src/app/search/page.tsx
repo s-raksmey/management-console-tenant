@@ -211,7 +211,7 @@ export default function SearchPage() {
       
       if (response?.searchArticles) {
         const newResults = response.searchArticles.articles || [];
-        setResults(resetResults ? newResults : [...results, ...newResults]);
+        setResults((current) => (resetResults ? newResults : [...current, ...newResults]));
         setTotalCount(response.searchArticles.totalCount || 0);
         setHasMore(response.searchArticles.hasMore || false);
         setCurrentPage(page);
@@ -219,13 +219,13 @@ export default function SearchPage() {
     } catch (err) {
       console.error('Search error:', err);
     }
-  }, [searchArticles, filters, results]);
+  }, [searchArticles, filters]);
 
   useEffect(() => {
     if (initialQuery) {
-      performSearch(initialQuery);
+      void performSearch(initialQuery);
     }
-  }, []);
+  }, [initialQuery, performSearch]);
 
   // Handle search suggestions
   useEffect(() => {
@@ -319,10 +319,10 @@ export default function SearchPage() {
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 rounded-md transition-colors"
+                    className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-slate-50"
                   >
-                    <Search className="inline h-3 w-3 mr-2 text-slate-400" />
-                    {suggestion}
+                    <Search className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                    <span className="min-w-0 truncate">{suggestion}</span>
                   </button>
                 ))}
               </div>

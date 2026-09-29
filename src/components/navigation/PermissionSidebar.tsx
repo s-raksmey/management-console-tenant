@@ -98,11 +98,11 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
       
       {!collapsed && (
         <>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between">
-              <span className="font-medium truncate">{item.name}</span>
+          <div className="min-w-0 flex-1">
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="min-w-0 flex-1 truncate font-medium">{item.name}</span>
               {item.badge && (
-                <Badge variant="secondary" className="ml-2 text-xs">
+                <Badge variant="secondary" className="shrink-0 text-xs">
                   {item.badge}
                 </Badge>
               )}
@@ -112,7 +112,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
                     e.preventDefault();
                     setManualExpanded(!isExpanded);
                   }}
-                  className="ml-2 rounded p-1 transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
+                  className="shrink-0 rounded p-1 transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
                 >
                   {isExpanded ? (
                     <ChevronUp className="h-3 w-3" />
@@ -287,18 +287,18 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
-            className="flex min-w-0 items-center gap-3 rounded-md"
+            className="flex min-w-0 flex-1 items-center gap-3 rounded-md"
           >
             <TenantBrandMark
               name={brandName}
               logoUrl={brandLogoUrl}
               initials={brandInitials}
             />
-            <div className="min-w-0 leading-tight">
-              <p className="max-w-[170px] truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
+            <div className="min-w-0 leading-normal">
+              <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {brandName}
               </p>
-              <p className="text-xs capitalize text-slate-500 dark:text-slate-400">{userRole?.toLowerCase()} {copy.panel}</p>
+              <p className="truncate text-xs capitalize text-slate-500 dark:text-slate-400">{userRole?.toLowerCase()} {copy.panel}</p>
             </div>
           </motion.div>
         ) : null}
@@ -309,7 +309,7 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
           onClick={onToggle}
           aria-label={collapsed ? copy.expand : copy.collapse}
           title={collapsed ? copy.expand : copy.collapse}
-          className="h-8 w-8 p-0 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus-visible:bg-slate-800"
+          className="h-8 w-8 shrink-0 p-0 hover:bg-slate-100 focus-visible:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800 dark:focus-visible:bg-slate-800"
         >
           {collapsed ? (
             <ChevronRight className="h-4 w-4" />

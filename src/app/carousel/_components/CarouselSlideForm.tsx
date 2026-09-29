@@ -360,7 +360,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
     return () => {
       isMounted = false;
     };
-  }, [isSuperAdmin]);
+  }, [copy.error, copy.loadTenantFailed, isSuperAdmin]);
 
   useEffect(() => {
     const loadPlacementOptions = async () => {
@@ -390,7 +390,7 @@ export function CarouselSlideForm({ slide }: CarouselSlideFormProps) {
     };
 
     void loadPlacementOptions();
-  }, [isSuperAdmin, selectedTenantId]);
+  }, [copy.error, copy.loadCategoryFailed, isSuperAdmin, selectedTenantId]);
 
   const handleMediaUpload = async (file: File, mediaType: "image" | "video") => {
     if (mediaType === "image" && !file.type.startsWith("image/")) {

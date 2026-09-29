@@ -146,8 +146,14 @@ function getErrorMessage(error: unknown): string {
   return "";
 }
 
-function isAuthenticationRequired(error: unknown): boolean {
-  return getErrorMessage(error).includes(AUTH_REQUIRED_MESSAGE);
+function isQuietSessionFailure(error: unknown): boolean {
+  const message = getErrorMessage(error).toLowerCase();
+  return (
+    message.includes(AUTH_REQUIRED_MESSAGE.toLowerCase()) ||
+    message.includes("failed to fetch") ||
+    message.includes("networkerror") ||
+    message.includes("network request failed")
+  );
 }
 
 // Create Context
@@ -187,49 +193,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
-  // Initialize auth state from the secure auth cookie.
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        const refreshed = await refreshUser({
-          suppressAuthRequired: true,
-          resetSuperAdminTenant: true,
-        });
-        if (!refreshed) {
-          clearAuthState();
-          return;
-        }
-        setToken(COOKIE_SESSION_TOKEN);
-      } catch (error) {
-        console.error("Failed to refresh user:", error);
-        clearAuthState();
-      } finally {
-        setIsLoading(false);
-        setIsInitializing(false);
+  const refreshRolePermissions = useCallback(async (): Promise<void> => {
+    const shouldShowInitialLoading = !hasLoadedRolePermissions.current;
+
+    try {
+      if (shouldShowInitialLoading) {
+        setPermissionsReady(false);
       }
-    };
 
-    initializeAuth();
-  }, [clearAuthState]);
+      const matrix = await RolePermissionService.getMatrix();
+      const next = Object.fromEntries(
+        matrix.map((item) => [item.role, item.permissions]),
+      ) as Record<string, Permission[]>;
 
-  useEffect(() => {
-    const handleTenantChanged = () => {
-      void refreshUser({ suppressAuthRequired: true }).then((refreshed) => {
-        if (!refreshed) {
-          clearAuthState();
-        }
-      });
-    };
+      setRolePermissions(next);
+      setDynamicRolePermissions(next);
+      hasLoadedRolePermissions.current = true;
+    } catch (error) {
+      console.warn("Could not refresh role permissions:", error);
+      if (shouldShowInitialLoading) {
+        setRolePermissions({});
+        setDynamicRolePermissions(null);
+      }
+    } finally {
+      setPermissionsReady(true);
+    }
+  }, []);
 
-    window.addEventListener("tenant-console:tenant-changed", handleTenantChanged);
-
-    return () => {
-      window.removeEventListener("tenant-console:tenant-changed", handleTenantChanged);
-    };
-  }, [clearAuthState]);
-
-  // Refresh user data from server
-  const refreshUser = async (
+  const refreshUser = useCallback(async (
     options: {
       authToken?: string;
       suppressAuthRequired?: boolean;
@@ -258,40 +249,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(response.me.message || "Failed to get user data");
       }
     } catch (error) {
-      if (options.suppressAuthRequired && isAuthenticationRequired(error)) {
+      if (options.suppressAuthRequired && isQuietSessionFailure(error)) {
         return false;
       }
-      console.error("Error refreshing user:", error);
       throw error;
     }
-  };
+  }, [refreshRolePermissions]);
 
-  const refreshRolePermissions = useCallback(async (): Promise<void> => {
-    const shouldShowInitialLoading = !hasLoadedRolePermissions.current;
-
-    try {
-      if (shouldShowInitialLoading) {
-        setPermissionsReady(false);
+  useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        const refreshed = await refreshUser({
+          suppressAuthRequired: true,
+          resetSuperAdminTenant: true,
+        });
+        if (!refreshed) {
+          clearAuthState();
+          return;
+        }
+        setToken(COOKIE_SESSION_TOKEN);
+      } catch {
+        clearAuthState();
+      } finally {
+        setIsLoading(false);
+        setIsInitializing(false);
       }
+    };
 
-      const matrix = await RolePermissionService.getMatrix();
-      const next = Object.fromEntries(
-        matrix.map((item) => [item.role, item.permissions]),
-      ) as Record<string, Permission[]>;
+    void initializeAuth();
+  }, [clearAuthState, refreshUser]);
 
-      setRolePermissions(next);
-      setDynamicRolePermissions(next);
-      hasLoadedRolePermissions.current = true;
-    } catch (error) {
-      console.warn("Could not refresh role permissions:", error);
-      if (shouldShowInitialLoading) {
-        setRolePermissions({});
-        setDynamicRolePermissions(null);
-      }
-    } finally {
-      setPermissionsReady(true);
-    }
-  }, []);
+  useEffect(() => {
+    const handleTenantChanged = () => {
+      void refreshUser({ suppressAuthRequired: true }).then((refreshed) => {
+        if (!refreshed) {
+          clearAuthState();
+        }
+      });
+    };
+
+    window.addEventListener("tenant-console:tenant-changed", handleTenantChanged);
+
+    return () => {
+      window.removeEventListener("tenant-console:tenant-changed", handleTenantChanged);
+    };
+  }, [clearAuthState, refreshUser]);
 
   const completeLogin = async (authResponse: AuthResponse) => {
     if (authResponse.success && authResponse.user) {
@@ -319,8 +321,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await completeLogin(authResponse);
 
       return authResponse;
-    } catch (error) {
-      console.error("Login error:", error);
+    } catch {
       return {
         success: false,
         message: "Network error occurred. Please try again.",
@@ -346,8 +347,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const authResponse = response.verifyTwoFactorLogin;
       await completeLogin(authResponse);
       return authResponse;
-    } catch (error) {
-      console.error("Two-factor login error:", error);
+    } catch {
       return {
         success: false,
         message: "Verification failed. Please try again.",

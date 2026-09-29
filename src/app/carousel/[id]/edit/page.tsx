@@ -85,7 +85,7 @@ export default function EditCarouselSlidePage() {
     return () => {
       isMounted = false;
     };
-  }, [isSuperAdmin]);
+  }, [copy.loadTenantFailed, isSuperAdmin]);
 
   useEffect(() => {
     let isMounted = true;
@@ -146,7 +146,7 @@ export default function EditCarouselSlidePage() {
     return () => {
       isMounted = false;
     };
-  }, [canUpdate, id, isSuperAdmin, permissionsLoading, selectedTenantId]);
+  }, [canUpdate, copy.loadSlideFailed, copy.slideNotFound, id, isSuperAdmin, locale, permissionsLoading, selectedTenantId]);
 
   if (!permissionsLoading && !canUpdate) {
     return (

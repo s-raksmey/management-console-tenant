@@ -14,7 +14,7 @@ const contentSecurityPolicy = [
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' data: blob: https: ${apiOrigin}`,
   "font-src 'self' data:",
-  `connect-src 'self' ${apiOrigin} http://localhost:4000 https:`,
+  `connect-src 'self' ${apiOrigin} http://localhost:4000 http://127.0.0.1:4000 ws: wss: https:`,
   "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com",
   "object-src 'none'",
   "base-uri 'self'",
@@ -23,6 +23,9 @@ const contentSecurityPolicy = [
 ].join("; ");
 
 const nextConfig = {
+  devIndicators: {
+    position: "top-left",
+  },
   images: {
     remotePatterns: [
       {

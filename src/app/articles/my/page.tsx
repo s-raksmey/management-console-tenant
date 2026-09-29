@@ -189,10 +189,6 @@ export default function MyArticlesPage() {
     ?? null;
 
   useEffect(() => {
-    loadMyArticles();
-  }, [statusFilter, user]);
-
-  useEffect(() => {
     setCurrentPage(1);
   }, [statusFilter]);
 
@@ -274,7 +270,7 @@ export default function MyArticlesPage() {
       console.error('Polling error:', error);
       // Don't show error toast for polling failures to avoid spam
     }
-  }, [user?.id, statusFilter, loading, articles, previousArticles, userRole, showSuccess, showError, showInfo, getArticles, loadRevisionStatuses]);
+  }, [user?.id, statusFilter, loading, articles, previousArticles, userRole, locale, showSuccess, showError, showInfo, getArticles, loadRevisionStatuses]);
 
   // Set up 10-second polling
   useVisibilityPolling(pollForUpdates, {
@@ -283,7 +279,7 @@ export default function MyArticlesPage() {
     immediate: false
   });
 
-  const loadMyArticles = async () => {
+  const loadMyArticles = useCallback(async () => {
     if (!user?.id) {
       return;
     }
@@ -300,7 +296,11 @@ export default function MyArticlesPage() {
     } else {
       setArticles([]);
     }
-  };
+  }, [getArticles, loadRevisionStatuses, statusFilter, user]);
+
+  useEffect(() => {
+    void loadMyArticles();
+  }, [loadMyArticles]);
 
   const handleStatusChange = async (articleId: string, newStatus: ArticleStatus) => {
     try {
