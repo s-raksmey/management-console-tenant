@@ -832,7 +832,7 @@ export default function CategoriesPage() {
 
             {/* Topic Management for New Categories */}
             {!editingCategory && (
-              <div className="rounded-md border border-slate-200 bg-slate-50/70 p-4">
+              <div className="py-2">
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h4 className="font-medium text-slate-950">
@@ -858,7 +858,7 @@ export default function CategoriesPage() {
                 {/* Topic Form */}
                 {showTopicForm && (
                   <PermissionGuard permissions={[Permission.CREATE_TOPIC]} fallback={null}>
-                  <div className="mb-3 rounded-md border bg-white p-4">
+                  <div className="mb-3 py-2">
                     <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr_220px]">
                       <div className="space-y-1.5">
                         <label className="block text-sm font-medium text-slate-700">
@@ -938,7 +938,7 @@ export default function CategoriesPage() {
                     {pendingTopics.map((topic, index) => (
                       <div
                         key={index}
-                        className="flex items-center justify-between rounded-md border bg-white px-3 py-2"
+                        className="flex items-center justify-between px-1 py-2"
                       >
                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                           <span className="font-medium text-sm">
@@ -966,7 +966,7 @@ export default function CategoriesPage() {
                   </div>
                 ) : (
                   !showTopicForm && (
-                    <div className="rounded-md border border-dashed bg-white px-4 py-8 text-center text-sm text-slate-500">
+                    <div className="px-4 py-8 text-center text-sm text-slate-500">
                       {copy.noSubCategoriesAdded}
                     </div>
                   )
@@ -1026,7 +1026,7 @@ export default function CategoriesPage() {
             {/* Topic Form */}
             {showTopicForm && (
               <PermissionGuard permissions={[Permission.CREATE_TOPIC]}>
-                <div className="rounded-md border bg-slate-50/70 p-4">
+                <div className="py-2">
                   <h4 className="mb-3 font-medium text-slate-950">
                     {editingTopic ? copy.editTopic : copy.addNewTopic}
                   </h4>
@@ -1098,7 +1098,7 @@ export default function CategoriesPage() {
 
             {/* Topics List */}
             {topics.length === 0 ? (
-              <div className="rounded-md border border-dashed py-10 text-center text-sm text-slate-500">
+              <div className="py-10 text-center text-sm text-slate-500">
                 {copy.noSubCategoriesYet}
               </div>
             ) : (
@@ -1109,7 +1109,7 @@ export default function CategoriesPage() {
                 {topics.map((topic) => (
                   <div
                     key={topic.id}
-                    className="flex items-center justify-between gap-4 rounded-md border bg-white p-3 transition-colors hover:bg-slate-50"
+                    className="flex items-center justify-between gap-4 py-3"
                   >
                     <div className="min-w-0 flex-1">
                       <div className="mb-1 flex flex-wrap items-center gap-2">

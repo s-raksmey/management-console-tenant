@@ -466,9 +466,9 @@ export default function AdminArticlesPage() {
         )}
       </div>
 
-      <div className="space-y-3 md:hidden">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white md:hidden">
         {articles.length === 0 ? (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-slate-500">
+          <div className="px-4 py-8 text-center text-slate-500">
             {copy.empty}{" "}
             {hasPermission(Permission.CREATE_ARTICLE) && (
               <Link href="/articles/new" className="text-blue-600 hover:underline">
@@ -480,9 +480,9 @@ export default function AdminArticlesPage() {
           paginatedArticles.map((article) => (
             <article
               key={article.id}
-              className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
+              className="border-b border-slate-200 py-5 last:border-b-0"
             >
-              <div className="flex items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
                 <Badge className={`text-[11px] font-bold tracking-wide ${statusColors[article.status]}`}>
                   {copy.statuses[article.status]}
                 </Badge>
@@ -631,7 +631,7 @@ export default function AdminArticlesPage() {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-xs text-slate-500">
+                <div className="mt-3 flex items-center justify-between text-xs text-slate-500">
                   <span>{copy.updated}</span>
                   <span className="font-semibold text-slate-700">
                     {format(new Date(article.updatedAt), "MMM d, yyyy")}

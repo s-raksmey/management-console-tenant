@@ -136,7 +136,7 @@ export function MediaGrid({
           <div
             key={file.id}
             className={cn(
-              'group relative bg-white border border-slate-200 rounded-lg overflow-hidden hover:shadow-md transition-all duration-200',
+              'group relative overflow-hidden rounded-lg border border-slate-200 bg-white transition-all duration-200 hover:shadow-md',
               selectable && 'cursor-pointer',
               isSelected && 'ring-2 ring-blue-500 border-blue-500'
             )}

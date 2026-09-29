@@ -4,19 +4,16 @@ import React from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertCircle,
   BarChart3,
   Brush,
-  CheckCircle2,
-  Circle,
   Code2,
-  ExternalLink,
   FileText,
   Globe2,
   HardDrive,
+  ChevronDown,
   Loader2,
   Mail,
   RefreshCw,
@@ -26,6 +23,12 @@ import {
   Users,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
 import {
   M_RESET_SETTING,
@@ -723,7 +726,6 @@ export default function SettingsPage() {
   const openSettingsCategory = React.useCallback((category: SettingType) => {
     setSelectedCategory(category);
     window.requestAnimationFrame(() => {
-      settingsPanelRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       settingsPanelRef.current?.focus({ preventScroll: true });
     });
   }, []);
@@ -808,22 +810,19 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-[1480px] space-y-6 px-4 py-5 sm:px-6 lg:px-8">
-        <header className="rounded-md border border-slate-200 bg-white p-4 sm:p-5">
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(360px,520px)] xl:items-end">
+    <div className="space-y-5">
+        <header>
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-end">
             <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="outline" className="bg-white">
-                  {viewingSubTenant
-                    ? getTenantDisplayName(activeTenant, copy.tenantWebsite)
-                    : copy.managementConsole}
-                </Badge>
+              <p className="text-sm font-medium text-slate-500">
+                {viewingSubTenant
+                  ? getTenantDisplayName(activeTenant, copy.tenantWebsite)
+                  : copy.managementConsole}
                 {viewingSubTenant && activeTenant?.slug ? (
-                  <span className="font-mono text-xs text-slate-400">{activeTenant.slug}</span>
+                  <span className="ml-2 font-mono text-xs text-slate-400">{activeTenant.slug}</span>
                 ) : null}
-              </div>
-              <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950">
+              </p>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950">
                 {pageTitle}
               </h1>
               <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-600">
@@ -837,61 +836,43 @@ export default function SettingsPage() {
                 </div>
               ) : null}
               {isSuperAdmin && !viewingSubTenant ? (
-                <div className="mt-4 max-w-xl rounded-md border border-slate-200 bg-slate-50 px-3 py-3">
-                  <p className="text-sm leading-6 text-slate-600">
-                    {copy.publicWebsiteHint}
-                  </p>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                  {copy.publicWebsiteHint}{" "}
                   <Link
                     href="/tenants"
-                    className="mt-2 inline-flex text-sm font-medium text-slate-950 underline-offset-2 hover:underline"
+                    className="font-medium text-slate-950 underline decoration-slate-300 underline-offset-2 hover:decoration-slate-950"
                   >
                     {copy.manageWebsites}
                   </Link>
-                </div>
+                </p>
               ) : null}
             </div>
 
-            <div className="space-y-3">
-              <div
-                className={`grid overflow-hidden rounded-md border border-slate-200 bg-slate-50 ${
-                  viewingSubTenant ? "grid-cols-3" : "grid-cols-2"
-                }`}
-              >
-                {settingSummary.map(([label, value]) => (
-                  <div key={label} className="border-r border-slate-200 px-3 py-2 last:border-r-0">
-                    <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">
-                      {label}
-                    </p>
-                    <p className="mt-1 text-lg font-semibold text-slate-950">{value}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="flex flex-col gap-2 sm:flex-row">
-                {isSuperAdmin ? (
-                  <Select
-                    value={activeTenant?.id || CONSOLE_SETTINGS_SCOPE}
-                    onValueChange={(value) => {
-                      void switchTenant(value === CONSOLE_SETTINGS_SCOPE ? "" : value);
-                    }}
-                  >
-                    <SelectTrigger className="h-10 w-full bg-white sm:w-[240px]">
-                      <SelectValue placeholder={copy.selectScope} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={CONSOLE_SETTINGS_SCOPE}>
-                        {copy.consoleOption}
-                      </SelectItem>
-                      {tenantOptions
-                        .filter((tenant) => tenant.status === "ACTIVE" && tenant.isMainTenant !== true)
-                        .map((tenant) => (
-                          <SelectItem key={tenant.id} value={tenant.id}>
-                            {getTenantDisplayName(tenant, tenant.name)}
-                          </SelectItem>
-                        ))}
-                    </SelectContent>
-                  </Select>
-                ) : null}
-                <div className="relative flex-1">
+            <div className="flex flex-col gap-2">
+              {isSuperAdmin ? (
+                <Select
+                  value={activeTenant?.id || CONSOLE_SETTINGS_SCOPE}
+                  onValueChange={(value) => {
+                    void switchTenant(value === CONSOLE_SETTINGS_SCOPE ? "" : value);
+                  }}
+                >
+                  <SelectTrigger className="h-10 w-full bg-white">
+                    <SelectValue placeholder={copy.selectScope} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={CONSOLE_SETTINGS_SCOPE}>{copy.consoleOption}</SelectItem>
+                    {tenantOptions
+                      .filter((tenant) => tenant.status === "ACTIVE" && tenant.isMainTenant !== true)
+                      .map((tenant) => (
+                        <SelectItem key={tenant.id} value={tenant.id}>
+                          {getTenantDisplayName(tenant, tenant.name)}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              ) : null}
+              <div className="flex gap-2">
+                <div className="relative min-w-0 flex-1">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                   <Input
                     placeholder={copy.searchSettings}
@@ -902,120 +883,99 @@ export default function SettingsPage() {
                 </div>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   onClick={() => void loadSettings()}
-                  className="h-10 shrink-0 bg-white"
+                  className="h-10 shrink-0 px-3"
+                  aria-label={copy.refresh}
                 >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  {copy.refresh}
+                  <RefreshCw className="h-4 w-4" />
                 </Button>
               </div>
             </div>
           </div>
-        </header>
 
-        <div className="grid gap-5 lg:grid-cols-[292px_minmax(0,1fr)]">
-          <aside className="space-y-4 lg:sticky lg:top-4 lg:self-start">
-            <section className="rounded-md border border-slate-200 bg-white p-3">
-              <div className="flex items-center justify-between px-2 py-2">
-                <h2 className="text-sm font-semibold text-slate-950">{copy.sections}</h2>
-                <Badge variant="outline" className="bg-white text-xs">
-                  {searchQuery ? copy.found(filteredSettings.length) : copy.shown(getCategoryCount(selectedCategory))}
-                </Badge>
-              </div>
-              <div className="flex gap-1 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible lg:pb-0">
-                {visibleCategories.map(([key]) => {
-                  const categoryKey = key as SettingType;
-                  const count = getCategoryCount(categoryKey);
-                  const Icon = CATEGORY_ICONS[categoryKey] || SettingsIcon;
-                  const selected = selectedCategory === categoryKey;
-
-                  return (
-                    <button
-                      key={key}
-                      type="button"
-                      disabled={count === 0}
-                      onClick={() => openSettingsCategory(categoryKey)}
-                      className={`flex min-w-max items-center gap-2 rounded-md px-3 py-2.5 text-left text-sm transition-colors lg:w-full ${
-                        selected
-                          ? "bg-slate-950 text-white"
-                          : "text-slate-700 hover:bg-slate-100"
-                      } disabled:cursor-not-allowed disabled:opacity-45`}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span className="min-w-0 flex-1 truncate">
-                        {categoryLabel(categoryKey)}
-                      </span>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs ${
-                          selected ? "bg-white/15 text-white" : "bg-slate-100 text-slate-600"
-                        }`}
-                      >
-                        {count}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className="rounded-md border border-slate-200 bg-white p-4">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-sm font-semibold text-slate-950">{copy.readiness}</h2>
-                  <p className="mt-1 text-xs text-slate-500">
-                    {copy.essentialsComplete(completedSetupItems, visibleSetupChecklist.length)}
+          <div className="mt-6 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+            <div className="flex items-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex h-10 items-center gap-2 text-sm text-slate-950"
+                  >
+                    <span className="font-medium">{copy.readiness}</span>
+                    <span className="text-slate-500">{setupProgress}%</span>
+                    <ChevronDown className="h-4 w-4 text-slate-400" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-72">
+                  <p className="px-2 py-2 text-sm text-slate-500">
+                    {incompleteSetupItems.length === 0
+                      ? copy.coreComplete
+                      : copy.essentialsComplete(completedSetupItems, visibleSetupChecklist.length)}
                   </p>
-                </div>
-                <span className="text-lg font-semibold text-slate-950">{setupProgress}%</span>
-              </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
-                <div
-                  className="h-full rounded-full bg-emerald-500 transition-all"
-                  style={{ width: `${setupProgress}%` }}
-                />
-              </div>
-              <div className="mt-4 space-y-1">
-                {(incompleteSetupItems.length > 0 ? incompleteSetupItems : visibleSetupChecklist).map((item) => {
-                  const Icon = item.complete ? CheckCircle2 : Circle;
-
-                  return (
-                    <button
+                  {visibleSetupChecklist.map((item) => (
+                    <DropdownMenuItem
                       key={item.label}
-                      type="button"
                       onClick={() => openSettingsCategory(item.category)}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm hover:bg-slate-50"
                     >
-                      <Icon
-                        className={`h-4 w-4 shrink-0 ${
-                          item.complete ? "text-emerald-600" : "text-slate-300"
+                      <span
+                        className={`mr-2 h-2 w-2 shrink-0 rounded-full ${
+                          item.complete ? "bg-emerald-500" : "bg-slate-300"
                         }`}
                       />
-                      <span className="min-w-0 flex-1 truncate text-slate-700">
-                        {item.label}
-                      </span>
-                      {!item.complete ? (
-                        <ExternalLink className="h-3.5 w-3.5 text-slate-400" />
-                      ) : null}
-                    </button>
-                  );
-                })}
-                {incompleteSetupItems.length === 0 ? (
-                  <p className="px-2 py-1.5 text-sm text-emerald-700">
-                    {copy.coreComplete}
-                  </p>
-                ) : null}
-              </div>
-            </section>
-          </aside>
+                      {item.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+            <div
+              className={`grid gap-6 ${
+                settingSummary.length > 2 ? "grid-cols-3" : "grid-cols-2"
+              }`}
+            >
+              {settingSummary.map(([label, value]) => (
+                <div key={label} className="min-w-16">
+                  <p className="text-sm text-slate-500">{label}</p>
+                  <p className="mt-1 text-2xl font-semibold text-slate-950">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </header>
+
+        <div className="space-y-5">
+          <nav className="flex gap-6 overflow-x-auto">
+            {visibleCategories.map(([key]) => {
+              const categoryKey = key as SettingType;
+              const count = getCategoryCount(categoryKey);
+              const selected = selectedCategory === categoryKey;
+
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  disabled={count === 0}
+                  onClick={() => openSettingsCategory(categoryKey)}
+                  className={`shrink-0 border-b-2 pb-3 text-sm transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                    selected
+                      ? "border-slate-950 font-medium text-slate-950"
+                      : "border-transparent text-slate-500 hover:text-slate-950"
+                  }`}
+                >
+                  {categoryLabel(categoryKey)}
+                </button>
+              );
+            })}
+          </nav>
 
           <main className="min-w-0 space-y-4">
             <section
               ref={settingsPanelRef}
               tabIndex={-1}
-              className="scroll-mt-4 rounded-md border border-slate-200 bg-white outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+              className="scroll-mt-4 outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             >
-              <div className="border-b border-slate-200 px-4 py-4 sm:px-5">
+              <div className="pb-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
@@ -1028,17 +988,12 @@ export default function SettingsPage() {
                       {categoryDescription}
                     </p>
                   </div>
-                  {!viewingSubTenant ? null : activeTenant ? (
-                    <Badge variant="outline" className="max-w-full truncate bg-white">
-                      {activeTenant.slug}
-                    </Badge>
-                  ) : null}
                 </div>
               </div>
 
-              <div className="p-4 sm:p-5">
+              <div>
                 {selectedCategory === SettingType.EMAIL ? (
-                  <div className="mb-5 rounded-md border border-sky-200 bg-sky-50/70 p-4">
+                  <div className="mb-8">
                     <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
@@ -1098,7 +1053,7 @@ export default function SettingsPage() {
                 ) : null}
 
                 {selectedCategory === SettingType.SITE && viewingSubTenant ? (
-                  <div className="mb-5 rounded-md border border-blue-200 bg-blue-50/70 p-4">
+                  <div className="mb-8">
                     <h3 className="font-semibold text-slate-950">
                       {viewingSubTenant
                         ? copy.brandingSection
@@ -1125,7 +1080,6 @@ export default function SettingsPage() {
             </section>
           </main>
         </div>
-      </div>
     </div>
   );
 }

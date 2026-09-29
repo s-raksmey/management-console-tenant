@@ -14,7 +14,6 @@ import {
   Archive,
   Building2,
   Megaphone,
-  Mail,
   MessageSquare,
 } from "lucide-react";
 import { Permission } from "../permissions/PermissionGuard";
@@ -55,7 +54,6 @@ const navCopy = {
     allUsers: "All Users",
     auditLogs: "Audit Logs",
     publicReaders: "Public Readers",
-    newsletter: "Newsletter",
     newArticle: "New Article",
     newTenant: "New Sub-tenant",
     newUser: "New User",
@@ -85,7 +83,6 @@ const navCopy = {
     manageUserRoles: "Manage user roles",
     websiteConfiguration: "Website configuration",
     passwordlessWebsiteReaders: "Passwordless website readers",
-    subscriberExports: "Subscriber exports",
     createNewArticle: "Create new article",
     createTenantWebsite: "Create sub-tenant website",
     createNewUser: "Create new user",
@@ -115,7 +112,6 @@ const navCopy = {
     allUsers: "អ្នកប្រើទាំងអស់",
     auditLogs: "កំណត់ហេតុសវនកម្ម",
     publicReaders: "អ្នកអានសាធារណៈ",
-    newsletter: "ព្រឹត្តិបត្រ",
     newArticle: "អត្ថបទថ្មី",
     newTenant: "គេហទំព័រថ្មី",
     newUser: "អ្នកប្រើថ្មី",
@@ -145,7 +141,6 @@ const navCopy = {
     manageUserRoles: "គ្រប់គ្រងតួនាទីអ្នកប្រើ",
     websiteConfiguration: "ការកំណត់គេហទំព័រ",
     passwordlessWebsiteReaders: "អ្នកអានគេហទំព័រដោយគ្មានពាក្យសម្ងាត់",
-    subscriberExports: "នាំចេញអ្នកជាវ",
     createNewArticle: "បង្កើតអត្ថបទថ្មី",
     createTenantWebsite: "បង្កើតគេហទំព័រ",
     createNewUser: "បង្កើតអ្នកប្រើថ្មី",
@@ -357,15 +352,6 @@ export const getNavigationItems = (
     icon: Users,
     badge: null,
     description: copy.passwordlessWebsiteReaders,
-    permissions: [Permission.VIEW_SETTINGS],
-  });
-
-  navigationItems.push({
-    name: copy.newsletter,
-    href: "/newsletter",
-    icon: Mail,
-    badge: null,
-    description: copy.subscriberExports,
     permissions: [Permission.VIEW_SETTINGS],
   });
 

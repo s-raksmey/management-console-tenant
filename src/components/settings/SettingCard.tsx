@@ -81,12 +81,8 @@ export function SettingCard({
 
   return (
     <section
-      className={`rounded-md border bg-white p-4 transition-colors sm:p-5 ${
-        error
-          ? 'border-red-200 bg-red-50/30'
-          : hasChanges
-            ? 'border-sky-300 bg-sky-50/40'
-            : 'border-slate-200'
+      className={`py-6 ${
+        error ? 'bg-red-50/40' : hasChanges ? 'bg-sky-50/40' : ''
       }`}
     >
       <div className="grid gap-4 xl:grid-cols-[minmax(220px,330px)_minmax(0,1fr)] xl:items-start">
@@ -128,7 +124,7 @@ export function SettingCard({
           />
           </fieldset>
 
-          <div className="flex flex-col gap-3 border-t border-slate-100 pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div
               className={`flex items-center gap-2 text-xs font-medium ${
                 readOnly

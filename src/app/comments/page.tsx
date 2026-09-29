@@ -352,7 +352,7 @@ export default function CommentsPage() {
                   )}
 
                   {expanded && (
-                    <div className="mt-3 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-950/50">
+                    <div className="mt-3">
                       <textarea
                         rows={2}
                         value={replyDrafts[comment.id] ?? ""}

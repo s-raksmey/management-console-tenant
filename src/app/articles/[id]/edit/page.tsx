@@ -1130,7 +1130,7 @@ export default function EditArticlePage() {
 
         {/* Breaking News Reason */}
         {!hasPermission(Permission.SET_BREAKING_NEWS) && !isBreaking && shouldRequestBreakingNews && canEditArticle(articleAuthorId, userId, userRole, hasPermission, status, revisionStatus, currentRevisionRequest?.status) && (
-          <div className="rounded-md border border-orange-200 bg-orange-50 p-3 space-y-3">
+          <div className="space-y-3 rounded-md border border-orange-200 bg-orange-50 p-3">
             <div>
               <label htmlFor="breaking-news-reason" className="block text-sm font-medium text-orange-900 mb-1">
                 {copy.whyBreaking}

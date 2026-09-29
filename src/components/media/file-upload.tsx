@@ -315,7 +315,7 @@ export function FileUpload({
         <div className="space-y-3">
           <h4 className="font-medium text-slate-900">{copy.uploadProgress}</h4>
           {uploadProgress.map((item) => (
-            <div key={item.id} className="bg-white border border-slate-200 rounded-lg p-4">
+            <div key={item.id} className="rounded-lg border border-slate-200 bg-white p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-3">
                   <div className="text-slate-400">

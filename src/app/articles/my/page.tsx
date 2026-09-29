@@ -468,15 +468,15 @@ export default function MyArticlesPage() {
       </div>
 
       {/* Mobile Article Cards */}
-      <div className="space-y-3 md:hidden">
+      <div className="overflow-hidden rounded-xl border bg-white md:hidden">
         {articles.length === 0 ? (
-          <div className="rounded-lg border bg-white p-8 text-center text-muted-foreground">
+          <div className="p-8 text-center text-muted-foreground">
             {user?.id ? copy.emptySignedIn : copy.emptySignedOut}
           </div>
         ) : (
           paginatedArticles.map((article) => (
-            <article key={article.id} className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-              <div className="flex items-center justify-between gap-3 border-b bg-muted/40 px-4 py-3">
+            <article key={article.id} className="border-b py-5 last:border-b-0">
+              <div className="flex items-center justify-between gap-3">
                 <StatusBadge status={article.status} />
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -613,7 +613,7 @@ export default function MyArticlesPage() {
                   )}
                 </div>
 
-                <div className="flex items-center justify-between border-t pt-3 text-xs text-muted-foreground">
+                <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                   <span>{copy.updated}</span>
                   <span className="font-semibold text-foreground">
                     {format(new Date(article.updatedAt), 'MMM d, yyyy')}

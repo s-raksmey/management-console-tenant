@@ -446,7 +446,7 @@ export default function MediaPage() {
             {copy.refresh}
           </Button>
           
-          <div className="flex items-center border border-slate-200 rounded-lg">
+          <div className="flex items-center rounded-lg border border-slate-200">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
               size="sm"
@@ -471,7 +471,7 @@ export default function MediaPage() {
       {stats.totalFiles > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {Object.entries(stats.byType).map(([type, count]) => (
-            <div key={type} className="bg-white border border-slate-200 rounded-lg p-4 text-center">
+            <div key={type} className="rounded-lg border border-slate-200 bg-white p-4 text-center">
               <div className="text-2xl font-bold text-slate-900">{count}</div>
               <div className="text-sm text-slate-500 capitalize">{copy.typeCount(type)}</div>
             </div>

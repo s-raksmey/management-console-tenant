@@ -215,7 +215,7 @@ export function SettingsCategory({
   return (
     <div className="space-y-4">
       {!readOnly && (hasAnyChanges || errorCount > 0) && (
-        <div className="sticky top-3 z-10 rounded-md border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur">
+        <div className="sticky top-3 z-10 bg-slate-50/95 py-3 backdrop-blur">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               {hasAnyChanges ? (
@@ -252,7 +252,7 @@ export function SettingsCategory({
         </div>
       )}
 
-      <div className="grid gap-3">
+      <div className="divide-y divide-slate-200/70">
         {categorySettings.map((setting) => (
           <SettingCard
             key={setting.key}
