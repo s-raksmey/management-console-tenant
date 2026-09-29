@@ -767,7 +767,7 @@ export default function CategoriesPage() {
 
       {/* Category Form - visible only when the role can create or edit categories */}
       {canShowCategoryForm && (
-        <Card className="overflow-hidden border-slate-200 shadow-sm">
+        <Card className="overflow-hidden border-slate-200">
           <CardHeader className="border-b bg-white px-4 py-5 sm:px-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div>
@@ -1003,7 +1003,7 @@ export default function CategoriesPage() {
 
       {/* Topics Management - Only show when editing a category */}
       {editingCategory && (
-        <Card className="overflow-hidden border-slate-200 shadow-sm">
+        <Card className="overflow-hidden border-slate-200">
           <CardHeader className="border-b bg-white px-6 py-5">
             <CardTitle className="flex items-center justify-between gap-3 text-lg">
               <span>{copy.subCategoriesFor(editingCategory.name)}</span>
@@ -1161,7 +1161,7 @@ export default function CategoriesPage() {
       )}
 
       {/* Categories List */}
-      <Card className="overflow-hidden border-slate-200 shadow-sm">
+      <Card className="overflow-hidden border-slate-200">
         <CardHeader className="border-b bg-white px-6 py-5">
           <div className="flex items-center justify-between gap-3">
             <div>

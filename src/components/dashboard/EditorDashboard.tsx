@@ -183,7 +183,7 @@ function KpiCard({
   icon: React.ElementType;
 }) {
   return (
-    <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <Card className="border-slate-200 dark:border-slate-700 dark:bg-slate-900">
       <CardContent className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div>
@@ -344,7 +344,7 @@ export const EditorDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <div className="mx-auto max-w-7xl space-y-6 p-6">
-        <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="rounded-lg border border-slate-200 bg-white p-6 dark:border-slate-700 dark:bg-slate-900">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">{copy.workspace}</p>
@@ -385,7 +385,7 @@ export const EditorDashboard: React.FC = () => {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
-          <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <Card className="border-slate-200 dark:border-slate-700 dark:bg-slate-900">
             <CardHeader className="border-b border-slate-200 dark:border-slate-700">
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
@@ -465,7 +465,7 @@ export const EditorDashboard: React.FC = () => {
           </Card>
 
           <div className="space-y-6">
-            <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <Card className="border-slate-200 dark:border-slate-700 dark:bg-slate-900">
               <CardHeader>
                 <CardTitle>{copy.metrics}</CardTitle>
                 <CardDescription>{copy.metricsDescription}</CardDescription>
@@ -486,7 +486,7 @@ export const EditorDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <Card className="border-slate-200 dark:border-slate-700 dark:bg-slate-900">
               <CardHeader>
                 <CardTitle>{copy.recentDecisions}</CardTitle>
                 <CardDescription>{copy.recentDecisionsDescription}</CardDescription>
@@ -512,7 +512,7 @@ export const EditorDashboard: React.FC = () => {
               </CardContent>
             </Card>
 
-            <Card className="border-slate-200 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+            <Card className="border-slate-200 dark:border-slate-700 dark:bg-slate-900">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-blue-600" />

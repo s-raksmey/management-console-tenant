@@ -470,7 +470,7 @@ export default function SearchPage() {
         {results.length > 0 ? (
           <div className="space-y-4">
             {results.map((article) => (
-              <div key={article.id} className="rounded-lg border border-slate-200 bg-white p-4 transition-shadow hover:shadow-sm sm:p-6">
+              <div key={article.id} className="rounded-lg border border-slate-200 bg-white p-4  sm:p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-2">

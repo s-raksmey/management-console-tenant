@@ -333,7 +333,7 @@ export default function AdsPage() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {isSuperAdmin && (
-            <select aria-label={copy.selectTenant} value={selectedTenantId} onChange={(event) => setSelectedTenantId(event.target.value)} className="h-10 min-w-56 rounded-md border border-slate-200 bg-white px-3 text-sm shadow-sm">
+            <select aria-label={copy.selectTenant} value={selectedTenantId} onChange={(event) => setSelectedTenantId(event.target.value)} className="h-10 min-w-56 rounded-md border border-slate-200 bg-white px-3 text-sm">
               <option value="">{copy.selectTenant}</option>
               {tenants.map((tenant) => <option key={tenant.id} value={tenant.id}>{tenant.name} /{tenant.slug}</option>)}
             </select>
@@ -344,7 +344,7 @@ export default function AdsPage() {
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {metrics.map(({ label: metricLabel, value, detail, icon: Icon }) => (
-          <div key={metricLabel} className="flex items-center gap-4 border border-slate-200 bg-white px-4 py-3 shadow-sm">
+          <div key={metricLabel} className="flex items-center gap-4 border border-slate-200 bg-white px-4 py-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-md bg-slate-100 text-slate-700"><Icon className="h-5 w-5" /></div>
             <div><p className="text-xs text-slate-500">{detail}</p><p className="text-xl font-semibold text-slate-950">{value.toLocaleString(numberLocale)}</p><p className="text-xs font-medium text-slate-600">{metricLabel}</p></div>
           </div>

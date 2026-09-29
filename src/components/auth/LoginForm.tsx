@@ -188,7 +188,7 @@ export function LoginForm({
       transition={{ duration: 0.3 }}
       className={appearance === 'editorial' ? 'w-full' : 'mx-auto w-full max-w-md'}
     >
-      <div className={appearance === 'editorial' ? 'p-1 sm:p-2' : 'rounded-lg bg-white p-8 shadow-lg'}>
+      <div className={appearance === 'editorial' ? 'p-1 sm:p-2' : 'rounded-lg border border-slate-200 bg-white p-8'}>
         <div className={appearance === 'editorial' ? 'mb-7' : 'mb-8 text-center'}>
           {appearance === 'card' && (
             <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
@@ -218,7 +218,7 @@ export function LoginForm({
                     width={192}
                     height={192}
                     unoptimized
-                    className="h-48 w-48 rounded-md border border-white bg-white p-2 shadow-sm"
+                    className="h-48 w-48 rounded-md border border-white bg-white p-2"
                   />
                   <div className="w-full rounded-md bg-white p-3 text-center">
                     <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
@@ -251,7 +251,7 @@ export function LoginForm({
                       void verifyTwoFactorCode(nextCode);
                     }
                   }}
-                  className="w-full px-3 py-2 pl-10 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 pl-10 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="123456"
                   required
                   disabled={isLoading}
@@ -300,7 +300,7 @@ export function LoginForm({
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder={copy.emailPlaceholder}
               required
               disabled={isLoading}
@@ -327,7 +327,7 @@ export function LoginForm({
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder={copy.passwordPlaceholder}
                 required
                 disabled={isLoading}
@@ -363,7 +363,7 @@ export function LoginForm({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isLoading ? (
               <>

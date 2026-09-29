@@ -67,7 +67,7 @@ export const StatCard: React.FC<StatCardProps> = ({
   };
 
   return (
-    <Card className={cn("relative overflow-hidden transition-all duration-300 hover:border-slate-300 hover:shadow-md dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600", className)}>
+    <Card className={cn("relative overflow-hidden transition-all duration-300 hover:border-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-slate-600", className)}>
       {/* Gradient Background */}
       <div className={cn("absolute inset-0 bg-gradient-to-br opacity-5", gradient)} />
       

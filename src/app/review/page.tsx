@@ -328,7 +328,7 @@ export default function ReviewQueuePage() {
           {articles.map((article) => (
             <div
               key={article.id}
-              className="bg-white border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
+              className="bg-white border border-gray-200 rounded-lg p-6"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">

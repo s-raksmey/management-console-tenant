@@ -600,7 +600,7 @@ export const AdminDashboard: React.FC = () => {
           ) : (
             <>
               {/* System Health */}
-              <Card className="border-green-200/70 hover:border-green-300 hover:shadow-md transition-shadow dark:border-slate-700 dark:bg-slate-900 dark:hover:border-green-500/50">
+              <Card className="border-green-200/70 hover:border-green-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-green-500/50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-green-100 rounded-lg dark:bg-green-500/15">
@@ -620,7 +620,7 @@ export const AdminDashboard: React.FC = () => {
               </Card>
 
               {/* User Management */}
-              <Card className="border-blue-200/70 hover:border-blue-300 hover:shadow-md transition-shadow dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500/50">
+              <Card className="border-blue-200/70 hover:border-blue-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-blue-500/50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-blue-100 rounded-lg dark:bg-blue-500/15">
@@ -640,7 +640,7 @@ export const AdminDashboard: React.FC = () => {
               </Card>
 
               {/* Main-tenant analytics */}
-              <Card className="border-purple-200/70 hover:border-purple-300 hover:shadow-md transition-shadow dark:border-slate-700 dark:bg-slate-900 dark:hover:border-purple-500/50">
+              <Card className="border-purple-200/70 hover:border-purple-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-purple-500/50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-purple-100 rounded-lg dark:bg-purple-500/15">
@@ -660,7 +660,7 @@ export const AdminDashboard: React.FC = () => {
               </Card>
 
               {/* System Activity */}
-              <Card className="border-orange-200/70 hover:border-orange-300 hover:shadow-md transition-shadow dark:border-slate-700 dark:bg-slate-900 dark:hover:border-orange-500/50">
+              <Card className="border-orange-200/70 hover:border-orange-300 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-orange-500/50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-orange-100 rounded-lg dark:bg-orange-500/15">
@@ -1030,7 +1030,7 @@ export const AdminDashboard: React.FC = () => {
           ) : (
             <>
               {/* Articles Reviewed */}
-              <Card className="hover:shadow-md transition-shadow border-blue-200">
+              <Card className="border-blue-200">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-blue-100 rounded-lg">
@@ -1050,7 +1050,7 @@ export const AdminDashboard: React.FC = () => {
               </Card>
 
               {/* Articles Approved */}
-              <Card className="hover:shadow-md transition-shadow border-green-200">
+              <Card className="border-green-200">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-green-100 rounded-lg">
@@ -1070,7 +1070,7 @@ export const AdminDashboard: React.FC = () => {
               </Card>
 
               {/* Pending Reviews */}
-              <Card className="hover:shadow-md transition-shadow border-orange-200">
+              <Card className="border-orange-200">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-orange-100 rounded-lg">
@@ -1093,7 +1093,7 @@ export const AdminDashboard: React.FC = () => {
               </Card>
 
               {/* Featured Articles */}
-              <Card className="hover:shadow-md transition-shadow border-purple-200">
+              <Card className="border-purple-200">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-purple-100 rounded-lg">
@@ -1192,7 +1192,7 @@ export const AdminDashboard: React.FC = () => {
           ) : (
             <>
               {/* My Articles */}
-              <Card className="hover:shadow-md transition-shadow border-green-200">
+              <Card className="border-green-200">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-green-100 rounded-lg">
@@ -1212,7 +1212,7 @@ export const AdminDashboard: React.FC = () => {
               </Card>
 
               {/* Published Articles */}
-              <Card className="hover:shadow-md transition-shadow border-blue-200">
+              <Card className="border-blue-200">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-blue-100 rounded-lg">
@@ -1232,7 +1232,7 @@ export const AdminDashboard: React.FC = () => {
               </Card>
 
               {/* Draft Articles */}
-              <Card className="hover:shadow-md transition-shadow border-yellow-200">
+              <Card className="border-yellow-200">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-yellow-100 rounded-lg">
@@ -1252,7 +1252,7 @@ export const AdminDashboard: React.FC = () => {
               </Card>
 
               {/* Pending Review */}
-              <Card className="hover:shadow-md transition-shadow border-orange-200">
+              <Card className="border-orange-200">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="p-2 bg-orange-100 rounded-lg">

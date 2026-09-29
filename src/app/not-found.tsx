@@ -113,7 +113,7 @@ export default function NotFound() {
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
           <Link href="/">
-            <Button size="default" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3">
+            <Button size="default" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3">
               <Home className="w-4 h-4 mr-2" />
               {copy.dashboard}
             </Button>
@@ -132,7 +132,7 @@ export default function NotFound() {
 
         {/* Quick Links Card */}
         <motion.div variants={itemVariants}>
-          <Card className="bg-white/70 backdrop-blur-sm border-slate-200 shadow-lg">
+          <Card className="bg-white/70 backdrop-blur-sm border-slate-200">
             <CardContent className="p-6">
               <h3 className="text-lg font-semibold text-slate-800 mb-4">
                 {copy.quickLinks}

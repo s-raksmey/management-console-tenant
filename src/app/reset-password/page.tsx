@@ -121,7 +121,7 @@ function ResetPasswordContent() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-white rounded-lg shadow-lg p-8"
+      className="bg-white rounded-lg border border-slate-200 p-8"
     >
       <div className="text-center mb-8">
         <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-blue-600">
@@ -147,7 +147,7 @@ function ResetPasswordContent() {
           </div>
           <Link
             href="/login"
-            className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+            className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
           >
             {copy.backToLoginTitle}
           </Link>
@@ -168,7 +168,7 @@ function ResetPasswordContent() {
                   if (error) setError("");
                 }}
                 minLength={8}
-                className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder={copy.newPasswordPlaceholder}
                 required
                 disabled={loading || !token}
@@ -199,7 +199,7 @@ function ResetPasswordContent() {
                   if (error) setError("");
                 }}
                 minLength={8}
-                className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-md shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder={copy.confirmPlaceholder}
                 required
                 disabled={loading || !token}
@@ -225,7 +225,7 @@ function ResetPasswordContent() {
           <button
             type="submit"
             disabled={loading || !token}
-            className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {loading ? (
               <>
@@ -270,7 +270,7 @@ export default function ResetPasswordPage() {
           </motion.div>
         </div>
 
-        <Suspense fallback={<div className="bg-white rounded-lg shadow-lg p-8">{copy.loading}</div>}>
+        <Suspense fallback={<div className="bg-white rounded-lg border border-slate-200 p-8">{copy.loading}</div>}>
           <ResetPasswordContent />
         </Suspense>
       </div>

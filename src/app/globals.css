@@ -321,18 +321,14 @@ html.dark :where(button[disabled], [aria-disabled="true"]) {
   opacity: 0.65;
 }
 
-html.dark :where(.shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shadow-2xl) {
-  box-shadow: 0 14px 35px rgb(0 0 0 / 0.35) !important;
-}
-
 /* Dashboard specific styles */
 @layer components {
   .dashboard-card {
-    @apply bg-white rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200;
+    @apply bg-white rounded-lg border border-slate-200;
   }
   
   .dashboard-stat-card {
-    @apply dashboard-card p-6 hover:scale-[1.02] transition-transform duration-200;
+    @apply dashboard-card p-6;
   }
   
   .sidebar-nav-item {
@@ -340,7 +336,7 @@ html.dark :where(.shadow, .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl, .shado
   }
   
   .sidebar-nav-item-active {
-    @apply bg-blue-50 text-blue-700 border border-blue-200 shadow-sm;
+    @apply bg-blue-50 text-blue-700 border border-blue-200;
   }
   
   .sidebar-nav-item-inactive {
