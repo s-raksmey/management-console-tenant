@@ -72,6 +72,7 @@ export interface MediaUploadOptions {
   maxWidth?: number;
   maxHeight?: number;
   quality?: number;
+  fit?: "inside" | "cover";
 }
 
 export interface MediaStats {

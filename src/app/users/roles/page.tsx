@@ -63,7 +63,7 @@ const rolePageCopy = {
     groupsCopy: {
       users: { title: "Users", description: "Team access and role governance." },
       articles: { title: "Articles", description: "Content creation, editing, and publishing." },
-      editorial: { title: "Editorial", description: "Review queue and article promotion controls." },
+      editorial: { title: "Article review", description: "Review queue and article promotion controls." },
       structure: { title: "Structure", description: "Category, topic, and site organization." },
       system: { title: "System", description: "Settings, logs, and Main Tenant operations." },
       carousel: { title: "Carousel", description: "Public hero slide management." },
@@ -152,7 +152,7 @@ const rolePageCopy = {
     groupsCopy: {
       users: { title: "អ្នកប្រើ", description: "ការចូលប្រើរបស់ក្រុម និងការគ្រប់គ្រងតួនាទី។" },
       articles: { title: "អត្ថបទ", description: "ការបង្កើត កែសម្រួល និងផ្សព្វផ្សាយមាតិកា។" },
-      editorial: { title: "វិចារណកិច្ច", description: "ជួរពិនិត្យ និងការលើកស្ទួយអត្ថបទ។" },
+      editorial: { title: "ពិនិត្យអត្ថបទ", description: "ជួរពិនិត្យ និងការលើកស្ទួយអត្ថបទ។" },
       structure: { title: "រចនាសម្ព័ន្ធ", description: "ការរៀបចំប្រភេទ ប្រធានបទ និងគេហទំព័រ។" },
       system: { title: "ប្រព័ន្ធ", description: "ការកំណត់ កំណត់ហេតុ និងប្រតិបត្តិការអ្នកជួលមេ។" },
       carousel: { title: "ការ៉ូសែល", description: "គ្រប់គ្រងស្លាយមុខសាធារណៈ។" },

@@ -97,7 +97,7 @@ const SUPER_ADMIN_HIDDEN_SETTING_KEYS = new Set([
   "site.contact_address",
   "site.contact_hours",
   "site.facebook_url",
-  "site.twitter_url",
+  "site.telegram_url",
   "site.instagram_url",
   "site.timezone",
   "site.base_url",

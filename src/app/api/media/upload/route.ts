@@ -69,7 +69,7 @@ async function requireMediaPermission(req: Request, allowedPermissions: string[]
 
   if (
     !result?.data?.me?.success ||
-    (userRole !== "SUPER_ADMIN" && !hasAccess)
+    (allowedPermissions.length > 0 && userRole !== "SUPER_ADMIN" && !hasAccess)
   ) {
     return NextResponse.json(
       { success: false, message: "Permission denied" },
@@ -157,10 +157,11 @@ async function processImage(
   options: MediaUploadOptions = {}
 ): Promise<{ buffer: Buffer; width?: number; height?: number; mimeType: string }> {
   const sharp = await loadSharp();
-  const { maxWidth = 1920, maxHeight = 1080, quality = 85 } = options;
-  const image = sharp(buffer);
+  const { maxWidth = 1920, maxHeight = 1080, quality = 85, fit = "inside" } = options;
+  const image = sharp(buffer).rotate();
   const metadata = await image.metadata();
   const needsResize =
+    fit === "cover" ||
     (metadata.width && metadata.width > maxWidth) ||
     (metadata.height && metadata.height > maxHeight);
 
@@ -168,7 +169,8 @@ async function processImage(
     const resized = image.resize({
       width: maxWidth,
       height: maxHeight,
-      fit: "inside",
+      fit,
+      position: "centre",
       withoutEnlargement: true,
     });
     const keepAlpha = Boolean(metadata.hasAlpha) && metadata.format !== "jpeg";
@@ -242,13 +244,15 @@ export async function POST(req: Request) {
     const options: MediaUploadOptions = optionsStr ? JSON.parse(optionsStr) : {};
     const folder = normalizeFolder(options.folder);
     const uploadPermissions =
-      folder === "ads"
-        ? ["MANAGE_MEDIA", "CREATE_ADS", "UPDATE_ADS"]
-        : folder === "carousel"
-          ? ["MANAGE_MEDIA", "CREATE_CAROUSEL", "UPDATE_CAROUSEL"]
-          : folder === "branding"
-            ? ["MANAGE_MEDIA", "UPDATE_SETTINGS"]
-            : ["MANAGE_MEDIA"];
+      folder === "profiles"
+        ? []
+        : folder === "ads"
+          ? ["MANAGE_MEDIA", "CREATE_ADS", "UPDATE_ADS"]
+          : folder === "carousel"
+            ? ["MANAGE_MEDIA", "CREATE_CAROUSEL", "UPDATE_CAROUSEL"]
+            : folder === "branding"
+              ? ["MANAGE_MEDIA", "UPDATE_SETTINGS"]
+              : ["MANAGE_MEDIA"];
     const authenticatedUser = await requireMediaPermission(req, uploadPermissions);
     if (authenticatedUser instanceof NextResponse) return authenticatedUser;
 
