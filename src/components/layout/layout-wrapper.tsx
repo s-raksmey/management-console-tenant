@@ -31,7 +31,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
   }, []);
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-slate-50">
+    <div className="min-h-screen overflow-x-hidden bg-background">
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
         <PermissionSidebar

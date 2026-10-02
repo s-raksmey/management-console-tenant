@@ -200,7 +200,7 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
 
 export function PermissionSidebar({ collapsed, onToggle, className }: PermissionSidebarProps) {
   const pathname = usePathname();
-  const { user, isLoading } = useAuth();
+  const { user } = useAuth();
   const { activeTenant, managementLogoUrl } = useTenant();
   const { locale } = useAdminLocale();
   const copy = sidebarCopy[locale];
@@ -249,26 +249,6 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
     userRole,
     locale
   );
-
-  // Keep the current sidebar mounted during background auth/permission refreshes.
-  // Swapping to the loading shell after a user is already present causes a white flash on navigation.
-  if (isLoading && !user) {
-    return (
-      <motion.aside
-        initial={false}
-        animate={{ width: collapsed ? 80 : 280 }}
-        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className={cn(
-          "fixed left-0 top-0 z-40 flex h-screen flex-col overflow-hidden border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900",
-          className
-        )}
-      >
-        <div className="flex h-12 items-center justify-center border-b border-slate-100 dark:border-slate-800">
-          <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-600 dark:border-blue-300"></div>
-        </div>
-      </motion.aside>
-    );
-  }
 
   return (
     <motion.aside

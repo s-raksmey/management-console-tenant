@@ -154,7 +154,7 @@ export default function LoginPage() {
 
   if (isInitializing || !brandReady) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600 dark:bg-slate-950 dark:text-slate-300">
+      <div data-auth-screen className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600 dark:bg-slate-950 dark:text-slate-300">
         <div className="text-center">
           <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-slate-900 dark:border-slate-700 dark:border-t-white" />
           <p className="text-sm">{copy.loading}</p>
@@ -170,7 +170,7 @@ export default function LoginPage() {
   const logoSrc = brand?.logoUrl ? resolveCmsMediaSrc(brand.logoUrl) : null;
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#eef3fb] text-slate-950 dark:bg-[#07111f] dark:text-white">
+    <main data-auth-screen className="relative min-h-screen overflow-hidden bg-[#eef3fb] text-slate-950 dark:bg-[#07111f] dark:text-white">
       <div className="pointer-events-none absolute -left-24 top-0 h-[34rem] w-[34rem] rounded-full bg-sky-400/25 blur-3xl dark:bg-sky-500/20" />
       <div className="pointer-events-none absolute bottom-0 right-0 h-72 w-72 rounded-full bg-blue-500/10 blur-3xl dark:bg-blue-400/10" />
 

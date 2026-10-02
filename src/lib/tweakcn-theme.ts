@@ -8,6 +8,8 @@ const THEME_SETTING_BY_ROLE: Record<string, string> = {
 export const PUBLIC_THEME_SETTING_KEY = "theme.public_tweakcn";
 export const THEME_SETTINGS_CHANGED_EVENT = "tenant-console-theme-settings-changed";
 export const COLOR_SCHEME_CHANGED_EVENT = "tenant-console-color-scheme-changed";
+export const COLOR_SCHEME_STORAGE_KEY = "tenant-console-color-scheme";
+export const THEME_CACHE_STORAGE_KEY = "tenant-console-theme-cache";
 const THEME_CUSTOM_STYLE_ID = "tenant-console-runtime-theme";
 
 export const getThemeSettingKeyForRole = (role?: string | null) =>
@@ -230,6 +232,129 @@ function injectCustomCss(css: string) {
   style.textContent = css;
 }
 
+function isSafeThemeToken(key: string, value: unknown): value is string {
+  return /^[a-z0-9-]+$/i.test(key) && typeof value === "string" && !/[;{}<>]/.test(value);
+}
+
+function readThemeTokenMap(value: unknown) {
+  const tokens: Record<string, string> = {};
+  if (!value || typeof value !== "object") return tokens;
+
+  Object.entries(value as Record<string, unknown>).forEach(([key, tokenValue]) => {
+    if (isSafeThemeToken(key, tokenValue)) tokens[key] = tokenValue;
+  });
+
+  return tokens;
+}
+
+function persistThemeCache(
+  theme: ParsedTheme,
+  overrides: Record<string, string>,
+  customCss: string,
+) {
+  if (typeof localStorage === "undefined") return;
+
+  try {
+    localStorage.setItem(
+      THEME_CACHE_STORAGE_KEY,
+      JSON.stringify({
+        light: { ...theme.light, ...overrides },
+        dark: theme.dark,
+        customCss,
+      }),
+    );
+  } catch {
+    // A full or blocked store still leaves the live theme applied.
+  }
+}
+
+export function reapplyCachedTheme() {
+  if (typeof document === "undefined" || typeof localStorage === "undefined") return;
+
+  try {
+    const raw = localStorage.getItem(THEME_CACHE_STORAGE_KEY);
+    if (!raw) return;
+
+    const cache = JSON.parse(raw) as {
+      light?: unknown;
+      dark?: unknown;
+      customCss?: unknown;
+    };
+    const isDark = document.documentElement.classList.contains("dark");
+    const light = readThemeTokenMap(cache.light);
+    const dark = readThemeTokenMap(cache.dark);
+    const tokens = { ...light, ...(isDark ? dark : {}) };
+
+    Object.entries(tokens).forEach(([key, value]) => {
+      document.documentElement.style.setProperty(`--${key}`, value);
+    });
+
+    if (Object.keys(tokens).length > 0) {
+      document.documentElement.dataset.themeActive = "true";
+    }
+    if (isDark && Object.keys(dark).length > 0) {
+      document.documentElement.dataset.themeDark = "true";
+    } else {
+      delete document.documentElement.dataset.themeDark;
+    }
+
+    if (typeof cache.customCss === "string") {
+      injectCustomCss(cache.customCss);
+    }
+  } catch {
+    // Ignore a damaged cache and wait for the settings request.
+  }
+}
+
+export function themeBootScript() {
+  const schemeKey = JSON.stringify(COLOR_SCHEME_STORAGE_KEY);
+  const cacheKey = JSON.stringify(THEME_CACHE_STORAGE_KEY);
+  const styleId = JSON.stringify(THEME_CUSTOM_STYLE_ID);
+
+  return `
+    try {
+      var scheme = localStorage.getItem(${schemeKey}) || 'system';
+      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var isDark = scheme === 'dark' || (scheme === 'system' && prefersDark);
+      var root = document.documentElement;
+      root.classList.toggle('dark', isDark);
+      document.cookie = ${schemeKey} + '=' + (isDark ? 'dark' : 'light') + '; Path=/; Max-Age=31536000; SameSite=Lax';
+      var raw = localStorage.getItem(${cacheKey});
+      if (raw) {
+      var cache = JSON.parse(raw);
+      var light = cache && cache.light && typeof cache.light === 'object' ? cache.light : {};
+      var dark = cache && cache.dark && typeof cache.dark === 'object' ? cache.dark : {};
+      var tokens = {};
+      function keep(key, value) {
+        return /^[a-z0-9-]+$/i.test(key) && typeof value === 'string' && !/[;{}<>]/.test(value);
+      }
+      Object.keys(light).forEach(function (key) {
+        if (keep(key, light[key])) tokens[key] = light[key];
+      });
+      if (isDark) {
+        Object.keys(dark).forEach(function (key) {
+          if (keep(key, dark[key])) tokens[key] = dark[key];
+        });
+      }
+      Object.keys(tokens).forEach(function (key) {
+        root.style.setProperty('--' + key, tokens[key]);
+      });
+      if (Object.keys(tokens).length) root.dataset.themeActive = 'true';
+      if (isDark && Object.keys(dark).length) root.dataset.themeDark = 'true';
+      if (typeof cache.customCss === 'string' && cache.customCss && !/<\\/?script/i.test(cache.customCss)) {
+        var style = document.getElementById(${styleId});
+        if (!style) {
+          style = document.createElement('style');
+          style.id = ${styleId};
+          document.head.appendChild(style);
+        }
+        style.textContent = cache.customCss;
+      }
+      }
+    } catch (e) {}
+  `;
+}
+
 export function applyTweakCnTheme(
   value: unknown,
   mode?: "light" | "dark",
@@ -262,6 +387,12 @@ export function applyTweakCnTheme(
   } else {
     delete document.documentElement.dataset.themeActive;
   }
+
+  if (resolvedMode === "dark" && Object.keys(parsed.dark).length > 0) {
+    document.documentElement.dataset.themeDark = "true";
+  } else {
+    delete document.documentElement.dataset.themeDark;
+  }
 }
 
 export function applyThemeSettings(
@@ -286,7 +417,9 @@ export function applyThemeSettings(
   }
 
   applyTweakCnTheme(themeValue, mode, overrides);
-  injectCustomCss(valueToString(getSettingValue(settings, "theme.custom_css")));
+  const customCss = valueToString(getSettingValue(settings, "theme.custom_css"));
+  injectCustomCss(customCss);
+  persistThemeCache(parsedTheme, overrides, customCss);
 }
 
 export function notifyThemeSettingsChanged() {

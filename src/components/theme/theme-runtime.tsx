@@ -9,6 +9,7 @@ import {
   COLOR_SCHEME_CHANGED_EVENT,
   THEME_SETTINGS_CHANGED_EVENT,
   applyThemeSettings,
+  reapplyCachedTheme,
 } from "@/lib/tweakcn-theme";
 import { useTenant } from "@/contexts/TenantContext";
 import { resolveCmsMediaSrc } from "@/lib/cms-media";
@@ -86,6 +87,7 @@ export function ThemeRuntime() {
     let cancelled = false;
 
     async function loadTheme() {
+      reapplyCachedTheme();
       try {
         const response = await getGqlClient().request<{
           publicSettings?: PublicSetting[];

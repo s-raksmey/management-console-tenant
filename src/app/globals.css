@@ -174,157 +174,157 @@ html {
 }
 
 /* Runtime theme bridge for older hard-coded Tailwind utility colors. */
-html:is([data-theme-active="true"], .dark) body {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) body {
   background-color: var(--background);
   color: var(--foreground);
 }
 
-html:is([data-theme-active="true"], .dark) :where(.bg-white) {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) :where(.bg-white) {
   background-color: var(--card) !important;
 }
 
-html:is([data-theme-active="true"], .dark) :where(.bg-slate-50, .bg-slate-100, .bg-gray-50, .bg-gray-100, .bg-blue-50, .bg-indigo-50) {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) :where(.bg-slate-50, .bg-slate-100, .bg-gray-50, .bg-gray-100, .bg-blue-50, .bg-indigo-50) {
   background-color: var(--muted) !important;
 }
 
-html:is([data-theme-active="true"], .dark) :where(.bg-blue-600, .bg-indigo-600, .bg-blue-500, .bg-indigo-500) {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) :where(.bg-blue-600, .bg-indigo-600, .bg-blue-500, .bg-indigo-500) {
   background-color: var(--primary) !important;
   color: var(--primary-foreground) !important;
 }
 
-html:is([data-theme-active="true"], .dark) :where(.hover\:bg-blue-700:hover, .hover\:bg-indigo-700:hover, .hover\:bg-blue-600:hover, .hover\:bg-indigo-600:hover) {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) :where(.hover\:bg-blue-700:hover, .hover\:bg-indigo-700:hover, .hover\:bg-blue-600:hover, .hover\:bg-indigo-600:hover) {
   background-color: var(--primary) !important;
 }
 
-html:is([data-theme-active="true"], .dark) :where(.text-blue-600, .text-blue-700, .text-indigo-600, .text-indigo-700) {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) :where(.text-blue-600, .text-blue-700, .text-indigo-600, .text-indigo-700) {
   color: var(--primary) !important;
 }
 
-html:is([data-theme-active="true"], .dark) :where(.hover\:text-blue-700:hover, .hover\:text-indigo-700:hover, .hover\:text-blue-600:hover, .hover\:text-indigo-600:hover) {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) :where(.hover\:text-blue-700:hover, .hover\:text-indigo-700:hover, .hover\:text-blue-600:hover, .hover\:text-indigo-600:hover) {
   color: var(--primary) !important;
 }
 
-html:is([data-theme-active="true"], .dark) :where(.text-slate-950, .text-slate-900, .text-gray-900) {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) :where(.text-slate-950, .text-slate-900, .text-gray-900) {
   color: var(--foreground) !important;
 }
 
-html:is([data-theme-active="true"], .dark) :where(.text-slate-700, .text-slate-600, .text-slate-500, .text-gray-700, .text-gray-600, .text-gray-500) {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) :where(.text-slate-700, .text-slate-600, .text-slate-500, .text-gray-700, .text-gray-600, .text-gray-500) {
   color: var(--muted-foreground) !important;
 }
 
-html:is([data-theme-active="true"], .dark) :where(.border-slate-100, .border-slate-200, .border-gray-100, .border-gray-200, .border-blue-200, .border-indigo-200) {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) :where(.border-slate-100, .border-slate-200, .border-gray-100, .border-gray-200, .border-blue-200, .border-indigo-200) {
   border-color: var(--border) !important;
 }
 
-html:is([data-theme-active="true"], .dark) :where(.ring-blue-100, .ring-indigo-100, .focus\:ring-blue-500:focus, .focus\:ring-indigo-500:focus) {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) :where(.ring-blue-100, .ring-indigo-100, .focus\:ring-blue-500:focus, .focus\:ring-indigo-500:focus) {
   --tw-ring-color: var(--ring) !important;
 }
 
-html:is([data-theme-active="true"], .dark) :where(input, textarea, select) {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) :where(input, textarea, select) {
   background-color: var(--card);
   color: var(--foreground);
   border-color: var(--border);
 }
 
-html:is([data-theme-active="true"], .dark) input::placeholder,
-html:is([data-theme-active="true"], .dark) textarea::placeholder {
+html[data-theme-active="true"]:not(:has([data-auth-screen])) input::placeholder,
+html[data-theme-active="true"]:not(:has([data-auth-screen])) textarea::placeholder {
   color: var(--muted-foreground);
 }
 
 /* Dark mode safety layer for legacy light utility classes. */
-html.dark body {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) body {
   background-color: #111827 !important;
   color: #e5e7eb !important;
 }
 
-html.dark :where(.bg-white, .bg-white\/70, .bg-white\/80, .bg-white\/95, .bg-card, .bg-popover) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.bg-white, .bg-white\/70, .bg-white\/80, .bg-white\/95, .bg-card, .bg-popover) {
   background-color: #172033 !important;
 }
 
-html.dark :where(.bg-background, .bg-slate-50, .bg-slate-50\/70, .bg-slate-50\/80, .bg-slate-100, .bg-gray-50, .bg-gray-100, .bg-blue-50, .bg-indigo-50) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.bg-background, .bg-slate-50, .bg-slate-50\/70, .bg-slate-50\/80, .bg-slate-100, .bg-gray-50, .bg-gray-100, .bg-blue-50, .bg-indigo-50) {
   background-color: #202b40 !important;
 }
 
-html.dark :where(.text-foreground, .text-card-foreground, .text-popover-foreground, .text-slate-950, .text-slate-900, .text-gray-950, .text-gray-900, .text-black) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.text-foreground, .text-card-foreground, .text-popover-foreground, .text-slate-950, .text-slate-900, .text-gray-950, .text-gray-900, .text-black) {
   color: #f8fafc !important;
 }
 
-html.dark :where(.text-muted-foreground, .text-slate-800, .text-slate-700, .text-slate-600, .text-gray-800, .text-gray-700, .text-gray-600) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.text-muted-foreground, .text-slate-800, .text-slate-700, .text-slate-600, .text-gray-800, .text-gray-700, .text-gray-600) {
   color: #cbd5e1 !important;
 }
 
-html.dark :where(.text-slate-500, .text-slate-400, .text-gray-500, .text-gray-400) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.text-slate-500, .text-slate-400, .text-gray-500, .text-gray-400) {
   color: #94a3b8 !important;
 }
 
-html.dark :where(.text-slate-300, .text-gray-300) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.text-slate-300, .text-gray-300) {
   color: #cbd5e1 !important;
 }
 
-html.dark :where(.text-blue-600, .text-blue-700, .text-indigo-600, .text-indigo-700) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.text-blue-600, .text-blue-700, .text-indigo-600, .text-indigo-700) {
   color: #7dd3fc !important;
 }
 
-html.dark :where(.border, .border-border, .border-slate-100, .border-slate-200, .border-slate-300, .border-gray-100, .border-gray-200, .border-gray-300, .border-input) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.border, .border-border, .border-slate-100, .border-slate-200, .border-slate-300, .border-gray-100, .border-gray-200, .border-gray-300, .border-input) {
   border-color: #2f3b52 !important;
 }
 
-html.dark :where(.divide-slate-200 > :not([hidden]) ~ :not([hidden]), .divide-gray-200 > :not([hidden]) ~ :not([hidden])) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.divide-slate-200 > :not([hidden]) ~ :not([hidden]), .divide-gray-200 > :not([hidden]) ~ :not([hidden])) {
   border-color: #334155 !important;
 }
 
-html.dark :where(input, textarea, select) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(input, textarea, select) {
   background-color: #111827 !important;
   color: #f8fafc !important;
   border-color: #3f4c63 !important;
 }
 
-html.dark :where(input:focus, textarea:focus, select:focus) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(input:focus, textarea:focus, select:focus) {
   border-color: #60a5fa !important;
   box-shadow: 0 0 0 1px #60a5fa !important;
 }
 
-html.dark :where(.hover\:bg-white:hover, .hover\:bg-slate-50:hover, .hover\:bg-slate-100:hover, .hover\:bg-slate-200:hover, .hover\:bg-gray-50:hover, .hover\:bg-gray-100:hover, .hover\:bg-blue-50:hover, .hover\:bg-indigo-50:hover) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.hover\:bg-white:hover, .hover\:bg-slate-50:hover, .hover\:bg-slate-100:hover, .hover\:bg-slate-200:hover, .hover\:bg-gray-50:hover, .hover\:bg-gray-100:hover, .hover\:bg-blue-50:hover, .hover\:bg-indigo-50:hover) {
   background-color: #243148 !important;
 }
 
-html.dark :where(.hover\:text-slate-900:hover, .hover\:text-slate-800:hover, .hover\:text-gray-900:hover, .hover\:text-gray-800:hover) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.hover\:text-slate-900:hover, .hover\:text-slate-800:hover, .hover\:text-gray-900:hover, .hover\:text-gray-800:hover) {
   color: #f8fafc !important;
 }
 
-html.dark :where(.data-\[state\=active\]\:bg-white[data-state="active"], .data-\[state\=active\]\:bg-slate-950[data-state="active"]) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.data-\[state\=active\]\:bg-white[data-state="active"], .data-\[state\=active\]\:bg-slate-950[data-state="active"]) {
   background-color: #0f172a !important;
   color: #f8fafc !important;
 }
 
-html.dark :where(.data-\[state\=active\]\:text-white[data-state="active"]) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.data-\[state\=active\]\:text-white[data-state="active"]) {
   color: #f8fafc !important;
 }
 
-html.dark :where(.rounded-lg.border, .rounded-xl.border, .rounded-md.border) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.rounded-lg.border, .rounded-xl.border, .rounded-md.border) {
   background-color: #172033 !important;
 }
 
-html.dark :where([data-radix-popper-content-wrapper] *) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where([data-radix-popper-content-wrapper] *) {
   border-color: #2f3b52 !important;
 }
 
-html.dark :where(.bg-red-100) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.bg-red-100) {
   background-color: #3f1d24 !important;
   color: #fca5a5 !important;
 }
 
-html.dark :where(.bg-green-100) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.bg-green-100) {
   background-color: #143226 !important;
   color: #86efac !important;
 }
 
-html.dark :where(.bg-blue-100, .bg-indigo-100) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(.bg-blue-100, .bg-indigo-100) {
   background-color: #1e3a5f !important;
   color: #bfdbfe !important;
 }
 
-html.dark :where(button[disabled], [aria-disabled="true"]) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(button[disabled], [aria-disabled="true"]) {
   opacity: 0.65;
 }
 
@@ -463,7 +463,7 @@ html.dark :where(button[disabled], [aria-disabled="true"]) {
 }
 
 /* Final dark-mode guardrails for legacy dashboard utilities and hover states. */
-html.dark :where(
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(
   main,
   section,
   article,
@@ -484,7 +484,7 @@ html.dark :where(
   border-color: #334155 !important;
 }
 
-html.dark :where(
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(
   .bg-white,
   .bg-white\/70,
   .bg-white\/80,
@@ -514,7 +514,7 @@ html.dark :where(
   color: #e5e7eb !important;
 }
 
-html.dark :where(
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(
   .bg-slate-200,
   .bg-slate-300,
   .bg-gray-200,
@@ -524,7 +524,7 @@ html.dark :where(
   background-color: #334155 !important;
 }
 
-html.dark :where(
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(
   .hover\:bg-white:hover,
   .hover\:bg-slate-50:hover,
   .hover\:bg-slate-100:hover,
@@ -553,7 +553,7 @@ html.dark :where(
   color: #f8fafc !important;
 }
 
-html.dark :where(
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(
   .data-\[state\=active\]\:bg-white[data-state="active"],
   .data-\[state\=active\]\:bg-background[data-state="active"],
   .data-\[state\=active\]\:bg-slate-950[data-state="active"],
@@ -563,7 +563,7 @@ html.dark :where(
   color: #f8fafc !important;
 }
 
-html.dark :where(
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(
   .text-black,
   .text-foreground,
   .text-card-foreground,
@@ -579,7 +579,7 @@ html.dark :where(
   color: #f8fafc !important;
 }
 
-html.dark :where(
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(
   .text-muted-foreground,
   .text-slate-700,
   .text-slate-600,
@@ -591,7 +591,7 @@ html.dark :where(
   color: #cbd5e1 !important;
 }
 
-html.dark :where(
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(
   .text-slate-400,
   .text-slate-300,
   .text-gray-400,
@@ -600,7 +600,7 @@ html.dark :where(
   color: #94a3b8 !important;
 }
 
-html.dark :where(
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(
   .hover\:text-slate-900:hover,
   .hover\:text-slate-800:hover,
   .hover\:text-gray-900:hover,
@@ -610,7 +610,7 @@ html.dark :where(
   color: #f8fafc !important;
 }
 
-html.dark :where(
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(
   .text-blue-600,
   .text-blue-700,
   .text-indigo-600,
@@ -625,13 +625,13 @@ html.dark :where(
   color: #7dd3fc !important;
 }
 
-html.dark :where(input, textarea, select, button[role="combobox"]) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(input, textarea, select, button[role="combobox"]) {
   background-color: #111827 !important;
   color: #f8fafc !important;
   border-color: #3f4c63 !important;
 }
 
-html.dark :where(input::placeholder, textarea::placeholder) {
+html.dark:not([data-theme-dark="true"]):not(:has([data-auth-screen])) :where(input::placeholder, textarea::placeholder) {
   color: #94a3b8 !important;
 }
 

@@ -8,6 +8,7 @@ import { TenantProvider } from "@/contexts/TenantContext"
 import { ToastProvider } from "@/contexts/ToastContext"
 import { ClientLayoutWrapper } from "@/components/layout/client-layout-wrapper"
 import { ThemeRuntime } from "@/components/theme/theme-runtime"
+import { COLOR_SCHEME_STORAGE_KEY, themeBootScript } from "@/lib/tweakcn-theme"
 import { AdminLocaleProvider } from "@/hooks/useAdminLocale"
 
 export const metadata: Metadata = {
@@ -23,23 +24,20 @@ export default async function RootLayout({
   // ✅ cookies() is async in your setup → await is CORRECT
   const cookieStore = await cookies()
   const locale = cookieStore.get("locale")?.value === "km" ? "km" : "en"
-  const colorSchemeScript = `
-    try {
-      var scheme = localStorage.getItem('tenant-console-color-scheme') || 'system';
-      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.documentElement.classList.toggle('dark', scheme === 'dark' || (scheme === 'system' && prefersDark));
-    } catch (_) {}
-  `
+  const colorScheme = cookieStore.get(COLOR_SCHEME_STORAGE_KEY)?.value
+  const colorSchemeScript = themeBootScript()
 
   return (
     <html
       lang={locale}
       data-locale={locale}
-      className={`${fontJetBrainsMono.variable} ${fontKantumruyPro.variable} locale-${locale}`}
+      className={`${fontJetBrainsMono.variable} ${fontKantumruyPro.variable} locale-${locale}${colorScheme === "dark" ? " dark" : ""}`}
       suppressHydrationWarning
     >
-      <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
+      <head>
         <script dangerouslySetInnerHTML={{ __html: colorSchemeScript }} />
+      </head>
+      <body className="min-h-screen bg-background text-foreground antialiased">
         <AuthProvider>
           <TenantProvider>
             <ToastProvider>

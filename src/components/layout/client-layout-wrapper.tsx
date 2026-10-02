@@ -123,30 +123,19 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
     return () => document.removeEventListener('click', handleInteraction, true);
   }, [isAuthenticated, isInitializing, isPublicRoute, pathname, user?.id]);
 
-  // Show loading spinner while checking authentication
-  if (isInitializing) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-slate-600">{copy.loading}</p>
-        </div>
-      </div>
-    );
-  }
-
-  // For public routes (like login), render without layout wrapper but with ApolloProvider
+  // Public pages own their layout. Waiting for auth here flashes the console loader first.
   if (isPublicRoute) {
     return <ApolloClientProvider>{children}</ApolloClientProvider>;
   }
 
-  // For protected routes, ensure user is authenticated
-  if (!isAuthenticated) {
+  // Keep the console shell mounted while the session is checked.
+  // A separate full-screen loader is a different layout on every refresh.
+  if (!isInitializing && !isAuthenticated) {
     // This will be handled by the useEffect redirect, but just in case
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         <div className="text-center">
-          <p className="text-slate-600">{copy.loginRedirect}</p>
+          <p>{copy.loginRedirect}</p>
         </div>
       </div>
     );
@@ -154,9 +143,9 @@ export function ClientLayoutWrapper({ children }: ClientLayoutWrapperProps) {
 
   if (isAuthenticated && user?.role === 'SUPER_ADMIN' && !isPublicRoute) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-background text-muted-foreground">
         <div className="text-center">
-          <p className="text-slate-600">{copy.wrongConsole}</p>
+          <p>{copy.wrongConsole}</p>
         </div>
       </div>
     );
