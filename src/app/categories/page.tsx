@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCategories, useGraphQL } from "@/hooks/useGraphQL";
 import { Button } from "@/components/ui/button";
+import { PageSkeleton } from "@/components/layout/page-skeleton";
 import { Input } from "@/components/ui/input";
 import {
   Card,
@@ -244,10 +245,11 @@ const categoryCopy = {
 export default function CategoriesPage() {
   const { locale } = useAdminLocale();
   const copy = categoryCopy[locale];
-  const { hasPermission } = usePermissions();
+  const { hasPermission, isLoading: permissionsLoading } = usePermissions();
   const [categories, setCategories] = useState<Category[]>([]);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [creating, setCreating] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [showTopicForm, setShowTopicForm] = useState(false);
@@ -291,18 +293,15 @@ export default function CategoriesPage() {
 
   const loadCategories = useCallback(async () => {
     try {
-      console.log("🔄 Loading categories...");
       const response = await getCategories();
-      console.log("📦 Categories response:", response);
       if (response?.categories) {
-        console.log(`✅ Setting ${response.categories.length} categories`);
         setCategories(response.categories);
-      } else {
-        console.warn("⚠️ No categories in response");
       }
     } catch (err) {
-      console.error("❌ Error loading categories:", err);
+      console.error("Error loading categories:", err);
       showErrorRef.current(copy.error, copy.loadCategoriesFailed);
+    } finally {
+      setPageReady(true);
     }
   }, [copy.error, copy.loadCategoriesFailed, getCategories]);
 
@@ -341,10 +340,13 @@ export default function CategoriesPage() {
   );
 
   useEffect(() => {
-    if (canListCategories) {
-      loadCategories();
+    if (permissionsLoading) return;
+    if (!canListCategories) {
+      setPageReady(true);
+      return;
     }
-  }, [canListCategories, loadCategories]);
+    void loadCategories();
+  }, [canListCategories, loadCategories, permissionsLoading]);
 
   // Load topics when editing a category
   useEffect(() => {
@@ -767,6 +769,10 @@ export default function CategoriesPage() {
       setIsLoading(false);
     }
   };
+
+  if (!pageReady) {
+    return <PageSkeleton />;
+  }
 
   return (
     <PermissionGuard permissions={[Permission.LIST_CATEGORIES]} showError>

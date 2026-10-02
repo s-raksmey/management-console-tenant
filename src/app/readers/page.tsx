@@ -9,6 +9,8 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Badge } from "@/components/ui/badge";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
 import { shouldBypassImageOptimizer } from "@/lib/cms-media";
+import { PageSkeleton } from "@/components/layout/page-skeleton";
+import { useInitialPageReady } from "@/lib/use-initial-page-ready";
 
 type Reader = { id: string; name: string; email: string; avatarUrl?: string | null; lastLoginAt: string; createdAt: string; commentCount: number };
 const Q_READERS = `query Readers { tenantPublicReaders { id name email avatarUrl lastLoginAt createdAt commentCount } }`;
@@ -43,6 +45,7 @@ export default function ReadersPage() {
   const canView = hasPermission(Permission.VIEW_SETTINGS);
   const [readers, setReaders] = useState<Reader[]>([]);
   const [loading, setLoading] = useState(true);
+  const pageReady = useInitialPageReady(loading);
 
   useEffect(() => {
     if (permissionsLoading || !canView) return;
@@ -50,6 +53,7 @@ export default function ReadersPage() {
   }, [canView, permissionsLoading]);
 
   if (!permissionsLoading && !canView) return <div className="text-sm text-red-600">{copy.accessDenied}</div>;
+  if (!pageReady) return <PageSkeleton />;
 
   return <div className="space-y-5">
     <header className="border-b border-slate-200 pb-5"><div className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase text-blue-700"><UserRound className="h-4 w-4" />{copy.eyebrow}</div><h1 className="text-3xl font-bold text-slate-950">{copy.title}</h1><p className="mt-2 text-sm text-slate-600">{copy.description}</p></header>

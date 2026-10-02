@@ -31,6 +31,8 @@ import { Permission } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useToastHelpers } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
+import { PageSkeleton } from "@/components/layout/page-skeleton";
+import { useInitialPageReady } from "@/lib/use-initial-page-ready";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
@@ -236,6 +238,7 @@ export default function AdsPage() {
   const [statusFilter, setStatusFilter] = useState<AdvertisementStatus | "ALL">("ALL");
   const [placementFilter, setPlacementFilter] = useState<AdvertisementPlacement | "ALL">("ALL");
   const [loading, setLoading] = useState(true);
+  const pageReady = useInitialPageReady(loading);
   const [archiveTarget, setArchiveTarget] = useState<Advertisement | null>(null);
 
   useEffect(() => {
@@ -255,7 +258,11 @@ export default function AdsPage() {
   }, [copy.error, copy.loadTenantFailed, isSuperAdmin]);
 
   const loadAds = useCallback(async () => {
-    if (permissionsLoading || !canView) return;
+    if (permissionsLoading) return;
+    if (!canView) {
+      setLoading(false);
+      return;
+    }
     if (isSuperAdmin && !selectedTenantId) {
       setAds([]);
       setLoading(false);
@@ -308,6 +315,7 @@ export default function AdsPage() {
   };
 
   if (!permissionsLoading && !canView) return <div className="text-sm text-red-600">{copy.accessDenied}</div>;
+  if (!pageReady) return <PageSkeleton />;
   const viewOnly = canView && !canCreate && !canUpdate && !canDelete;
   const numberLocale = locale === "km" ? "km-KH" : undefined;
 

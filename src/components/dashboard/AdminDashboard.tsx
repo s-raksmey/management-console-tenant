@@ -44,8 +44,7 @@ import {
   TrendingDown
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { StatCard, MetricCard, ActivityFeed, StatCardSkeleton, MetricCardSkeleton, ActivityFeedSkeleton } from './shared';
-import type { ActivityItem } from './shared';
+import type { ActivityItem } from "./activity-item";
 import { UserStats, useUserManagement } from '@/hooks/useUserManagement';
 import { useArticles } from '@/hooks/useGraphQL';
 import { useEditorial } from '@/hooks/useEditorial';
@@ -138,7 +137,6 @@ const adminDashboardCopy = {
     systemCategory: 'System',
     activityFallback: (type: string) => `${type} activity`,
     byUser: (name: string) => `by ${name}`,
-    loadingDashboard: 'Loading dashboard',
     dashboardTitle: (tenantName: string) => `${tenantName} Dashboard`,
     adminDescription: 'Manage content, users, settings, and public website configuration',
     refresh: 'Refresh',
@@ -232,7 +230,6 @@ const adminDashboardCopy = {
     systemCategory: 'ប្រព័ន្ធ',
     activityFallback: (type: string) => `សកម្មភាព ${type}`,
     byUser: (name: string) => `ដោយ ${name}`,
-    loadingDashboard: 'កំពុងផ្ទុកផ្ទាំងគ្រប់គ្រង',
     dashboardTitle: (tenantName: string) => `ផ្ទាំងគ្រប់គ្រង ${tenantName}`,
     adminDescription: 'គ្រប់គ្រងមាតិកា អ្នកប្រើ ការកំណត់ និងការរៀបចំគេហទំព័រសាធារណៈ',
     refresh: 'ធ្វើបច្ចុប្បន្នភាព',
@@ -517,17 +514,6 @@ export const AdminDashboard: React.FC = () => {
 
   const loading = useStableLoading(initialLoading || userLoading || articlesLoading || editorialLoading || permissionsLoading);
   const error = userError || articlesError;
-
-  // RoleDashboard handles the initial permission transition; keep re-checks unobtrusive.
-  if (permissionsLoading) {
-    return (
-      <div
-        className="min-h-screen bg-slate-50 dark:bg-slate-950"
-        aria-busy="true"
-        aria-label={copy.loadingDashboard}
-      />
-    );
-  }
 
   // Render role-specific dashboard
   const renderRoleBasedDashboard = () => {

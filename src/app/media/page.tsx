@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, FolderPlus, Grid, List, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PageSkeleton } from '@/components/layout/page-skeleton';
+import { useInitialPageReady } from '@/lib/use-initial-page-ready';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import {
   Dialog,
@@ -131,6 +133,7 @@ export default function MediaPage() {
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [folders, setFolders] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const pageReady = useInitialPageReady(loading);
   const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   const [filters, setFilters] = useState<MediaFiltersType>({
     sortBy: 'date',
@@ -415,6 +418,10 @@ export default function MediaPage() {
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
+
+  if (!pageReady) {
+    return <PageSkeleton />;
+  }
 
   return (
     <PermissionGuard permissions={MEDIA_ACCESS_PERMISSIONS} showError>

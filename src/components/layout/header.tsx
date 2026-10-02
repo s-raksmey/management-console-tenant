@@ -39,7 +39,7 @@ import {
 } from "@/components/ui/tooltip";
 import { MobileNavTrigger } from "./mobile-nav";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenant } from "@/contexts/TenantContext";
+import { useConsoleBrand } from "@/lib/use-console-brand";
 import { useSearch } from "@/hooks/useGraphQL";
 import {
   useNotifications,
@@ -51,11 +51,6 @@ import { formatDistanceToNow } from "date-fns";
 import { COLOR_SCHEME_CHANGED_EVENT } from "@/lib/tweakcn-theme";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
 import { AdminLanguageToggle } from "./language-toggle";
-import {
-  getTenantDisplayName,
-  getTenantLogoUrl,
-  isSubTenantDisplay,
-} from "@/lib/tenant-display";
 import { TenantBrandMark } from "./tenant-brand-mark";
 
 interface HeaderProps {
@@ -151,7 +146,6 @@ const headerCopy = {
 export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { activeTenant, managementLogoUrl } = useTenant();
   const { searchArticles } = useSearch();
   const { locale } = useAdminLocale();
   const copy = headerCopy[locale];
@@ -168,20 +162,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
   const [notifications, setNotifications] = useState<NotificationRecord[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(false);
-  const viewingSubTenant = isSubTenantDisplay(activeTenant);
-  const brandName = viewingSubTenant
-    ? getTenantDisplayName(activeTenant, copy.subTenant)
-    : copy.managementConsole;
-  const brandLogoUrl = viewingSubTenant
-    ? getTenantLogoUrl(activeTenant)
-    : managementLogoUrl;
-  const brandInitials = brandName
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word.charAt(0))
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const { brandName, brandLogoUrl } = useConsoleBrand(copy.managementConsole);
 
   const {
     getNotifications,
@@ -543,11 +524,7 @@ export function Header({ onMobileNavOpen, showBrand = false }: HeaderProps) {
 
         {showBrand && (
           <div className="hidden min-w-0 shrink-0 items-center gap-2 lg:flex">
-            <TenantBrandMark
-              name={brandName}
-              logoUrl={brandLogoUrl}
-              initials={brandInitials}
-            />
+            <TenantBrandMark name={brandName} logoUrl={brandLogoUrl} />
             <span className="max-w-[260px] truncate font-semibold tracking-tight text-slate-900 dark:text-slate-100 xl:max-w-[360px] 2xl:max-w-[460px]">
               {brandName}
             </span>

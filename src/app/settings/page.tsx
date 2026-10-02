@@ -4,6 +4,7 @@ import React from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { PageSkeleton } from "@/components/layout/page-skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   AlertCircle,
@@ -730,23 +731,8 @@ export default function SettingsPage() {
     });
   }, []);
 
-  if (permissionsLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="rounded-lg border bg-white p-6">
-          <div className="mb-6 h-10 w-72 animate-pulse rounded bg-slate-100" />
-          <div className="h-12 animate-pulse rounded-md bg-slate-100" />
-        </div>
-        <div className="grid gap-4 xl:grid-cols-2">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-44 animate-pulse rounded-lg border bg-white"
-            />
-          ))}
-        </div>
-      </div>
-    );
+  if (permissionsLoading || loading) {
+    return <PageSkeleton />;
   }
 
   if (!canAccessSettings) {
@@ -761,25 +747,6 @@ export default function SettingsPage() {
             </p>
           </CardContent>
         </Card>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="rounded-lg border bg-white p-6">
-          <div className="mb-6 h-10 w-72 animate-pulse rounded bg-slate-100" />
-          <div className="h-12 animate-pulse rounded-md bg-slate-100" />
-        </div>
-        <div className="grid gap-4 xl:grid-cols-2">
-          {Array.from({ length: 6 }).map((_, index) => (
-            <div
-              key={index}
-              className="h-44 animate-pulse rounded-lg border bg-white"
-            />
-          ))}
-        </div>
       </div>
     );
   }

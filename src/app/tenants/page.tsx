@@ -30,6 +30,8 @@ import {
 } from "@/services/tenant.gql";
 import { UserService } from "@/services/user.gql";
 import { Button } from "@/components/ui/button";
+import { TenantsPageSkeleton } from "@/components/layout/page-skeleton";
+import { useInitialPageReady } from "@/lib/use-initial-page-ready";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -177,7 +179,6 @@ const tenantsCopy = {
     websiteDescription: "Update the name, locale, and active state for this sub-tenant",
     websiteDescriptionSuper: "Set production domains, locale, and whether this site is active.",
     websiteDescriptionTenant: "Update the name, locale, and active state. Super Admin sets production domains.",
-    refresh: "Refresh",
     loadingTenants: "Loading sub-tenants...",
     noTenants: "No sub-tenants yet.",
     createTenantDialogDescription:
@@ -340,7 +341,6 @@ const tenantsCopy = {
     websiteDescription: "កែឈ្មោះ ភាសាចម្បង និងស្ថានភាពសកម្មរបស់គេហទំព័រនេះ",
     websiteDescriptionSuper: "កំណត់ដែនផលិតកម្ម ភាសា និងថាតើគេហទំព័រនេះសកម្មដែរឬទេ។",
     websiteDescriptionTenant: "កែឈ្មោះ ភាសា និងស្ថានភាពសកម្ម។ Super Admin ជាអ្នកកំណត់ដែនផលិតកម្ម។",
-    refresh: "ផ្ទុកឡើងវិញ",
     loadingTenants: "កំពុងផ្ទុកគេហទំព័រ...",
     noTenants: "មិនទាន់មានគេហទំព័រ។",
     createTenantDialogDescription:
@@ -503,6 +503,7 @@ export default function TenantsPage() {
 
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [loading, setLoading] = useState(true);
+  const pageReady = useInitialPageReady(loading);
   const [savingTenant, setSavingTenant] = useState(false);
   const [savingAdmin, setSavingAdmin] = useState(false);
   const [savingEdit, setSavingEdit] = useState(false);
@@ -879,10 +880,17 @@ export default function TenantsPage() {
     });
   };
 
+  if (!pageReady) {
+    return <TenantsPageSkeleton />;
+  }
+
   return (
     <PermissionGuard permissions={[Permission.SYSTEM_ADMINISTRATION, Permission.UPDATE_SETTINGS]} showError>
       <main className="space-y-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div
+          className="grid w-full grid-cols-[minmax(0,1fr)_max-content] items-start gap-4"
+          style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) max-content", alignItems: "start", width: "100%" }}
+        >
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-blue-400">
               {isSuperAdmin ? copy.eyebrowSuper : copy.eyebrowTenant}
@@ -901,23 +909,12 @@ export default function TenantsPage() {
               </p>
             )}
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => void loadTenants()}
-            >
-              <RotateCcw className="mr-2 h-4 w-4" />
-              {copy.refresh}
+          {isSuperAdmin && (
+            <Button type="button" className="w-max shrink-0 justify-self-end" onClick={() => setTenantDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              {copy.createTenantWebsite}
             </Button>
-            {isSuperAdmin && (
-              <Button type="button" onClick={() => setTenantDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                {copy.createTenantWebsite}
-              </Button>
-            )}
-          </div>
+          )}
         </div>
 
         <Card>
@@ -974,12 +971,6 @@ export default function TenantsPage() {
               <div className="py-16 text-center">
                 <Building2 className="mx-auto h-10 w-10 text-slate-400" />
                 <p className="mt-3 text-sm text-slate-500">{copy.noTenants}</p>
-                {isSuperAdmin && (
-                  <Button className="mt-4" type="button" onClick={() => setTenantDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    {copy.createTenantWebsite}
-                  </Button>
-                )}
               </div>
             ) : filteredTenants.length === 0 ? (
               <div className="py-16 text-center text-sm text-slate-500">{copy.noSearchResults}</div>

@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToastHelpers } from "@/components/ui/toast";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
+import { PageSkeleton } from "@/components/layout/page-skeleton";
+import { useInitialPageReady } from "@/lib/use-initial-page-ready";
 
 type Comment = {
   id: string;
@@ -125,6 +127,7 @@ export default function CommentsPage() {
   const canReview = isSuperAdmin || hasPermission(Permission.REVIEW_ARTICLES);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
+  const pageReady = useInitialPageReady(loading);
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [replyingId, setReplyingId] = useState<string | null>(null);
   const [openReplies, setOpenReplies] = useState<Record<string, boolean>>({});
@@ -145,7 +148,11 @@ export default function CommentsPage() {
   });
 
   const loadComments = useCallback(async () => {
-    if (permissionsLoading || !canReview) return;
+    if (permissionsLoading) return;
+    if (!canReview) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const response = await getAuthenticatedGqlClient().request<{ tenantComments: Comment[] }>(Q_COMMENTS);
@@ -257,6 +264,7 @@ export default function CommentsPage() {
   };
 
   if (!permissionsLoading && !canReview) return <div className="text-sm text-red-600">{copy.accessDenied}</div>;
+  if (!pageReady) return <PageSkeleton />;
 
   return (
     <div className="space-y-5">

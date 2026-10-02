@@ -1,7 +1,8 @@
 'use client';
 
 import Link from "next/link";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { PageSkeleton } from "@/components/layout/page-skeleton";
 import { useArticles, useArticleMutations, useRevisions } from "@/hooks/useGraphQL";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -178,6 +179,13 @@ export default function MyArticlesPage() {
   const [shareArticle, setShareArticle] = useState<Article | null>(null);
   
   const { getArticles, loading, error } = useArticles();
+  const loadStarted = useRef(false);
+  const [initialReady, setInitialReady] = useState(false);
+
+  useEffect(() => {
+    if (loading) loadStarted.current = true;
+    if (loadStarted.current && !loading) setInitialReady(true);
+  }, [loading]);
   const { getLatestRevisionRequest } = useRevisions();
   const { setArticleStatus, performWorkflowAction, deleteArticle, loading: mutationLoading } = useArticleMutations();
   const { user } = useAuth();
@@ -386,12 +394,8 @@ export default function MyArticlesPage() {
     }
   }, [currentPage, totalPages]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg">{copy.loading}</div>
-      </div>
-    );
+  if (!initialReady) {
+    return <PageSkeleton />;
   }
 
   if (error) {

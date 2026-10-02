@@ -1,8 +1,9 @@
 // src/components/users/UserList.tsx
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { PageSkeleton } from '@/components/layout/page-skeleton';
 import { useSearchParams } from 'next/navigation';
 import { 
   Users, 
@@ -251,6 +252,13 @@ export const UserList: React.FC<UserListProps> = () => {
     loading, 
     error 
   } = useUserManagement();
+  const loadStarted = useRef(false);
+  const [initialReady, setInitialReady] = useState(false);
+
+  useEffect(() => {
+    if (loading) loadStarted.current = true;
+    if (loadStarted.current && !loading) setInitialReady(true);
+  }, [loading]);
 
   const [users, setUsers] = useState<User[]>([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -505,17 +513,8 @@ export const UserList: React.FC<UserListProps> = () => {
   const getUserDisplayName = (user: User) => user.name || user.email;
   const getRoleLabel = (role: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR') => copy.roleLabel[role];
 
-  if (loading && users.length === 0) {
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-center py-12">
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span className="text-lg">{copy.loadingUsers}</span>
-          </div>
-        </div>
-      </div>
-    );
+  if (!initialReady) {
+    return <PageSkeleton />;
   }
 
   if (error && users.length === 0) {

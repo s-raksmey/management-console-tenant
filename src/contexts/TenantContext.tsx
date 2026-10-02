@@ -28,6 +28,7 @@ import {
   getTenantLogoUrl,
   withTenantLogoUrl,
 } from "@/lib/tenant-display";
+import type { CachedBrand } from "@/lib/brand-cache";
 
 function sameTenantBrand(left: Tenant | null, right: Tenant | null) {
   if (left === right) return true;
@@ -75,6 +76,8 @@ type TenantContextType = {
   memberships: TenantMembership[];
   isLoading: boolean;
   managementLogoUrl: string | null;
+  cachedBrand: CachedBrand | null;
+  brandResolved: boolean;
   switchTenant: (tenantId: string) => Promise<void>;
   refreshTenants: () => Promise<void>;
 };
@@ -95,23 +98,35 @@ function tenantFromMembership(membership: TenantMembership): Tenant {
   };
 }
 
-export function TenantProvider({ children }: { children: ReactNode }) {
+export function TenantProvider({
+  children,
+  initialBrand = null,
+}: {
+  children: ReactNode;
+  initialBrand?: CachedBrand | null;
+}) {
   const pathname = usePathname();
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isInitializing } = useAuth();
   const [activeTenant, setActiveTenant] = useState<Tenant | null>(null);
   const [tenantOptions, setTenantOptions] = useState<Tenant[]>([]);
   const [memberships, setMemberships] = useState<TenantMembership[]>([]);
-  const [managementLogoUrl, setManagementLogoUrl] = useState<string | null>(null);
+  const [managementLogoUrl, setManagementLogoUrl] = useState<string | null>(
+    initialBrand?.logoUrl ?? null,
+  );
+  const [cachedBrand] = useState<CachedBrand | null>(initialBrand);
+  const [brandResolved, setBrandResolved] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const hasResolvedTenantRef = useRef(false);
 
   const loadTenants = useCallback(async () => {
     if (!isAuthenticated || !user) {
+      if (isInitializing) return;
       hasResolvedTenantRef.current = false;
       setActiveTenant(null);
       setTenantOptions([]);
       setMemberships([]);
       setManagementLogoUrl(null);
+      setBrandResolved(true);
       return;
     }
 
@@ -182,9 +197,10 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       });
     } finally {
       hasResolvedTenantRef.current = true;
+      setBrandResolved(true);
       setIsLoading(false);
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, isInitializing, user]);
 
   useEffect(() => {
     void loadTenants();
@@ -226,6 +242,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       memberships,
       isLoading,
       managementLogoUrl,
+      cachedBrand,
+      brandResolved,
       switchTenant,
       refreshTenants: loadTenants,
     }),
@@ -235,6 +253,8 @@ export function TenantProvider({ children }: { children: ReactNode }) {
       memberships,
       isLoading,
       managementLogoUrl,
+      cachedBrand,
+      brandResolved,
       switchTenant,
       loadTenants,
     ],

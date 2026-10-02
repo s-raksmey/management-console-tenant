@@ -8,6 +8,7 @@ import AdminDashboard from "./AdminDashboard";
 import EditorDashboard from "./EditorDashboard";
 import AuthorDashboard from "./AuthorDashboard";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
+import { PageSkeleton } from "@/components/layout/page-skeleton";
 
 /**
  * Tenant-console dashboard. Super admins use the main console instead.
@@ -17,14 +18,12 @@ export const RoleDashboard: React.FC = () => {
   const { locale } = useAdminLocale();
   const copy = locale === "km"
     ? {
-        loadingDashboard: "កំពុងផ្ទុកផ្ទាំងគ្រប់គ្រង",
         unknownRole: "មិនស្គាល់តួនាទី",
         unknownRoleDescription: (role?: string | null) =>
           `តួនាទីអ្នកប្រើ (${role || "-"}) មិនអាចប្រើកុងសូលគេហទំព័រនេះបានទេ។`,
         contactAdmin: "អ្នកគ្រប់គ្រងកំពូលត្រូវចូលតាមកុងសូលមេ។",
       }
     : {
-        loadingDashboard: "Loading dashboard",
         unknownRole: "Wrong console",
         unknownRoleDescription: (role?: string | null) =>
           `This account (${role || "unknown role"}) cannot use the tenant console.`,
@@ -32,13 +31,7 @@ export const RoleDashboard: React.FC = () => {
       };
 
   if (isLoading) {
-    return (
-      <div
-        className="min-h-screen bg-slate-50 dark:bg-slate-950"
-        aria-busy="true"
-        aria-label={copy.loadingDashboard}
-      />
-    );
+    return <PageSkeleton />;
   }
 
   if (!userRole || !["ADMIN", "EDITOR", "AUTHOR"].includes(userRole)) {

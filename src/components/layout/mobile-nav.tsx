@@ -26,16 +26,11 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenant } from "@/contexts/TenantContext";
+import { useConsoleBrand } from "@/lib/use-console-brand";
 import { Permission } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useAdminLocale, type AdminLocale } from "@/hooks/useAdminLocale";
 import { AdminLanguageToggle } from "./language-toggle";
-import {
-  getTenantDisplayName,
-  getTenantLogoUrl,
-  isSubTenantDisplay,
-} from "@/lib/tenant-display";
 import { TenantBrandMark } from "./tenant-brand-mark";
 
 interface MobileNavProps {
@@ -274,7 +269,6 @@ const getNavigation = (
 export function MobileNav({ open, onOpenChange }: MobileNavProps) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { activeTenant, managementLogoUrl } = useTenant();
   const { hasPermission } = usePermissions();
   const { locale } = useAdminLocale();
   const userRole = user?.role?.toString().toUpperCase();
@@ -301,22 +295,9 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
       hasPermission(Permission.UPDATE_TOPIC) ||
       hasPermission(Permission.DELETE_TOPIC),
   });
-  const viewingSubTenant = isSubTenantDisplay(activeTenant);
-  const brandName = viewingSubTenant
-    ? getTenantDisplayName(activeTenant, locale === "km" ? "គេហទំព័រ" : "Sub-tenant")
-    : locale === "km"
-      ? "កុងសូលគេហទំព័រ"
-      : "Tenant Console";
-  const brandLogoUrl = viewingSubTenant
-    ? getTenantLogoUrl(activeTenant)
-    : managementLogoUrl;
-  const brandInitials = brandName
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word.charAt(0))
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const { brandName, brandLogoUrl } = useConsoleBrand(
+    locale === "km" ? "កុងសូលគេហទំព័រ" : "Tenant Console",
+  );
 
   return (
     <Sheet
@@ -331,11 +312,7 @@ export function MobileNav({ open, onOpenChange }: MobileNavProps) {
         />
         <SheetHeader className="border-b px-4 py-4 pr-16 text-left dark:border-slate-800">
           <SheetTitle className="flex min-w-0 items-center gap-2">
-            <TenantBrandMark
-              name={brandName}
-              logoUrl={brandLogoUrl}
-              initials={brandInitials}
-            />
+            <TenantBrandMark name={brandName} logoUrl={brandLogoUrl} />
             <div className="min-w-0">
               <div className="truncate font-semibold text-slate-900 dark:text-white">{brandName}</div>
               <div className="text-xs text-slate-500 dark:text-slate-400">

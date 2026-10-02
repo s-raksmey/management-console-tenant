@@ -1,7 +1,6 @@
 "use client";
 
 import { LoginForm } from "@/components/auth/LoginForm";
-import { TenantBrandMark } from "@/components/layout/tenant-brand-mark";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
 import { resolveCmsMediaSrc, shouldBypassImageOptimizer } from "@/lib/cms-media";
@@ -222,11 +221,9 @@ export default function LoginPage() {
                 className="object-contain drop-shadow-[0_18px_30px_rgba(14,116,220,0.35)]"
               />
             ) : (
-              <TenantBrandMark
-                name={siteName}
-                initials={brandInitials(siteName)}
-                className="relative h-full w-full"
-              />
+              <div className="relative flex h-full w-full items-center justify-center rounded-full bg-slate-900 text-3xl font-semibold text-white dark:bg-slate-800">
+                {brandInitials(siteName)}
+              </div>
             )}
           </div>
 

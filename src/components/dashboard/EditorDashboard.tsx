@@ -27,7 +27,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { Permission } from '@/components/permissions/PermissionGuard';
 import { useStableLoading } from '@/hooks/useStableLoading';
 import { useAdminLocale } from '@/hooks/useAdminLocale';
-import type { ActivityItem } from './shared';
+import type { ActivityItem } from "./activity-item";
 
 const editorDashboardCopy = {
   en: {

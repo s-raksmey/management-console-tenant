@@ -13,6 +13,8 @@ import {
 } from "@/services/carousel.gql";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { PageSkeleton } from "@/components/layout/page-skeleton";
+import { useInitialPageReady } from "@/lib/use-initial-page-ready";
 import {
   Card,
   CardContent,
@@ -131,6 +133,7 @@ export default function CarouselListPage() {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [selectedTenantId, setSelectedTenantId] = useState("");
   const [loading, setLoading] = useState(true);
+  const pageReady = useInitialPageReady(loading);
   const [deleteTarget, setDeleteTarget] = useState<CarouselSlide | null>(null);
   const { showSuccess, showError } = useToastHelpers();
   const showErrorRef = useRef(showError);
@@ -165,7 +168,11 @@ export default function CarouselListPage() {
   }, [copy.error, copy.loadTenantFailed, isSuperAdmin]);
 
   const loadSlides = useCallback(async () => {
-    if (permissionsLoading || !canAccessCarousel) return;
+    if (permissionsLoading) return;
+    if (!canAccessCarousel) {
+      setLoading(false);
+      return;
+    }
     if (isSuperAdmin && !selectedTenantId) {
       setSlides([]);
       setLoading(false);
@@ -239,6 +246,10 @@ export default function CarouselListPage() {
       setDeleteTarget(null);
     }
   };
+
+  if (!pageReady) {
+    return <PageSkeleton />;
+  }
 
   return (
     <>

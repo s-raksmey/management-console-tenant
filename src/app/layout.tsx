@@ -9,6 +9,7 @@ import { ToastProvider } from "@/contexts/ToastContext"
 import { ClientLayoutWrapper } from "@/components/layout/client-layout-wrapper"
 import { ThemeRuntime } from "@/components/theme/theme-runtime"
 import { COLOR_SCHEME_STORAGE_KEY, themeBootScript } from "@/lib/tweakcn-theme"
+import { BRAND_CACHE_COOKIE, parseCachedBrand } from "@/lib/brand-cache"
 import { AdminLocaleProvider } from "@/hooks/useAdminLocale"
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default async function RootLayout({
   const cookieStore = await cookies()
   const locale = cookieStore.get("locale")?.value === "km" ? "km" : "en"
   const colorScheme = cookieStore.get(COLOR_SCHEME_STORAGE_KEY)?.value
+  const initialBrand = parseCachedBrand(cookieStore.get(BRAND_CACHE_COOKIE)?.value)
   const colorSchemeScript = themeBootScript()
 
   return (
@@ -39,7 +41,7 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
         <AuthProvider>
-          <TenantProvider>
+          <TenantProvider initialBrand={initialBrand}>
             <ToastProvider>
               <AdminLocaleProvider initialLocale={locale}>
                 <ThemeRuntime />

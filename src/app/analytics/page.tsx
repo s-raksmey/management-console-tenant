@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { BarChart3, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { PageSkeleton } from "@/components/layout/page-skeleton";
+import { useInitialPageReady } from "@/lib/use-initial-page-ready";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -63,6 +65,7 @@ export default function AnalyticsPage() {
     MAIN_TENANT_ANALYTICS_ID,
   );
   const [loading, setLoading] = useState(true);
+  const pageReady = useInitialPageReady(loading);
   const [loadingTenants, setLoadingTenants] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -138,6 +141,10 @@ export default function AnalyticsPage() {
   const selectedTenant = tenantOptions.find(
     (tenant) => tenant.id === selectedAnalyticsTenantId,
   );
+
+  if (!pageReady) {
+    return <PageSkeleton />;
+  }
 
   return (
     <PermissionGuard permissions={[Permission.VIEW_ANALYTICS]} showError>

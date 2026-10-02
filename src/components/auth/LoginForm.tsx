@@ -195,10 +195,10 @@ export function LoginForm({
               {twoFactorState ? <ShieldCheck className="h-6 w-6" /> : <LogIn className="h-6 w-6" />}
             </div>
           )}
-          <h1 className={`font-bold text-slate-900 ${appearance === 'editorial' ? 'font-[family-name:var(--font-kantumruy-pro)] text-3xl' : 'mb-2 text-2xl'}`}>
+          <h1 className={`font-bold text-slate-900 dark:text-slate-50 ${appearance === 'editorial' ? 'font-[family-name:var(--font-kantumruy-pro)] text-3xl' : 'mb-2 text-2xl'}`}>
             {twoFactorState ? copy.verifyTitle : heading || copy.welcomeTitle}
           </h1>
-          <p className={`text-slate-600 ${appearance === 'editorial' ? 'mt-2 text-sm leading-6' : ''}`}>
+          <p className={`text-slate-600 dark:text-slate-300 ${appearance === 'editorial' ? 'mt-2 text-sm leading-6' : ''}`}>
             {twoFactorState
               ? twoFactorState.setupRequired
                 ? copy.setupDescription
@@ -221,10 +221,10 @@ export function LoginForm({
                     className="h-48 w-48 rounded-md border border-white bg-white p-2"
                   />
                   <div className="w-full rounded-md bg-white p-3 text-center">
-                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
                       {copy.manualSetupKey}
                     </p>
-                    <p className="mt-1 break-all font-mono text-sm text-slate-900">
+                    <p className="mt-1 break-all font-mono text-sm text-slate-900 dark:text-slate-100">
                       {twoFactorState.setup.secret}
                     </p>
                   </div>
@@ -233,7 +233,7 @@ export function LoginForm({
             )}
 
             <div>
-              <label htmlFor="twoFactorCode" className="block text-sm font-medium text-slate-700 mb-2">
+              <label htmlFor="twoFactorCode" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
                 {copy.verificationCode}
               </label>
               <div className="relative">
@@ -251,7 +251,7 @@ export function LoginForm({
                       void verifyTwoFactorCode(nextCode);
                     }
                   }}
-                  className="w-full px-3 py-2 pl-10 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 pl-10 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-[#0c1626] dark:text-slate-100 dark:placeholder:text-slate-500"
                   placeholder="123456"
                   required
                   disabled={isLoading}
@@ -281,7 +281,7 @@ export function LoginForm({
               type="button"
               onClick={handleBackToPassword}
               disabled={isLoading}
-              className="w-full flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50"
+              className="flex w-full items-center justify-center px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 disabled:opacity-50 dark:text-slate-300 dark:hover:text-white"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               {copy.backToPassword}
@@ -291,7 +291,7 @@ export function LoginForm({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Email Field */}
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700 mb-2">
+            <label htmlFor="email" className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-200">
               {copy.email}
             </label>
             <input
@@ -300,7 +300,7 @@ export function LoginForm({
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-[#0c1626] dark:text-slate-100 dark:placeholder:text-slate-500"
               placeholder={copy.emailPlaceholder}
               required
               disabled={isLoading}
@@ -310,12 +310,12 @@ export function LoginForm({
           {/* Password Field */}
           <div>
             <div className="mb-2 flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700">
+              <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-200">
                 {copy.password}
               </label>
               <Link
                 href="/forgot-password"
-                className="text-sm font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                className="text-sm font-medium text-blue-600 transition-colors hover:text-blue-500 dark:text-sky-300 dark:hover:text-sky-200"
               >
                 {copy.forgotPassword}
               </Link>
@@ -327,7 +327,7 @@ export function LoginForm({
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 pr-10 border border-slate-300 rounded-md placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 pr-10 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-[#0c1626] dark:text-slate-100 dark:placeholder:text-slate-500"
                 placeholder={copy.passwordPlaceholder}
                 required
                 disabled={isLoading}
@@ -336,7 +336,7 @@ export function LoginForm({
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 aria-label={showPassword ? copy.hidePassword : copy.showPassword}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                className="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200"
                 disabled={isLoading}
               >
                 {showPassword ? (
@@ -363,7 +363,7 @@ export function LoginForm({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex items-center justify-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex w-full items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:focus:ring-offset-[#122033]"
           >
             {isLoading ? (
               <>

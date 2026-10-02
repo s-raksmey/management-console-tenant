@@ -18,6 +18,8 @@ import {
   Monitor
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PageSkeleton } from '@/components/layout/page-skeleton';
+import { useInitialPageReady } from '@/lib/use-initial-page-ready';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import {
@@ -235,6 +237,7 @@ export default function AuditLogsPage() {
   const { showSuccess, showError } = useToastHelpers();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
+  const pageReady = useInitialPageReady(loading);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(50);
@@ -362,6 +365,10 @@ export default function AuditLogsPage() {
 
   const totalPages = Math.ceil(totalCount / pageSize);
   const numberLocale = locale === 'km' ? 'km-KH' : undefined;
+
+  if (!pageReady) {
+    return <PageSkeleton />;
+  }
 
   return (
     <PermissionGuard permissions={[Permission.VIEW_AUDIT_LOGS]} showError>

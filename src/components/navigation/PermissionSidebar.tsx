@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenant } from "@/contexts/TenantContext";
+import { useConsoleBrand } from "@/lib/use-console-brand";
 import { Permission, PermissionGuard } from "../permissions/PermissionGuard";
 import { usePermissions } from "../../hooks/usePermissions";
 import { getNavigationItems, NavigationItem } from "./NavigationItems";
@@ -22,11 +22,6 @@ import { useState, useEffect } from "react";
 import { useCounts } from "@/hooks/useCounts";
 import { useArticles } from "@/hooks/useGraphQL";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
-import {
-  getTenantDisplayName,
-  getTenantLogoUrl,
-  isSubTenantDisplay,
-} from "@/lib/tenant-display";
 import { TenantBrandMark } from "@/components/layout/tenant-brand-mark";
 
 
@@ -201,27 +196,13 @@ const NavigationItemComponent: React.FC<NavigationItemComponentProps> = ({
 export function PermissionSidebar({ collapsed, onToggle, className }: PermissionSidebarProps) {
   const pathname = usePathname();
   const { user } = useAuth();
-  const { activeTenant, managementLogoUrl } = useTenant();
   const { locale } = useAdminLocale();
   const copy = sidebarCopy[locale];
   const { hasPermission, userRole } = usePermissions();
   const { counts } = useCounts(userRole);
   const { getArticles } = useArticles();
   const [reviewQueueCount, setReviewQueueCount] = useState(0);
-  const viewingSubTenant = isSubTenantDisplay(activeTenant);
-  const brandName = viewingSubTenant
-    ? getTenantDisplayName(activeTenant, copy.subTenant)
-    : copy.managementConsole;
-  const brandLogoUrl = viewingSubTenant
-    ? getTenantLogoUrl(activeTenant)
-    : managementLogoUrl;
-  const brandInitials = brandName
-    .split(" ")
-    .filter(Boolean)
-    .map((word) => word.charAt(0))
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+  const { brandName, brandLogoUrl } = useConsoleBrand(copy.managementConsole);
 
 
   useEffect(() => {
@@ -251,14 +232,13 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
   );
 
   return (
-    <motion.aside
-      initial={false}
-      animate={{ width: collapsed ? 80 : 280 }}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+    <aside
       className={cn(
-        "fixed left-0 top-0 z-40 flex h-screen flex-col overflow-hidden border-r border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900",
+        "fixed left-0 top-0 z-40 flex h-screen flex-col overflow-hidden border-r border-slate-200 bg-white transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] dark:border-slate-800 dark:bg-slate-900",
+        collapsed ? "w-20" : "w-[280px]",
         className
       )}
+      style={{ width: collapsed ? 80 : 280 }}
     >
       {/* Header */}
       <div className="flex h-12 items-center justify-between border-b border-slate-100 bg-white px-4 dark:border-slate-800 dark:bg-slate-900">
@@ -269,11 +249,7 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
             transition={{ delay: 0.1 }}
             className="flex min-w-0 flex-1 items-center gap-3 rounded-md"
           >
-            <TenantBrandMark
-              name={brandName}
-              logoUrl={brandLogoUrl}
-              initials={brandInitials}
-            />
+            <TenantBrandMark name={brandName} logoUrl={brandLogoUrl} />
             <div className="min-w-0 leading-normal">
               <p className="truncate text-sm font-semibold text-slate-900 dark:text-slate-100">
                 {brandName}
@@ -344,7 +320,7 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
           </div>
         </div>
       )}
-    </motion.aside>
+    </aside>
   );
 }
 

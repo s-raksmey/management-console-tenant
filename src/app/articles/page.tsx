@@ -10,6 +10,7 @@ import {
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
 import { Q_REVISION_REQUESTS } from "@/services/article.gql";
 import { Button } from "@/components/ui/button";
+import { PageSkeleton } from "@/components/layout/page-skeleton";
 import { Article, ArticleStatus } from "@/types/article";
 import { Badge } from "@/components/ui/badge";
 import { ArticleShareDialog } from "@/components/articles/article-share-dialog";
@@ -203,6 +204,7 @@ export default function AdminArticlesPage() {
     onConfirm: () => {},
   });
   const [shareArticle, setShareArticle] = useState<Article | null>(null);
+  const [pageReady, setPageReady] = useState(false);
   const [revisionRequestStatusById, setRevisionRequestStatusById] = useState<
     Record<string, string>
   >({});
@@ -270,15 +272,19 @@ export default function AdminArticlesPage() {
   );
 
   const loadArticles = useCallback(async () => {
-    const response = await getArticles({
-      status: statusFilter,
-      take: 1000,
-      skip: 0,
-    });
+    try {
+      const response = await getArticles({
+        status: statusFilter,
+        take: 1000,
+        skip: 0,
+      });
 
-    if (response?.articles) {
-      setArticles(response.articles);
-      await loadRevisionStatuses(response.articles);
+      if (response?.articles) {
+        setArticles(response.articles);
+        await loadRevisionStatuses(response.articles);
+      }
+    } finally {
+      setPageReady(true);
     }
   }, [getArticles, loadRevisionStatuses, statusFilter]);
 
@@ -422,6 +428,10 @@ export default function AdminArticlesPage() {
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
+
+  if (!pageReady) {
+    return <PageSkeleton />;
+  }
 
   return (
     <PermissionGuard permissions={[Permission.VIEW_ALL_ARTICLES]} showError>
