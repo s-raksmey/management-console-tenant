@@ -230,6 +230,12 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
     userRole,
     locale
   );
+  const articlesItem = navigationItems.find((item) => item.href === "/articles");
+  if (articlesItem && !hasPermission(Permission.VIEW_ALL_ARTICLES)) {
+    articlesItem.href = hasPermission(Permission.UPDATE_OWN_ARTICLE)
+      ? "/articles?scope=my"
+      : "/articles/new";
+  }
 
   return (
     <aside

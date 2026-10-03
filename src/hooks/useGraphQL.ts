@@ -166,15 +166,9 @@ export function useArticles() {
       }
     `;
 
-      const client = getAuthenticatedGqlClient(token ?? undefined);
-
-      try {
-        return await client.request(ARTICLES_QUERY, filters);
-      } catch {
-        return null;
-      }
+      return query(ARTICLES_QUERY, filters);
     },
-    [token],
+    [query],
   );
 
   const getArticleById = useCallback(
@@ -821,6 +815,7 @@ export function useRevisions() {
           id
           summary
           changes
+          snapshot
           appliedAt
           appliedBy {
             id

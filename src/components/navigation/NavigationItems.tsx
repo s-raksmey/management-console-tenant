@@ -193,22 +193,6 @@ export const getNavigationItems = (
         Permission.PUBLISH_ARTICLE,
         Permission.REVIEW_ARTICLES,
       ],
-      children: [
-        {
-          name: copy.allArticles,
-          href: "/articles",
-          icon: FileText,
-          description: copy.viewAllArticles,
-          permissions: [Permission.VIEW_ALL_ARTICLES],
-        },
-        {
-          name: copy.myArticles,
-          href: "/articles/my",
-          icon: FileText,
-          description: copy.yourArticles,
-          permissions: [Permission.UPDATE_OWN_ARTICLE],
-        },
-      ],
     },
 
     {

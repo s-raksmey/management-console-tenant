@@ -25,7 +25,9 @@ import { MoreHorizontal, Edit, Trash2, Plus, Share2, Eye } from "lucide-react";
 import { format } from "date-fns";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
+import { ArticleScopeTabs, type ArticleScope } from "@/components/articles/article-scope-tabs";
 import { useTenant } from "@/contexts/TenantContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
 
 const statusColors = {
@@ -33,6 +35,7 @@ const statusColors = {
   REVIEW: "bg-yellow-100 text-yellow-800",
   PUBLISHED: "bg-green-100 text-green-800",
   ARCHIVED: "bg-red-100 text-red-800",
+  SCHEDULED: "bg-blue-100 text-blue-800",
 };
 
 const PAGE_SIZE = 10;
@@ -42,6 +45,8 @@ const articlesCopy = {
     confirm: "Confirm",
     pageTitle: "Articles",
     pageDescription: "Create, edit, and publish articles.",
+    myPageTitle: "My Articles",
+    myPageDescription: "Manage your personal articles.",
     newArticle: "New Article",
     all: "All",
     statuses: {
@@ -49,10 +54,12 @@ const articlesCopy = {
       REVIEW: "REVIEW",
       PUBLISHED: "PUBLISHED",
       ARCHIVED: "ARCHIVED",
+      SCHEDULED: "SCHEDULED",
     },
     empty: "No articles found.",
     createFirst: "Create your first article",
     edit: "Edit",
+    submitForReview: "Submit for Review",
     view: "View",
     publish: "Publish",
     publishTitle: "Publish Article?",
@@ -109,6 +116,8 @@ const articlesCopy = {
     confirm: "បញ្ជាក់",
     pageTitle: "អត្ថបទ",
     pageDescription: "បង្កើត កែសម្រួល និងផ្សព្វផ្សាយអត្ថបទ។",
+    myPageTitle: "អត្ថបទរបស់ខ្ញុំ",
+    myPageDescription: "គ្រប់គ្រងអត្ថបទផ្ទាល់ខ្លួនរបស់អ្នក។",
     newArticle: "អត្ថបទថ្មី",
     all: "ទាំងអស់",
     statuses: {
@@ -116,10 +125,12 @@ const articlesCopy = {
       REVIEW: "រង់ចាំពិនិត្យ",
       PUBLISHED: "បានផ្សព្វផ្សាយ",
       ARCHIVED: "បានដាក់ប័ណ្ណសារ",
+      SCHEDULED: "បានកំណត់ពេល",
     },
     empty: "រកមិនឃើញអត្ថបទទេ។",
     createFirst: "បង្កើតអត្ថបទដំបូង",
     edit: "កែសម្រួល",
+    submitForReview: "ផ្ញើទៅពិនិត្យ",
     view: "មើល",
     publish: "ផ្សព្វផ្សាយ",
     publishTitle: "ផ្សព្វផ្សាយអត្ថបទ?",
@@ -179,6 +190,7 @@ export default function AdminArticlesPage() {
   const copy = articlesCopy[locale];
   const [articles, setArticles] = useState<Article[]>([]);
   const [statusFilter, setStatusFilter] = useState<ArticleStatus | undefined>();
+  const [articleScope, setArticleScope] = useState<ArticleScope>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteDialog, setDeleteDialog] = useState<{
     open: boolean;
@@ -223,6 +235,7 @@ export default function AdminArticlesPage() {
     loading: mutationLoading,
   } = useArticleMutations();
   const { hasPermission } = usePermissions();
+  const { user } = useAuth();
   const { activeTenant } = useTenant();
   const publicBaseUrl = useMemo(() => {
     const primarySite =
@@ -231,6 +244,26 @@ export default function AdminArticlesPage() {
 
     return primarySite?.publicBaseUrl ?? null;
   }, [activeTenant]);
+
+  useEffect(() => {
+    const canViewAll = hasPermission(Permission.VIEW_ALL_ARTICLES);
+    const canViewMine = hasPermission(Permission.UPDATE_OWN_ARTICLE);
+    const requestedMine = new URLSearchParams(window.location.search).get("scope") === "my";
+    setArticleScope(
+      (requestedMine && canViewMine) || (!canViewAll && canViewMine)
+        ? "mine"
+        : "all",
+    );
+  }, [hasPermission]);
+
+  const handleScopeChange = useCallback((scope: ArticleScope) => {
+    setArticleScope(scope);
+    setCurrentPage(1);
+    const url = new URL(window.location.href);
+    if (scope === "mine") url.searchParams.set("scope", "my");
+    else url.searchParams.delete("scope");
+    window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  }, []);
 
   const loadRevisionStatuses = useCallback(
     async (list: Article[]) => {
@@ -273,8 +306,13 @@ export default function AdminArticlesPage() {
 
   const loadArticles = useCallback(async () => {
     try {
+      if (articleScope === "mine" && !user?.id) {
+        setArticles([]);
+        return;
+      }
       const response = await getArticles({
         status: statusFilter,
+        ...(articleScope === "mine" ? { authorId: user?.id } : {}),
         take: 1000,
         skip: 0,
       });
@@ -286,7 +324,7 @@ export default function AdminArticlesPage() {
     } finally {
       setPageReady(true);
     }
-  }, [getArticles, loadRevisionStatuses, statusFilter]);
+  }, [articleScope, getArticles, loadRevisionStatuses, statusFilter, user?.id]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -402,6 +440,7 @@ export default function AdminArticlesPage() {
 
   const hasRowActions = (article: Article) =>
     hasPermission(Permission.UPDATE_ANY_ARTICLE) ||
+    (articleScope === "mine" && hasPermission(Permission.UPDATE_OWN_ARTICLE)) ||
     hasPermission(Permission.VIEW_ALL_ARTICLES) ||
     hasPermission(Permission.REVIEW_ARTICLES) ||
     (article.status === "DRAFT" && hasPermission(Permission.PUBLISH_ARTICLE)) ||
@@ -412,7 +451,8 @@ export default function AdminArticlesPage() {
       hasPermission(Permission.UNPUBLISH_ARTICLE)) ||
     (article.revisionStatus === "REQUESTED" &&
       hasPermission(Permission.APPROVE_ARTICLES)) ||
-    hasPermission(Permission.DELETE_ANY_ARTICLE);
+    hasPermission(Permission.DELETE_ANY_ARTICLE) ||
+    (articleScope === "mine" && hasPermission(Permission.DELETE_OWN_ARTICLE));
 
   const totalPages = Math.max(1, Math.ceil(articles.length / PAGE_SIZE));
   const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -434,13 +474,18 @@ export default function AdminArticlesPage() {
   }
 
   return (
-    <PermissionGuard permissions={[Permission.VIEW_ALL_ARTICLES]} showError>
+    <PermissionGuard
+      permissions={[articleScope === "mine" ? Permission.UPDATE_OWN_ARTICLE : Permission.VIEW_ALL_ARTICLES]}
+      showError
+    >
     <main className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">{copy.pageTitle}</h1>
+          <h1 className="text-xl font-semibold text-slate-900">
+            {articleScope === "mine" ? copy.myPageTitle : copy.pageTitle}
+          </h1>
           <p className="text-sm text-slate-600">
-            {copy.pageDescription}
+            {articleScope === "mine" ? copy.myPageDescription : copy.pageDescription}
           </p>
         </div>
         {hasPermission(Permission.CREATE_ARTICLE) && (
@@ -452,6 +497,8 @@ export default function AdminArticlesPage() {
           </Link>
         )}
       </div>
+
+      <ArticleScopeTabs scope={articleScope} onScopeChange={handleScopeChange} />
 
       {/* Filters */}
       <div className="flex flex-wrap gap-2">
@@ -493,8 +540,8 @@ export default function AdminArticlesPage() {
               className="border-b border-slate-200 py-5 last:border-b-0"
             >
               <div className="flex items-center justify-between gap-3">
-                <Badge className={`text-[11px] font-bold tracking-wide ${statusColors[article.status]}`}>
-                  {copy.statuses[article.status]}
+                <Badge className={`text-[11px] font-bold tracking-wide ${statusColors[article.scheduledAt && new Date(article.scheduledAt) > new Date() ? "SCHEDULED" : article.status]}`}>
+                  {copy.statuses[article.scheduledAt && new Date(article.scheduledAt) > new Date() ? "SCHEDULED" : article.status]}
                 </Badge>
                 {hasRowActions(article) ? (
                   <DropdownMenu>
@@ -504,7 +551,8 @@ export default function AdminArticlesPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {hasPermission(Permission.UPDATE_ANY_ARTICLE) ? (
+                      {hasPermission(Permission.UPDATE_ANY_ARTICLE) ||
+                      (articleScope === "mine" && hasPermission(Permission.UPDATE_OWN_ARTICLE)) ? (
                         <DropdownMenuItem asChild>
                           <Link href={`/articles/${article.id}/edit`}>
                             <Edit className="mr-2 h-4 w-4" />
@@ -520,6 +568,24 @@ export default function AdminArticlesPage() {
                           </Link>
                         </DropdownMenuItem>
                       ) : null}
+                      {article.status === "DRAFT" &&
+                        articleScope === "mine" &&
+                        (hasPermission(Permission.CREATE_ARTICLE) ||
+                          hasPermission(Permission.UPDATE_OWN_ARTICLE)) && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              requestArticleAction({
+                                title: copy.submitForReview,
+                                description: `${copy.submitForReview} "${article.title}"?`,
+                                confirmText: copy.submitForReview,
+                                onConfirm: () => handleStatusChange(article.id, "REVIEW"),
+                              })
+                            }
+                            disabled={mutationLoading}
+                          >
+                            {copy.submitForReview}
+                          </DropdownMenuItem>
+                        )}
                       {article.status === "DRAFT" &&
                         hasPermission(Permission.PUBLISH_ARTICLE) && (
                           <DropdownMenuItem
@@ -591,7 +657,8 @@ export default function AdminArticlesPage() {
                           {copy.share}
                         </DropdownMenuItem>
                       )}
-                      {hasPermission(Permission.DELETE_ANY_ARTICLE) && (
+                      {(hasPermission(Permission.DELETE_ANY_ARTICLE) ||
+                        (articleScope === "mine" && hasPermission(Permission.DELETE_OWN_ARTICLE))) && (
                         <DropdownMenuItem
                           onClick={() => requestDelete(article)}
                           disabled={mutationLoading}
@@ -655,7 +722,7 @@ export default function AdminArticlesPage() {
 
       <div className="hidden overflow-hidden rounded-xl border border-slate-200 bg-white md:block">
         <div className="grid grid-cols-[minmax(0,1fr)_120px_120px_108px_48px] items-center gap-4 border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs font-semibold text-slate-600 xl:grid-cols-[minmax(0,1fr)_120px_140px_140px_112px_48px]">
-          <div>{copy.tableTitle}</div>
+          <div>{articleScope === "mine" ? copy.myPageTitle : copy.tableTitle}</div>
           <div>{copy.status}</div>
           <div>{copy.category}</div>
           <div className="hidden xl:block">{copy.topic}</div>
@@ -769,8 +836,8 @@ export default function AdminArticlesPage() {
                   )}
               </div>
               <div>
-                <Badge className={`text-xs ${statusColors[article.status]}`}>
-                  {copy.statuses[article.status]}
+                <Badge className={`text-xs ${statusColors[article.scheduledAt && new Date(article.scheduledAt) > new Date() ? "SCHEDULED" : article.status]}`}>
+                  {copy.statuses[article.scheduledAt && new Date(article.scheduledAt) > new Date() ? "SCHEDULED" : article.status]}
                 </Badge>
               </div>
               <div className="truncate text-xs text-slate-600" title={article.category?.name ?? "—"}>
@@ -791,7 +858,8 @@ export default function AdminArticlesPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {hasPermission(Permission.UPDATE_ANY_ARTICLE) ? (
+                      {hasPermission(Permission.UPDATE_ANY_ARTICLE) ||
+                      (articleScope === "mine" && hasPermission(Permission.UPDATE_OWN_ARTICLE)) ? (
                         <DropdownMenuItem asChild>
                           <Link href={`/articles/${article.id}/edit`}>
                             <Edit className="w-4 h-4 mr-2" />
@@ -807,6 +875,24 @@ export default function AdminArticlesPage() {
                           </Link>
                         </DropdownMenuItem>
                       ) : null}
+                      {article.status === "DRAFT" &&
+                        articleScope === "mine" &&
+                        (hasPermission(Permission.CREATE_ARTICLE) ||
+                          hasPermission(Permission.UPDATE_OWN_ARTICLE)) && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              requestArticleAction({
+                                title: copy.submitForReview,
+                                description: `${copy.submitForReview} "${article.title}"?`,
+                                confirmText: copy.submitForReview,
+                                onConfirm: () => handleStatusChange(article.id, "REVIEW"),
+                              })
+                            }
+                            disabled={mutationLoading}
+                          >
+                            {copy.submitForReview}
+                          </DropdownMenuItem>
+                        )}
                       {article.status === "DRAFT" &&
                         hasPermission(Permission.PUBLISH_ARTICLE) && (
                           <DropdownMenuItem
@@ -910,7 +996,8 @@ export default function AdminArticlesPage() {
                             </DropdownMenuItem>
                           </>
                         )}
-                      {hasPermission(Permission.DELETE_ANY_ARTICLE) && (
+                      {(hasPermission(Permission.DELETE_ANY_ARTICLE) ||
+                        (articleScope === "mine" && hasPermission(Permission.DELETE_OWN_ARTICLE))) && (
                         <DropdownMenuItem
                           onClick={() => requestDelete(article)}
                           disabled={mutationLoading}

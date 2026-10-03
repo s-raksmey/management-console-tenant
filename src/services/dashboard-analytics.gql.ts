@@ -12,7 +12,6 @@ export type DashboardTenantMetric = {
   name: string;
   slug: string;
   status: "ACTIVE" | "SUSPENDED" | "ARCHIVED";
-  articles: number;
   users: number;
   publicSites: number;
 };
@@ -40,6 +39,60 @@ export type DashboardAnalytics = {
   monthlyContent: DashboardChartPoint[];
   tenantActivity: DashboardTenantMetric[];
   categoryViews: DashboardChartPoint[];
+};
+
+export type AnalyticsDateRangePreset =
+  | "LAST_7_DAYS"
+  | "LAST_30_DAYS"
+  | "LAST_3_MONTHS"
+  | "LAST_6_MONTHS"
+  | "LAST_12_MONTHS"
+  | "CUSTOM";
+
+export type AnalyticsGroupBy = "DAY" | "WEEK" | "MONTH";
+
+export type TenantTimeAnalyticsInput = {
+  dateRange: {
+    preset: AnalyticsDateRangePreset;
+    from?: string;
+    to?: string;
+  };
+  groupBy: AnalyticsGroupBy;
+};
+
+export type TenantPublishingPoint = {
+  label: string;
+  start: string;
+  endExclusive: string;
+  created: number;
+  published: number;
+  totalViews: number;
+};
+
+export type TenantCategoryView = {
+  categoryId: string;
+  name: string;
+  views: number;
+  percentage: number;
+  topics: Array<{
+    slug: string;
+    name: string;
+    views: number;
+    percentage: number;
+    parentPercentage: number;
+  }>;
+};
+
+export type TenantTimeAnalytics = {
+  rangeFrom: string;
+  rangeTo: string;
+  summary: {
+    createdArticles: number;
+    publishedArticles: number;
+    totalViews: number;
+  };
+  publishing: TenantPublishingPoint[];
+  categoryViews: TenantCategoryView[];
 };
 
 const Q_DASHBOARD_ANALYTICS = gql`
@@ -82,7 +135,6 @@ const Q_DASHBOARD_ANALYTICS = gql`
         name
         slug
         status
-        articles
         users
         publicSites
       }
@@ -90,6 +142,41 @@ const Q_DASHBOARD_ANALYTICS = gql`
         label
         value
         secondaryValue
+      }
+    }
+  }
+`;
+
+const Q_TENANT_TIME_ANALYTICS = gql`
+  query TenantTimeAnalytics($input: TenantTimeAnalyticsInput!) {
+    tenantTimeAnalytics(input: $input) {
+      rangeFrom
+      rangeTo
+      summary {
+        createdArticles
+        publishedArticles
+        totalViews
+      }
+      publishing {
+        label
+        start
+        endExclusive
+        created
+        published
+        totalViews
+      }
+      categoryViews {
+        categoryId
+        name
+        views
+        percentage
+        topics {
+          slug
+          name
+          views
+          percentage
+          parentPercentage
+        }
       }
     }
   }
@@ -109,5 +196,15 @@ export class DashboardAnalyticsService {
     }>(Q_DASHBOARD_ANALYTICS);
 
     return response.dashboardAnalytics;
+  }
+
+  static async getTenantTimeAnalytics(
+    input: TenantTimeAnalyticsInput,
+  ): Promise<TenantTimeAnalytics> {
+    const client = getAuthenticatedGqlClient();
+    const response = await client.request<{
+      tenantTimeAnalytics: TenantTimeAnalytics;
+    }>(Q_TENANT_TIME_ANALYTICS, { input });
+    return response.tenantTimeAnalytics;
   }
 }

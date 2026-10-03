@@ -9,14 +9,18 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DashboardCharts } from "@/components/dashboard/DashboardCharts";
-import {
-  DashboardAnalytics,
-  DashboardAnalyticsService,
-} from "@/services/dashboard-analytics.gql";
 import { Tenant, TenantService } from "@/services/tenant.gql";
 import { useAuth } from "@/contexts/AuthContext";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
+import {
+  AnalyticsDateRangePreset,
+  AnalyticsGroupBy,
+  DashboardAnalytics,
+  DashboardAnalyticsService,
+  TenantTimeAnalytics,
+  TenantTimeAnalyticsInput,
+} from "@/services/dashboard-analytics.gql";
 
 const analyticsCopy = {
   en: {
@@ -34,6 +38,18 @@ const analyticsCopy = {
     mainTenantOption: "Main Tenant",
     tenantView: "Sub-tenant View",
     refresh: "Refresh",
+    dateRange: "Date range",
+    last7Days: "Last 7 days",
+    last30Days: "Last 30 days",
+    last3Months: "Last 3 months",
+    last6Months: "Last 6 months",
+    last12Months: "Last 12 months",
+    customRange: "Custom range",
+    from: "From",
+    to: "To",
+    apply: "Apply",
+    invalidCustomRange: "Choose a valid start and end date.",
+    loadTimeAnalyticsFailed: "Failed to load analytics for this period.",
   },
   km: {
     loadAnalyticsFailed: "ផ្ទុកទិន្នន័យវិភាគមិនបានសម្រេច។",
@@ -50,6 +66,18 @@ const analyticsCopy = {
     mainTenantOption: "អ្នកជួលមេ",
     tenantView: "ទិដ្ឋភាពគេហទំព័រ",
     refresh: "ធ្វើបច្ចុប្បន្នភាព",
+    dateRange: "រយៈពេល",
+    last7Days: "7 ថ្ងៃចុងក្រោយ",
+    last30Days: "30 ថ្ងៃចុងក្រោយ",
+    last3Months: "3 ខែចុងក្រោយ",
+    last6Months: "6 ខែចុងក្រោយ",
+    last12Months: "12 ខែចុងក្រោយ",
+    customRange: "កំណត់រយៈពេល",
+    from: "ចាប់ពី",
+    to: "ដល់",
+    apply: "អនុវត្ត",
+    invalidCustomRange: "សូមជ្រើសរើសថ្ងៃចាប់ផ្តើម និងថ្ងៃបញ្ចប់ត្រឹមត្រូវ។",
+    loadTimeAnalyticsFailed: "មិនអាចផ្ទុកការវិភាគតាមរយៈពេលនេះបានទេ។",
   },
 } as const;
 
@@ -60,6 +88,15 @@ export default function AnalyticsPage() {
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const MAIN_TENANT_ANALYTICS_ID = "__main__";
   const [analytics, setAnalytics] = useState<DashboardAnalytics | null>(null);
+  const [tenantTimeAnalytics, setTenantTimeAnalytics] = useState<TenantTimeAnalytics | null>(null);
+  const [dateRange, setDateRange] = useState<TenantTimeAnalyticsInput["dateRange"]>({
+    preset: "LAST_6_MONTHS",
+  });
+  const [groupBy, setGroupBy] = useState<AnalyticsGroupBy>("MONTH");
+  const [customFrom, setCustomFrom] = useState("");
+  const [customTo, setCustomTo] = useState("");
+  const [timeLoading, setTimeLoading] = useState(false);
+  const [timeError, setTimeError] = useState<string | null>(null);
   const [tenantOptions, setTenantOptions] = useState<Tenant[]>([]);
   const [selectedAnalyticsTenantId, setSelectedAnalyticsTenantId] = useState<string>(
     MAIN_TENANT_ANALYTICS_ID,
@@ -87,12 +124,35 @@ export default function AnalyticsPage() {
     }
   }, [copy.loadAnalyticsFailed, locale]);
 
+  const loadTenantTimeAnalytics = useCallback(async (
+    selectedRange: TenantTimeAnalyticsInput["dateRange"],
+    selectedGroupBy: AnalyticsGroupBy,
+  ) => {
+    setTimeLoading(true);
+    setTimeError(null);
+    try {
+      const data = await DashboardAnalyticsService.getTenantTimeAnalytics({
+        dateRange: selectedRange,
+        groupBy: selectedGroupBy,
+      });
+      setTenantTimeAnalytics(data);
+    } catch (err) {
+      console.error("Failed to load tenant time analytics:", err);
+      setTimeError(locale === "en" && err instanceof Error ? err.message : copy.loadTimeAnalyticsFailed);
+    } finally {
+      setTimeLoading(false);
+    }
+  }, [copy.loadTimeAnalyticsFailed, locale]);
+
   useEffect(() => {
     let mounted = true;
 
     const initializeAnalytics = async () => {
       if (!isSuperAdmin) {
-        await loadAnalytics();
+        await Promise.all([
+          loadAnalytics(),
+          loadTenantTimeAnalytics({ preset: "LAST_6_MONTHS" }, "MONTH"),
+        ]);
         return;
       }
 
@@ -124,17 +184,45 @@ export default function AnalyticsPage() {
     return () => {
       mounted = false;
     };
-  }, [copy.loadTenantsFailed, isSuperAdmin, loadAnalytics, locale]);
+  }, [copy.loadTenantsFailed, isSuperAdmin, loadAnalytics, loadTenantTimeAnalytics, locale]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadAnalytics(selectedAnalyticsTenantId || undefined);
+    await Promise.all([
+      loadAnalytics(selectedAnalyticsTenantId || undefined),
+      !isSuperAdmin ? loadTenantTimeAnalytics(dateRange, groupBy) : Promise.resolve(),
+    ]);
   };
 
   const handleTenantChange = async (tenantId: string) => {
     setSelectedAnalyticsTenantId(tenantId);
     setLoading(true);
     await loadAnalytics(tenantId);
+  };
+
+  const handleDateRangeChange = (value: AnalyticsDateRangePreset) => {
+    if (value === "CUSTOM") {
+      setDateRange({ preset: value, from: customFrom, to: customTo });
+      return;
+    }
+    const nextRange = { preset: value };
+    setDateRange(nextRange);
+    void loadTenantTimeAnalytics(nextRange, groupBy);
+  };
+
+  const applyCustomRange = () => {
+    if (!customFrom || !customTo || customFrom > customTo) {
+      setTimeError(copy.invalidCustomRange);
+      return;
+    }
+    const nextRange = { preset: "CUSTOM" as const, from: customFrom, to: customTo };
+    setDateRange(nextRange);
+    void loadTenantTimeAnalytics(nextRange, groupBy);
+  };
+
+  const handleGroupByChange = (value: AnalyticsGroupBy) => {
+    setGroupBy(value);
+    void loadTenantTimeAnalytics(dateRange, value);
   };
 
   const isMainTenantView = analytics?.scope === "PLATFORM";
@@ -149,82 +237,106 @@ export default function AnalyticsPage() {
   return (
     <PermissionGuard permissions={[Permission.VIEW_ANALYTICS]} showError>
       <div className="space-y-6">
-      <section className="rounded-lg border border-slate-200 bg-white p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-sky-400">
-              {isMainTenantView ? copy.mainTenantAnalytics : copy.tenantAnalytics}
-            </p>
-            <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">
-              <BarChart3 className="h-6 w-6 shrink-0 text-blue-600 sm:h-7 sm:w-7 dark:text-sky-400" />
-              {copy.title}
-            </h1>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
-              {isMainTenantView
-                ? copy.mainTenantDescription
-                : copy.tenantDescription(analytics?.tenantName || copy.fallbackTenant)}
-            </p>
-          </div>
+        <section className="rounded-lg border border-slate-200 bg-white p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-600 dark:text-sky-400">
+                {isMainTenantView ? copy.mainTenantAnalytics : copy.tenantAnalytics}
+              </p>
+              <h1 className="mt-2 flex items-center gap-2 text-2xl font-bold text-slate-950 sm:text-3xl dark:text-white">
+                <BarChart3 className="h-6 w-6 shrink-0 text-blue-600 sm:h-7 sm:w-7 dark:text-sky-400" />
+                {copy.title}
+              </h1>
+              <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+                {isMainTenantView
+                  ? copy.mainTenantDescription
+                  : copy.tenantDescription(analytics?.tenantName || copy.fallbackTenant)}
+              </p>
+            </div>
 
-          <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:justify-end">
-            {isSuperAdmin ? (
-              <Select
-                value={selectedAnalyticsTenantId}
-                onValueChange={handleTenantChange}
-                disabled={loadingTenants || tenantOptions.length === 0}
-              >
-                <SelectTrigger className="w-full bg-white sm:w-[240px] dark:bg-slate-950">
-                  <SelectValue
-                    placeholder={
-                      loadingTenants ? copy.loadingTenants : copy.selectTenant
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={MAIN_TENANT_ANALYTICS_ID}>
-                    {copy.mainTenantOption}
-                  </SelectItem>
-                  {tenantOptions.map((tenant) => (
-                    <SelectItem key={tenant.id} value={tenant.id}>
-                      {tenant.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : analytics ? (
-              <Badge variant="outline" className="bg-white">
-                {analytics.tenantName || copy.tenantView}
-              </Badge>
-            ) : null}
-            {isSuperAdmin && selectedTenant && (
-              <Badge variant="outline" className="max-w-full truncate bg-white">
-                /{selectedTenant.slug}
-              </Badge>
-            )}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleRefresh}
-              disabled={loading || refreshing}
-            >
-              {refreshing ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <RefreshCw className="mr-2 h-4 w-4" />
+            <div className="flex w-full flex-col gap-2 lg:w-auto lg:items-end">
+              <div className="flex w-full flex-wrap items-center gap-2 lg:justify-end">
+                {isSuperAdmin ? (
+                  <Select
+                    value={selectedAnalyticsTenantId}
+                    onValueChange={handleTenantChange}
+                    disabled={loadingTenants || tenantOptions.length === 0}
+                  >
+                    <SelectTrigger className="w-full bg-white sm:w-[240px] dark:bg-slate-950">
+                      <SelectValue placeholder={loadingTenants ? copy.loadingTenants : copy.selectTenant} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={MAIN_TENANT_ANALYTICS_ID}>{copy.mainTenantOption}</SelectItem>
+                      {tenantOptions.map((tenant) => (
+                        <SelectItem key={tenant.id} value={tenant.id}>{tenant.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : null}
+
+                {!isSuperAdmin && (
+                  <Select
+                    value={dateRange.preset}
+                    onValueChange={(value) => handleDateRangeChange(value as AnalyticsDateRangePreset)}
+                  >
+                    <SelectTrigger aria-label={copy.dateRange} className="w-full bg-white sm:w-[190px] dark:bg-slate-950">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="LAST_7_DAYS">{copy.last7Days}</SelectItem>
+                      <SelectItem value="LAST_30_DAYS">{copy.last30Days}</SelectItem>
+                      <SelectItem value="LAST_3_MONTHS">{copy.last3Months}</SelectItem>
+                      <SelectItem value="LAST_6_MONTHS">{copy.last6Months}</SelectItem>
+                      <SelectItem value="LAST_12_MONTHS">{copy.last12Months}</SelectItem>
+                      <SelectItem value="CUSTOM">{copy.customRange}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+
+                {isSuperAdmin && selectedTenant && (
+                  <Badge variant="outline" className="max-w-full truncate bg-white">/{selectedTenant.slug}</Badge>
+                )}
+                {isSuperAdmin && (
+                  <Button type="button" variant="outline" onClick={handleRefresh} disabled={loading || refreshing}>
+                    {refreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                    {copy.refresh}
+                  </Button>
+                )}
+              </div>
+
+              {!isSuperAdmin && dateRange.preset === "CUSTOM" && (
+                <div className="flex w-full flex-col gap-2 sm:flex-row lg:w-auto">
+                  <label className="flex min-w-0 flex-1 items-center gap-2 text-xs text-slate-500">
+                    {copy.from}
+                    <input type="date" value={customFrom} onChange={(event) => setCustomFrom(event.target.value)} className="h-9 min-w-0 rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200" />
+                  </label>
+                  <label className="flex min-w-0 flex-1 items-center gap-2 text-xs text-slate-500">
+                    {copy.to}
+                    <input type="date" value={customTo} onChange={(event) => setCustomTo(event.target.value)} className="h-9 min-w-0 rounded-md border border-slate-200 bg-white px-2 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200" />
+                  </label>
+                  <Button type="button" variant="outline" onClick={applyCustomRange}>{copy.apply}</Button>
+                </div>
               )}
-              {copy.refresh}
-            </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {error && (
-        <Card className="border-red-200 bg-red-50">
-          <CardContent className="p-4 text-sm text-red-700">{error}</CardContent>
-        </Card>
-      )}
+        {error && (
+          <Card className="border-red-200 bg-red-50">
+            <CardContent className="p-4 text-sm text-red-700">{error}</CardContent>
+          </Card>
+        )}
 
-      <DashboardCharts analytics={analytics} loading={loading} />
+        <DashboardCharts
+          analytics={analytics}
+          loading={loading}
+          tenantTimeAnalytics={!isSuperAdmin ? tenantTimeAnalytics : null}
+          timeLoading={timeLoading}
+          timeError={timeError}
+          groupBy={groupBy}
+          onGroupByChange={handleGroupByChange}
+          rangeLabel={copy[dateRange.preset === "LAST_7_DAYS" ? "last7Days" : dateRange.preset === "LAST_30_DAYS" ? "last30Days" : dateRange.preset === "LAST_3_MONTHS" ? "last3Months" : dateRange.preset === "LAST_12_MONTHS" ? "last12Months" : dateRange.preset === "CUSTOM" ? "customRange" : "last6Months"]}
+        />
       </div>
     </PermissionGuard>
   );

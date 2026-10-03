@@ -214,6 +214,7 @@ export const Q_ARTICLE_REVISION_HISTORY = /* GraphQL */ `
       id
       summary
       changes
+      snapshot
       appliedAt
       appliedBy {
         id
@@ -254,6 +255,7 @@ export const M_UPSERT_ARTICLE = /* GraphQL */ `
         slug
       }
       contentJson
+      updatedAt
     }
   }
 `;
@@ -264,6 +266,17 @@ export const M_SET_STATUS = /* GraphQL */ `
       id
       status
       publishedAt
+    }
+  }
+`;
+
+export const M_RESTORE_ARTICLE_REVISION = /* GraphQL */ `
+  mutation RestoreArticleRevision($articleId: ID!, $revisionId: ID!) {
+    restoreArticleRevision(articleId: $articleId, revisionId: $revisionId) {
+      id
+      title
+      slug
+      updatedAt
     }
   }
 `;

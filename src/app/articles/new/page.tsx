@@ -19,6 +19,7 @@ import { ArticleStatus } from "@/utils/articlePermissions";
 import { Permission, PermissionGuard } from "@/components/permissions/PermissionGuard";
 import { SeoPreviewCard } from "@/components/articles/seo-preview-card";
 import { useToastHelpers } from "@/components/ui/toast";
+import { safeArticleErrorMessage } from "@/utils/articleErrors";
 import {
   ArticleReadinessCard,
   getArticleReadinessIssues,
@@ -86,17 +87,24 @@ const articleCopy = {
     category: "Category",
     selectCategoryOption: "— Select Category —",
     loadingCategories: "Loading categories...",
-    topicOptional: "Topic (optional)",
-    noTopic: "— No topic —",
+    topicRequired: "Subcategory *",
+    noTopic: "— Select subcategory —",
+    selectTopic: "Please select a subcategory.",
+    noTopics: "This category has no subcategories. Add one before creating an article.",
     loadingTopics: "Loading topics...",
     selectCategoryFirst: "Select a category first",
     tags: "Tags",
     tagsHelp: "Separate tags with commas.",
     schedulePublishing: "Schedule publishing",
     scheduleHelp: "Saving with a future time keeps the article as a draft until publication.",
+    scheduleButton: "Schedule",
+    scheduledFor: "Scheduled for",
     categoryError: "Category Error",
     topicsError: "Topics Error",
     validationError: "Validation Error",
+    saveFailed: "Unable to save article.",
+    publishFailed: "Unable to publish article.",
+    scheduleFailed: "Unable to schedule article.",
     markBreaking: "Mark as breaking news",
     markBreakingTitle: "Mark this article as breaking news",
     requestBreaking: "Request as breaking news",
@@ -133,17 +141,24 @@ const articleCopy = {
     category: "ប្រភេទ",
     selectCategoryOption: "— ជ្រើសប្រភេទ —",
     loadingCategories: "កំពុងផ្ទុកប្រភេទ...",
-    topicOptional: "ប្រធានបទ (ជម្រើស)",
-    noTopic: "— គ្មានប្រធានបទ —",
+    topicRequired: "ប្រភេទរង *",
+    noTopic: "— ជ្រើសប្រភេទរង —",
+    selectTopic: "សូមជ្រើសប្រភេទរង។",
+    noTopics: "ប្រភេទនេះមិនទាន់មានប្រភេទរងទេ។ សូមបន្ថែមប្រភេទរងមុនបង្កើតអត្ថបទ។",
     loadingTopics: "កំពុងផ្ទុកប្រធានបទ...",
     selectCategoryFirst: "ជ្រើសប្រភេទជាមុនសិន",
     tags: "ស្លាក",
     tagsHelp: "បំបែកស្លាកដោយសញ្ញាក្បៀស។",
     schedulePublishing: "កំណត់ពេលផ្សព្វផ្សាយ",
     scheduleHelp: "រក្សាទុកជាមួយពេលអនាគត នឹងរក្សាអត្ថបទជាព្រាងរហូតដល់ពេលផ្សព្វផ្សាយ។",
+    scheduleButton: "កំណត់ពេល",
+    scheduledFor: "បានកំណត់ពេល",
     categoryError: "បញ្ហាប្រភេទ",
     topicsError: "បញ្ហាប្រធានបទ",
     validationError: "ទិន្នន័យមិនត្រឹមត្រូវ",
+    saveFailed: "មិនអាចរក្សាទុកអត្ថបទបានទេ។",
+    publishFailed: "មិនអាចបោះពុម្ពអត្ថបទបានទេ។",
+    scheduleFailed: "មិនអាចកំណត់ពេលអត្ថបទបានទេ។",
     markBreaking: "កំណត់ជាព័ត៌មានទាន់ហេតុការណ៍",
     markBreakingTitle: "កំណត់អត្ថបទនេះជាព័ត៌មានទាន់ហេតុការណ៍",
     requestBreaking: "ស្នើជាព័ត៌មានទាន់ហេតុការណ៍",
@@ -200,6 +215,7 @@ export default function NewArticlePage() {
   const [hasBodyContent, setHasBodyContent] = useState(false);
   const [saving, setSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [createdArticleId, setCreatedArticleId] = useState<string | undefined>();
 
   // Set default category when categories load
   useEffect(() => {
@@ -221,13 +237,17 @@ export default function NewArticlePage() {
   /* -------------------------
      Save
   ------------------------- */
-  async function save() {
+  async function save(scheduleOnly = false) {
     if (!title) return;
 
     // Validate category is selected and exists in database
     setValidationError(null);
     if (!categorySlug) {
       setValidationError(copy.selectCategory);
+      return;
+    }
+    if (!topic || !topics.some((item) => item.slug === normalizeTopic(topic))) {
+      setValidationError(copy.selectTopic);
       return;
     }
     if (!categoriesLoading && !isValidCategory(categorySlug)) {
@@ -240,8 +260,8 @@ export default function NewArticlePage() {
       const contentJson: OutputData =
         (await editorRef.current?.save()) ?? { blocks: [] };
 
-      const shouldSubmitForReview = status === 'REVIEW';
-      if (shouldSubmitForReview) {
+      const shouldSubmitForReview = !scheduleOnly && status === 'REVIEW';
+      if (shouldSubmitForReview || scheduleOnly) {
         const readinessIssues = getArticleReadinessIssues({
           title,
           slug: slug || slugify(title),
@@ -256,9 +276,10 @@ export default function NewArticlePage() {
         }
       }
 
-      const statusForSave = shouldSubmitForReview ? 'DRAFT' : status;
+      const statusForSave = scheduleOnly || shouldSubmitForReview ? 'DRAFT' : status;
 
       const response = await client.request(M_UPSERT_ARTICLE, {
+        id: createdArticleId,
         input: {
           title,
           slug: slug || slugify(title),
@@ -273,6 +294,7 @@ export default function NewArticlePage() {
           contentJson,
         },
       });
+      if (response?.upsertArticle?.id) setCreatedArticleId(response.upsertArticle.id);
 
       if (shouldSubmitForReview && response?.upsertArticle?.id) {
         const result = await performWorkflowAction({
@@ -303,6 +325,9 @@ export default function NewArticlePage() {
       }
 
       window.location.href = "/articles";
+    } catch (error) {
+      const fallback = scheduleOnly ? copy.scheduleFailed : copy.saveFailed;
+      setValidationError(safeArticleErrorMessage(error, fallback));
     } finally {
       setSaving(false);
     }
@@ -318,6 +343,10 @@ export default function NewArticlePage() {
     setValidationError(null);
     if (!categorySlug) {
       setValidationError(copy.selectCategory);
+      return;
+    }
+    if (!topic || !topics.some((item) => item.slug === normalizeTopic(topic))) {
+      setValidationError(copy.selectTopic);
       return;
     }
     if (!categoriesLoading && !isValidCategory(categorySlug)) {
@@ -343,6 +372,7 @@ export default function NewArticlePage() {
       }
 
       const response = await client.request(M_UPSERT_ARTICLE, {
+        id: createdArticleId,
         input: {
           title,
           slug: slug || slugify(title),
@@ -357,6 +387,7 @@ export default function NewArticlePage() {
           contentJson,
         },
       });
+      if (response?.upsertArticle?.id) setCreatedArticleId(response.upsertArticle.id);
 
       // If user requested breaking news, send the request after creating article
       if (shouldRequestBreakingNews && response?.upsertArticle?.id) {
@@ -375,6 +406,8 @@ export default function NewArticlePage() {
       }
 
       window.location.href = "/articles";
+    } catch (error) {
+      setValidationError(safeArticleErrorMessage(error, copy.publishFailed));
     } finally {
       setSaving(false);
     }
@@ -395,14 +428,19 @@ export default function NewArticlePage() {
         </div>
 
         <div className="flex gap-2">
+          {scheduledAt && hasPermission(Permission.PUBLISH_ARTICLE) && (
+            <Button onClick={() => save(true)} disabled={saving || !title}>
+              {saving ? copy.saving : copy.scheduleButton}
+            </Button>
+          )}
           {hasPermission(Permission.PUBLISH_ARTICLE) && (
-            <Button onClick={publish} disabled={saving || !title}>
+            <Button onClick={publish} disabled={saving || !title || !!scheduledAt}>
               {saving ? copy.publishing : copy.publish}
             </Button>
           )}
-          <Button onClick={save} disabled={saving || !title}>
+          {!scheduledAt && <Button onClick={() => save()} disabled={saving || !title}>
             {saving ? copy.saving : copy.save}
-          </Button>
+          </Button>}
         </div>
       </div>
 
@@ -448,13 +486,13 @@ export default function NewArticlePage() {
           />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2">
           <div className="grid gap-2">
             <label className="text-xs font-semibold text-slate-600">
               {copy.category}
             </label>
             <select
-              className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+              className="h-10 w-full min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm"
               value={categorySlug}
               onChange={(e) => {
                 setCategorySlug(e.target.value);
@@ -476,13 +514,14 @@ export default function NewArticlePage() {
 
           <div className="grid gap-2">
             <label className="text-xs font-semibold text-slate-600">
-              {copy.topicOptional}
+              {copy.topicRequired}
             </label>
             <select
-              className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+              className="h-10 w-full min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm"
               value={topic}
               onChange={(e) => setTopic(e.target.value)}
-              disabled={topicsLoading || !categorySlug}
+              disabled={topicsLoading || !categorySlug || topics.length === 0}
+              required
             >
               <option value="">{copy.noTopic}</option>
               {topics.map((topicItem) => (
@@ -496,6 +535,9 @@ export default function NewArticlePage() {
             )}
             {!categorySlug && (
               <p className="text-xs text-slate-500">{copy.selectCategoryFirst}</p>
+            )}
+            {!topicsLoading && categorySlug && topics.length === 0 && !topicsError && (
+              <p className="text-xs text-amber-700">{copy.noTopics}</p>
             )}
           </div>
         </div>
@@ -520,6 +562,11 @@ export default function NewArticlePage() {
               disabled={saving}
             />
             <p className="text-xs text-slate-500">{copy.scheduleHelp}</p>
+            {scheduledAt && !Number.isNaN(new Date(scheduledAt).getTime()) && (
+              <p className="text-xs font-medium text-blue-700">
+                {copy.scheduledFor} {new Intl.DateTimeFormat(locale === "en" ? "en" : "km", { dateStyle: "medium", timeStyle: "short" }).format(new Date(scheduledAt))} · {Intl.DateTimeFormat().resolvedOptions().timeZone}
+              </p>
+            )}
           </div>
         )}
 

@@ -9,6 +9,7 @@ import {
   Q_ARTICLE_BY_ID,
   M_UPSERT_ARTICLE,
   M_DELETE_ARTICLE,
+  M_RESTORE_ARTICLE_REVISION,
   Q_BREAKING_NEWS_REQUESTS,
 } from "@/services/article.gql";
 import { useArticleMutations } from "@/hooks/useGraphQL";
@@ -29,6 +30,7 @@ import { ArticleBreakingNewsRequestStatus } from "@/types/article";
 import { Permission } from "@/components/permissions/PermissionGuard";
 import { SeoPreviewCard } from "@/components/articles/seo-preview-card";
 import { useToastHelpers } from "@/components/ui/toast";
+import { safeArticleErrorMessage } from "@/utils/articleErrors";
 import {
   ArticleReadinessCard,
   getArticleReadinessIssues,
@@ -64,6 +66,28 @@ function normalizeTopic(value: string) {
   return slugify(value);
 }
 
+function articleText(content: any): string {
+  return (content?.blocks ?? [])
+    .map((block: any) => block?.data?.text ?? block?.data?.caption ?? block?.data?.title ?? "")
+    .filter(Boolean)
+    .join("\n\n");
+}
+
+function wordDiff(previous: string, proposed: string) {
+  const before = previous.split(/\s+/).filter(Boolean);
+  const after = proposed.split(/\s+/).filter(Boolean);
+  let prefix = 0;
+  while (prefix < before.length && prefix < after.length && before[prefix] === after[prefix]) prefix++;
+  let suffix = 0;
+  while (suffix < before.length - prefix && suffix < after.length - prefix && before[before.length - 1 - suffix] === after[after.length - 1 - suffix]) suffix++;
+  return {
+    unchangedStart: before.slice(0, prefix).join(" "),
+    removed: before.slice(prefix, before.length - suffix).join(" "),
+    added: after.slice(prefix, after.length - suffix).join(" "),
+    unchangedEnd: suffix ? before.slice(before.length - suffix).join(" ") : "",
+  };
+}
+
 function parseTagSlugs(value: string) {
   return Array.from(new Set(value.split(",").map(slugify).filter(Boolean)));
 }
@@ -77,6 +101,7 @@ function toDateTimeLocal(value?: string | null) {
 const editArticleCopy = {
   en: {
     invalidCategory: (slug: string) => `Category "${slug}" does not exist in the database. Please select a valid category.`,
+    selectTopicRequired: "Please select a subcategory before saving.",
     beforeAction: (action: string, issues: string[]) => `Before ${action}: ${issues.join(", ")}.`,
     publishing: "publishing",
     review: "submitting for review",
@@ -130,7 +155,7 @@ const editArticleCopy = {
     category: "Category",
     selectCategory: "— Select Category —",
     loadingCategories: "Loading categories...",
-    topicOptional: "Topic (optional)",
+    topicOptional: "Subcategory (required)",
     noTopic: "— No topic —",
     loadingTopics: "Loading topics...",
     selectCategoryFirst: "Select a category first",
@@ -138,6 +163,13 @@ const editArticleCopy = {
     tagsHelp: "Separate tags with commas.",
     schedulePublishing: "Schedule publishing",
     scheduleHelp: "Leave blank to keep manual publishing.",
+    scheduledLabel: "SCHEDULED",
+    cancelSchedule: "Cancel schedule",
+    scheduledFor: "Scheduled for",
+    scheduleButton: "Schedule",
+    archive: "Archive",
+    restoreDraft: "Restore to draft",
+    articleStatus: "Status",
     categoryError: "Category Error",
     topicsError: "Topics Error",
     validationError: "Validation Error",
@@ -189,6 +221,7 @@ const editArticleCopy = {
   },
   km: {
     invalidCategory: (slug: string) => `ប្រភេទ "${slug}" មិនមានក្នុងមូលដ្ឋានទិន្នន័យទេ។ សូមជ្រើសប្រភេទត្រឹមត្រូវ។`,
+    selectTopicRequired: "សូមជ្រើសប្រភេទរង មុនពេលរក្សាទុក។",
     beforeAction: (action: string, issues: string[]) => `មុន${action}: ${issues.join(", ")}។`,
     publishing: "ផ្សព្វផ្សាយ",
     review: "ផ្ញើទៅពិនិត្យ",
@@ -242,7 +275,7 @@ const editArticleCopy = {
     category: "ប្រភេទ",
     selectCategory: "— ជ្រើសប្រភេទ —",
     loadingCategories: "កំពុងផ្ទុកប្រភេទ...",
-    topicOptional: "ប្រធានបទ (ជម្រើស)",
+    topicOptional: "ប្រធានបទរង (ត្រូវការ)",
     noTopic: "— គ្មានប្រធានបទ —",
     loadingTopics: "កំពុងផ្ទុកប្រធានបទ...",
     selectCategoryFirst: "ជ្រើសប្រភេទជាមុនសិន",
@@ -250,6 +283,13 @@ const editArticleCopy = {
     tagsHelp: "បំបែកស្លាកដោយសញ្ញាក្បៀស។",
     schedulePublishing: "កំណត់ពេលផ្សព្វផ្សាយ",
     scheduleHelp: "ទុកទទេដើម្បីផ្សព្វផ្សាយដោយដៃ។",
+    scheduledLabel: "បានកំណត់ពេល",
+    cancelSchedule: "បោះបង់ពេលកំណត់",
+    scheduledFor: "បានកំណត់ពេល",
+    scheduleButton: "កំណត់ពេល",
+    archive: "ទុកក្នុងប័ណ្ណសារ",
+    restoreDraft: "ស្តារទៅជាព្រាង",
+    articleStatus: "ស្ថានភាព",
     categoryError: "បញ្ហាប្រភេទ",
     topicsError: "បញ្ហាប្រធានបទ",
     validationError: "ទិន្នន័យមិនត្រឹមត្រូវ",
@@ -324,7 +364,7 @@ export default function EditArticlePage() {
     rejectBreakingNewsRequest,
     consumeRevisionRequest
   } = useArticleMutations();
-  const { getLatestRevisionRequest } = useRevisions();
+  const { getLatestRevisionRequest, getRevisionHistory } = useRevisions();
   
   // Category validation hook
   const { categories, loading: categoriesLoading, error: categoriesError, isValidCategory } = useCategories();
@@ -342,6 +382,14 @@ export default function EditArticlePage() {
   }, [activeTenant]);
 
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [expectedUpdatedAt, setExpectedUpdatedAt] = useState<string | null>(null);
+  const [revisionHistory, setRevisionHistory] = useState<any[]>([]);
+  const [revisionHistoryError, setRevisionHistoryError] = useState<string | null>(null);
+  const [restoreRevisionId, setRestoreRevisionId] = useState<string | null>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [editorVersion, setEditorVersion] = useState(0);
   const [saving, setSaving] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
 
@@ -373,6 +421,7 @@ export default function EditArticlePage() {
   const [currentRevisionRequest, setCurrentRevisionRequest] = useState<any | undefined>();
   const [revisionNote, setRevisionNote] = useState<string>("");
   const [hasBodyContent, setHasBodyContent] = useState(false);
+  const [contentDirty, setContentDirty] = useState(false);
   const [showRevisionForm, setShowRevisionForm] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   
@@ -383,6 +432,10 @@ export default function EditArticlePage() {
   const [originalCategorySlug, setOriginalCategorySlug] = useState("");
   const [originalTopic, setOriginalTopic] = useState("");
   const [originalIsBreaking, setOriginalIsBreaking] = useState(false);
+  const [originalTags, setOriginalTags] = useState("");
+  const [originalAuthorName, setOriginalAuthorName] = useState("");
+  const [originalCoverImageUrl, setOriginalCoverImageUrl] = useState<string | null>(null);
+  const [originalScheduledAt, setOriginalScheduledAt] = useState("");
 
   /** Editor initial content (ONE TIME) */
   const [initialContent, setInitialContent] = useState<OutputData>({
@@ -404,10 +457,14 @@ export default function EditArticlePage() {
     let active = true;
 
     (async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
       const data = await client.request(Q_ARTICLE_BY_ID, { id });
       if (!active) return;
 
       const article = data.articleById;
+      setExpectedUpdatedAt(article.updatedAt);
 
       setTitle(article.title);
       setSlug(article.slug);
@@ -418,12 +475,14 @@ export default function EditArticlePage() {
       setTopic(article.topic ? normalizeTopic(article.topic) : "");
       setTags(article.tags?.map((tag: { slug: string }) => tag.slug).join(", ") ?? "");
       setScheduledAt(toDateTimeLocal(article.scheduledAt));
+      setOriginalScheduledAt(toDateTimeLocal(article.scheduledAt));
       setStatus(article.status);
       setOriginalStatus(article.status); // Track original status for permission checks
       setArticleAuthorId(article.author?.id ?? ""); // Track author for ownership checks
       setIsBreaking(article.isBreaking ?? false);
       setRevisionStatus(article.revisionStatus);
       setInitialContent(article.contentJson ?? { blocks: [] });
+      setContentDirty(false);
       
       // Load breaking news request status directly from article data
       setBreakingNewsRequestStatus(article.breakingNewsRequestStatus ?? undefined);
@@ -443,6 +502,14 @@ export default function EditArticlePage() {
       } else {
         setCurrentRevisionRequest(undefined);
       }
+      try {
+        setRevisionHistoryError(null);
+        const history = await getRevisionHistory(id);
+        if (active) setRevisionHistory(history?.articleRevisionHistory ?? []);
+      } catch (historyError) {
+        console.warn("Unable to load article revision history", historyError);
+        if (active) setRevisionHistoryError("Revision history is temporarily unavailable.");
+      }
       
       // Set original values for change detection
       setOriginalTitle(article.title);
@@ -451,23 +518,35 @@ export default function EditArticlePage() {
       setOriginalCategorySlug(article.category?.slug ?? "");
       setOriginalTopic(article.topic ? normalizeTopic(article.topic) : "");
       setOriginalIsBreaking(article.isBreaking ?? false);
+      setOriginalTags(article.tags?.map((tag: { slug: string }) => tag.slug).join(", ") ?? "");
+      setOriginalAuthorName(article.authorName ?? "");
+      setOriginalCoverImageUrl(article.coverImageUrl ?? null);
 
       setLoading(false);
+      } catch (error) {
+        if (!active) return;
+        setLoadError(safeArticleErrorMessage(error, "Unable to load article."));
+        setLoading(false);
+      }
     })();
 
     return () => {
       active = false;
     };
-  }, [client, getLatestRevisionRequest, id]);
+  }, [client, getLatestRevisionRequest, getRevisionHistory, id, loadAttempt, locale]);
 
   /* -------------------------
      Actions
   ------------------------- */
-  async function upsertArticle(nextStatus = status, redirectToList = false) {
+  async function upsertArticle(nextStatus = status, redirectToList = false, scheduleOverride?: string | null) {
     // Validate category exists in database
     setValidationError(null);
     if (!categoriesLoading && !isValidCategory(categorySlug)) {
       setValidationError(copy.invalidCategory(categorySlug));
+      return;
+    }
+    if (!topic || !topics.some((item) => item.slug === normalizeTopic(topic))) {
+      setValidationError(copy.selectTopicRequired);
       return;
     }
 
@@ -504,7 +583,10 @@ export default function EditArticlePage() {
           categorySlug,
           topic: topic ? normalizeTopic(topic) : null,
           tagSlugs: parseTagSlugs(tags),
-          scheduledAt: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+          scheduledAt: (scheduleOverride !== undefined ? scheduleOverride : scheduledAt)
+            ? new Date(scheduleOverride !== undefined ? scheduleOverride as string : scheduledAt).toISOString()
+            : null,
+          expectedUpdatedAt,
           status: statusForSave,
           isBreaking,
           contentJson,
@@ -556,7 +638,13 @@ export default function EditArticlePage() {
         setOriginalCategorySlug(categorySlug);
         setOriginalTopic(topic ?? "");
         setOriginalIsBreaking(isBreaking);
+        setOriginalTags(tags);
+        setOriginalAuthorName(authorName);
+        setOriginalCoverImageUrl(coverImageUrl);
+        setOriginalScheduledAt(scheduleOverride !== undefined ? (scheduleOverride ?? "") : scheduledAt);
         setInitialContent(contentJson);
+        setContentDirty(false);
+        setExpectedUpdatedAt(response.upsertArticle.updatedAt ?? expectedUpdatedAt);
 
         if (
           !hasPermission(Permission.UPDATE_ANY_ARTICLE) &&
@@ -578,7 +666,7 @@ export default function EditArticlePage() {
       }
     } catch (error) {
       console.error('Error saving article:', error);
-      const message = locale === "en" && error instanceof Error ? error.message : copy.saveFailed;
+      const message = safeArticleErrorMessage(error, copy.saveFailed);
       setValidationError(message);
     } finally {
       setSaving(false);
@@ -623,9 +711,11 @@ export default function EditArticlePage() {
 
       setStatus("PUBLISHED");
       setOriginalStatus("PUBLISHED");
+      const latest = await client.request(Q_ARTICLE_BY_ID, { id });
+      setExpectedUpdatedAt(latest.articleById.updatedAt);
       setValidationError(null);
     } catch (error) {
-      const message = locale === "en" && error instanceof Error ? error.message : copy.approveFailed;
+      const message = safeArticleErrorMessage(error, copy.approveFailed);
       setValidationError(message);
     } finally {
       setSaving(false);
@@ -651,15 +741,47 @@ export default function EditArticlePage() {
         throw new Error(message);
       }
 
-      setStatus("ARCHIVED");
-      setOriginalStatus("ARCHIVED");
+      setStatus("DRAFT");
+      setOriginalStatus("DRAFT");
+      const latest = await client.request(Q_ARTICLE_BY_ID, { id });
+      setExpectedUpdatedAt(latest.articleById.updatedAt);
       setValidationError(null);
     } catch (error) {
-      const message = locale === "en" && error instanceof Error ? error.message : copy.rejectFailed;
+      const message = safeArticleErrorMessage(error, copy.rejectFailed);
       setValidationError(message);
     } finally {
       setSaving(false);
     }
+  }
+
+  async function archiveArticle() {
+    setSaving(true);
+    try {
+      const result = await performWorkflowAction({ articleId: id, action: "ARCHIVE" });
+      if (!result?.performWorkflowAction?.success) throw new Error(result?.performWorkflowAction?.message || copy.saveFailed);
+      setStatus("ARCHIVED"); setOriginalStatus("ARCHIVED");
+      const latest = await client.request(Q_ARTICLE_BY_ID, { id });
+      setExpectedUpdatedAt(latest.articleById.updatedAt);
+      showSuccess(copy.archive, "Article archived.");
+    } catch (error) {
+      const message = safeArticleErrorMessage(error, copy.saveFailed);
+      setValidationError(message);
+    } finally { setSaving(false); }
+  }
+
+  async function restoreStatusToDraft() {
+    setSaving(true);
+    try {
+      const result = await performWorkflowAction({ articleId: id, action: "SAVE_DRAFT" });
+      if (!result?.performWorkflowAction?.success) throw new Error(result?.performWorkflowAction?.message || copy.saveFailed);
+      setStatus("DRAFT"); setOriginalStatus("DRAFT");
+      const latest = await client.request(Q_ARTICLE_BY_ID, { id });
+      setExpectedUpdatedAt(latest.articleById.updatedAt);
+      showSuccess(copy.restoreDraft, "Article status restored to draft.");
+    } catch (error) {
+      const message = safeArticleErrorMessage(error, copy.saveFailed);
+      setValidationError(message);
+    } finally { setSaving(false); }
   }
 
   async function remove() {
@@ -688,7 +810,40 @@ export default function EditArticlePage() {
     } else {
       setCurrentRevisionRequest(undefined);
     }
+    const history = await getRevisionHistory(id);
+    setRevisionHistory(history?.articleRevisionHistory ?? []);
+    setRevisionHistoryError(null);
   };
+
+  async function restoreRevision() {
+    if (!restoreRevisionId) return;
+    try {
+    await client.request(M_RESTORE_ARTICLE_REVISION, { articleId: id, revisionId: restoreRevisionId });
+    const data = await client.request(Q_ARTICLE_BY_ID, { id });
+    const article = data.articleById;
+    setTitle(article.title); setSlug(article.slug); setExcerpt(article.excerpt ?? "");
+    setCategorySlug(article.category?.slug ?? ""); setTopic(article.topic ?? "");
+    setCoverImageUrl(article.coverImageUrl ?? null); setAuthorName(article.authorName ?? "");
+    setTags(article.tags?.map((tag: { slug: string }) => tag.slug).join(", ") ?? "");
+    setIsBreaking(article.isBreaking ?? false); setScheduledAt(toDateTimeLocal(article.scheduledAt));
+    setInitialContent(article.contentJson ?? { blocks: [] });
+    setOriginalTitle(article.title); setOriginalSlug(article.slug); setOriginalExcerpt(article.excerpt ?? "");
+    setOriginalCategorySlug(article.category?.slug ?? ""); setOriginalTopic(article.topic ?? "");
+    setOriginalIsBreaking(article.isBreaking ?? false);
+    setOriginalTags(article.tags?.map((tag: { slug: string }) => tag.slug).join(", ") ?? "");
+    setOriginalAuthorName(article.authorName ?? "");
+    setOriginalCoverImageUrl(article.coverImageUrl ?? null);
+    setOriginalScheduledAt(toDateTimeLocal(article.scheduledAt));
+    setHasBodyContent(hasMeaningfulArticleContent(article.contentJson)); setContentDirty(false);
+    setEditorVersion((version) => version + 1);
+    setExpectedUpdatedAt(article.updatedAt);
+    setRestoreRevisionId(null);
+    await refreshRevisionState();
+    showSuccess("Revision restored", "The restored content has been saved as a new revision.");
+    } catch (error) {
+      throw new Error(safeArticleErrorMessage(error, "Unable to restore this article revision."));
+    }
+  }
 
   async function submitRevisionRequest() {
     setValidationError(null);
@@ -717,7 +872,7 @@ export default function EditArticlePage() {
       if (isBreaking !== originalIsBreaking) proposedChanges.isBreaking = isBreaking;
       
       // Always include contentJson if editor has content
-      if (contentJson.blocks?.length > 0) {
+      if (JSON.stringify(contentJson.blocks ?? []) !== JSON.stringify(initialContent.blocks ?? [])) {
         proposedChanges.contentJson = contentJson;
       }
       
@@ -728,6 +883,7 @@ export default function EditArticlePage() {
       }
 
       // Call the new requestRevision mutation with proper input structure
+      if (slug !== originalSlug) proposedChanges.slug = slug;
       await requestRevision({
         articleId: id,
         note: revisionNote.trim(),
@@ -739,6 +895,10 @@ export default function EditArticlePage() {
       showSuccess(copy.revisionRequested, copy.revisionRequestedDescription);
       
       await refreshRevisionState();
+    } catch (error) {
+      const message = safeArticleErrorMessage(error, "Unable to submit revision request.");
+      setValidationError(message);
+      showError("Unable to submit revision request.", message);
     } finally {
       setSaving(false);
     }
@@ -822,6 +982,46 @@ export default function EditArticlePage() {
     }
   }
 
+  const hasUnsavedChanges = contentDirty || title !== originalTitle || slug !== originalSlug ||
+    excerpt !== originalExcerpt || categorySlug !== originalCategorySlug || topic !== originalTopic ||
+      isBreaking !== originalIsBreaking || tags !== originalTags || authorName !== originalAuthorName ||
+      coverImageUrl !== originalCoverImageUrl || scheduledAt !== originalScheduledAt;
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const warnBeforeLeave = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warnBeforeLeave);
+    return () => window.removeEventListener("beforeunload", warnBeforeLeave);
+  }, [hasUnsavedChanges]);
+  useEffect(() => {
+    if (!hasUnsavedChanges) return;
+    const interceptInternalNavigation = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      const anchor = target?.closest("a[href]") as HTMLAnchorElement | null;
+      if (!anchor || anchor.target === "_blank" || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const url = new URL(anchor.href, window.location.href);
+      if (url.origin !== window.location.origin || url.href === window.location.href) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setPendingNavigation(url.href);
+    };
+    document.addEventListener("click", interceptInternalNavigation, true);
+    return () => document.removeEventListener("click", interceptInternalNavigation, true);
+  }, [hasUnsavedChanges]);
+
+  if (loadError) {
+    return <main className="mx-auto max-w-2xl space-y-4 py-10">
+      <h2 className="text-lg font-semibold">Unable to load article.</h2>
+      <p className="text-sm text-slate-600">{loadError}</p>
+      <div className="flex gap-3">
+        <Button variant="outline" onClick={() => { setLoading(true); setLoadAttempt((attempt) => attempt + 1); }}>Try again</Button>
+        <Button variant="outline" onClick={() => router.push('/articles')}>{copy.backToArticles}</Button>
+      </div>
+    </main>;
+  }
+
   if (loading) {
     return <div className="text-sm text-slate-600">{copy.loading}</div>;
   }
@@ -892,6 +1092,14 @@ export default function EditArticlePage() {
         <div>
           <h2 className="text-lg font-semibold">{copy.editArticle}</h2>
           <p className="text-sm text-slate-600">ID: {id}</p>
+          <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+            {copy.articleStatus}: {status === "DRAFT" && scheduledAt && new Date(scheduledAt).getTime() > Date.now() ? copy.scheduledLabel : status}
+          </p>
+          {status === "DRAFT" && scheduledAt && new Date(scheduledAt).getTime() > Date.now() && (
+            <p className="mt-1 text-xs font-medium text-blue-700">
+              {copy.scheduledLabel} · {copy.scheduledFor} {new Intl.DateTimeFormat(locale === "en" ? "en" : "km", { dateStyle: "medium", timeStyle: "short" }).format(new Date(scheduledAt))} · {Intl.DateTimeFormat().resolvedOptions().timeZone}
+            </p>
+          )}
         </div>
 
         <div className="flex gap-2">
@@ -899,6 +1107,12 @@ export default function EditArticlePage() {
             <Button variant="outline" onClick={togglePublish} disabled={saving}>
               {copy.unpublish}
             </Button>
+          )}
+          {status === "PUBLISHED" && hasPermission(Permission.UNPUBLISH_ARTICLE) && (
+            <Button variant="outline" onClick={archiveArticle} disabled={saving}>{copy.archive}</Button>
+          )}
+          {status === "ARCHIVED" && hasPermission(Permission.UPDATE_ANY_ARTICLE) && (
+            <Button variant="outline" onClick={restoreStatusToDraft} disabled={saving}>{copy.restoreDraft}</Button>
           )}
           {status === "REVIEW" && (
             <>
@@ -920,7 +1134,7 @@ export default function EditArticlePage() {
             </Button>
           )}
           <Button onClick={save} disabled={saving || !title || isReadOnly}>
-            {copy.save}
+            {scheduledAt ? copy.scheduleButton : copy.save}
           </Button>
           {canDelete && (
             <Button variant="ghost" onClick={() => setDeleteDialogOpen(true)} disabled={saving}>
@@ -967,13 +1181,13 @@ export default function EditArticlePage() {
           <Input value={excerpt} disabled={isReadOnly} onChange={(e) => setExcerpt(e.target.value)} />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid items-start gap-x-4 gap-y-3 sm:grid-cols-2">
           <div className="grid gap-2">
             <label className="text-xs font-semibold text-slate-600">
               {copy.category}
             </label>
             <select
-              className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+              className="h-10 w-full min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm"
               value={categorySlug}
               disabled={isReadOnly || categoriesLoading}
               onChange={(e) => {
@@ -998,7 +1212,7 @@ export default function EditArticlePage() {
               {copy.topicOptional}
             </label>
             <select
-              className="h-10 rounded-md border border-slate-200 bg-white px-3 text-sm"
+              className="h-10 w-full min-w-0 rounded-md border border-slate-200 bg-white px-3 text-sm"
               value={topic}
               disabled={isReadOnly || topicsLoading || !categorySlug}
               onChange={(e) => setTopic(e.target.value)}
@@ -1039,7 +1253,12 @@ export default function EditArticlePage() {
               disabled={isReadOnly || saving}
               onChange={(e) => setScheduledAt(e.target.value)}
             />
-            <p className="text-xs text-slate-500">{copy.scheduleHelp}</p>
+            <p className="text-xs text-slate-500">{copy.scheduleHelp} Time zone: {Intl.DateTimeFormat().resolvedOptions().timeZone}</p>
+            {status === "DRAFT" && scheduledAt && hasPermission(Permission.PUBLISH_ARTICLE) && (
+              <Button type="button" variant="outline" size="sm" disabled={saving} onClick={() => { setScheduledAt(""); void upsertArticle("DRAFT", false, null); }}>
+                {copy.cancelSchedule}
+              </Button>
+            )}
           </div>
         )}
 
@@ -1226,7 +1445,7 @@ export default function EditArticlePage() {
         )}
 
         {/* Revision Request Status (for Editors/Admins) */}
-        {currentRevisionRequest?.status === 'PENDING' && hasPermission(Permission.APPROVE_ARTICLES) && (
+      {currentRevisionRequest?.status === 'PENDING' && hasPermission(Permission.APPROVE_ARTICLES) && (
           <div className="rounded-md border border-purple-200 bg-purple-50 p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
@@ -1241,6 +1460,43 @@ export default function EditArticlePage() {
                   <p className="text-xs text-purple-700">
                     <strong>{copy.requestNote}:</strong> {currentRevisionRequest.note}
                   </p>
+                )}
+                {currentRevisionRequest?.proposedChanges && (
+                  <details className="mt-3 rounded-lg bg-slate-50 p-3 text-sm">
+                    <summary className="cursor-pointer font-medium">Review requested changes</summary>
+                    {(() => {
+                      const proposed = currentRevisionRequest.proposedChanges;
+                      const previous: Record<string, unknown> = {
+                        title: originalTitle, slug: originalSlug, excerpt: originalExcerpt,
+                        categorySlug: originalCategorySlug, topic: originalTopic,
+                        isBreaking: originalIsBreaking, tagSlugs: parseTagSlugs(originalTags),
+                      };
+                      return <div className="mt-3 space-y-3">
+                        {Object.entries(proposed).filter(([key]) => key !== "contentJson").map(([key, next]) => (
+                          <div key={key} className="grid gap-1 border-t pt-2 sm:grid-cols-[150px_1fr]">
+                            <strong className="capitalize">{key.replace(/[A-Z]/g, (letter) => ` ${letter.toLowerCase()}`)}</strong>
+                            <div className="grid gap-1 sm:grid-cols-2">
+                              <div><div className="text-xs uppercase text-slate-500">Previous</div><div className="break-words">{String(previous[key] ?? "(not set)")}</div></div>
+                              <div><div className="text-xs uppercase text-slate-500">Proposed</div><div className="break-words font-medium">{Array.isArray(next) ? next.join(", ") : String(next ?? "(not set)")}</div></div>
+                            </div>
+                          </div>
+                        ))}
+                        {proposed.contentJson && (() => {
+                          const diff = wordDiff(articleText(initialContent), articleText(proposed.contentJson));
+                          return <details className="border-t pt-2">
+                            <summary className="cursor-pointer font-medium">View content changes</summary>
+                            <p className="mt-2 whitespace-pre-wrap leading-relaxed">
+                              {diff.unchangedStart}{diff.unchangedStart ? " " : ""}
+                              {diff.removed && <del className="rounded bg-red-100 px-1 text-red-800">{diff.removed}</del>}
+                              {diff.added && <ins className="rounded bg-green-100 px-1 text-green-800 no-underline">{diff.added}</ins>}
+                              {diff.unchangedEnd && ` ${diff.unchangedEnd}`}
+                              {!diff.removed && !diff.added && "No text difference detected; non-text blocks may have changed."}
+                            </p>
+                          </details>;
+                        })()}
+                      </div>;
+                    })()}
+                  </details>
                 )}
               </div>
               <div className="flex gap-2">
@@ -1366,11 +1622,31 @@ export default function EditArticlePage() {
       </div>
 
       {/* ---------- Editor ---------- */}
+      {revisionHistory.length > 0 && (
+        <section className="space-y-3 rounded-xl border p-4">
+          <h3 className="font-semibold">Revision history</h3>
+          {revisionHistoryError && <p className="text-sm text-amber-700">{revisionHistoryError}</p>}
+          {revisionHistory.map((revision) => (
+            <div key={revision.id} className="border-t py-3 text-sm">
+              <div className="flex items-center justify-between gap-4">
+                <div><div className="font-medium">{revision.summary || "Content revision"}</div><div className="text-slate-500">{new Date(revision.appliedAt).toLocaleString()} · {revision.appliedBy?.name}</div></div>
+                {revision.snapshot && canEdit && <Button size="sm" variant="outline" onClick={() => setRestoreRevisionId(revision.id)}>Restore content</Button>}
+                {!revision.snapshot && <span className="text-xs text-slate-500">Snapshot unavailable for this older revision</span>}
+              </div>
+              <details className="mt-2">
+                <summary className="w-fit cursor-pointer text-xs font-medium text-blue-700">View changes</summary>
+                <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded bg-slate-50 p-2 text-xs">{JSON.stringify(revision.changes, null, 2)}</pre>
+              </details>
+            </div>
+          ))}
+        </section>
+      )}
       <NewsEditor
+        key={editorVersion}
         ref={editorRef}
         initialData={initialContent}
         onChange={(content) =>
-          setHasBodyContent(hasMeaningfulArticleContent(content))
+          (setHasBodyContent(hasMeaningfulArticleContent(content)), setContentDirty(JSON.stringify(content) !== JSON.stringify(initialContent)))
         }
       />
 
@@ -1403,6 +1679,24 @@ export default function EditArticlePage() {
         confirmText={copy.deleteConfirm}
         variant="destructive"
         onConfirm={() => void remove()}
+      />
+      <ConfirmationDialog
+        open={!!restoreRevisionId}
+        onOpenChange={(open) => { if (!open) setRestoreRevisionId(null); }}
+        title="Restore article content?"
+        description="This replaces the current content with the selected snapshot and records a new revision. Article status and publication history stay unchanged."
+        confirmText="Restore content"
+        onConfirm={restoreRevision}
+      />
+      <ConfirmationDialog
+        open={!!pendingNavigation}
+        onOpenChange={(open) => { if (!open) setPendingNavigation(null); }}
+        title="Unsaved changes"
+        description="You have unsaved changes in this article."
+        confirmText="Leave without saving"
+        cancelText="Stay"
+        variant="destructive"
+        onConfirm={() => { if (pendingNavigation) window.location.assign(pendingNavigation); }}
       />
     </main>
   );
