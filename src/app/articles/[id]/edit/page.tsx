@@ -144,7 +144,6 @@ const editArticleCopy = {
     unpublish: "Unpublish",
     approvePublish: "Approve & Publish",
     reject: "Reject",
-    publish: "Publish",
     save: "Save",
     delete: "Delete",
     title: "Title",
@@ -264,7 +263,6 @@ const editArticleCopy = {
     unpublish: "ដកពីការផ្សព្វផ្សាយ",
     approvePublish: "អនុម័ត និងផ្សព្វផ្សាយ",
     reject: "បដិសេធ",
-    publish: "ផ្សព្វផ្សាយ",
     save: "រក្សាទុក",
     delete: "លុប",
     title: "ចំណងជើង",
@@ -680,14 +678,6 @@ export default function EditArticlePage() {
   async function togglePublish() {
     const nextStatus = status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
     await upsertArticle(nextStatus, false);
-  }
-
-  async function publish() {
-    if (status === "REVIEW") {
-      await approveFromReview();
-      return;
-    }
-    await upsertArticle("PUBLISHED", false);
   }
 
   async function approveFromReview() {
@@ -1127,11 +1117,6 @@ export default function EditArticlePage() {
                 </Button>
               )}
             </>
-          )}
-          {status !== "PUBLISHED" && status !== "REVIEW" && hasPermission(Permission.PUBLISH_ARTICLE) && (
-            <Button variant="outline" onClick={publish} disabled={saving}>
-              {copy.publish}
-            </Button>
           )}
           <Button onClick={save} disabled={saving || !title || isReadOnly}>
             {scheduledAt ? copy.scheduleButton : copy.save}

@@ -33,7 +33,6 @@ const reviewCopy = {
     revisionEnd: 'Revision End',
     revisionStatus: (status: string) => `Revision ${status}`,
     failedLoadTitle: 'Failed to load articles',
-    refreshTryAgain: 'Please refresh the page to try again',
     failedApproveTitle: 'Failed to approve article',
     tryAgain: 'Please try again',
     failedRejectTitle: 'Failed to reject article',
@@ -41,7 +40,7 @@ const reviewCopy = {
     title: 'Review Queue',
     description: 'Articles awaiting editorial review and approval',
     pendingCount: (count: number) => `${count} article${count !== 1 ? 's' : ''} pending review`,
-    loadError: 'Failed to load articles. Please refresh the page.',
+    loadError: 'Failed to load articles. Please try again.',
     emptyTitle: 'No articles in review',
     emptyDescription: 'All articles have been reviewed. New submissions will appear here.',
     breakingNews: 'Breaking News',
@@ -66,7 +65,6 @@ const reviewCopy = {
     revisionEnd: 'ការកែសម្រួលបានបញ្ចប់',
     revisionStatus: (status: string) => `ការកែសម្រួល ${status}`,
     failedLoadTitle: 'ផ្ទុកអត្ថបទមិនបានសម្រេច',
-    refreshTryAgain: 'សូមធ្វើឱ្យទំព័រថ្មី ហើយព្យាយាមម្តងទៀត',
     failedApproveTitle: 'អនុម័តអត្ថបទមិនបានសម្រេច',
     tryAgain: 'សូមព្យាយាមម្តងទៀត',
     failedRejectTitle: 'បដិសេធអត្ថបទមិនបានសម្រេច',
@@ -74,7 +72,7 @@ const reviewCopy = {
     title: 'ជួរត្រួតពិនិត្យ',
     description: 'អត្ថបទដែលកំពុងរង់ចាំការត្រួតពិនិត្យ និងអនុម័តដោយអ្នកកែសម្រួល',
     pendingCount: (count: number) => `${count} អត្ថបទកំពុងរង់ចាំការត្រួតពិនិត្យ`,
-    loadError: 'ផ្ទុកអត្ថបទមិនបានសម្រេច។ សូមធ្វើឱ្យទំព័រថ្មី។',
+    loadError: 'ផ្ទុកអត្ថបទមិនបានសម្រេច។ សូមព្យាយាមម្តងទៀត។',
     emptyTitle: 'មិនមានអត្ថបទសម្រាប់ត្រួតពិនិត្យ',
     emptyDescription: 'អត្ថបទទាំងអស់ត្រូវបានត្រួតពិនិត្យរួចហើយ។ អត្ថបទថ្មីនឹងបង្ហាញនៅទីនេះ។',
     breakingNews: 'ព័ត៌មានទាន់ហេតុការណ៍',
@@ -199,9 +197,9 @@ export default function ReviewQueuePage() {
       }
     } catch (error) {
       console.error('Failed to load review articles:', error);
-      showError(copy.failedLoadTitle, copy.refreshTryAgain);
+      showError(copy.failedLoadTitle, copy.tryAgain);
     }
-  }, [copy.failedLoadTitle, copy.refreshTryAgain, getArticles, loadRevisionStatuses, showError]);
+  }, [copy.failedLoadTitle, copy.tryAgain, getArticles, loadRevisionStatuses, showError]);
 
   useEffect(() => {
     void loadReviewArticles();

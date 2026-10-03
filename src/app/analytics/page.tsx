@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { BarChart3, Loader2, RefreshCw } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/layout/page-skeleton";
 import { useInitialPageReady } from "@/lib/use-initial-page-ready";
@@ -37,7 +37,6 @@ const analyticsCopy = {
     selectTenant: "Select tenant",
     mainTenantOption: "Main Tenant",
     tenantView: "Sub-tenant View",
-    refresh: "Refresh",
     dateRange: "Date range",
     last7Days: "Last 7 days",
     last30Days: "Last 30 days",
@@ -65,7 +64,6 @@ const analyticsCopy = {
     selectTenant: "ជ្រើសអ្នកជួល",
     mainTenantOption: "អ្នកជួលមេ",
     tenantView: "ទិដ្ឋភាពគេហទំព័រ",
-    refresh: "ធ្វើបច្ចុប្បន្នភាព",
     dateRange: "រយៈពេល",
     last7Days: "7 ថ្ងៃចុងក្រោយ",
     last30Days: "30 ថ្ងៃចុងក្រោយ",
@@ -104,7 +102,6 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const pageReady = useInitialPageReady(loading);
   const [loadingTenants, setLoadingTenants] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadAnalytics = useCallback(async (tenantId?: string) => {
@@ -120,7 +117,6 @@ export default function AnalyticsPage() {
       setAnalytics(null);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
   }, [copy.loadAnalyticsFailed, locale]);
 
@@ -185,14 +181,6 @@ export default function AnalyticsPage() {
       mounted = false;
     };
   }, [copy.loadTenantsFailed, isSuperAdmin, loadAnalytics, loadTenantTimeAnalytics, locale]);
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await Promise.all([
-      loadAnalytics(selectedAnalyticsTenantId || undefined),
-      !isSuperAdmin ? loadTenantTimeAnalytics(dateRange, groupBy) : Promise.resolve(),
-    ]);
-  };
 
   const handleTenantChange = async (tenantId: string) => {
     setSelectedAnalyticsTenantId(tenantId);
@@ -295,12 +283,6 @@ export default function AnalyticsPage() {
 
                 {isSuperAdmin && selectedTenant && (
                   <Badge variant="outline" className="max-w-full truncate bg-white">/{selectedTenant.slug}</Badge>
-                )}
-                {isSuperAdmin && (
-                  <Button type="button" variant="outline" onClick={handleRefresh} disabled={loading || refreshing}>
-                    {refreshing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                    {copy.refresh}
-                  </Button>
                 )}
               </div>
 

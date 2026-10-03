@@ -26,7 +26,7 @@ export default function NotFound() {
       dashboardLink: "Dashboard",
       articles: "Articles",
       search: "Search",
-      help: "If you believe this is an error, please contact the administrator or try refreshing the page.",
+      help: "If you believe this is an error, please contact the administrator.",
     },
     km: {
       title: "រកមិនឃើញទំព័រ",
@@ -37,7 +37,7 @@ export default function NotFound() {
       dashboardLink: "ផ្ទាំងគ្រប់គ្រង",
       articles: "អត្ថបទ",
       search: "ស្វែងរក",
-      help: "ប្រសិនបើអ្នកគិតថានេះជាបញ្ហា សូមទាក់ទងអ្នកគ្រប់គ្រង ឬព្យាយាមធ្វើឱ្យទំព័រថ្មី។",
+      help: "ប្រសិនបើអ្នកគិតថានេះជាបញ្ហា សូមទាក់ទងអ្នកគ្រប់គ្រង។",
     },
   }[locale];
 

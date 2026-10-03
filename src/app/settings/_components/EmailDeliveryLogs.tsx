@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, RefreshCw, RotateCcw } from "lucide-react";
+import { Loader2, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
@@ -21,7 +21,6 @@ const copy = {
     retryFailed: "Unable to retry this email.",
     retry: "Retry",
     retrying: "Retrying...",
-    refresh: "Refresh",
     attempts: (count: number) => `${count} attempt${count === 1 ? "" : "s"}`,
     statuses: {
       SENT: "Sent",
@@ -37,7 +36,6 @@ const copy = {
     retryFailed: "Unable to retry this email.",
     retry: "Retry",
     retrying: "Retrying...",
-    refresh: "Refresh",
     attempts: (count: number) => `${count} attempt${count === 1 ? "" : "s"}`,
     statuses: {
       SENT: "Sent",
@@ -98,10 +96,6 @@ export function EmailDeliveryLogs({ canRetry }: { canRetry: boolean }) {
           <h4 className="font-semibold text-slate-950">{labels.title}</h4>
           <p className="mt-1 text-sm text-slate-600">{labels.description}</p>
         </div>
-        <Button type="button" variant="outline" onClick={() => void loadLogs()} disabled={loading}>
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-          {labels.refresh}
-        </Button>
       </div>
       {message ? <p className="mb-3 text-sm text-red-600">{message}</p> : null}
       {loading ? (

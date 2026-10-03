@@ -10,7 +10,6 @@ import {
   Clock,
   Eye,
   FileText,
-  RefreshCw,
   Search,
   Star,
   Users,
@@ -51,7 +50,6 @@ const editorDashboardCopy = {
     workspace: 'Editorial Workspace',
     dashboard: 'Dashboard',
     description: 'Review submissions, publish approved content, and monitor editorial flow.',
-    refresh: 'Refresh',
     reviewQueue: 'Review Queue',
     loadError: 'Error loading dashboard data:',
     pending: 'Pending',
@@ -108,7 +106,6 @@ const editorDashboardCopy = {
     workspace: 'កន្លែងការងារអ្នកកែសម្រួល',
     dashboard: 'ផ្ទាំងគ្រប់គ្រង',
     description: 'ត្រួតពិនិត្យការដាក់ស្នើ ផ្សព្វផ្សាយមាតិកាដែលបានអនុម័ត និងតាមដានលំហូរកែសម្រួល។',
-    refresh: 'ធ្វើបច្ចុប្បន្នភាព',
     reviewQueue: 'ជួរត្រួតពិនិត្យ',
     loadError: 'មានបញ្ហាផ្ទុកទិន្នន័យផ្ទាំងគ្រប់គ្រង៖',
     pending: 'កំពុងរង់ចាំ',
@@ -225,7 +222,6 @@ export const EditorDashboard: React.FC = () => {
   const [recentActions, setRecentActions] = useState<ActivityItem[]>([]);
   const [authorPerformance, setAuthorPerformance] = useState<any[]>([]);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [confirmation, setConfirmation] = useState<{
     open: boolean;
@@ -288,12 +284,6 @@ export const EditorDashboard: React.FC = () => {
     void loadDashboardData();
   }, [loadDashboardData]);
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadDashboardData();
-    setRefreshing(false);
-  };
-
   const runArticleAction = async (action: 'approve' | 'reject' | 'feature', articleId: string) => {
     if (action === 'approve') await approveArticle(articleId);
     if (action === 'reject') await rejectArticle(articleId);
@@ -352,10 +342,6 @@ export const EditorDashboard: React.FC = () => {
               <p className="mt-1 text-slate-600 dark:text-slate-400">{copy.description}</p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
-                <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                {copy.refresh}
-              </Button>
               {canReview ? (
                 <Button asChild>
                   <Link href="/review">

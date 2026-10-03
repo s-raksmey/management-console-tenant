@@ -13,7 +13,6 @@ import {
   Clock,
   BarChart3,
   Settings,
-  RefreshCw,
   Database,
   Globe,
   Zap,
@@ -139,7 +138,6 @@ const adminDashboardCopy = {
     byUser: (name: string) => `by ${name}`,
     dashboardTitle: (tenantName: string) => `${tenantName} Dashboard`,
     adminDescription: 'Manage content, users, settings, and public website configuration',
-    refresh: 'Refresh',
     settings: 'Settings',
     loadError: 'Error loading dashboard data:',
     responseTime: 'Response Time',
@@ -232,7 +230,6 @@ const adminDashboardCopy = {
     byUser: (name: string) => `ដោយ ${name}`,
     dashboardTitle: (tenantName: string) => `ផ្ទាំងគ្រប់គ្រង ${tenantName}`,
     adminDescription: 'គ្រប់គ្រងមាតិកា អ្នកប្រើ ការកំណត់ និងការរៀបចំគេហទំព័រសាធារណៈ',
-    refresh: 'ធ្វើបច្ចុប្បន្នភាព',
     settings: 'ការកំណត់',
     loadError: 'មានបញ្ហាផ្ទុកទិន្នន័យផ្ទាំងគ្រប់គ្រង៖',
     responseTime: 'ពេលឆ្លើយតប',
@@ -339,7 +336,6 @@ export const AdminDashboard: React.FC = () => {
   const [systemActivity, setSystemActivity] = useState<ActivityItem[]>([]);
   const [systemHealth, setSystemHealth] = useState<SystemHealth | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const tenantName = getTenantDisplayName(activeTenant, copy.tenant);
 
   const loadDashboardData = useCallback(async () => {
@@ -506,12 +502,6 @@ export const AdminDashboard: React.FC = () => {
     void loadDashboardData();
   }, [loadDashboardData]);
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadDashboardData();
-    setRefreshing(false);
-  };
-
   const loading = useStableLoading(initialLoading || userLoading || articlesLoading || editorialLoading || permissionsLoading);
   const error = userError || articlesError;
 
@@ -544,16 +534,6 @@ export const AdminDashboard: React.FC = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <Button 
-              onClick={handleRefresh} 
-              disabled={refreshing}
-              variant="outline"
-              size="sm"
-              className="border-gray-300 hover:border-gray-400"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              {copy.refresh}
-            </Button>
             {hasPermission(Permission.VIEW_SETTINGS) && (
               <Link href="/settings">
                 <Button size="sm" className="bg-red-600 hover:bg-red-700">
@@ -980,10 +960,6 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-gray-600 text-sm">{copy.editorDescription}</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button onClick={handleRefresh} disabled={refreshing} variant="outline" size="sm">
-              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              {copy.refresh}
-            </Button>
             {hasPermission(Permission.REVIEW_ARTICLES) && (
               <Link href="/review">
                 <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
@@ -1142,10 +1118,6 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-gray-600 text-sm">{copy.authorDescription}</p>
           </div>
           <div className="flex items-center gap-3">
-            <Button onClick={handleRefresh} disabled={refreshing} variant="outline" size="sm">
-              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-              {copy.refresh}
-            </Button>
             {hasPermission(Permission.CREATE_ARTICLE) && (
               <Link href="/articles/new">
                 <Button size="sm" className="bg-green-600 hover:bg-green-700">

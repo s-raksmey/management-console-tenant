@@ -12,7 +12,7 @@ import {
   Settings,
   Image as ImageIcon,
   Folder,
-  RefreshCw,
+  Loader2,
   Clock,
   MapPin,
   Monitor
@@ -40,7 +40,6 @@ const auditCopy = {
   en: {
     title: 'Audit Logs',
     description: 'Track all system activities and user actions',
-    refresh: 'Refresh',
     exporting: 'Exporting...',
     exportCsv: 'Export CSV',
     loadFailedTitle: 'Audit Logs Failed',
@@ -136,7 +135,6 @@ const auditCopy = {
   km: {
     title: 'កំណត់ហេតុសវនកម្ម',
     description: 'តាមដានសកម្មភាពប្រព័ន្ធ និងសកម្មភាពអ្នកប្រើទាំងអស់',
-    refresh: 'ធ្វើបច្ចុប្បន្នភាព',
     exporting: 'កំពុងនាំចេញ...',
     exportCsv: 'នាំចេញ CSV',
     loadFailedTitle: 'ផ្ទុកកំណត់ហេតុសវនកម្មមិនបាន',
@@ -386,15 +384,6 @@ export default function AuditLogsPage() {
           </div>
           <div className="flex items-center gap-3">
             <Button
-              variant="outline"
-              className="shadow-none"
-              onClick={fetchAuditLogs}
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              {copy.refresh}
-            </Button>
-            <Button
               className="shadow-none"
               onClick={handleExport}
               disabled={isExporting || logs.length === 0}
@@ -553,7 +542,7 @@ export default function AuditLogsPage() {
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center">
                       <div className="flex items-center justify-center gap-2 text-slate-500">
-                        <RefreshCw className="h-5 w-5 animate-spin" />
+                        <Loader2 className="h-5 w-5 animate-spin" />
                         <span>{copy.loading}</span>
                       </div>
                     </td>

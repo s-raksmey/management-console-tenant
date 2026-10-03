@@ -11,7 +11,6 @@ import {
   Eye,
   FileText,
   Plus,
-  RefreshCw,
 } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +41,6 @@ const authorDashboardCopy = {
     workspace: 'Author Workspace',
     dashboard: 'Dashboard',
     description: 'Track your drafts, submissions, and published articles.',
-    refresh: 'Refresh',
     newArticle: 'New Article',
     loadError: 'Error loading dashboard data:',
     articles: 'Articles',
@@ -88,7 +86,6 @@ const authorDashboardCopy = {
     workspace: 'កន្លែងការងារអ្នកនិពន្ធ',
     dashboard: 'ផ្ទាំងគ្រប់គ្រង',
     description: 'តាមដានព្រាង ការដាក់ស្នើ និងអត្ថបទដែលបានផ្សព្វផ្សាយ។',
-    refresh: 'ធ្វើបច្ចុប្បន្នភាព',
     newArticle: 'អត្ថបទថ្មី',
     loadError: 'មានបញ្ហាផ្ទុកទិន្នន័យផ្ទាំងគ្រប់គ្រង៖',
     articles: 'អត្ថបទ',
@@ -182,7 +179,6 @@ export const AuthorDashboard: React.FC = () => {
   const [articles, setArticles] = useState<any[]>([]);
   const [insights, setInsights] = useState<any>(null);
   const [initialLoading, setInitialLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const loading = useStableLoading(initialLoading || requestLoading);
 
   const loadDashboardData = useCallback(async () => {
@@ -207,12 +203,6 @@ export const AuthorDashboard: React.FC = () => {
     void loadDashboardData();
   }, [loadDashboardData]);
 
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    await loadDashboardData();
-    setRefreshing(false);
-  };
-
   const monthlyProgress = stats?.monthlyProgress ?? 0;
   const monthlyGoal = stats?.monthlyGoal ?? 0;
   const goalPercent = monthlyGoal > 0 ? Math.min((monthlyProgress / monthlyGoal) * 100, 100) : 0;
@@ -228,10 +218,6 @@ export const AuthorDashboard: React.FC = () => {
               <p className="mt-1 text-slate-600 dark:text-slate-400">{copy.description}</p>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
-                <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                {copy.refresh}
-              </Button>
               {hasPermission(Permission.CREATE_ARTICLE) && (
                 <Button asChild>
                   <Link href="/articles/new">

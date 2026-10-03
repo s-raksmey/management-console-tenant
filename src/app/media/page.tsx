@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Upload, FolderPlus, Grid, List, RefreshCw } from 'lucide-react';
+import { Upload, FolderPlus, Grid, List, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageSkeleton } from '@/components/layout/page-skeleton';
 import { useInitialPageReady } from '@/lib/use-initial-page-ready';
@@ -50,7 +50,6 @@ const mediaPageCopy = {
     pageTitle: 'Media Library',
     viewOnlyBanner: 'Your role can view media but cannot upload, edit, or delete files.',
     pageDescription: (count: number, size: string) => `Manage your files and images. ${count} files (${size})`,
-    refresh: 'Refresh',
     typeCount: (type: string) => `${type}s`,
     library: 'Library',
     upload: 'Upload',
@@ -93,7 +92,6 @@ const mediaPageCopy = {
     pageTitle: 'បណ្ណាល័យមេឌៀ',
     viewOnlyBanner: 'តួនាទីរបស់អ្នកអាចមើលមេឌៀ ប៉ុន្តែមិនអាចផ្ទុកឡើង កែ ឬលុបឯកសារបានទេ។',
     pageDescription: (count: number, size: string) => `គ្រប់គ្រងឯកសារ និងរូបភាព។ ${count} ឯកសារ (${size})`,
-    refresh: 'ផ្ទុកឡើងវិញ',
     typeCount: (type: string) => `${type}`,
     library: 'បណ្ណាល័យ',
     upload: 'ផ្ទុកឡើង',
@@ -443,16 +441,6 @@ export default function MediaPage() {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadFiles}
-            disabled={loading}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            {copy.refresh}
-          </Button>
-          
           <div className="flex items-center rounded-lg border border-slate-200">
             <Button
               variant={viewMode === 'grid' ? 'default' : 'ghost'}
@@ -550,7 +538,7 @@ export default function MediaPage() {
           {/* Files Grid */}
           {loading ? (
             <div className="text-center py-12">
-              <RefreshCw className="w-8 h-8 text-slate-400 mx-auto mb-4 animate-spin" />
+              <Loader2 className="w-8 h-8 text-slate-400 mx-auto mb-4 animate-spin" />
               <p className="text-slate-500">{copy.loadingFiles}</p>
             </div>
           ) : (

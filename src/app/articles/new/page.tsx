@@ -72,9 +72,7 @@ const articleCopy = {
     breakingServerRejected: "The server did not accept the request.",
     breakingUnable: "Unable to submit the request.",
     title: "New Article",
-    description: "Draft first, publish when ready.",
-    publishing: "Publishing...",
-    publish: "Publish",
+    description: "Choose a status, then save.",
     saving: "Saving...",
     save: "Save",
     titleLabel: "Title",
@@ -103,7 +101,6 @@ const articleCopy = {
     topicsError: "Topics Error",
     validationError: "Validation Error",
     saveFailed: "Unable to save article.",
-    publishFailed: "Unable to publish article.",
     scheduleFailed: "Unable to schedule article.",
     markBreaking: "Mark as breaking news",
     markBreakingTitle: "Mark this article as breaking news",
@@ -126,9 +123,7 @@ const articleCopy = {
     breakingServerRejected: "ម៉ាស៊ីនមេមិនទទួលសំណើនេះទេ។",
     breakingUnable: "មិនអាចផ្ញើសំណើបានទេ។",
     title: "អត្ថបទថ្មី",
-    description: "រក្សាជាព្រាងមុន ហើយផ្សព្វផ្សាយពេលរួចរាល់។",
-    publishing: "កំពុងផ្សព្វផ្សាយ...",
-    publish: "ផ្សព្វផ្សាយ",
+    description: "ជ្រើសស្ថានភាព រួចរក្សាទុក។",
     saving: "កំពុងរក្សាទុក...",
     save: "រក្សាទុក",
     titleLabel: "ចំណងជើង",
@@ -157,7 +152,6 @@ const articleCopy = {
     topicsError: "បញ្ហាប្រធានបទ",
     validationError: "ទិន្នន័យមិនត្រឹមត្រូវ",
     saveFailed: "មិនអាចរក្សាទុកអត្ថបទបានទេ។",
-    publishFailed: "មិនអាចបោះពុម្ពអត្ថបទបានទេ។",
     scheduleFailed: "មិនអាចកំណត់ពេលអត្ថបទបានទេ។",
     markBreaking: "កំណត់ជាព័ត៌មានទាន់ហេតុការណ៍",
     markBreakingTitle: "កំណត់អត្ថបទនេះជាព័ត៌មានទាន់ហេតុការណ៍",
@@ -261,7 +255,8 @@ export default function NewArticlePage() {
         (await editorRef.current?.save()) ?? { blocks: [] };
 
       const shouldSubmitForReview = !scheduleOnly && status === 'REVIEW';
-      if (shouldSubmitForReview || scheduleOnly) {
+      const shouldPublish = !scheduleOnly && status === 'PUBLISHED';
+      if (shouldSubmitForReview || shouldPublish || scheduleOnly) {
         const readinessIssues = getArticleReadinessIssues({
           title,
           slug: slug || slugify(title),
@@ -271,7 +266,7 @@ export default function NewArticlePage() {
         }, locale);
 
         if (readinessIssues.length > 0) {
-          setValidationError(copy.beforeReview(readinessIssues));
+          setValidationError(shouldPublish ? copy.beforePublish(readinessIssues) : copy.beforeReview(readinessIssues));
           return;
         }
       }
@@ -333,88 +328,6 @@ export default function NewArticlePage() {
     }
   }
 
-  /* -------------------------
-     Publish (for admins/editors)
-  ------------------------- */
-  async function publish() {
-    if (!title) return;
-
-    // Validate category is selected and exists in database
-    setValidationError(null);
-    if (!categorySlug) {
-      setValidationError(copy.selectCategory);
-      return;
-    }
-    if (!topic || !topics.some((item) => item.slug === normalizeTopic(topic))) {
-      setValidationError(copy.selectTopic);
-      return;
-    }
-    if (!categoriesLoading && !isValidCategory(categorySlug)) {
-      setValidationError(copy.invalidCategory(categorySlug));
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const contentJson: OutputData =
-        (await editorRef.current?.save()) ?? { blocks: [] };
-      const readinessIssues = getArticleReadinessIssues({
-        title,
-        slug: slug || slugify(title),
-        excerpt,
-        categorySlug,
-        hasBodyContent: hasMeaningfulArticleContent(contentJson),
-      }, locale);
-
-      if (readinessIssues.length > 0) {
-        setValidationError(copy.beforePublish(readinessIssues));
-        return;
-      }
-
-      const response = await client.request(M_UPSERT_ARTICLE, {
-        id: createdArticleId,
-        input: {
-          title,
-          slug: slug || slugify(title),
-          excerpt,
-          authorName,
-          categorySlug,
-          topic: topic ? normalizeTopic(topic) : null,
-          tagSlugs: parseTagSlugs(tags),
-          scheduledAt: null,
-          status: "PUBLISHED", // Directly publish
-          isBreaking,
-          contentJson,
-        },
-      });
-      if (response?.upsertArticle?.id) setCreatedArticleId(response.upsertArticle.id);
-
-      // If user requested breaking news, send the request after creating article
-      if (shouldRequestBreakingNews && response?.upsertArticle?.id) {
-        try {
-          const breakingResponse = await requestBreakingNews(response.upsertArticle.id, breakingNewsReason);
-          if (breakingResponse?.requestBreakingNews?.id) {
-            showSuccess(copy.breakingRequested, copy.breakingRequestedDescription);
-          } else {
-            showError(copy.breakingRequestFailed, copy.breakingServerRejected);
-          }
-        } catch (err) {
-          console.warn('Breaking news request submission failed:', err);
-          showError(copy.breakingRequestFailed, copy.breakingUnable);
-          // Don't block the article save if breaking news request fails
-        }
-      }
-
-      window.location.href = "/articles";
-    } catch (error) {
-      setValidationError(safeArticleErrorMessage(error, copy.publishFailed));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-
-
   return (
     <PermissionGuard permissions={[Permission.CREATE_ARTICLE]} showError>
     <main className="space-y-4">
@@ -431,11 +344,6 @@ export default function NewArticlePage() {
           {scheduledAt && hasPermission(Permission.PUBLISH_ARTICLE) && (
             <Button onClick={() => save(true)} disabled={saving || !title}>
               {saving ? copy.saving : copy.scheduleButton}
-            </Button>
-          )}
-          {hasPermission(Permission.PUBLISH_ARTICLE) && (
-            <Button onClick={publish} disabled={saving || !title || !!scheduledAt}>
-              {saving ? copy.publishing : copy.publish}
             </Button>
           )}
           {!scheduledAt && <Button onClick={() => save()} disabled={saving || !title}>

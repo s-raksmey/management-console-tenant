@@ -17,7 +17,6 @@ import {
   ChevronDown,
   Loader2,
   Mail,
-  RefreshCw,
   Search,
   Send,
   Settings as SettingsIcon,
@@ -208,7 +207,6 @@ const settingsCopy = {
     public: "Public",
     required: "Required",
     searchSettings: "Search settings",
-    refresh: "Refresh",
     sections: "Sections",
     found: (count: number) => `${count} found`,
     shown: (count: number) => `${count} shown`,
@@ -281,7 +279,6 @@ const settingsCopy = {
     public: "សាធារណៈ",
     required: "ត្រូវការ",
     searchSettings: "ស្វែងរកការកំណត់",
-    refresh: "ផ្ទុកឡើងវិញ",
     sections: "ផ្នែក",
     found: (count: number) => `រកឃើញ ${count}`,
     shown: (count: number) => `បង្ហាញ ${count}`,
@@ -767,7 +764,6 @@ export default function SettingsPage() {
             </h3>
             <p className="mb-4 text-slate-600">{error}</p>
             <Button onClick={() => void loadSettings()} variant="outline">
-              <RefreshCw className="mr-2 h-4 w-4" />
               {copy.tryAgain}
             </Button>
           </CardContent>
@@ -848,15 +844,6 @@ export default function SettingsPage() {
                     className="h-10 border-slate-200 bg-white pl-9"
                   />
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => void loadSettings()}
-                  className="h-10 shrink-0 px-3"
-                  aria-label={copy.refresh}
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
               </div>
             </div>
           </div>
