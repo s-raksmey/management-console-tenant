@@ -70,6 +70,36 @@ export function TenantsPageSkeleton() {
   );
 }
 
+export function DashboardPageSkeleton() {
+  return (
+    <div className="min-h-screen space-y-8 bg-slate-50 p-3 dark:bg-slate-950 sm:p-6" aria-busy="true" aria-live="polite">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-3">
+          <Bone className="h-8 w-64 max-w-full" />
+          <Bone className="h-4 w-80 max-w-full" />
+        </div>
+        <Bone className="h-9 w-36 rounded-lg" />
+      </div>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <MetricSkeleton key={index} />
+        ))}
+      </div>
+      <div className="grid gap-6 xl:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, index) => (
+          <div key={index} className="overflow-hidden rounded-xl border border-slate-200/80 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="space-y-2 border-b border-slate-100 px-5 py-4 dark:border-slate-800">
+              <Bone className="h-5 w-40" />
+              <Bone className="h-3.5 w-56 max-w-full" />
+            </div>
+            <TableRows count={4} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function PageSkeleton() {
   return (
     <div className="space-y-6" aria-busy="true" aria-live="polite">

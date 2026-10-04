@@ -23,24 +23,6 @@ export const Q_SETTINGS = gql`
   }
 `;
 
-export const Q_SETTING = gql`
-  query GetSetting($key: String!) {
-    setting(key: $key) {
-      id
-      key
-      value
-      type
-      label
-      description
-      isPublic
-      isRequired
-      validation
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
 export const Q_PUBLIC_SETTINGS = gql`
   query GetPublicSettings {
     publicSettings {
@@ -66,24 +48,6 @@ export const Q_PUBLIC_SETTINGS = gql`
 export const M_UPDATE_SETTING = gql`
   mutation UpdateSetting($input: UpdateSettingInput!) {
     updateSetting(input: $input) {
-      id
-      key
-      value
-      type
-      label
-      description
-      isPublic
-      isRequired
-      validation
-      createdAt
-      updatedAt
-    }
-  }
-`;
-
-export const M_UPDATE_SETTINGS = gql`
-  mutation UpdateSettings($input: [UpdateSettingInput!]!) {
-    updateSettings(input: $input) {
       id
       key
       value
@@ -285,39 +249,6 @@ export const SETTING_CATEGORIES = {
 
 export function getSettingsByType(settings: Setting[], type: SettingType): Setting[] {
   return settings.filter(setting => setting.type === type);
-}
-
-export function getSettingValue(settings: Setting[], key: string): JsonValue | undefined {
-  const setting = settings.find(s => s.key === key);
-  return setting?.value;
-}
-
-export function formatSettingValue(value: JsonValue | undefined, key: string): string {
-  if (value === null || value === undefined) {
-    return '';
-  }
-  
-  // Handle boolean values
-  if (typeof value === 'boolean') {
-    return value ? 'Enabled' : 'Disabled';
-  }
-  
-  // Handle arrays
-  if (Array.isArray(value)) {
-    return value.join(', ');
-  }
-  
-  // Handle objects
-  if (typeof value === 'object') {
-    return JSON.stringify(value);
-  }
-  
-  // Handle special formatting for specific keys
-  if (key.includes('password') || key.includes('secret') || key.includes('key')) {
-    return '••••••••';
-  }
-  
-  return String(value);
 }
 
 export function getSettingInputType(key: string, value: JsonValue | undefined): 'text' | 'number' | 'boolean' | 'email' | 'url' | 'textarea' | 'select' | 'color' {

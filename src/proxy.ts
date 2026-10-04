@@ -13,6 +13,8 @@ function isPublicPath(pathname: string) {
   if (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/favicon") ||
+    pathname.startsWith("/uploads/") ||
+    pathname.startsWith("/media/") ||
     pathname === "/robots.txt"
   ) {
     return true;
@@ -23,7 +25,7 @@ function isPublicPath(pathname: string) {
   );
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   if (isPublicPath(req.nextUrl.pathname)) {
     return NextResponse.next();
   }
@@ -41,7 +43,9 @@ export function middleware(req: NextRequest) {
   }
 
   const loginUrl = new URL("/login", req.url);
-  loginUrl.searchParams.set("next", req.nextUrl.pathname);
+  if (req.nextUrl.pathname !== "/") {
+    loginUrl.searchParams.set("next", req.nextUrl.pathname);
+  }
   return NextResponse.redirect(loginUrl);
 }
 

@@ -39,7 +39,7 @@ interface MobileNavProps {
 }
 
 const getNavigation = (
-  userRole?: string,
+  _userRole?: string,
   locale: AdminLocale = "en",
   permissions: {
     canViewSettings: boolean;
@@ -101,90 +101,6 @@ const getNavigation = (
       users: "អ្នកប្រើ",
     },
   }[locale];
-
-  if (userRole === "SUPER_ADMIN") {
-    const mainTenantItems = [
-      {
-        name: copy.dashboard,
-        href: "/",
-        icon: LayoutDashboard,
-      },
-    ];
-
-    if (permissions.canSystemAdmin) {
-      mainTenantItems.push({
-        name: copy.tenantManagement,
-        href: "/tenants",
-        icon: Building2,
-      });
-    }
-
-    if (permissions.canViewUsers) {
-      mainTenantItems.push({
-        name: copy.userManagement,
-        href: "/users",
-        icon: Users,
-      });
-    }
-
-    if (permissions.canManageRoles) {
-      mainTenantItems.push({
-        name: copy.roleManagement,
-        href: "/users/roles",
-        icon: Shield,
-      });
-    }
-
-    if (permissions.canViewAnalytics) {
-      mainTenantItems.push({
-        name: copy.analytics,
-        href: "/analytics",
-        icon: BarChart3,
-      });
-    }
-
-    if (permissions.canViewMedia) {
-      mainTenantItems.push({
-        name: copy.media,
-        href: "/media",
-        icon: Image,
-      });
-    }
-
-    if (permissions.canViewCarousel) {
-      mainTenantItems.push({
-        name: copy.carousel,
-        href: "/carousel",
-        icon: Image,
-      });
-    }
-
-    if (permissions.canViewAds) {
-      mainTenantItems.push({
-        name: copy.ads,
-        href: "/ads",
-        icon: Megaphone,
-      });
-    }
-
-    if (permissions.canViewAuditLogs) {
-      mainTenantItems.push({
-        name: copy.logs,
-        href: "/audit",
-        icon: Archive,
-      });
-    }
-
-    if (permissions.canViewSettings) {
-      mainTenantItems.push({
-        name: copy.settings,
-        href: "/settings",
-        icon: Settings,
-      });
-    }
-
-    return mainTenantItems;
-  }
 
   const baseItems = [
     {

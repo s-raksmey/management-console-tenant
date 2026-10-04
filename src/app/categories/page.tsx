@@ -6,13 +6,6 @@ import { Button } from "@/components/ui/button";
 import { PageSkeleton } from "@/components/layout/page-skeleton";
 import { Input } from "@/components/ui/input";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -21,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
-import { Plus, Save, X } from "lucide-react";
+import { ChevronDown, Plus, Save, X } from "lucide-react";
 import { useToastHelpers } from "@/components/ui/toast";
 import {
   Category,
@@ -157,6 +150,12 @@ const categoryCopy = {
     editManageTopics: "Edit & Manage Topics",
     delete: "Delete",
     loading: "Loading...",
+    save: "Save",
+    nameEnglishColumn: "Name (English)",
+    nameKhmerColumn: "Name (Khmer)",
+    slugColumn: "Slug",
+    actionsColumn: "Actions",
+    addSubcategory: "Add subcategory",
   },
   km: {
     confirm: "បញ្ជាក់",
@@ -239,6 +238,12 @@ const categoryCopy = {
     editManageTopics: "កែ និងគ្រប់គ្រងប្រធានបទ",
     delete: "លុប",
     loading: "កំពុងផ្ទុក...",
+    save: "រក្សាទុក",
+    nameEnglishColumn: "ឈ្មោះ (អង់គ្លេស)",
+    nameKhmerColumn: "ឈ្មោះ (ខ្មែរ)",
+    slugColumn: "ស្លាក URL",
+    actionsColumn: "សកម្មភាព",
+    addSubcategory: "បន្ថែមប្រភេទរង",
   },
 };
 
@@ -247,6 +252,9 @@ export default function CategoriesPage() {
   const copy = categoryCopy[locale];
   const { hasPermission, isLoading: permissionsLoading } = usePermissions();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoryTopics, setCategoryTopics] = useState<Record<string, Topic[]>>({});
+  const [collapsedCategoryIds, setCollapsedCategoryIds] = useState<Set<string>>(new Set());
+  const [manageSubcategories, setManageSubcategories] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [creating, setCreating] = useState(false);
   const [pageReady, setPageReady] = useState(false);
@@ -272,11 +280,41 @@ export default function CategoriesPage() {
   const canListCategories = hasPermission(Permission.LIST_CATEGORIES);
   const canCreateCategory = hasPermission(Permission.CREATE_CATEGORY);
   const canUpdateCategory = hasPermission(Permission.UPDATE_CATEGORY);
-  const formOpen = (creating && canCreateCategory) || Boolean(editingCategory && canUpdateCategory);
+  const canCreateTopic = hasPermission(Permission.CREATE_TOPIC);
+  const canUpdateTopic = hasPermission(Permission.UPDATE_TOPIC);
+  const formOpen = (creating && canCreateCategory) || Boolean(
+    editingCategory &&
+      (editingTopic
+        ? canUpdateTopic
+        : manageSubcategories
+          ? canCreateTopic
+          : canUpdateCategory),
+  );
 
   useEffect(() => {
     showErrorRef.current = showError;
   }, [showError]);
+
+  const loadCategoryTopics = useCallback(async () => {
+    const result = await query(`
+      query GetCategoryDashboardTopics {
+        topics {
+          id
+          slug
+          title
+          titleKhmer
+          category { id }
+        }
+      }
+    `);
+    const groupedTopics: Record<string, Topic[]> = {};
+    for (const topic of result?.topics ?? []) {
+      const categoryId = topic.category?.id;
+      if (!categoryId) continue;
+      (groupedTopics[categoryId] ??= []).push(topic);
+    }
+    setCategoryTopics(groupedTopics);
+  }, [query]);
 
   // Form state
   const [formData, setFormData] = useState<CategoryFormData>({
@@ -293,7 +331,7 @@ export default function CategoriesPage() {
 
   const loadCategories = useCallback(async () => {
     try {
-      const response = await getCategories();
+      const [response] = await Promise.all([getCategories(), loadCategoryTopics()]);
       if (response?.categories) {
         setCategories(response.categories);
       }
@@ -303,7 +341,7 @@ export default function CategoriesPage() {
     } finally {
       setPageReady(true);
     }
-  }, [copy.error, copy.loadCategoriesFailed, getCategories]);
+  }, [copy.error, copy.loadCategoriesFailed, getCategories, loadCategoryTopics]);
 
   const loadTopicsForCategory = useCallback(
     async (categorySlug: string) => {
@@ -397,6 +435,7 @@ export default function CategoriesPage() {
     setTopics([]);
     setShowTopicForm(false);
     setEditingTopic(null);
+    setManageSubcategories(false);
     setPendingTopics([]);
     setCreating(false);
     resetTopicForm();
@@ -420,6 +459,7 @@ export default function CategoriesPage() {
     setShowTopicForm(false);
     setEditingTopic(null);
     setTopicFormData({ title: "", titleKhmer: "", slug: "" });
+    setManageSubcategories(false);
     setCreating(true);
   };
 
@@ -434,6 +474,14 @@ export default function CategoriesPage() {
     setPendingTopics([]);
     setShowTopicForm(false);
     setEditingTopic(null);
+    setManageSubcategories(false);
+  };
+
+  const startAddingSubcategory = (category: Category) => {
+    startEditing(category);
+    setManageSubcategories(true);
+    setTopicFormData({ title: "", titleKhmer: "", slug: "" });
+    setShowTopicForm(true);
   };
 
   const startEditingTopic = (topic: Topic) => {
@@ -700,8 +748,9 @@ export default function CategoriesPage() {
             ? copy.topicUpdated
             : copy.topicCreated,
         );
-        resetTopicForm();
+        resetForm();
         loadTopicsForCategory(editingCategory.slug);
+        void loadCategoryTopics();
       }
     } catch (err: any) {
       console.error("Failed to save topic:", err);
@@ -728,6 +777,7 @@ export default function CategoriesPage() {
         if (editingCategory) {
           loadTopicsForCategory(editingCategory.slug);
         }
+        void loadCategoryTopics();
       }
     } catch (err: any) {
       console.error("Failed to delete topic:", err);
@@ -803,16 +853,24 @@ export default function CategoriesPage() {
         <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
           <DialogHeader className="pr-8">
             <DialogTitle>
-              {editingCategory ? copy.editCategory : copy.createCategory}
+              {editingTopic
+                ? copy.editTopic
+                : manageSubcategories && editingCategory
+                  ? copy.subCategoriesFor(editingCategory.name)
+                  : editingCategory
+                    ? copy.editCategory
+                    : copy.createCategory}
             </DialogTitle>
             <DialogDescription>
-              {editingCategory
+              {editingTopic
+                ? copy.editing(editingTopic.title)
+                : editingCategory
                 ? copy.editing(editingCategory.name)
                 : copy.formDescription}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5">
-            <div className="grid gap-4 sm:grid-cols-2">
+            {!editingTopic && !manageSubcategories && <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-slate-700">
                   {copy.englishName} <span className="text-red-500">*</span>
@@ -850,7 +908,7 @@ export default function CategoriesPage() {
                   placeholder="category-slug"
                 />
               </div>
-            </div>
+            </div>}
 
             {/* Topic Management for New Categories */}
             {!editingCategory && (
@@ -992,32 +1050,16 @@ export default function CategoriesPage() {
               </div>
             )}
 
-            {editingCategory && (
+            {editingCategory && (manageSubcategories || editingTopic) && (
               <div className="border-t pt-5">
-                <div className="mb-3 flex items-center justify-between gap-3">
+                {manageSubcategories && !editingTopic && <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <h4 className="font-medium text-slate-950">{copy.subCategories}</h4>
-                    <p className="text-sm text-slate-500">{copy.subCategoryCount(topics.length)}</p>
                   </div>
-                  <PermissionGuard permissions={[Permission.CREATE_TOPIC]} fallback={null}>
-                    <Button
-                      onClick={() => {
-                        setEditingTopic(null);
-                        setTopicFormData({ title: "", titleKhmer: "", slug: "" });
-                        setShowTopicForm(true);
-                      }}
-                      size="sm"
-                      variant="outline"
-                      className="items-center gap-2"
-                    >
-                      <Plus className="h-4 w-4" />
-                      {copy.addTopic}
-                    </Button>
-                  </PermissionGuard>
-                </div>
+                </div>}
 
                 {showTopicForm && (
-                  <PermissionGuard permissions={[Permission.CREATE_TOPIC]} fallback={null}>
+                  <PermissionGuard permissions={[editingTopic ? Permission.UPDATE_TOPIC : Permission.CREATE_TOPIC]} fallback={null}>
                     <div className="mb-4 space-y-3">
                       <h4 className="text-sm font-medium text-slate-950">
                         {editingTopic ? copy.editTopic : copy.addNewTopic}
@@ -1064,30 +1106,11 @@ export default function CategoriesPage() {
                           />
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          onClick={requestSaveTopic}
-                          disabled={isLoading}
-                          size="sm"
-                          className="items-center gap-2"
-                        >
-                          <Save className="h-4 w-4" />
-                          {editingTopic ? copy.updateTopic : copy.addTopic}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={resetTopicForm}
-                          size="sm"
-                          className="items-center gap-2"
-                        >
-                          {copy.cancel}
-                        </Button>
-                      </div>
                     </div>
                   </PermissionGuard>
                 )}
 
-                {topics.length === 0 ? (
+                {manageSubcategories && !editingTopic && (topics.length === 0 ? (
                   <p className="text-sm text-slate-500">{copy.noSubCategoriesYet}</p>
                 ) : (
                   <div className="divide-y">
@@ -1129,105 +1152,118 @@ export default function CategoriesPage() {
                       </div>
                     ))}
                   </div>
-                )}
+                ))}
               </div>
             )}
 
           </div>
           <DialogFooter className="gap-2 sm:space-x-0">
+            {manageSubcategories && showTopicForm && !editingTopic ? (
+              <Button onClick={requestSaveTopic} disabled={isLoading} className="items-center gap-2">
+                <Save className="h-4 w-4" />
+                {copy.save}
+              </Button>
+            ) : !manageSubcategories ? (
+              <Button
+                onClick={editingTopic ? requestSaveTopic : requestSaveCategory}
+                disabled={isLoading}
+                className="items-center gap-2"
+              >
+                <Save className="h-4 w-4" />
+                {editingTopic
+                  ? copy.updateTopic
+                  : editingCategory
+                    ? copy.updateCategory
+                    : copy.createCategory}
+                {!editingCategory &&
+                  pendingTopics.length > 0 &&
+                  ` & ${pendingTopics.length} ${copy.subCategories}`}
+              </Button>
+            ) : null}
             <Button variant="outline" onClick={resetForm} disabled={isLoading}>
               {copy.cancel}
-            </Button>
-            <Button
-              onClick={requestSaveCategory}
-              disabled={isLoading}
-              className="items-center gap-2"
-            >
-              <Save className="h-4 w-4" />
-              {editingCategory ? copy.updateCategory : copy.createCategory}
-              {!editingCategory &&
-                pendingTopics.length > 0 &&
-                ` & ${pendingTopics.length} ${copy.subCategories}`}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Card className="overflow-hidden border-slate-200">
-        <CardHeader className="border-b bg-white px-4 py-4 sm:px-5">
-          <CardTitle className="text-lg">{copy.allCategories}</CardTitle>
-          <CardDescription className="mt-1">
-            {categoriesLoading
-              ? copy.loading
-              : categories.length === 0
-                ? copy.noCategoriesFound
-                : copy.categoriesFound(categories.length)}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-0">
-          {categories.length === 0 ? (
-            <p className="px-5 py-10 text-center text-sm text-slate-500">
-              {categoriesLoading ? copy.loading : copy.noCategoriesYet}
-            </p>
-          ) : (
-            <div className="divide-y">
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        {categories.length === 0 ? (
+          <p className="px-5 py-10 text-center text-sm text-slate-500">
+            {categoriesLoading ? copy.loading : copy.noCategoriesYet}
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <div className="min-w-[800px]">
+              <div className="grid grid-cols-[minmax(0,1.8fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_220px] items-center gap-4 border-b border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200">
+                <span>{copy.nameEnglishColumn}</span>
+                <span>{copy.nameKhmerColumn}</span>
+                <span>{copy.slugColumn}</span>
+                <span>{copy.actionsColumn}</span>
+              </div>
               {categories.map((category) => {
+                const collapsed = collapsedCategoryIds.has(category.id);
                 const selected = editingCategory?.id === category.id;
+                const categorySubcategories = categoryTopics[category.id] ?? [];
                 return (
-                  <div
-                    key={category.id}
-                    className={`flex items-center justify-between gap-3 px-4 py-3 sm:px-5 ${selected ? "bg-slate-50" : ""}`}
-                  >
-                    {canUpdateCategory ? (
-                      <button
-                        type="button"
-                        onClick={() => startEditing(category)}
-                        className="min-w-0 flex-1 text-left"
-                      >
-                        <p className="truncate font-medium text-slate-950">{category.name}</p>
-                        <p className="truncate text-sm text-slate-500">
-                          {[category.nameKhmer, category.slug].filter(Boolean).join(" · ")}
-                        </p>
-                      </button>
-                    ) : (
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-medium text-slate-950">{category.name}</p>
-                        <p className="truncate text-sm text-slate-500">
-                          {[category.nameKhmer, category.slug].filter(Boolean).join(" · ")}
-                        </p>
+                  <div key={category.id} className="border-b border-slate-100 last:border-b-0 dark:border-slate-800">
+                    <div className={`grid grid-cols-[minmax(0,1.8fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_220px] items-center gap-4 px-5 py-3 ${selected ? "bg-blue-50/70 dark:bg-blue-950/30" : "bg-slate-50/80 dark:bg-slate-800/60"}`}>
+                      <div className="flex min-w-0 items-center gap-2">
+                        <button
+                          type="button"
+                          aria-label={`${collapsed ? "Expand" : "Collapse"} ${category.name}`}
+                          aria-expanded={!collapsed}
+                          onClick={() => setCollapsedCategoryIds((current) => {
+                            const next = new Set(current);
+                            if (next.has(category.id)) next.delete(category.id);
+                            else next.add(category.id);
+                            return next;
+                          })}
+                          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-600 hover:bg-white dark:text-slate-300 dark:hover:bg-slate-700"
+                        >
+                          <ChevronDown className={`h-4 w-4 transition-transform ${collapsed ? "-rotate-90" : ""}`} />
+                        </button>
+                        <span className="truncate font-semibold text-slate-950 dark:text-slate-100">{category.name}</span>
                       </div>
-                    )}
-                    <div className="flex shrink-0 items-center">
-                      <PermissionGuard permissions={[Permission.UPDATE_CATEGORY]} fallback={null}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => startEditing(category)}
-                          disabled={isLoading}
-                          className="h-8 px-2"
-                        >
-                          {copy.edit}
-                        </Button>
-                      </PermissionGuard>
-                      <PermissionGuard permissions={[Permission.DELETE_CATEGORY]} fallback={null}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => requestDeleteCategory(category.id, category.name)}
-                          disabled={isLoading}
-                          className="h-8 px-2 text-red-600 hover:text-red-700"
-                        >
-                          {copy.delete}
-                        </Button>
-                      </PermissionGuard>
+                      <span className="truncate text-slate-700 dark:text-slate-300">{category.nameKhmer || "—"}</span>
+                      <span className="truncate text-sm text-slate-500 dark:text-slate-400">{category.slug}</span>
+                      <div className="flex items-center gap-1">
+                        <PermissionGuard permissions={[Permission.UPDATE_CATEGORY]} fallback={null}>
+                          <Button variant="ghost" size="sm" onClick={() => startEditing(category)} disabled={isLoading} className="h-8 px-2">{copy.edit}</Button>
+                        </PermissionGuard>
+                        <PermissionGuard permissions={[Permission.CREATE_TOPIC]} fallback={null}>
+                          <Button variant="outline" size="sm" onClick={() => startAddingSubcategory(category)} disabled={isLoading} className="h-8 gap-1 px-2"><Plus className="h-3.5 w-3.5" />{copy.addSubcategory}</Button>
+                        </PermissionGuard>
+                        <PermissionGuard permissions={[Permission.DELETE_CATEGORY]} fallback={null}>
+                          <Button variant="ghost" size="sm" onClick={() => requestDeleteCategory(category.id, category.name)} disabled={isLoading} className="h-8 px-2 text-red-600 hover:text-red-700">{copy.delete}</Button>
+                        </PermissionGuard>
+                      </div>
                     </div>
+                    {!collapsed && categorySubcategories.map((topic, index) => (
+                      <div key={topic.id} className="grid grid-cols-[minmax(0,1.8fr)_minmax(0,1.5fr)_minmax(0,1.2fr)_220px] items-center gap-4 border-t border-slate-100 bg-white px-5 py-2.5 dark:border-slate-800 dark:bg-slate-900">
+                        <div className="flex min-w-0 items-center gap-3 pl-3">
+                          <span className={`h-6 w-5 shrink-0 border-l border-slate-200 dark:border-slate-700 ${index === categorySubcategories.length - 1 ? "border-b" : ""}`} />
+                          <span className="truncate text-slate-800 dark:text-slate-200">{topic.title}</span>
+                        </div>
+                        <span className="truncate text-slate-600 dark:text-slate-400">{topic.titleKhmer || "—"}</span>
+                        <span className="truncate text-sm text-slate-500 dark:text-slate-400">{topic.slug}</span>
+                        <div className="flex items-center gap-2">
+                          <PermissionGuard permissions={[Permission.UPDATE_TOPIC]} fallback={null}>
+                            <Button variant="ghost" size="sm" onClick={() => { startEditing(category); startEditingTopic(topic); }} disabled={isLoading} className="h-8 px-2">{copy.edit}</Button>
+                          </PermissionGuard>
+                          <PermissionGuard permissions={[Permission.DELETE_TOPIC]} fallback={null}>
+                            <Button variant="ghost" size="sm" onClick={() => requestDeleteTopic(topic.id, topic.title)} disabled={isLoading} className="h-8 px-2 text-red-600 hover:text-red-700">{copy.delete}</Button>
+                          </PermissionGuard>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 );
               })}
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+        )}
+      </div>
 
       <ConfirmationDialog
         open={confirmation.open}

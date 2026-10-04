@@ -206,46 +206,6 @@ export function getAllowedStatusTransitions(
 }
 
 /**
- * Check if a user can perform a specific status change
- */
-export function canChangeStatus(
-  fromStatus: ArticleStatus,
-  toStatus: ArticleStatus,
-  userRole: string,
-  hasPermission: (permission: Permission) => boolean,
-  isOwner: boolean = false
-): boolean {
-  if (fromStatus === toStatus) return true; // No change needed
-  
-  const transition = STATUS_TRANSITIONS.find(
-    t => t.from === fromStatus && t.to === toStatus
-  );
-  
-  if (!transition) return false;
-  
-  // Any role with article creation/update rights can submit owned drafts for review.
-  if (fromStatus === 'DRAFT' && 
-      toStatus === 'REVIEW' && 
-      isOwner && 
-      (hasPermission(Permission.CREATE_ARTICLE) || hasPermission(Permission.UPDATE_OWN_ARTICLE))) {
-    return true;
-  }
-  
-  // Special case: authors can pull their own articles back from review (REVIEW -> DRAFT)
-  if (fromStatus === 'REVIEW' && 
-      toStatus === 'DRAFT' && 
-      isOwner && 
-      hasPermission(Permission.UPDATE_OWN_ARTICLE)) {
-    return true;
-  }
-  
-  // Check permission
-  if (hasPermission(transition.requiredPermission)) return true;
-  
-  return false;
-}
-
-/**
  * Get user-friendly workflow guidance based on role
  */
 export function getWorkflowGuidance(userRole: string): string {

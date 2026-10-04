@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { PermissionSidebar } from "../navigation/PermissionSidebar";
 import { Header } from "./header";
 import { MobileNav } from "./mobile-nav";
-import { PageSkeleton, TenantsPageSkeleton } from "./page-skeleton";
+import { DashboardPageSkeleton, PageSkeleton, TenantsPageSkeleton } from "./page-skeleton";
 import { ToastContainer } from "@/components/ui/toast";
 
 interface LayoutWrapperProps {
@@ -92,7 +92,7 @@ export function LayoutWrapper({ children }: LayoutWrapperProps) {
         {/* Page Content */}
         <main className="min-w-0 flex-1 p-3 sm:p-4 md:p-6 lg:p-8">
           <div className={isWidePage ? "min-w-0 w-full space-y-5 sm:space-y-6" : "mx-auto min-w-0 max-w-7xl space-y-5 sm:space-y-6"}>
-            {contentReady ? children : pathname === "/tenants" ? <TenantsPageSkeleton /> : <PageSkeleton />}
+            {contentReady ? children : pathname === "/" ? <DashboardPageSkeleton /> : pathname === "/tenants" ? <TenantsPageSkeleton /> : <PageSkeleton />}
           </div>
         </main>
       </div>
