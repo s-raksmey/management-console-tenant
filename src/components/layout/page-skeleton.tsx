@@ -100,6 +100,60 @@ export function DashboardPageSkeleton() {
   );
 }
 
+const sidebarRowWidths = [
+  ["w-28", "w-40"],
+  ["w-36", "w-24"],
+  ["w-32", "w-44"],
+  ["w-24", "w-36"],
+  ["w-40", "w-28"],
+  ["w-20", "w-32"],
+  ["w-32", "w-24"],
+  ["w-28", "w-36"],
+] as const;
+
+export function SidebarSkeleton({
+  collapsed,
+  activeIndex = 0,
+  count = 14,
+}: {
+  collapsed: boolean;
+  activeIndex?: number;
+  count?: number;
+}) {
+  return (
+    <div className="space-y-2" aria-busy="true" aria-live="polite">
+      {Array.from({ length: count }).map((_, index) => {
+        const [titleWidth, detailWidth] = sidebarRowWidths[index % sidebarRowWidths.length];
+        const active = index === activeIndex;
+
+        if (collapsed) {
+          return (
+            <div
+              key={index}
+              className={`flex justify-center rounded-lg py-2 ${active ? "bg-blue-50 dark:bg-blue-500/15" : ""}`}
+            >
+              <Bone className="h-8 w-8 rounded-md" />
+            </div>
+          );
+        }
+
+        return (
+          <div
+            key={index}
+            className={`flex items-center gap-3 rounded-lg px-3 py-2 ${active ? "bg-blue-50 dark:bg-blue-500/15" : ""}`}
+          >
+            <Bone className="h-8 w-8 shrink-0 rounded-md" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Bone className={`h-3 ${titleWidth}`} />
+              {active ? null : <Bone className={`h-2.5 ${detailWidth}`} />}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function PageSkeleton() {
   return (
     <div className="space-y-6" aria-busy="true" aria-live="polite">

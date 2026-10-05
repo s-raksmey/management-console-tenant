@@ -23,6 +23,8 @@ import { useCounts } from "@/hooks/useCounts";
 import { useArticles } from "@/hooks/useGraphQL";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
 import { TenantBrandMark } from "@/components/layout/tenant-brand-mark";
+import { SidebarSkeleton } from "@/components/layout/page-skeleton";
+import { useStableLoading } from "@/hooks/useStableLoading";
 
 
 interface PermissionSidebarProps {
@@ -36,6 +38,36 @@ interface NavigationItemComponentProps {
   collapsed: boolean;
   isActive: boolean;
   level?: number;
+}
+
+const sidebarSkeletonHrefs = [
+  "/",
+  "/articles",
+  "/tenants",
+  "/review",
+  "/comments",
+  "/categories",
+  "/media",
+  "/carousel",
+  "/ads",
+  "/analytics",
+  "/users",
+  "/audit",
+  "/settings",
+  "/readers",
+];
+
+function sidebarSkeletonIndex(pathname: string) {
+  const match = sidebarSkeletonHrefs
+    .map((href, index) => ({ href, index }))
+    .filter(({ href }) =>
+      href === "/"
+        ? pathname === "/"
+        : (pathname === href || pathname.startsWith(`${href}/`)),
+    )
+    .sort((left, right) => right.href.length - left.href.length)[0];
+
+  return match?.index ?? 0;
 }
 
 const sidebarCopy = {
@@ -198,7 +230,8 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
   const { user } = useAuth();
   const { locale } = useAdminLocale();
   const copy = sidebarCopy[locale];
-  const { hasPermission, userRole } = usePermissions();
+  const { hasPermission, userRole, isLoading: navigationLoading } = usePermissions();
+  const showNavigationSkeleton = useStableLoading(navigationLoading);
   const { counts } = useCounts(userRole);
   const { getArticles } = useArticles();
   const [reviewQueueCount, setReviewQueueCount] = useState(0);
@@ -282,9 +315,16 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
       </div>
 
       {/* Navigation */}
-      <nav className="sidebar-scrollbar flex-1 overflow-y-auto overflow-x-hidden p-4 [scrollbar-color:#334155_transparent] [scrollbar-width:thin]">
+      <nav className={cn(
+        "flex-1 overflow-x-hidden p-4",
+        showNavigationSkeleton
+          ? "overflow-y-hidden"
+          : "sidebar-scrollbar overflow-y-auto [scrollbar-color:#334155_transparent] [scrollbar-width:thin]",
+      )}>
         <div className="space-y-2">
-          {navigationItems.map((item) => {
+          {showNavigationSkeleton ? (
+            <SidebarSkeleton collapsed={collapsed} activeIndex={sidebarSkeletonIndex(pathname)} />
+          ) : navigationItems.map((item) => {
             const activeHref = navigationItems
               .filter(
                 (candidate) =>
@@ -307,7 +347,7 @@ export function PermissionSidebar({ collapsed, onToggle, className }: Permission
       </nav>
 
       {/* User Info */}
-      {!collapsed && user && (
+      {!collapsed && user && !showNavigationSkeleton && (
         <div className="border-t border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/80">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-slate-400 to-slate-500">

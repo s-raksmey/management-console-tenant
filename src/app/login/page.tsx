@@ -4,7 +4,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
 import { resolveCmsMediaSrc, shouldBypassImageOptimizer } from "@/lib/cms-media";
-import { COLOR_SCHEME_CHANGED_EVENT } from "@/lib/tweakcn-theme";
+import { COLOR_SCHEME_CHANGED_EVENT, COLOR_SCHEME_STORAGE_KEY } from "@/lib/tweakcn-theme";
 import { getGqlClient } from "@/services/graphql-client";
 import { gql } from "graphql-request";
 import { Moon, Sun } from "lucide-react";
@@ -55,14 +55,6 @@ const Q_CONSOLE_BRAND = gql`
   }
 `;
 
-function getInitialDarkMode() {
-  if (typeof window === "undefined") return true;
-
-  const savedScheme = localStorage.getItem("tenant-console-color-scheme") || "system";
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  return savedScheme === "dark" || (savedScheme === "system" && prefersDark);
-}
-
 function brandInitials(name: string) {
   const initials = name
     .split(" ")
@@ -101,7 +93,7 @@ export default function LoginPage() {
     nextPath && nextPath.startsWith("/") && !nextPath.startsWith("//") ? nextPath : "/";
   const verified = searchParams.get("verified");
   const { locale, selectLocale } = useAdminLocale();
-  const [isDarkMode, setIsDarkMode] = useState(getInitialDarkMode);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const [brand, setBrand] = useState<ConsoleBrand | null>(null);
   const [brandReady, setBrandReady] = useState(false);
   const copy = loginPageCopy[locale];
@@ -111,9 +103,23 @@ export default function LoginPage() {
     const nextIsDark = !isDarkMode;
     setIsDarkMode(nextIsDark);
     document.documentElement.classList.toggle("dark", nextIsDark);
-    localStorage.setItem("tenant-console-color-scheme", nextIsDark ? "dark" : "light");
+    localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, nextIsDark ? "dark" : "light");
     window.dispatchEvent(new Event(COLOR_SCHEME_CHANGED_EVENT));
   };
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const applyScheme = () => {
+      const savedScheme = localStorage.getItem(COLOR_SCHEME_STORAGE_KEY) || "system";
+      const nextIsDark = savedScheme === "dark" || (savedScheme === "system" && mediaQuery.matches);
+      document.documentElement.classList.toggle("dark", nextIsDark);
+      setIsDarkMode(nextIsDark);
+    };
+
+    applyScheme();
+    mediaQuery.addEventListener("change", applyScheme);
+    return () => mediaQuery.removeEventListener("change", applyScheme);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
