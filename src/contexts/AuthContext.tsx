@@ -11,8 +11,10 @@ import React, {
 } from "react";
 import {
   COOKIE_SESSION_TOKEN,
+  clearConsoleQueryCache,
   getGqlClient,
   getAuthenticatedGqlClient,
+  refreshConsoleSession,
   getSelectedTenantId,
   isBearerToken,
   setSelectedTenantId,
@@ -185,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const hasLoadedRolePermissions = useRef(false);
 
   const clearAuthState = useCallback(() => {
+    clearConsoleQueryCache();
     hasLoadedRolePermissions.current = false;
     setDynamicRolePermissions(null);
     setRolePermissions({});
@@ -225,11 +228,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       authToken?: string;
       suppressAuthRequired?: boolean;
       resetSuperAdminTenant?: boolean;
+      skipRefresh?: boolean;
     } = {},
   ): Promise<boolean> => {
     try {
       const client = getAuthenticatedClient(options.authToken);
       const response = await client.request<{ me: AuthResponse }>(ME_QUERY);
+
+      if (
+        !response.me.success &&
+        response.me.message === AUTH_REQUIRED_MESSAGE &&
+        !options.skipRefresh
+      ) {
+        const refreshed = await refreshConsoleSession();
+        if (refreshed) {
+          return refreshUser({ ...options, skipRefresh: true });
+        }
+      }
 
       if (response.me.success && response.me.user) {
         if (response.me.user.role === "SUPER_ADMIN" && options.resetSuperAdminTenant) {
@@ -278,6 +293,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     void initializeAuth();
   }, [clearAuthState, refreshUser]);
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      clearAuthState();
+    };
+    window.addEventListener("management-console:session-expired", handleSessionExpired);
+    return () => {
+      window.removeEventListener("management-console:session-expired", handleSessionExpired);
+    };
+  }, [clearAuthState]);
 
   useEffect(() => {
     const handleTenantChanged = () => {

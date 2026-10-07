@@ -8,7 +8,6 @@ import AdminDashboard from "./AdminDashboard";
 import EditorDashboard from "./EditorDashboard";
 import AuthorDashboard from "./AuthorDashboard";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
-import { PageSkeleton } from "@/components/layout/page-skeleton";
 
 /**
  * Tenant-console dashboard. Super admins use the main console instead.
@@ -31,7 +30,7 @@ export const RoleDashboard: React.FC = () => {
       };
 
   if (isLoading) {
-    return <PageSkeleton />;
+    return null;
   }
 
   if (!userRole || !["ADMIN", "EDITOR", "AUTHOR"].includes(userRole)) {

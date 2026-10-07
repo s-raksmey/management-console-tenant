@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { useToastHelpers } from "@/components/ui/toast";
 import { useAdminLocale } from "@/hooks/useAdminLocale";
-import { PageSkeleton } from "@/components/layout/page-skeleton";
 import { useInitialPageReady } from "@/lib/use-initial-page-ready";
 
 type Comment = {
@@ -264,7 +263,7 @@ export default function CommentsPage() {
   };
 
   if (!permissionsLoading && !canReview) return <div className="text-sm text-red-600">{copy.accessDenied}</div>;
-  if (!pageReady) return <PageSkeleton />;
+  if (!pageReady) return null;
 
   return (
     <div className="space-y-5">

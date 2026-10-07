@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@apollo/client": "^4.1.4",
+    "@bprogress/next": "^3.2.12",
     "@editorjs/editorjs": "^2.30.2",
     "@editorjs/embed": "^2.7.7",
     "@editorjs/header": "^2.8.1",

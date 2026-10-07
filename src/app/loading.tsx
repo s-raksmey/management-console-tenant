@@ -1,5 +1,3 @@
-import { DashboardPageSkeleton } from "@/components/layout/page-skeleton";
-
 export default function Loading() {
-  return <DashboardPageSkeleton />;
+  return null;
 }

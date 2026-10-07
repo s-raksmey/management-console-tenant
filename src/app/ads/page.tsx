@@ -31,7 +31,6 @@ import { Permission } from "@/components/permissions/PermissionGuard";
 import { usePermissions } from "@/hooks/usePermissions";
 import { useToastHelpers } from "@/components/ui/toast";
 import { Button } from "@/components/ui/button";
-import { PageSkeleton } from "@/components/layout/page-skeleton";
 import { useInitialPageReady } from "@/lib/use-initial-page-ready";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -315,7 +314,7 @@ export default function AdsPage() {
   };
 
   if (!permissionsLoading && !canView) return <div className="text-sm text-red-600">{copy.accessDenied}</div>;
-  if (!pageReady) return <PageSkeleton />;
+  if (!pageReady) return null;
   const viewOnly = canView && !canCreate && !canUpdate && !canDelete;
   const numberLocale = locale === "km" ? "km-KH" : undefined;
 

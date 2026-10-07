@@ -10,7 +10,6 @@ import {
 import { getAuthenticatedGqlClient } from "@/services/graphql-client";
 import { Q_REVISION_REQUESTS } from "@/services/article.gql";
 import { Button } from "@/components/ui/button";
-import { PageSkeleton } from "@/components/layout/page-skeleton";
 import { Article, ArticleStatus } from "@/types/article";
 import { Badge } from "@/components/ui/badge";
 import { ArticleShareDialog } from "@/components/articles/article-share-dialog";
@@ -470,7 +469,7 @@ export default function AdminArticlesPage() {
   }, [currentPage, totalPages]);
 
   if (!pageReady) {
-    return <PageSkeleton />;
+    return null;
   }
 
   return (

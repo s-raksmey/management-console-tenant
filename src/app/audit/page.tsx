@@ -18,7 +18,6 @@ import {
   Monitor
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PageSkeleton } from '@/components/layout/page-skeleton';
 import { useInitialPageReady } from '@/lib/use-initial-page-ready';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -365,7 +364,7 @@ export default function AuditLogsPage() {
   const numberLocale = locale === 'km' ? 'km-KH' : undefined;
 
   if (!pageReady) {
-    return <PageSkeleton />;
+    return null;
   }
 
   return (

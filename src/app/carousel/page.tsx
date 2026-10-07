@@ -13,7 +13,6 @@ import {
 } from "@/services/carousel.gql";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { PageSkeleton } from "@/components/layout/page-skeleton";
 import { useInitialPageReady } from "@/lib/use-initial-page-ready";
 import {
   Card,
@@ -248,7 +247,7 @@ export default function CarouselListPage() {
   };
 
   if (!pageReady) {
-    return <PageSkeleton />;
+    return null;
   }
 
   return (

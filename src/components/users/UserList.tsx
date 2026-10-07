@@ -3,7 +3,6 @@
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { PageSkeleton } from '@/components/layout/page-skeleton';
 import { useSearchParams } from 'next/navigation';
 import { 
   Users, 
@@ -514,7 +513,7 @@ export const UserList: React.FC<UserListProps> = () => {
   const getRoleLabel = (role: 'SUPER_ADMIN' | 'ADMIN' | 'EDITOR' | 'AUTHOR') => copy.roleLabel[role];
 
   if (!initialReady) {
-    return <PageSkeleton />;
+    return null;
   }
 
   if (error && users.length === 0) {

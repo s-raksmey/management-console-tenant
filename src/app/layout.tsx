@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext"
 import { TenantProvider } from "@/contexts/TenantContext"
 import { ToastProvider } from "@/contexts/ToastContext"
 import { ClientLayoutWrapper } from "@/components/layout/client-layout-wrapper"
+import { ProgressProvider } from "@/components/providers/ProgressProvider"
 import { ThemeRuntime } from "@/components/theme/theme-runtime"
 import { COLOR_SCHEME_STORAGE_KEY, themeBootScript } from "@/lib/tweakcn-theme"
 import { BRAND_CACHE_COOKIE, parseCachedBrand } from "@/lib/brand-cache"
@@ -40,18 +41,20 @@ export default async function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: colorSchemeScript }} />
       </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
-        <AuthProvider>
-          <TenantProvider initialBrand={initialBrand}>
-            <ToastProvider>
-              <AdminLocaleProvider initialLocale={locale}>
-                <ThemeRuntime />
-                <ClientLayoutWrapper>
-                  {children}
-                </ClientLayoutWrapper>
-              </AdminLocaleProvider>
-            </ToastProvider>
-          </TenantProvider>
-        </AuthProvider>
+        <ProgressProvider>
+          <AuthProvider>
+            <TenantProvider initialBrand={initialBrand}>
+              <ToastProvider>
+                <AdminLocaleProvider initialLocale={locale}>
+                  <ThemeRuntime />
+                  <ClientLayoutWrapper>
+                    {children}
+                  </ClientLayoutWrapper>
+                </AdminLocaleProvider>
+              </ToastProvider>
+            </TenantProvider>
+          </AuthProvider>
+        </ProgressProvider>
       </body>
     </html>
   )

@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useCategories, useGraphQL } from "@/hooks/useGraphQL";
 import { Button } from "@/components/ui/button";
-import { PageSkeleton } from "@/components/layout/page-skeleton";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -821,7 +820,7 @@ export default function CategoriesPage() {
   };
 
   if (!pageReady) {
-    return <PageSkeleton />;
+    return null;
   }
 
   return (

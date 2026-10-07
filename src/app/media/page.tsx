@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, FolderPlus, Grid, List, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PageSkeleton } from '@/components/layout/page-skeleton';
 import { useInitialPageReady } from '@/lib/use-initial-page-ready';
 import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import {
@@ -418,7 +417,7 @@ export default function MediaPage() {
   };
 
   if (!pageReady) {
-    return <PageSkeleton />;
+    return null;
   }
 
   return (

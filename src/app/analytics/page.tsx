@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { PageSkeleton } from "@/components/layout/page-skeleton";
 import { useInitialPageReady } from "@/lib/use-initial-page-ready";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -219,7 +218,7 @@ export default function AnalyticsPage() {
   );
 
   if (!pageReady) {
-    return <PageSkeleton />;
+    return null;
   }
 
   return (

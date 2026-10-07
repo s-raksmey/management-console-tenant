@@ -30,7 +30,6 @@ import {
 } from "@/services/tenant.gql";
 import { UserService } from "@/services/user.gql";
 import { Button } from "@/components/ui/button";
-import { TenantsPageSkeleton } from "@/components/layout/page-skeleton";
 import { useInitialPageReady } from "@/lib/use-initial-page-ready";
 import { Badge } from "@/components/ui/badge";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
@@ -881,7 +880,7 @@ export default function TenantsPage() {
   };
 
   if (!pageReady) {
-    return <TenantsPageSkeleton />;
+    return null;
   }
 
   return (
