@@ -32,7 +32,7 @@ function cleanSegment(value: string | null | undefined, fallback: string) {
 
 function getFallbackBaseUrl() {
   if (typeof window === "undefined") return "https://example.com";
-  return window.location.origin.replace(":3002", ":3000").replace(":3001", ":3000");
+  return window.location.origin.replace(":3000", ":3002").replace(":3001", ":3002");
 }
 
 function buildArticleUrl({

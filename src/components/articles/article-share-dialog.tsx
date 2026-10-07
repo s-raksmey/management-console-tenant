@@ -153,7 +153,7 @@ function getPreviewArticleUrl(article: Article | null, publicBaseUrl?: string | 
   const base =
     publicBaseUrl?.trim() ||
     (typeof window !== "undefined"
-      ? window.location.origin.replace(":3002", ":3000").replace(":3001", ":3000")
+      ? window.location.origin.replace(":3000", ":3002").replace(":3001", ":3002")
       : "");
   const category = article.category?.slug || "news";
   const topic = article.topic || "latest";

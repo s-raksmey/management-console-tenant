@@ -7,10 +7,10 @@
     "seed": "node --loader ts-node/esm prisma/seed.ts"
   },
   "scripts": {
-    "dev": "next dev --webpack -p 3002",
-    "dev:turbo": "next dev --turbo -p 3002",
+    "dev": "next dev --webpack -p 3001",
+    "dev:turbo": "next dev --turbo -p 3001",
     "build": "next build",
-    "start": "next start -p 3002",
+    "start": "next start -p 3001",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "security:audit": "npm audit --audit-level=moderate"
