@@ -298,9 +298,9 @@ export const PermissionGuard: React.FC<PermissionGuardProps> = ({
     },
   }[locale];
 
-  // Show loading state
+  // Wait for auth/permissions without placeholder skeletons (sidebar uses fallback={null}).
   if (isLoading || (user && !permissionsReady)) {
-    return <div className="animate-pulse bg-gray-200 h-4 w-24 rounded"></div>;
+    return <>{fallback}</>;
   }
 
   // No user authenticated

@@ -257,13 +257,7 @@ export const AuthorDashboard: React.FC = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              {loading ? (
-                <div className="space-y-3 p-5">
-                  {Array.from({ length: 4 }).map((_, index) => (
-                    <div key={index} className="h-16 animate-pulse rounded-md bg-slate-100" />
-                  ))}
-                </div>
-              ) : articles.length === 0 ? (
+              {articles.length === 0 ? (
                 <div className="p-10 text-center">
                   <FileText className="mx-auto h-10 w-10 text-slate-300" />
                   <p className="mt-3 font-semibold text-slate-950 dark:text-slate-100">{copy.emptyTitle}</p>

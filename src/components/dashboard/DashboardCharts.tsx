@@ -210,16 +210,6 @@ function EmptyChart({ label }: { label: string }) {
   );
 }
 
-function LoadingChart() {
-  return (
-    <div className="grid gap-3 sm:grid-cols-2">
-      {Array.from({ length: 4 }).map((_, index) => (
-        <div key={index} className="h-40 animate-pulse rounded-2xl bg-slate-100 dark:bg-slate-800" />
-      ))}
-    </div>
-  );
-}
-
 function Sparkline({ values, color }: { values: number[]; color: string }) {
   const width = 88;
   const height = 28;
@@ -979,10 +969,10 @@ export function DashboardCharts({ analytics, loading, tenantTimeAnalytics, timeL
       <Card>
         <CardHeader>
           <CardTitle>{copy.charts}</CardTitle>
-          <CardDescription>{copy.loadingCharts}</CardDescription>
+          <CardDescription>{copy.dataUnavailable}</CardDescription>
         </CardHeader>
         <CardContent>
-          <LoadingChart />
+          <EmptyChart label={copy.noAnalytics} />
         </CardContent>
       </Card>
     );
